@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark'=> ($appearance ?? 'system') == 'dark'])>
+<head>
+    {{-- ===================================================
+         Datos de empresa desde BD (disponible en todo el head)
+         =================================================== --}}
+    @php
+        $empresa        = \App\Models\Empresa::principal();
+        $appName        = $empresa?->nombre_comercial ?? $empresa?->razon_social ?? config('app.name', 'App');
+        $faviconVersion = $empresa && $empresa->fav_ico ? md5($empresa->updated_at->timestamp) : '';
+    @endphp
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=auto, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    {{-- Application Configuration (Runtime) --}}
+    <script>
+        // Get WebSocket URL: prioritize WEBSOCKET_URL, fallback to VITE_WEBSOCKET_URL
+        const wsUrl = "{{ env('WEBSOCKET_URL') }}" || "{{ env('VITE_WEBSOCKET_URL', 'http://localhost:3001') }}";
+
+        window.__APP_CONFIG__ = {
+            websocketUrl: wsUrl,
+            apiUrl: "{{ env('VITE_API_URL', '/api') }}"
+        };
+        window.__APP_NAME__ = "{{ $appName }}";
+    </script>
+
+    {{-- Inline script to detect system dark mode preference and apply it immediately --}}
+    <script>
+        (function() {
+            const appearance = '{{ $appearance ?? "system" }}';
+
+            if (appearance === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                if (prefersDark) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        })();
+
+    </script>
+
+    {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+    <style>
+        html {
+            background-color: oklch(1 0 0);
+        }
+
+        html.dark {
+            background-color: oklch(0.145 0 0);
+        }
+    </style>
+
+
+    <title inertia>{{ $appName }}</title>
+
+    {{-- Meta descripción desde BD --}}
+    @if($empresa?->mensaje_footer)
+        <meta name="description" content="{{ Str::limit(strip_tags($empresa->mensaje_footer), 160) }}">
+    @endif
+
+    {{-- PWA / Mobile: nombre de la app --}}
+    <meta name="application-name"            content="{{ $appName }}">
+    <meta name="apple-mobile-web-app-title"  content="{{ $appName }}">
+
+    {{-- Favicon dinámico desde BD con versioning para evitar caché --}}
+    <link rel="icon" href="/dynamic-favicon{{ $faviconVersion ? '?v=' . $faviconVersion : '' }}" sizes="any">
+    <link rel="icon" href="{{ env('FAVICON_SVG', '/favicon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ env('APPLE_TOUCH_ICON', '/apple-touch-icon.png') }}">
+
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+
+    @viteReactRefresh
+    @vite(['resources/js/app.tsx'])
+    @inertiaHead
+</head>
+<body class="font-sans antialiased">
+    @inertia
+</body>
+</html>

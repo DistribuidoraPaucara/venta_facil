@@ -1,0 +1,648 @@
+import { Head } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/presentation/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/presentation/components/ui/tabs';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/presentation/components/ui/dropdown-menu';
+import { CheckCircle2, Navigation, Flag, Printer, MoreVertical, MapPin, XCircle, Pencil } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import type { Entrega, VehiculoCompleto } from '@/domain/entities/entregas';
+import VentasEntregaSection from './components/VentasEntregaSection';
+import ProductosAgrupados from './components/ProductosAgrupados';
+import ResumenPagosEntrega from './components/ResumenPagosEntrega';
+import ConfirmacionesEntregaSection from './components/ConfirmacionesEntregaSection';
+import { CorregirPagoModal } from './components/CorregirPagoModal';
+import { CancelarEntregaModal } from './components/CancelarEntregaModal';
+import { EntregaActionsModal } from '@/presentation/components/logistica/entrega-actions-modal';
+import EstadoBadge from '@/presentation/components/logistica/EstadoBadge';
+import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
+import { UbicacionesMultiplesModal } from './components/UbicacionesMultiplesModal';
+import { useState, useEffect } from 'react';
+import { useEntregaNotifications } from '@/application/hooks/use-entrega-notifications';
+import { useToastNotifications } from '@/application/hooks/use-toast-notifications';
+import { useWebSocket } from '@/application/hooks/use-websocket';
+import type { VentaEntrega } from '@/domain/entities/entregas';
+
+interface TipoPago {
+    id: number;
+    nombre: string;
+    activo: boolean;
+}
+
+interface DesglosePago {
+    tipo_pago_id: number;
+    tipo_pago_nombre: string;
+    monto: number;
+    referencia?: string;
+}
+
+interface ShowProps {
+    entrega: Entrega;
+    vehiculos?: VehiculoCompleto[];
+    tiposPago: TipoPago[];
+}
+
+export default function EntregaShow({ entrega: initialEntrega, tiposPago }: ShowProps) {
+    const [entrega, setEntrega] = useState<Entrega>(initialEntrega);
+    const [isOutputModalOpen, setIsOutputModalOpen] = useState(false);
+    const [isMarking, setIsMarking] = useState(false);
+    const [isInitiatingRoute, setIsInitiatingRoute] = useState(false);
+    const [isFinalizingDelivery, setIsFinalizingDelivery] = useState(false);
+    const [corrigiendo, setCorrigiendo] = useState<{ ventaId: number; ventaNumero: string; ventaTotal: number; desglose: DesglosePago[] } | null>(null);
+    // ✅ NUEVO: Estado para confirmación de entrega individual
+    const [confirmandoEntrega, setConfirmandoEntrega] = useState<VentaEntrega | null>(null);
+    // ✅ NUEVO: Estado para confirmación existente (editar)
+    const [confirmacionExistente, setConfirmacionExistente] = useState<any>(null);
+    // ✅ NUEVO: Estado para modal de ubicaciones
+    const [mostrarUbicaciones, setMostrarUbicaciones] = useState(false);
+    // ✅ NUEVO: Estado para modal de cancelar entrega
+    const [mostrarCancelarModal, setMostrarCancelarModal] = useState(false);
+
+    // ✅ DEBUG: Ver qué datos llegan del backend
+    useEffect(() => {
+        console.log('📦 [SHOW] Datos de entrega recibida del backend:', initialEntrega);
+        /* console.log('📦 [SHOW] Datos de entrega recibida del backend:', {
+            entrega_id: initialEntrega.id,
+            numero_entrega: initialEntrega.numero_entrega,
+            estado: initialEntrega.estado_entrega_codigo,
+            total_ventas: initialEntrega.ventas?.length,
+            confirmaciones_entregas: initialEntrega.confirmacionesVentas?.length,
+            ventas_con_detalles: initialEntrega.ventas?.map((v: any) => ({
+                venta_id: v.id,
+                venta_numero: v.numero,
+                confirmacion_entrega: v.confirmacion_entrega,
+                todas_propiedades: v
+            })),
+            todo_entrega: initialEntrega,
+        }); */
+    }, [initialEntrega]);
+
+    // ✅ Cargar confirmación existente cuando se selecciona una venta
+    useEffect(() => {
+        if (confirmandoEntrega && entrega.confirmacionesVentas) {
+            const confirmacion = entrega.confirmacionesVentas.find(
+                (c: any) => c.venta_id === confirmandoEntrega.id
+            );
+            setConfirmacionExistente(confirmacion || null);
+        } else {
+            setConfirmacionExistente(null);
+        }
+    }, [confirmandoEntrega, entrega.confirmacionesVentas]);
+
+    // ✅ NUEVO: Calcular monto total de ventas sin CREDITO
+    const montoTotalVentas = entrega.ventas
+        ?.filter((venta: any) => {
+            // Excluir si tipo_pago.id === 3 (CREDITO)
+            const tipoPageoId = venta.tipo_pago_id || venta.tipo_pago?.id;
+            return tipoPageoId !== 3;
+        })
+        .reduce((sum: number, venta: any) => sum + (parseFloat(venta.total) || 0), 0) || 0;
+
+    // Hooks para sincronización en tiempo real
+    const { isConnected, on, off } = useWebSocket();
+    const { showNotification } = useToastNotifications();
+
+    // Configurar notificaciones en tiempo real
+    useEntregaNotifications(Number(entrega.id), {
+        onNotification: (data) => showNotification(data),
+        enableLogging: true,
+    });
+
+    // WebSocket listener para cambios de estado en tiempo real
+    useEffect(() => {
+        if (!isConnected) return;
+
+        const channel = `entrega.${entrega.id}`;
+
+        const handleEstadoCambio = (newEntrega: Entrega) => {
+            console.log('[SHOW] Cambio de estado recibido:', {
+                estadoAnterior: entrega.estado_entrega_codigo,
+                estadoNuevo: newEntrega.estado_entrega_codigo,
+                timestamp: new Date().toISOString(),
+            });
+
+            // Actualizar estado localmente
+            setEntrega(newEntrega);
+
+            // Timeline se actualiza automáticamente porque depende de entrega.estado_entrega_codigo
+        };
+
+        on(`${channel}:estado-cambio`, handleEstadoCambio);
+
+        return () => {
+            off(`${channel}:estado-cambio`, handleEstadoCambio);
+        };
+    }, [on, off, isConnected, entrega.id]);
+
+    // ✅ NUEVO: Handler para marcar entrega como listo para entrega
+    const handleMarcarListoParaEntrega = async () => {
+        setIsMarking(true);
+        console.log('[SHOW] 📤 Iniciando: Marcar como listo para entrega');
+        console.log(`[SHOW] 🔗 Endpoint: POST /api/entregas/${entrega.id}/listo-para-entrega`);
+        try {
+            const response = await fetch(`/api/entregas/${entrega.id}/listo-para-entrega`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            console.log('[SHOW] 📥 Respuesta recibida:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+            });
+
+            const data = await response.json();
+            console.log('[SHOW] ✅ Datos parseados:', data);
+            console.log('[SHOW] 🔍 Completa respuesta JSON:', JSON.stringify(data, null, 2));
+
+            if (response.ok && data.success) {
+                console.log('[SHOW] ✨ Éxito - Mostrando notificación');
+                showNotification({
+                    title: '✅ Éxito',
+                    description: data.message || 'Operación completada',
+                    type: 'success',
+                });
+                // Recargar la página para ver el cambio de estado
+                console.log('[SHOW] ⏳ Recargando página en 1.5 segundos...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                console.log('[SHOW] ❌ Error en respuesta:', data);
+                console.log('[SHOW] 📊 Status:', response.status, response.statusText);
+                showNotification({
+                    title: '❌ Error',
+                    description: data.message || data.error || 'Operación no completada',
+                    type: 'error',
+                });
+            }
+        } catch (error) {
+            console.error('[SHOW] ❌ Excepción al marcar listo para entrega:', error);
+            showNotification({
+                title: '❌ Error',
+                description: error instanceof Error ? error.message : 'Error desconocido',
+                type: 'error',
+            });
+        } finally {
+            setIsMarking(false);
+        }
+    };
+
+    // ✅ NUEVO: Handler para iniciar ruta
+    const handleIniciarRuta = async () => {
+        setIsInitiatingRoute(true);
+        console.log('[SHOW] 📤 Iniciando: Iniciar ruta');
+        console.log(`[SHOW] 🔗 Endpoint: POST /api/chofer/entregas/${entrega.id}/iniciar-ruta`);
+        try {
+            const response = await fetch(`/api/chofer/entregas/${entrega.id}/iniciar-ruta`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            console.log('[SHOW] 📥 Respuesta recibida:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+            });
+
+            const data = await response.json();
+            console.log('[SHOW] ✅ Datos parseados:', data);
+            console.log('[SHOW] 🔍 Completa respuesta JSON:', JSON.stringify(data, null, 2));
+
+            if (response.ok && data.success) {
+                console.log('[SHOW] ✨ Éxito - Mostrando notificación');
+                showNotification({
+                    title: '✅ Éxito',
+                    description: data.message || 'Operación completada',
+                    type: 'success',
+                });
+                // Recargar la página para ver el cambio de estado
+                console.log('[SHOW] ⏳ Recargando página en 1.5 segundos...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                console.log('[SHOW] ❌ Error en respuesta:', data);
+                console.log('[SHOW] 📊 Status:', response.status, response.statusText);
+                showNotification({
+                    title: '❌ Error',
+                    description: data.message || data.error || 'Operación no completada',
+                    type: 'error',
+                });
+            }
+        } catch (error) {
+            console.error('[SHOW] ❌ Excepción al iniciar ruta:', error);
+            showNotification({
+                title: '❌ Error',
+                description: error instanceof Error ? error.message : 'Error desconocido',
+                type: 'error',
+            });
+        } finally {
+            setIsInitiatingRoute(false);
+        }
+    };
+
+    // ✅ NUEVO: Handler para finalizar entrega
+    const handleFinalizarEntrega = async () => {
+        setIsFinalizingDelivery(true);
+        console.log('[SHOW] 📤 Iniciando: Finalizar entrega');
+        console.log(`[SHOW] 🔗 Endpoint: POST /api/chofer/entregas/${entrega.id}/finalizar-entrega`);
+        try {
+            const response = await fetch(`/api/chofer/entregas/${entrega.id}/finalizar-entrega`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            console.log('[SHOW] 📥 Respuesta recibida:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+            });
+
+            const data = await response.json();
+            console.log('[SHOW] ✅ Datos parseados:', data);
+            console.log('[SHOW] 🔍 Completa respuesta JSON:', JSON.stringify(data, null, 2));
+
+            if (response.ok && data.success) {
+                console.log('[SHOW] ✨ Éxito - Mostrando notificación');
+                showNotification({
+                    title: '✅ Éxito',
+                    description: data.message || 'Operación completada',
+                    type: 'success',
+                });
+                // Recargar la página para ver el cambio de estado
+                console.log('[SHOW] ⏳ Recargando página en 1.5 segundos...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                console.log('[SHOW] ❌ Error en respuesta:', data);
+                console.log('[SHOW] 📊 Status:', response.status, response.statusText);
+                showNotification({
+                    title: '❌ Error',
+                    description: data.message || data.error || 'Operación no completada',
+                    type: 'error',
+                });
+            }
+        } catch (error) {
+            console.error('[SHOW] ❌ Excepción al finalizar entrega:', error);
+            showNotification({
+                title: '❌ Error',
+                description: error instanceof Error ? error.message : 'Error desconocido',
+                type: 'error',
+            });
+        } finally {
+            setIsFinalizingDelivery(false);
+        }
+    };
+
+    // console.log('Entrega data:', entrega.numero_entrega);
+    // const cliente: ClienteEntrega | undefined = entrega.venta?.cliente || entrega.proforma?.cliente;
+    const numero: string = String(entrega.proforma?.numero || entrega.venta?.numero || entrega.numero || `#${entrega.id}`);
+
+    // Usar estado_entrega_codigo (más confiable) o caer a estado como fallback
+    const estadoActualParaValidar = entrega.estado_entrega_codigo ?? entrega.estado;
+
+    return (
+        <AppLayout>
+            <Head title={`Entrega ${numero}`} />
+
+            <div className="space-y-2 p-4 sm:p-6 bg-white dark:bg-slate-950 w-full">
+                {/* Header - Responsive */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    {/* Título y Info */}
+                    <div className="flex items-start gap-3 sm:gap-4">
+                        <div className="min-w-0">
+                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white break-words">
+                                Folio: {numero}
+                            </h1>
+                            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 truncate">{entrega.numero_entrega}</p>
+                        </div>
+                        {/* Estado Badge - Oculto en móvil */}
+                        <div className="hidden sm:block">
+                            <EstadoBadge entrega={entrega} />
+                        </div>
+                    </div>
+
+                    {/* Estado Badge - Visible en móvil arriba */}
+                    <div className="sm:hidden">
+                        <EstadoBadge entrega={entrega} />
+                    </div>
+
+                    {/* Botones - Stack en móvil */}
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        {/* ✅ NUEVO: Botón para marcar como listo para entrega - SOLO en PREPARACION_CARGA */}
+                        {estadoActualParaValidar === 'PREPARACION_CARGA' && (
+                            <Button
+                                onClick={handleMarcarListoParaEntrega}
+                                disabled={isMarking}
+                                variant="default"
+                                className="bg-green-600 hover:bg-green-700 text-white w-full text-sm sm:text-base"
+                            >
+                                <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">{isMarking ? 'Procesando...' : 'Listo para Entrega'}</span>
+                            </Button>
+                        )}
+
+                        {/* ✅ NUEVO: Botón para iniciar ruta - SOLO en LISTO_PARA_ENTREGA */}
+                        {estadoActualParaValidar === 'LISTO_PARA_ENTREGA' && (
+                            <Button
+                                onClick={handleIniciarRuta}
+                                disabled={isInitiatingRoute}
+                                variant="default"
+                                className="bg-blue-600 hover:bg-blue-700 text-white w-full text-sm sm:text-base"
+                            >
+                                <Navigation className="w-4 h-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">{isInitiatingRoute ? 'Iniciando...' : 'Iniciar Ruta'}</span>
+                            </Button>
+                        )}
+
+                        {/* ✅ NUEVO: Botón para finalizar entrega - SOLO en EN_TRANSITO */}
+                        {estadoActualParaValidar === 'EN_TRANSITO' && (
+                            <Button
+                                onClick={handleFinalizarEntrega}
+                                disabled={isFinalizingDelivery}
+                                variant="default"
+                                className="bg-red-600 hover:bg-red-700 text-white w-full text-sm sm:text-base"
+                            >
+                                <Flag className="w-4 h-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">{isFinalizingDelivery ? 'Finalizando...' : 'Finalizar Entrega'}</span>
+                            </Button>
+                        )}
+
+                        {/* ✅ NUEVO: Menú desplegable con acciones adicionales */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="outline" title="Más acciones">
+                                    <MoreVertical className="h-4 w-4" />
+                                    <span className="sr-only">Abrir menú</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent align="end" className="w-56">
+                                {/* Ver en Mapa */}
+                                {entrega.ventas && entrega.ventas.length > 0 && (
+                                    <>
+                                        <DropdownMenuItem onClick={() => setMostrarUbicaciones(true)}>
+                                            <MapPin className="mr-2 h-4 w-4" />
+                                            Ver en Mapa ({entrega.ventas.length})
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                    </>
+                                )}
+
+                                {/* Imprimir */}
+                                <DropdownMenuItem onClick={() => setIsOutputModalOpen(true)}>
+                                    <Printer className="mr-2 h-4 w-4" />
+                                    Imprimir
+                                </DropdownMenuItem>
+
+                                {/* Editar Entrega */}
+                                <DropdownMenuItem onClick={() => router.visit(`/logistica/entregas/${entrega.id}/edit`)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Editar Entrega
+                                </DropdownMenuItem>
+
+                                {/* Cancelar - solo si estado permite */}
+                                {['PROGRAMADO', 'PENDIENTE', 'EN_TRANSITO', 'PREPARACION_CARGA'].includes(estadoActualParaValidar) && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            onClick={() => setMostrarCancelarModal(true)}
+                                            className="text-red-600 focus:bg-red-50 focus:text-red-600 dark:text-red-400 dark:focus:bg-red-950/30 dark:focus:text-red-400"
+                                        >
+                                            <XCircle className="mr-2 h-4 w-4" />
+                                            Cancelar Entrega
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+
+                    {/* Modal de selección de formato de impresión/descarga */}
+                    <OutputSelectionModal
+                        isOpen={isOutputModalOpen}
+                        onClose={() => setIsOutputModalOpen(false)}
+                        documentoId={entrega.id as number | string}
+                        tipoDocumento="entrega"
+                        documentoInfo={{
+                            numero: entrega.numero_entrega,
+                            fecha: entrega.fecha_asignacion,
+                        }}
+                    />
+
+                    {/* ✅ NUEVO: Modal mejorado para confirmar entrega de venta */}
+                    {confirmandoEntrega && (
+                        <EntregaActionsModal
+                            entrega={entrega}
+                            venta={confirmandoEntrega as any}
+                            confirmacionExistente={confirmacionExistente}
+                            isOpen={Boolean(confirmandoEntrega)}
+                            onClose={() => setConfirmandoEntrega(null)}
+                            actionType="confirmar-entrega"
+                            onSuccess={() => {
+                                setConfirmandoEntrega(null);
+                                // Recargar la página para reflejar cambios
+                                setTimeout(() => {
+                                    router.reload();
+                                }, 1000);
+                            }}
+                        />
+                    )}
+
+                    {/* ✅ NUEVO: Modal para corregir pagos */}
+                    {corrigiendo && (
+                        <CorregirPagoModal
+                            isOpen={Boolean(corrigiendo)}
+                            onClose={() => setCorrigiendo(null)}
+                            entregaId={entrega.id as number}
+                            ventaId={corrigiendo.ventaId}
+                            ventaNumero={corrigiendo.ventaNumero}
+                            ventaTotal={corrigiendo.ventaTotal}
+                            desgloseActual={corrigiendo.desglose}
+                            tiposPago={tiposPago}
+                        />
+                    )}
+
+                    {/* ✅ NUEVO: Modal de ubicaciones múltiples */}
+                    {entrega.ventas && (
+                        <UbicacionesMultiplesModal
+                            isOpen={mostrarUbicaciones}
+                            onClose={() => setMostrarUbicaciones(false)}
+                            ubicaciones={
+                                entrega.ventas.map((venta: any) => ({
+                                    id: venta.direccion_cliente?.id || venta.id,
+                                    venta_id: venta.id,
+                                    venta_numero: venta.numero,
+                                    cliente_nombre: venta.cliente?.nombre || 'Cliente desconocido',
+                                    cliente_telefono: venta.cliente?.telefono,
+                                    cliente_foto: venta.cliente?.foto_perfil ? `/storage/${venta.cliente.foto_perfil}` : undefined,
+                                    direccion: venta.direccion_cliente?.direccion || 'Sin dirección',
+                                    observaciones: venta.direccion_cliente?.observaciones,
+                                    latitud: venta.direccion_cliente?.latitud,
+                                    longitud: venta.direccion_cliente?.longitud,
+                                    estado: entrega.estado_entrega?.nombre,
+                                    tipo_entrega: venta.confirmacion_entrega?.tipo_entrega || 'COMPLETA',
+                                    confirmacion_entrega: venta.confirmacion_entrega ? {
+                                        tipo_confirmacion: venta.confirmacion_entrega.tipo_confirmacion,
+                                        total_dinero_recibido: venta.confirmacion_entrega.total_dinero_recibido,
+                                        monto_pendiente: venta.confirmacion_entrega.monto_pendiente,
+                                        confirmado_en: venta.confirmacion_entrega.confirmado_en,
+                                    } : undefined,
+                                })) || []
+                            }
+                            titulo={`Ubicaciones de Entrega ${entrega.numero_entrega || ''}`}
+                        />
+                    )}
+
+                    {/* ✅ NUEVO: Modal para cancelar entrega */}
+                    <CancelarEntregaModal
+                        isOpen={mostrarCancelarModal}
+                        onClose={() => setMostrarCancelarModal(false)}
+                        entrega={{
+                            id: entrega.id,
+                            numero_entrega: entrega.numero_entrega,
+                            estado: entrega.estado,
+                        }}
+                    />
+                </div>
+
+                {/* Información del Lote - Entregas con mismo chofer y vehículo */}
+                {entrega.chofer && entrega.vehiculo && (
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-50/50 dark:from-purple-900/20 dark:to-purple-900/10 rounded-lg border border-purple-200 dark:border-purple-800 p-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
+                            <div>
+                                <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">Chofer Asignado</p>
+                                <p className="font-medium text-sm sm:text-base text-purple-900 dark:text-purple-100 truncate">{entrega.chofer.name}</p>
+                            </div>
+                            {/* ✅ NUEVO (2026-02-12): Mostrar entregador */}
+                            {entrega.entregador && (
+                                <div>
+                                    <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">Entregador</p>
+                                    <p className="font-medium text-sm sm:text-base text-purple-900 dark:text-purple-100 truncate">{entrega.entregador.name}</p>
+                                </div>
+                            )}
+                            <div>
+                                <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">Vehículo</p>
+                                <p className="font-medium text-sm sm:text-base text-purple-900 dark:text-purple-100">
+                                    {entrega.vehiculo.placa}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">Fecha Programada</p>
+                                <p className="font-medium text-sm sm:text-base text-purple-900 dark:text-purple-100">
+                                    {new Date(entrega.fecha_programada).toLocaleDateString('es-ES', {
+                                        weekday: 'short',
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                    })}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">Peso Entrega</p>
+                                <p className="font-medium text-sm sm:text-base text-purple-900 dark:text-purple-100">
+                                    {entrega.peso_kg ? `${entrega.peso_kg} kg` : 'N/A'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">Mnt. Total (Sin Crédito)</p>
+                                <p className="font-medium text-sm sm:text-base text-green-700 dark:text-green-400">
+                                    Bs {montoTotalVentas.toFixed(2)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ✅ NUEVO: Tabs para Ventas, Resumen de Pagos, Reportes y Productos */}
+                {entrega.ventas && entrega.ventas.length > 0 && entrega.id && (
+                    <Tabs defaultValue="ventas" className="w-full">
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="ventas">
+                                📦 Ventas ({entrega.ventas.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="pagos">
+                                💳 Resumen de Pagos
+                            </TabsTrigger>
+                            <TabsTrigger value="reportes">
+                                📋 Reportes del Chofer
+                            </TabsTrigger>
+                            <TabsTrigger value="productos">
+                                📦 Productos
+                            </TabsTrigger>
+                        </TabsList>
+
+                        {/* TAB 1: Ventas */}
+                        <TabsContent value="ventas" className="w-full mt-6">
+                            <VentasEntregaSection
+                                entrega={entrega}
+                                ventas={entrega.ventas}
+                                totalVentas={entrega.ventas.length}
+                                onConfirmarEntrega={(venta) => {
+                                    setConfirmandoEntrega(venta);
+                                }}
+                                onCorregirPago={(ventaId, ventaNumero, ventaTotal, desglose) => {
+                                    setCorrigiendo({ ventaId, ventaNumero, ventaTotal, desglose });
+                                }}
+                            />
+                        </TabsContent>
+
+                        {/* TAB 2: Resumen de Pagos */}
+                        <TabsContent value="pagos" className="w-full mt-6">
+                            <ResumenPagosEntrega entregaId={entrega.id} />
+                        </TabsContent>
+
+                        {/* TAB 3: Reportes del Chofer */}
+                        <TabsContent value="reportes" className="w-full mt-6">
+                            {entrega.confirmacionesVentas && entrega.confirmacionesVentas.length > 0 ? (
+                                <ConfirmacionesEntregaSection
+                                    confirmaciones={entrega.confirmacionesVentas}
+                                    ventasEnEntrega={entrega.ventas}
+                                />
+                            ) : (
+                                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                    <p>No hay reportes de entrega disponibles</p>
+                                </div>
+                            )}
+                        </TabsContent>
+
+                        {/* TAB 4: Productos */}
+                        <TabsContent value="productos" className="w-full mt-6">
+                            <ProductosAgrupados
+                                entregaId={entrega.id as number}
+                                mostrarDetalleVentas={true}
+                            />
+                        </TabsContent>
+                    </Tabs>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 justify-end pt-4">
+                    <Button
+                        variant="outline"
+                        onClick={() => router.visit('/logistica/entregas')}
+                        className="dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                        Volver
+                    </Button>
+                </div>
+            </div>
+        </AppLayout>
+    );
+}

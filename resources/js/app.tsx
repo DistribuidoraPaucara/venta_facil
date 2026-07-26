@@ -1,0 +1,90 @@
+import '../css/app.css';
+import '../css/react-colorful.css';
+import 'react-toastify/dist/ReactToastify.css';
+import 'leaflet/dist/leaflet.css';
+
+// ✅ Polyfill para Socket.IO - definir global en navegador
+if (typeof (globalThis as any).global === 'undefined') {
+    (globalThis as any).global = globalThis;
+}
+
+import { createInertiaApp } from '@inertiajs/react';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { createRoot } from 'react-dom/client';
+import { ToastContainer } from 'react-toastify';
+import { initializeTheme } from '@/presentation/hooks/use-appearance';
+import { configureAxios } from '@/infrastructure/config/axios.config';
+import { EstadosProvider } from '@/application/contexts/EstadosContext';
+import { NotificationsProvider } from '@/application/contexts/notifications-context';
+
+// Get appName from window props injected by Laravel, fallback to env, then 'Laravel'
+const getAppName = (): string => {
+    // First, try to get from window.__APP_NAME__ (will be set in the HTML template)
+    if (typeof window !== 'undefined' && (window as any).__APP_NAME__) {
+        return (window as any).__APP_NAME__;
+    }
+    // Fallback to environment variable
+    return import.meta.env.VITE_APP_NAME || 'Laravel';
+};
+
+const appName = getAppName();
+
+// Configurar axios con interceptadores para autenticación
+configureAxios();
+
+// ✅ NUEVO: Obtener token CSRF de Sanctum antes de hacer peticiones
+// Esto configura la cookie XSRF-TOKEN que axios usa en todas las peticiones
+const initializeCsrfToken = async () => {
+    try {
+        await fetch('/sanctum/csrf-cookie', {
+            credentials: 'include',
+            method: 'GET',
+        });
+        // console.log('✅ CSRF token inicializado desde /sanctum/csrf-cookie');
+    } catch (error) {
+        console.error('⚠️ Error inicializando CSRF token:', error);
+    }
+};
+
+// Inicializar CSRF token antes de crear la app
+initializeCsrfToken();
+
+createInertiaApp({
+    title: (title) => title ? `${title} - ${appName}` : appName,
+    resolve: (name) => resolvePageComponent(`./presentation/pages/${name}.tsx`, import.meta.glob('./presentation/pages/**/*.tsx')),
+    setup({ el, App, props }) {
+        const root = createRoot(el);
+
+        // ✅ Obtener datos del usuario de las props de Inertia
+        const userId = (props.auth?.user as any)?.id || undefined;
+        const userRoles = (props.auth?.roles as any) || [];
+
+        root.render(
+            <>
+                <EstadosProvider>
+                    <NotificationsProvider userId={userId} userRoles={userRoles}>
+                        <App {...props} />
+                    </NotificationsProvider>
+                </EstadosProvider>
+                <ToastContainer
+                    position="top-right"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                />
+            </>
+        );
+    },
+    progress: {
+        color: '#4B5563',
+    },
+});
+
+// This will set light / dark mode on load...
+initializeTheme();

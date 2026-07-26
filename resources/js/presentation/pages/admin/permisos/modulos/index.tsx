@@ -1,0 +1,315 @@
+import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/presentation/components/ui/button';
+import { Badge } from '@/presentation/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/presentation/components/ui/table';
+import { Input } from '@/presentation/components/ui/input';
+import { Label } from '@/presentation/components/ui/label';
+import { Eye, EyeOff, Search, Plus, Trash2, Edit2, AlertTriangle, MoreVertical } from 'lucide-react';
+import toast from 'react-hot-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/presentation/components/ui/dropdown-menu';
+import type { BreadcrumbItem } from '@/types';
+import type { ModuloSidebar } from '@/domain/entities/admin-permisos';
+import { modulosService } from '@/infrastructure/services/modulos.service';
+
+interface Props {
+  modulos: ModuloSidebar[];
+}
+
+const breadcrumbs: BreadcrumbItem[] = [
+  {
+    title: 'Centro de Permisos',
+    href: '/admin/permisos',
+  },
+  {
+    title: 'Módulos del Sidebar',
+    href: '/admin/permisos/modulos',
+  },
+];
+
+export default function Index({ modulos }: Props) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [modulosList, setModulosList] = useState<ModuloSidebar[]>(modulos);
+  const [loading, setLoading] = useState(false);
+
+  // Filtrar módulos por búsqueda
+  const modulosFiltrados = modulosList.filter((modulo) =>
+    modulo.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    modulo.ruta.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Toggle activo/inactivo
+  const handleToggleActivo = async (modulo: ModuloSidebar) => {
+    setLoading(true);
+    try {
+      await modulosService.toggleActivo(modulo.id);
+      // Actualizar la lista local
+      setModulosList(
+        modulosList.map((m) =>
+          m.id === modulo.id ? { ...m, activo: !m.activo } : m
+        )
+      );
+      toast.success(`Módulo ${modulo.titulo} ${!modulo.activo ? 'activado' : 'desactivado'}`);
+    } catch (error) {
+      toast.error('Error al cambiar el estado del módulo');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Navegar a edición
+  const handleEdit = (modulo: ModuloSidebar) => {
+    router.visit(modulosService.editUrl(modulo.id));
+  };
+
+  // Eliminar módulo con confirmación mediante toast
+  const handleDelete = (modulo: ModuloSidebar) => {
+    toast.custom((t) => (
+      <div className="flex flex-col gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 shadow-lg max-w-sm">
+        <div className="flex gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-red-900 dark:text-red-200">
+              ¿Eliminar módulo?
+            </p>
+            <p className="text-sm text-red-800 dark:text-red-300 mt-1">
+              El módulo "{modulo.titulo}" será eliminado. Esta acción no se puede deshacer.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end pt-2 border-t border-red-200 dark:border-red-800">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toast.dismiss(t.id)}
+            className="text-xs"
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => performDelete(modulo, t.id)}
+            disabled={loading}
+            className="text-xs"
+          >
+            {loading ? 'Eliminando...' : 'Eliminar'}
+          </Button>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      position: 'top-center',
+    });
+  };
+
+  // Realizar eliminación después de confirmación
+  const performDelete = async (modulo: ModuloSidebar, toastId: string) => {
+    setLoading(true);
+    try {
+      await modulosService.delete(modulo.id);
+      // Actualizar la lista local
+      setModulosList(modulosList.filter((m) => m.id !== modulo.id));
+      toast.dismiss(toastId);
+      toast.success(`Módulo ${modulo.titulo} eliminado exitosamente`);
+    } catch (error) {
+      toast.error('Error al eliminar el módulo');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title="Módulos del Sidebar" />
+
+      <div className="py-2">
+        <div className="sm:px-2 lg:px-4">
+          {/* Header */}
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                Módulos del Sidebar
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Gestiona los módulos y menús disponibles en el sidebar de la aplicación
+              </p>
+            </div>
+            <Button
+              onClick={() => router.visit(modulosService.createUrl())}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Crear Módulo
+            </Button>
+          </div>
+
+          {/* Card con tabla */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Listado de Módulos</CardTitle>
+              <CardDescription>
+                Total de módulos: {modulosList.length} | Mostrando: {modulosFiltrados.length}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Búsqueda */}
+              <div className="space-y-2">
+                <Label htmlFor="search">Buscar módulo</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    id="search"
+                    type="text"
+                    placeholder="Buscar por título o ruta..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Tabla */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Ruta</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Ícono</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead>Orden</TableHead>
+                      <TableHead className="text-right">Opciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {modulosFiltrados.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-8 text-center text-gray-500">
+                          {modulosList.length === 0
+                            ? 'No hay módulos registrados'
+                            : 'No se encontraron módulos que coincidan con la búsqueda'}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      modulosFiltrados.map((modulo) => (
+                        <TableRow key={modulo.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {modulo.es_submenu && (
+                                <span className="text-gray-400">└</span>
+                              )}
+                              {modulo.titulo}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {modulo.ruta}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={modulo.es_submenu ? 'secondary' : 'default'}>
+                              {modulo.es_submenu ? 'Submódulo' : 'Principal'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {modulo.icono ? (
+                              <Badge variant="outline">{modulo.icono}</Badge>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {modulo.categoria ? (
+                              <Badge variant="outline">{modulo.categoria}</Badge>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-center">
+                            {modulo.orden}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={loading}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>Estado</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleActivo(modulo)}
+                                  disabled={loading}
+                                  className="cursor-pointer"
+                                >
+                                  {modulo.activo ? (
+                                    <>
+                                      <EyeOff className="h-4 w-4 mr-2" />
+                                      <span>Desactivar módulo</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      <span>Activar módulo</span>
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => handleEdit(modulo)}
+                                  disabled={loading}
+                                  className="cursor-pointer"
+                                >
+                                  <Edit2 className="h-4 w-4 mr-2" />
+                                  <span>Editar</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(modulo)}
+                                  disabled={loading}
+                                  variant="destructive"
+                                  className="cursor-pointer"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  <span>Eliminar</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Info Box */}
+              <div className="mt-6 rounded-lg bg-green-50 border border-green-200 p-4">
+                <p className="text-sm text-green-900">
+                  <strong>✅ Implementado:</strong> CRUD completo de módulos del sidebar (crear, leer, actualizar, eliminar).
+                  Puedes gestionar todos los módulos desde esta interfaz.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}

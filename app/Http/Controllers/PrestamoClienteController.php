@@ -1,0 +1,805 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\PrestamoCliente;
+use App\Services\ImpresionService;
+use App\Services\Prestamos\PrestableStockAdvancedService;
+use App\Services\Prestamos\PrestamoClienteService;
+use App\Services\Prestamos\ValidacionPrestamosService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Models\PrestableStock;
+
+class PrestamoClienteController extends Controller
+{
+    public function __construct(
+        private PrestamoClienteService $prestamoService,
+        private ValidacionPrestamosService $validacionService,
+        private PrestableStockAdvancedService $stockAdvancedService,
+        private ImpresionService $impresionService,
+    ) {
+    }
+
+    /**
+     * GET /api/prestamos-cliente
+     * Listar préstamos (filtrado por cliente o chofer)
+     */
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $query = PrestamoCliente::with([
+                'creador',
+                'detalles.prestable',
+                'detalles.prestable.precios',
+                'detalles.prestamoPorAlmacenes.almacen',
+                'cliente',
+                'almacen',
+                'chofer',
+                'vehiculo',
+                'ubicaciones' => function ($query) {
+                    $query->with(['direccionCliente.localidad', 'localidad']);
+                },
+                // ✅ MEJORADO: Cargar devoluciones con sus detalles, prestables y almacenes
+                'devoluciones' => function ($query) {
+                    $query->with([
+                        'detalles' => function ($q) {
+                            $q->with([
+                                'detallePrestamoCliente' => function ($dq) {
+                                    $dq->with('prestable:id,tipo,nombre');
+                                },
+                                // ✅ NUEVO: Cargar almacenes de devoluciones con sus datos
+                                'devolucionesAlmacenes.almacen'
+                            ]);
+                        }
+                    ]);
+                }
+            ]);
+
+            // ✅ NUEVO (2026-07-03): Filtro por rol del usuario autenticado
+            $user = Auth::user();
+            if ($user && !$user->hasRole(['admin', 'Admin', 'ADMIN'])) {
+                // Si no es admin y tiene chofer_id, filtrar por su propio chofer_id
+                if ($user->id) {
+                    $query->where('chofer_id', $user->id);
+                    Log::info('🔒 Filtrando préstamos para chofer:', ['chofer_id' => $user->id]);
+                }
+            }
+
+            // Filtro por cliente (si es admin o tiene permiso)
+            if ($request->has('cliente_id')) {
+                $query->where('cliente_id', $request->integer('cliente_id'));
+            }
+
+            // Filtro por chofer (solo si es admin o busca específicamente)
+            if ($request->has('chofer_id')) {
+                $query->where('chofer_id', $request->integer('chofer_id'));
+            }
+
+            // Filtro por estado
+            if ($request->has('estado')) {
+                $query->where('estado', $request->string('estado'));
+            }
+
+            $prestamos = $query->orderByDesc('id')->paginate($request->integer('per_page', 15));
+
+            return response()->json([
+                'success' => true,
+                'data' => $prestamos,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error listando préstamos', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error listando préstamos'], 500);
+        }
+    }
+
+    /**
+     * POST /api/prestamos-cliente
+     * Crear nuevo préstamo con múltiples detalles
+     */
+    public function store(Request $request): JsonResponse
+    {
+        try {
+            Log::info('📨 Recibiendo solicitud de préstamo', [
+                'datos' => $request->all(),
+                'headers' => $request->headers->all()
+            ]);
+
+            // Validar datos
+            $validacion = $this->validacionService->datosCreacionPrestamo($request->all());
+            if (!$validacion['valido']) {
+                Log::error('❌ Validación fallida al crear préstamo', [
+                    'datos' => $request->all(),
+                    'errores' => $validacion['errores']
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Datos inválidos: ' . implode(', ', $validacion['errores']),
+                    'errores' => $validacion['errores'],
+                ], 422);
+            }
+
+            // Validar datos de ubicación si vienen
+            if ($request->has('ubicacion')) {
+                $datosUbicacion = $request->input('ubicacion');
+
+                // Validar estructura
+                $validacionUbicacion = validator($datosUbicacion, [
+                    'direccion_cliente_id' => 'nullable|integer|exists:direcciones_cliente,id',
+                    'localidad_id' => 'nullable|integer|exists:localidades,id',
+                    'direccion' => 'nullable|string|max:255',
+                    'es_ubicacion_manual' => 'nullable|boolean',
+                    'latitud' => 'nullable|numeric|between:-90,90',
+                    'longitud' => 'nullable|numeric|between:-180,180',
+                ]);
+
+                if ($validacionUbicacion->fails()) {
+                    Log::error('❌ Validación de ubicación fallida', [
+                        'errores' => $validacionUbicacion->errors()
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Datos de ubicación inválidos',
+                        'errores' => $validacionUbicacion->errors(),
+                    ], 422);
+                }
+
+                // Si es ubicación manual, validar que tenga localidad_id
+                if (isset($datosUbicacion['es_ubicacion_manual']) && $datosUbicacion['es_ubicacion_manual']) {
+                    if (!isset($datosUbicacion['localidad_id'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Ubicación manual requiere localidad_id',
+                        ], 422);
+                    }
+                }
+            }
+
+            // Validar almacenes (pueden venir en cabecera O en detalles)
+            $almacenCabecera = $request->integer('almacenes_prestables_id');
+            $detalles = $request->input('detalles', []);
+
+            // Determinar si usa formato nuevo (múltiples almacenes en detalles) o antiguo (almacén en cabecera)
+            $usaFormatoNuevo = false;
+            foreach ($detalles as $detalle) {
+                if (!empty($detalle['almacenes']) && is_array($detalle['almacenes'])) {
+                    $usaFormatoNuevo = true;
+                    break;
+                }
+            }
+
+            if (!$usaFormatoNuevo && !$almacenCabecera) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debes especificar un almacén en la cabecera O en los detalles',
+                ], 422);
+            }
+
+            Log::info('🏭 Validando stock' . ($usaFormatoNuevo ? ' (múltiples almacenes)' : ' (almacén de cabecera)'), [
+                'almacen_cabecera' => $almacenCabecera,
+                'formato_nuevo' => $usaFormatoNuevo,
+                'cantidad_detalles' => count($detalles),
+            ]);
+
+            // Validar stock de cada almacén
+            foreach ($detalles as $i => $detalle) {
+                $prestableId = (int) $detalle['prestable_id'];
+                $cantidadTotal = (int) $detalle['cantidad'];
+
+                // Determinar qué almacenes validar
+                $almacenesAValidar = [];
+
+                if (!empty($detalle['almacenes']) && is_array($detalle['almacenes'])) {
+                    // Formato nuevo: cada detalle especifica sus almacenes
+                    foreach ($detalle['almacenes'] as $almacenData) {
+                        $almacenesAValidar[] = [
+                            'id' => (int) $almacenData['almacenes_prestables_id'],
+                            'cantidad' => (int) $almacenData['cantidad']
+                        ];
+                    }
+                } elseif ($almacenCabecera) {
+                    // Formato antiguo: usar almacén de cabecera
+                    $almacenesAValidar = [
+                        ['id' => $almacenCabecera, 'cantidad' => $cantidadTotal]
+                    ];
+                }
+
+                // Validar stock en cada almacén
+                $cantidadValidadaTotal = 0;
+                foreach ($almacenesAValidar as $almacenValidar) {
+                    $cantidadDisponible = (int) PrestableStock::where('prestable_id', $prestableId)
+                        ->where('almacenes_prestables_id', $almacenValidar['id'])
+                        ->value('cantidad_disponible') ?? 0;
+
+                    if ($cantidadDisponible < $almacenValidar['cantidad']) {
+                        Log::warning('⚠️ Stock insuficiente en detalle ' . $i, [
+                            'prestable_id' => $prestableId,
+                            'almacen_id' => $almacenValidar['id'],
+                            'cantidad_disponible' => $cantidadDisponible,
+                            'solicitado' => $almacenValidar['cantidad'],
+                        ]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Detalle {$i}: Stock insuficiente en almacén {$almacenValidar['id']}. Disponible: {$cantidadDisponible}, solicitado: {$almacenValidar['cantidad']}",
+                        ], 422);
+                    }
+
+                    $cantidadValidadaTotal += $almacenValidar['cantidad'];
+                }
+
+                if ($cantidadValidadaTotal !== $cantidadTotal) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Detalle {$i}: Suma de cantidades en almacenes ({$cantidadValidadaTotal}) no coincide con cantidad total ({$cantidadTotal})",
+                    ], 422);
+                }
+            }
+
+            Log::info('✅ Stock validado correctamente para todos los detalles');
+
+            // Crear préstamo
+            Log::info('💾 Creando préstamo');
+            $prestamo = $this->prestamoService->crearPrestamo($request->all());
+
+            if (!$prestamo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error creando préstamo',
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $prestamo->load([
+                    'detalles.prestable',
+                    'detalles.prestable.condiciones',
+                    'detalles.prestable.precios',
+                    // ✅ CORREGIDO: Cargar almacenes con sus datos completos
+                    'detalles.almacenes.almacen',
+                    'cliente',
+                    'almacen',
+                    'chofer',
+                    'vehiculo',
+                    'ubicacion',
+                    'creador'
+                ]),
+                'message' => 'Préstamo creado exitosamente',
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('❌ Error creando préstamo', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * GET /api/prestamos-cliente/{prestamo}
+     * Ver detalles del préstamo
+     */
+    public function show(PrestamoCliente $prestamo): JsonResponse
+    {
+        try {
+            $prestamo->load([
+                'detalles.prestable',
+                'detalles.prestable.condiciones',
+                'detalles.prestable.precios',
+                // ✅ CORREGIDO: Cargar almacenes con sus datos completos
+                'detalles.almacenes.almacen',
+                'detalles.devolucionDetalles.devolucionesAlmacenes.almacen',
+                'cliente',
+                'almacen',
+                'chofer',
+                'vehiculo',
+                'venta',
+                'ubicacion' => function ($query) {
+                    $query->with(['direccionCliente.localidad', 'localidad']);
+                },
+                'ubicaciones' => function ($query) {
+                    $query->with(['direccionCliente.localidad', 'localidad']);
+                },
+                'creador',
+                'devoluciones' => function ($query) {
+                    $query->with([
+                        'detalles.detallePrestamoCliente.prestable',
+                        'detalles.devolucionesAlmacenes.almacen',
+                        'creador',
+                        'anulador',
+                    ]);
+                }
+            ]);
+
+            Log::info('📍 [UBICACIONES CARGADAS]', [
+                'prestamo_id' => $prestamo->id,
+                'ubicacion_singular' => $prestamo->ubicacion,
+                'ubicaciones_array' => $prestamo->ubicaciones,
+            ]);
+
+            $resumen = $this->prestamoService->obtenerResumenPrestamo($prestamo->id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $prestamo,
+                'resumen' => $resumen,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error obteniendo préstamo', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error obteniendo préstamo'], 500);
+        }
+    }
+
+    /**
+     * PATCH /api/prestamos-cliente/{prestamo}
+     * Actualizar préstamo (fecha esperada, garantía, observaciones, ubicación)
+     */
+    public function update(Request $request, PrestamoCliente $prestamo): JsonResponse
+    {
+        try {
+            Log::info('📝 Actualizando préstamo', [
+                'prestamo_id' => $prestamo->id,
+                'datos' => $request->all()
+            ]);
+
+            // Validar y actualizar solo campos permitidos
+            $datosActualizacion = $request->validate([
+                'fecha_esperada_devolucion' => 'nullable|date',
+                'monto_garantia' => 'nullable|numeric|min:0',
+                'observaciones' => 'nullable|string|max:1000',
+                'ubicacion.direccion_cliente_id' => 'nullable|integer|exists:direcciones_cliente,id',
+                'ubicacion.localidad_id' => 'nullable|integer|exists:localidades,id',
+                'ubicacion.direccion' => 'nullable|string|max:255',
+                'ubicacion.es_ubicacion_manual' => 'nullable|boolean',
+            ]);
+
+            // Actualizar el préstamo
+            $prestamo->update([
+                'fecha_esperada_devolucion' => $datosActualizacion['fecha_esperada_devolucion'] ?? $prestamo->fecha_esperada_devolucion,
+                'monto_garantia' => $datosActualizacion['monto_garantia'] ?? $prestamo->monto_garantia,
+                'observaciones' => $datosActualizacion['observaciones'] ?? $prestamo->observaciones,
+            ]);
+
+            // Actualizar ubicación si viene en los datos
+            if (isset($datosActualizacion['ubicacion'])) {
+                $datosUbicacion = $datosActualizacion['ubicacion'];
+
+                // Si es ubicación manual, validar que tenga localidad_id o dirección
+                if (isset($datosUbicacion['es_ubicacion_manual']) && $datosUbicacion['es_ubicacion_manual']) {
+                    if (!isset($datosUbicacion['localidad_id'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Ubicación manual requiere localidad_id',
+                        ], 422);
+                    }
+                }
+
+                // Obtener o crear ubicación
+                $ubicacion = $prestamo->ubicacion()->first();
+
+                if ($ubicacion) {
+                    $ubicacion->update($datosUbicacion);
+                } else {
+                    $prestamo->ubicacion()->create($datosUbicacion);
+                }
+
+                Log::info('✅ Ubicación del préstamo actualizada', [
+                    'prestamo_id' => $prestamo->id,
+                    'ubicacion_data' => $datosUbicacion
+                ]);
+            }
+
+            Log::info('✅ Préstamo actualizado', [
+                'prestamo_id' => $prestamo->id,
+                'cambios' => $datosActualizacion
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $prestamo->load([
+                    'detalles.prestable',
+                    // ✅ CORREGIDO: Cargar almacenes con sus datos completos
+                    'detalles.almacenes.almacen',
+                    'cliente',
+                    'chofer',
+                    'ubicacion'
+                ]),
+                'message' => 'Préstamo actualizado exitosamente',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('⚠️ Validación fallida al actualizar préstamo', [
+                'errores' => $e->errors()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errores' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('❌ Error actualizando préstamo', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * POST /api/prestamos-cliente/{prestamo}/devolver
+     * Registrar devolución con múltiples detalles
+     */
+    public function registrarDevolucion(Request $request, PrestamoCliente $prestamo): JsonResponse
+    {
+        try {
+            $usuario = auth()->user();
+
+            // ✅ NUEVO: Validar permisos de acceso
+            $tienePermiso = false;
+
+            // Admin, Manager: permiso total
+            if ($usuario->hasRole(['admin', 'Admin', 'manager', 'Manager', 'ADMIN', 'MANAGER'])) {
+                $tienePermiso = true;
+            }
+            // Chofer: solo puede registrar devoluciones de sus propios préstamos
+            elseif ($usuario->hasRole(['chofer', 'Chofer', 'CHOFER'])) {
+                if ($prestamo->chofer_id === $usuario->id) {
+                    $tienePermiso = true;
+                }
+            }
+
+            if (!$tienePermiso) {
+                Log::warning('⚠️ ACCESO DENEGADO - Intento de registrar devolución sin permisos', [
+                    'usuario_id' => $usuario->id,
+                    'usuario_nombre' => $usuario->name,
+                    'prestamo_id' => $prestamo->id,
+                    'chofer_asignado_id' => $prestamo->chofer_id,
+                    'roles_usuario' => $usuario->getRoleNames()->toArray(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para registrar devoluciones de este préstamo',
+                ], 403);
+            }
+
+            // Preparar datos para validación y servicio
+            $datosValidacion = $request->all();
+            $datosValidacion['prestamo_cliente_id'] = $prestamo->id;
+            $datosValidacion['created_by'] = auth()->id(); // ✅ Registrar quién creó la devolución
+
+            Log::info('📨 INICIANDO DEVOLUCIÓN', [
+                'usuario_id' => $usuario->id,
+                'usuario_nombre' => $usuario->name,
+                'prestamo_id' => $prestamo->id,
+                'fecha_devolucion' => $datosValidacion['fecha_devolucion'] ?? null,
+                'cantidad_detalles' => count($datosValidacion['detalles'] ?? []),
+                'almacen_id' => $prestamo->almacenes_prestables_id,
+            ]);
+
+            // Validar datos de devolución
+            $validacion = $this->validacionService->datosDevolucion($datosValidacion);
+            if (!$validacion['valido']) {
+                Log::warning('⚠️ VALIDACIÓN FALLIDA EN DEVOLUCIÓN', [
+                    'prestamo_id' => $prestamo->id,
+                    'errores' => $validacion['errores'],
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Datos de devolución inválidos',
+                    'errores' => $validacion['errores'],
+                ], 422);
+            }
+
+            // Registrar devolución
+            $devolución = $this->prestamoService->registrarDevolucion($datosValidacion);
+
+            if (!$devolución) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error registrando devolución',
+                ], 500);
+            }
+
+            // Cargar relaciones
+            $devolución->load([
+                'detalles.detallePrestamoCliente.prestable',
+                'detalles.devolucionesAlmacenes.almacen'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $devolución,
+                'message' => 'Devolución registrada exitosamente',
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('❌ Error registrando devolución', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * GET /api/prestamos-cliente/chofer/{choferId}/pendientes
+     * Listar préstamos pendientes de devolver por chofer
+     */
+    public function obtenerPendientesChofer(int $choferId): JsonResponse
+    {
+        try {
+            $pendientes = $this->prestamoService->obtenerPrestamosParaDevolver($choferId);
+
+            return response()->json([
+                'success' => true,
+                'data' => $pendientes,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error obteniendo pendientes', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error obteniendo pendientes'], 500);
+        }
+    }
+
+    /**
+     * GET /api/prestamos-cliente/cliente/{clienteId}/activos
+     * Listar préstamos activos de un cliente
+     */
+    public function obtenerActivosCliente(int $clienteId): JsonResponse
+    {
+        try {
+            $activos = $this->prestamoService->obtenerPrestamosActivos($clienteId);
+
+            return response()->json([
+                'success' => true,
+                'data' => $activos,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error obteniendo préstamos activos', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error obteniendo préstamos'], 500);
+        }
+    }
+
+    /**
+     * GET /prestamos/clientes/{prestamo}/imprimir
+     * Imprimir información del préstamo en PDF (formatos A4 y TICKET_80)
+     */
+    public function imprimir(PrestamoCliente $prestamo, Request $request)
+    {
+        try {
+            $formato = $request->input('formato', 'A4');      // A4 | TICKET_80
+            $accion  = $request->input('accion', 'download'); // download | stream
+
+            // Cargar relaciones necesarias para la impresión
+            $prestamo->load([
+                'detalles.prestable',
+                // ✅ CORREGIDO: Cargar almacenes con sus datos completos
+                'detalles.almacenes.almacen',
+                'detalles.devoluciones.detallePrestamoCliente.prestable',
+                'cliente',
+                'chofer',
+                'venta',
+                'devoluciones',
+                // ✅ NUEVO: Cargar ubicacion con localidad para impresión
+                'ubicacion' => fn($q) => $q->with(['direccionCliente.localidad', 'localidad']),
+                'ubicaciones' => fn($q) => $q->with(['direccionCliente.localidad', 'localidad']),
+            ]);
+
+            // Generar PDF usando el tipo de documento "prestamo_cliente"
+            $pdf = $this->impresionService->generarPDF('prestamo_cliente', $prestamo, $formato);
+
+            $nombreArchivo = "prestamo_cliente_{$prestamo->id}_{$formato}.pdf";
+
+            return $accion === 'stream'
+                ? $pdf->stream($nombreArchivo)
+                : $pdf->download($nombreArchivo);
+        } catch (\Exception $e) {
+            Log::error('❌ Error generando PDF de préstamo cliente', [
+                'prestamo_id' => $prestamo->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Si es una llamada API, retornar JSON
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al generar PDF: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            // Si es web, retornar redirección
+            return back()->with('error', 'Error al generar PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /api/prestamos-cliente/{prestamo}/devoluciones/{devolucion}/imprimir
+     * Imprimir comprobante de devolución en PDF
+     */
+    public function imprimirDevolucion(PrestamoCliente $prestamo, $devolucionId, Request $request)
+    {
+        try {
+            $devolucion = \App\Models\DevolucionCliente::findOrFail($devolucionId);
+
+            // Verificar que la devolución pertenece al préstamo
+            if ($devolucion->prestamo_cliente_id !== $prestamo->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Devolución no pertenece a este préstamo',
+                ], 403);
+            }
+
+            // Cargar relaciones
+            $devolucion->load([
+                'detalles.detallePrestamoCliente.prestable',
+                'prestamo.cliente'
+            ]);
+
+            $formato = $request->input('formato', 'A4');
+            $accion = $request->input('accion', 'download');
+
+            // Generar PDF usando el tipo de documento "devolucion_cliente"
+            $pdf = $this->impresionService->generarPDF('devolucion_cliente', $devolucion, $formato);
+
+            $nombreArchivo = "devolucion_prestamo_{$prestamo->id}_{$devolucionId}_{$formato}.pdf";
+
+            return $accion === 'stream'
+                ? $pdf->stream($nombreArchivo)
+                : $pdf->download($nombreArchivo);
+        } catch (\Exception $e) {
+            Log::error('Error imprimiendo devolución', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generando PDF',
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/prestamos-cliente/{prestamo}/devoluciones/imprimir
+     * Imprimir todas las devoluciones de un préstamo en un solo PDF
+     */
+    public function imprimirTodasLasDevoluciones(PrestamoCliente $prestamo, Request $request)
+    {
+        try {
+            // Cargar todas las devoluciones con sus detalles y relaciones
+            $prestamo->load([
+                'detalles.prestable',
+                // ✅ CORREGIDO: Cargar almacenes con sus datos completos
+                'detalles.almacenes.almacen',
+                'devoluciones.detalles.detallePrestamoCliente.prestable',
+                'cliente'
+            ]);
+
+            $formato = $request->input('formato', 'A4');
+            $accion = $request->input('accion', 'download');
+
+            // Generar PDF usando el tipo de documento "devoluciones_cliente_todas"
+            // Este tipo imprimirá todas las devoluciones de un prestamo en un solo documento
+            $pdf = $this->impresionService->generarPDF('devoluciones_cliente_todas', $prestamo, $formato);
+
+            $nombreArchivo = "devoluciones_prestamo_{$prestamo->id}_{$formato}.pdf";
+
+            return $accion === 'stream'
+                ? $pdf->stream($nombreArchivo)
+                : $pdf->download($nombreArchivo);
+        } catch (\Exception $e) {
+            Log::error('Error imprimiendo devoluciones', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generando PDF',
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/prestamos-cliente/{prestamo}/anular
+     * Anular préstamo (cancela y devuelve stock)
+     */
+    public function anularPrestamo(Request $request, PrestamoCliente $prestamo): JsonResponse
+    {
+        try {
+            Log::info('📝 Anulando préstamo', [
+                'prestamo_id' => $prestamo->id,
+                'datos' => $request->all()
+            ]);
+
+            // Validar datos
+            $datosValidacion = $request->validate([
+                'razon_anulacion' => 'nullable|string|max:500',
+            ]);
+
+            // Anular préstamo
+            $prestamoAnulado = $this->prestamoService->anularPrestamo(
+                $prestamo->id,
+                $datosValidacion['razon_anulacion'] ?? null
+            );
+
+            if (!$prestamoAnulado) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error anulando préstamo',
+                ], 500);
+            }
+
+            Log::info('✅ Préstamo anulado correctamente', [
+                'prestamo_id' => $prestamoAnulado->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $prestamoAnulado->load([
+                    'detalles.prestable',
+                    // ✅ CORREGIDO: Cargar almacenes con sus datos completos
+                    'detalles.almacenes.almacen',
+                    'cliente',
+                    'chofer'
+                ]),
+                'message' => 'Préstamo anulado exitosamente',
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('⚠️ Validación fallida al anular préstamo', [
+                'errores' => $e->errors()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errores' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('❌ Error anulando préstamo', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * POST /api/prestamos-cliente/{prestamo}/devoluciones/{devolucion}/anular
+     * Anular devolución (revierte movimientos y stock)
+     */
+    public function anularDevolucion(Request $request, PrestamoCliente $prestamo, $devolucionId): JsonResponse
+    {
+        try {
+            Log::info('📝 Anulando devolución', [
+                'prestamo_id' => $prestamo->id,
+                'devolucion_id' => $devolucionId,
+                'datos' => $request->all()
+            ]);
+
+            // Validar datos
+            $datosValidacion = $request->validate([
+                'razon_anulacion' => 'nullable|string|max:500',
+            ]);
+
+            // Anular devolución
+            $devolucionAnulada = $this->prestamoService->anularDevolucion(
+                $prestamo->id,
+                (int) $devolucionId,
+                $datosValidacion['razon_anulacion'] ?? null
+            );
+
+            if (!$devolucionAnulada) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error anulando devolución',
+                ], 500);
+            }
+
+            Log::info('✅ Devolución anulada correctamente', [
+                'prestamo_id' => $prestamo->id,
+                'devolucion_id' => $devolucionAnulada->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $devolucionAnulada->load([
+                    'detalles.detallePrestamoCliente.prestable',
+                    'detalles.devolucionesAlmacenes.almacen',
+                    'prestamo.cliente'
+                ]),
+                'message' => 'Devolución anulada exitosamente',
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('⚠️ Validación fallida al anular devolución', [
+                'errores' => $e->errors()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errores' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('❌ Error anulando devolución', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+}

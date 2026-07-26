@@ -1,0 +1,220 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Traits\SimpleCrudController;
+use App\Models\EstadoLogistica;
+use Illuminate\Http\Request;
+use Inertia\Response;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * EstadosLogisticaController - CRUD de Estados de Logística
+ *
+ * ✅ CONSOLIDADO: Usa SimpleCrudController trait
+ * ✅ FILTROS: Soporta categoría y otros filtros case-insensitive
+ * Gestiona estados de logística, categorías, transiciones y visualización
+ */
+class EstadosLogisticaController extends Controller
+{
+    use SimpleCrudController;
+
+    /**
+     * Retorna el modelo a usar
+     */
+    protected function getModel(): string
+    {
+        return EstadoLogistica::class;
+    }
+
+    /**
+     * Retorna el nombre de las rutas
+     */
+    protected function getRouteName(): string
+    {
+        return 'estados-logistica';
+    }
+
+    /**
+     * Retorna el path de las vistas
+     */
+    protected function getViewPath(): string
+    {
+        return 'estados-logistica';
+    }
+
+    /**
+     * Retorna el nombre del recurso
+     */
+    protected function getResourceName(): string
+    {
+        return 'estadosLogistica';
+    }
+
+    /**
+     * Retorna el nombre singular del recurso
+     */
+    protected function getSingularResourceName(): string
+    {
+        return 'estadoLogistica';
+    }
+
+    /**
+     * Retorna las reglas de validación
+     */
+    protected function getValidationRules(): array
+    {
+        return [
+            'codigo' => ['required', 'string', 'max:50'],
+            'categoria' => ['required', 'string', 'max:50'],
+            'nombre' => ['required', 'string', 'max:100'],
+            'descripcion' => ['nullable', 'string'],
+            'orden' => ['nullable', 'integer', 'min:0'],
+            'activo' => ['boolean'],
+            'color' => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icono' => ['nullable', 'string', 'max:50'],
+            'estado_anterior_id' => ['nullable', 'exists:estados_logistica,id'],
+            'estado_siguiente_id' => ['nullable', 'exists:estados_logistica,id'],
+            'es_estado_final' => ['boolean'],
+            'permite_edicion' => ['boolean'],
+            'requiere_aprobacion' => ['boolean'],
+            'metadatos' => ['nullable', 'json'],
+        ];
+    }
+
+    /**
+     * Mostrar formulario de creación
+     */
+    public function create(): Response
+    {
+        // Obtener todos los estados disponibles para los selects
+        $modelClass = $this->getModel();
+        $todosLosEstados = $modelClass::where('activo', true)
+            ->orderBy('categoria')
+            ->orderBy('orden')
+            ->get();
+
+        Log::info('EstadoLogistica Create - Cargando formulario', [
+            'estados_disponibles' => $todosLosEstados->count(),
+        ]);
+
+        return inertia($this->getViewPath() . '/form', [
+            'estadosLogistica' => $todosLosEstados,
+        ]);
+    }
+
+    /**
+     * Mostrar formulario de edición con todos los datos
+     */
+    public function edit($id): Response
+    {
+        $modelClass = $this->getModel();
+        $item = $modelClass::findOrFail($id);
+
+        // Obtener todos los estados disponibles para los selects
+        $todosLosEstados = $modelClass::where('activo', true)
+            ->orderBy('categoria')
+            ->orderBy('orden')
+            ->get();
+
+        Log::info('EstadoLogistica Edit - Datos cargados:', [
+            'id' => $item->id,
+            'codigo' => $item->codigo,
+            'nombre' => $item->nombre,
+            'categoria' => $item->categoria,
+            'orden' => $item->orden,
+            'descripcion' => $item->descripcion,
+            'activo' => $item->activo,
+            'es_estado_final' => $item->es_estado_final,
+            'permite_edicion' => $item->permite_edicion,
+            'requiere_aprobacion' => $item->requiere_aprobacion,
+            'color' => $item->color,
+            'icono' => $item->icono,
+            'estado_anterior_id' => $item->estado_anterior_id,
+            'estado_siguiente_id' => $item->estado_siguiente_id,
+            'todos_los_datos' => $item->toArray(),
+            'estados_disponibles' => $todosLosEstados->count(),
+        ]);
+
+        return inertia($this->getViewPath() . '/form', [
+            $this->getSingularResourceName() => $item,
+            'estadosLogistica' => $todosLosEstados,
+        ]);
+    }
+
+    /**
+     * Listar con filtros avanzados: búsqueda, categoría, estado, etc.
+     * Soporta: ?q=busqueda&categoria=venta_logistica&activo=true&es_estado_final=false
+     */
+    public function index(Request $request): Response
+    {
+        $modelClass = $this->getModel();
+        // Convertir a string explícitamente para evitar objetos Stringable
+        $q = (string) $request->string('q', '');
+        $categoria = (string) $request->string('categoria', '');
+        $activo = $request->input('activo');
+        $esEstadoFinal = $request->input('es_estado_final');
+
+        Log::info('EstadosLogistica Index - Parámetros recibidos:', [
+            'q' => $q,
+            'q_type' => gettype($q),
+            'categoria' => $categoria,
+            'categoria_type' => gettype($categoria),
+            'activo' => $activo,
+            'es_estado_final' => $esEstadoFinal,
+        ]);
+
+        $query = $modelClass::query();
+
+        // Filtro de búsqueda (case-insensitive) - validar como string
+        if (strlen($q) > 0) {
+            $query->where(function ($sub) use ($q) {
+                $sub->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($q) . '%'])
+                    ->orWhereRaw('LOWER(codigo) LIKE ?', ['%' . strtolower($q) . '%']);
+            });
+        }
+
+        // Filtro de categoría (case-insensitive) - validar como string
+        if (strlen($categoria) > 0) {
+            $query->whereRaw('LOWER("categoria") = LOWER(?)', [$categoria]);
+        }
+
+        // Filtro de activo
+        if ($activo !== null && $activo !== '') {
+            $activo = filter_var($activo, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($activo !== null) {
+                $query->where('activo', $activo);
+            }
+        }
+
+        // Filtro de estado final
+        if ($esEstadoFinal !== null && $esEstadoFinal !== '') {
+            $esEstadoFinal = filter_var($esEstadoFinal, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($esEstadoFinal !== null) {
+                $query->where('es_estado_final', $esEstadoFinal);
+            }
+        }
+
+        $items = $query
+            ->orderBy('categoria', 'asc')
+            ->orderBy('orden', 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
+        Log::info('EstadosLogistica Index - Resultados:', [
+            'total' => $items->total(),
+            'count' => $items->count(),
+            'sql_bindings' => $query->toSql(),
+        ]);
+
+        return inertia($this->getViewPath() . '/index', [
+            $this->getResourceName() => $items,
+            'filters' => [
+                'q' => $q,
+                'categoria' => $categoria,
+                'activo' => $activo,
+                'es_estado_final' => $esEstadoFinal,
+            ],
+        ]);
+    }
+}

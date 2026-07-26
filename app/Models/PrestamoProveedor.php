@@ -1,0 +1,93 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class PrestamoProveedor extends Model
+{
+    protected $table = 'prestamo_proveedor';
+
+    protected $fillable = [
+        'proveedor_id',
+        'compra_id',
+        'es_compra',
+        'almacenes_prestables_id',
+        'chofer_id',
+        'vehiculo_asignado',
+        'monto_garantia',
+        'fecha_prestamo',
+        'fecha_esperada_devolucion',
+        'observaciones',
+        'estado',
+        'created_by',
+        'anulada_por',
+        'razon_anulacion',
+        'fecha_anulacion',
+    ];
+
+    protected $casts = [
+        'es_compra' => 'boolean',
+        'monto_garantia' => 'decimal:2',
+        'fecha_prestamo' => 'date',
+        'fecha_esperada_devolucion' => 'date',
+    ];
+
+    // ✅ Relación con detalles del préstamo
+    public function detalles(): HasMany
+    {
+        return $this->hasMany(PrestamoProveedorDetalle::class, 'prestamo_proveedor_id');
+    }
+
+    public function compra(): BelongsTo
+    {
+        return $this->belongsTo(Compra::class);
+    }
+
+    public function proveedor(): BelongsTo
+    {
+        return $this->belongsTo(Proveedor::class);
+    }
+
+    public function almacen(): BelongsTo
+    {
+        return $this->belongsTo(AlmacenPrestable::class, 'almacenes_prestables_id');
+    }
+
+    public function chofer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'chofer_id');
+    }
+
+    // ✅ Relación a devoluciones (cabecera)
+    public function devoluciones(): HasMany
+    {
+        return $this->hasMany(DevolucionProveedor::class, 'prestamo_proveedor_id');
+    }
+
+    // ✅ Relación con el usuario creador
+    public function creador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // ✅ Relación con el usuario que anuló
+    public function anulador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'anulada_por');
+    }
+
+    // ✅ Relación con ubicaciones del préstamo
+    public function ubicaciones(): HasMany
+    {
+        return $this->hasMany(PrestamoUbicacion::class, 'prestamo_proveedor_id');
+    }
+
+    // ✅ NUEVO: Relación para obtener la PRIMERA ubicación (más usada en vistas)
+    public function ubicacion()
+    {
+        return $this->hasOne(PrestamoUbicacion::class, 'prestamo_proveedor_id')->latestOfMany();
+    }
+}
