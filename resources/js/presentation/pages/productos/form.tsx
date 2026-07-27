@@ -291,6 +291,8 @@ export default function ProductoForm({
 
         // Precios (solo los válidos)
         preciosValidos.forEach((p: Precio, i: number) => {
+            // Si el monto es 0 o negativo, no enviar
+            console.log(`🔍 Procesando precio ${i}:`, p.tipo_precio_id);
             formData.append(`precios[${i}][monto]`, String(p.monto));
             if (p.tipo_precio_id != null) {
                 formData.append(`precios[${i}][tipo_precio_id]`, String(p.tipo_precio_id));

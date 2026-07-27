@@ -91,8 +91,8 @@ class VentasComidasController extends Controller
             $tipoPagoIdFinal = $validated['tipo_pago_id'];
             if ($montoEfectivo > 0 && $montoTransferencia > 0) {
                 // Hay pagos en efectivo Y transferencia → usar MIXTO
-                $tipoPagoMixto = \App\Models\TipoPago::where('codigo', 'MIXTO')
-                    ->orWhere('id', 4)
+                $tipoPagoMixto = \App\Models\TipoPago::where('codigo', 'EFECTIVO')
+                    ->orWhere('id', 1)
                     ->first();
                 if ($tipoPagoMixto) {
                     $tipoPagoIdFinal = $tipoPagoMixto->id;
@@ -109,8 +109,8 @@ class VentasComidasController extends Controller
                 'total' => $validated['total'],
             ]);
 
-            // Validar que todos los productos son de comida
-            $productosIds = collect($validated['productos_comida'])->pluck('producto_id')->unique();
+            // Validar que todos tengan permite_venta_sin_stock = true 
+            /* $productosIds = collect($validated['productos_comida'])->pluck('producto_id')->unique();
             $productosValidar = Producto::whereIn('id', $productosIds)->get();
 
             foreach ($productosValidar as $producto) {
@@ -120,7 +120,7 @@ class VentasComidasController extends Controller
                         'message' => "Producto '{$producto->nombre}' no es un producto de comida",
                     ], 422);
                 }
-            }
+            } */
 
             // Obtener caja del usuario actual (para comidas PRESENCIAL)
             $cajaUsuario = AperturaCaja::where('user_id', Auth::id())

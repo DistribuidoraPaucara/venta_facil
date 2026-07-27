@@ -1,10 +1,10 @@
 import NotificationService from '@/infrastructure/services/notification.service';
 import { Checkbox } from '@/presentation/components/ui/checkbox';
+import { FeatureToggle } from '@/presentation/components/ui/feature-toggle';
 import { Input } from '@/presentation/components/ui/input';
 import InputSearch from '@/presentation/components/ui/input-search';
 import { Label } from '@/presentation/components/ui/label';
 import SearchSelect from '@/presentation/components/ui/search-select';
-import { FeatureToggle } from '@/presentation/components/ui/feature-toggle';
 import { useState } from 'react';
 
 interface Option {
@@ -540,21 +540,21 @@ function Step1DatosProducto({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 pt-4 text-sm text-muted-foreground">
-              {/* ✨ NUEVA SECCIÓN: Productos Fraccionados */}
-              {permite_productos_fraccionados && (
-                  <FeatureToggle
-                      id="es_fraccionado"
-                      checked={!!data.es_fraccionado}
-                      onCheckedChange={(v) => setData('es_fraccionado', !!v)}
-                      icon="⚡"
-                      title="Productos Fraccionados"
-                      description="Permite fraccionamiento de este producto en diferentes unidades de medida."
-                      colorScheme="blue"
-                  />
-              )}
+                {/* ✨ NUEVA SECCIÓN: Productos Fraccionados */}
+                {permite_productos_fraccionados && (
+                    <FeatureToggle
+                        id="es_fraccionado"
+                        checked={!!data.es_fraccionado}
+                        onCheckedChange={(v) => setData('es_fraccionado', !!v)}
+                        icon="⚡"
+                        title="Productos Fraccionados"
+                        description="Permite fraccionamiento de este producto en diferentes unidades de medida."
+                        colorScheme="blue"
+                    />
+                )}
 
-              {/* 🍦 NUEVA SECCIÓN: Producto de Comida/Helado */}
-              <FeatureToggle
+                {/* 🍦 NUEVA SECCIÓN: Producto de Comida/Helado */}
+                {/* <FeatureToggle
                   id="es_producto_comida"
                   checked={!!data.es_producto_comida}
                   onCheckedChange={(v) => setData('es_producto_comida', !!v)}
@@ -563,47 +563,42 @@ function Step1DatosProducto({
                   description="Marca este producto si es una comida o helado que se vende sin control de stock."
                   hint="Ejemplo: Helados, postres, bebidas personalizadas"
                   colorScheme="orange"
-                  // additionalContent={
-                  //     <div>
-                  //         <p className="text-sm font-medium">💡 <strong>Próximo Paso:</strong> Agrega adicionales (extras) en la pestaña <strong>"Productos de Comida"</strong></p>
-                  //         <p className="mt-1 text-xs opacity-75">Ejemplos: Leche extra (+3Bs), Chocolate (+5Bs), Uvas Pasa (+2Bs)</p>
-                  //     </div>
-                  // }
-              />
+              /> */}
 
-              {/* ✅ NUEVA SECCIÓN: Venta sin Stock (solo para farmacias) */}
-              {es_farmacia && (
-                  <FeatureToggle
-                      id="permite_venta_sin_stock"
-                      checked={!!data.permite_venta_sin_stock}
-                      onCheckedChange={(v) => setData('permite_venta_sin_stock', !!v)}
-                      icon="⚙️"
-                      title="Vender sin Stock"
-                      description="Marca este producto si es un servicio que se puede vender incluso sin inventario disponible."
-                      hint="Ejemplo: Inyecciones, curaciones, aplicación de medicamentos"
-                      colorScheme="purple"
-                      /* additionalContent={
+                {/* ✅ NUEVA SECCIÓN: Venta sin Stock (solo para farmacias) */}
+                <FeatureToggle
+                    id="permite_venta_sin_stock"
+                    checked={!!data.permite_venta_sin_stock}
+                    onCheckedChange={(v) => setData('permite_venta_sin_stock', !!v)}
+                    icon="⚙️"
+                    title="Vender sin Stock"
+                    description="Marca este producto si es un servicio que se puede vender incluso sin inventario disponible."
+                    hint="Ejemplo: Inyecciones, curaciones, aplicación de medicamentos"
+                    colorScheme="purple"
+                    /* additionalContent={
                           <div>
                               <p className="text-sm font-medium">✅ <strong>Servicio Habilitado:</strong> Este producto se puede vender sin stock disponible</p>
                               <p className="mt-1 text-xs opacity-75">Se permitirá crear ventas incluso si el inventario es 0 o negativo</p>
                           </div>
                       } */
-                  />
-              )}
+                />
 
-              {/* ✨ NUEVA SECCIÓN: Visibilidad en App */}
-              <FeatureToggle
-                  id="visible_app"
-                  checked={!!data.visible_app}
-                  onCheckedChange={(v) => setData('visible_app', !!v)}
-                  icon="👁️"
-                  title="Visible en App"
-                  description={data.visible_app ? '✅ Este producto es visible en la aplicación móvil' : '❌ Este producto está oculto en la aplicación móvil'}
-                  hint="Desactiva esta opción si quieres ocultarlo de los clientes en la app"
-                  colorScheme="green"
-              />
+                {/* ✨ NUEVA SECCIÓN: Visibilidad en App */}
+                <FeatureToggle
+                    id="visible_app"
+                    checked={!!data.visible_app}
+                    onCheckedChange={(v) => setData('visible_app', !!v)}
+                    icon="👁️"
+                    title="Visible en App"
+                    description={
+                        data.visible_app
+                            ? '✅ Este producto es visible en la aplicación móvil'
+                            : '❌ Este producto está oculto en la aplicación móvil'
+                    }
+                    hint="Desactiva esta opción si quieres ocultarlo de los clientes en la app"
+                    colorScheme="green"
+                />
             </div>
-
 
             {/* ✨ NUEVA SECCIÓN: Información de Medicamentos (solo para farmacias) */}
             {es_farmacia && (

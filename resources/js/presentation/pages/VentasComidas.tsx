@@ -14,6 +14,7 @@
 import { useCarritoComidas } from '@/application/hooks/use-carrito-comidas';
 import { useClienteSearch } from '@/infrastructure/hooks/use-api-search';
 import AppLayout from '@/layouts/app-layout';
+import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { ProductosComidaSelector } from '@/presentation/components/ProductosComidaSelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import InputSearch from '@/presentation/components/ui/input-search';
@@ -76,6 +77,7 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
     const [montoEfectivo, setMontoEfectivo] = useState<number | ''>(0);
     const [montoTransferencia, setMontoTransferencia] = useState<number | ''>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [ventaCreada, setVentaCreada] = useState<{ id: number; numero: string; fecha: string } | null>(null);
     const [mostrarSelector, setMostrarSelector] = useState(true);
 
     // Hook para búsqueda de clientes en tiempo real
@@ -150,10 +152,10 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
             }
         } else if (efectivo > 0 && transferencia > 0) {
             // Ambos > 0: usar MIXTO
-            const tipoPagoMixto = tiposPago.find((tp) => tp.codigo.toUpperCase() === 'MIXTO' || tp.nombre.toLowerCase().includes('mixto'));
+            const tipoPagoMixto = tiposPago.find((tp) => tp.codigo.toUpperCase() === 'EFECTIVO' || tp.nombre.toLowerCase().includes('efectivo'));
             nuevoTipoPago = tipoPagoMixto?.id.toString() || null;
             if (nuevoTipoPago) {
-                console.log('💳 Tipo de pago actualizado a MIXTO');
+                console.log('💳 Tipo de pago actualizado a EFECTIVO');
             }
         }
 
@@ -173,6 +175,8 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
         carrito.eliminarProducto(index);
         toast.success('Producto eliminado');
     };
+
+    const [showOutputModal, setShowOutputModal] = useState(false);
 
     const handleGuardarVenta = async () => {
         // Validaciones
@@ -236,7 +240,9 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
             });
 
             const result = await response.json();
-
+            console.group(`📥 RESPUESTA DEL BACKEND - Status: ${response.status}`);
+            console.log('Respuesta completa:', result);
+            console.groupEnd();
             if (result.success) {
                 // Mostrar mensaje con información del vuelto
                 const mensaje =
@@ -245,7 +251,6 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                         : '✅ Venta registrada exitosamente';
 
                 toast.success(mensaje);
-
                 // Limpiar formulario
                 carrito.limpiarCarrito();
                 setClienteValue(null);
@@ -255,6 +260,15 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                 setMontoEfectivo(0);
                 setMontoTransferencia(0);
                 setMostrarSelector(true);
+
+                // ✅ NUEVO: Guardar datos de la venta y mostrar modal de selección de salida
+                /* setVentaCreada({
+                    id: result.ventaId,
+                    numero: result.numero,
+                    fecha: result.ventaFecha,
+                });
+
+                setShowOutputModal(true); */
 
                 // Log en consola para debugging
                 console.log('💚 Venta creada:', {
@@ -567,6 +581,22 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                     </div>
                 </div>
             </div>
+            {/* Modal de Selección de Salida (Imprimir, Excel, PDF) */}
+            {ventaCreada && (
+                <OutputSelectionModal
+                    isOpen={showOutputModal}
+                    onClose={() => {
+                        setShowOutputModal(false);
+                        setVentaCreada(null);
+                    }}
+                    documentoId={ventaCreada.id}
+                    tipoDocumento="venta"
+                    documentoInfo={{
+                        numero: ventaCreada.numero,
+                        fecha: ventaCreada.fecha,
+                    }}
+                />
+            )}
         </AppLayout>
     );
 }
