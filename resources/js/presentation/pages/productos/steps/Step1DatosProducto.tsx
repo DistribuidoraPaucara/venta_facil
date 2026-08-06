@@ -284,7 +284,7 @@ function Step1DatosProducto({
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <div className="relative flex-1">
-                            <label
+                            {/* <label
                                 htmlFor="sku"
                                 className={`pointer-events-none absolute left-3 transition-all duration-200 ${
                                     data.sku
@@ -293,7 +293,7 @@ function Step1DatosProducto({
                                 }`}
                             >
                                 Proveedor (opcional)
-                            </label>
+                            </label> */}
                             <InputSearch
                                 id="proveedor"
                                 label=""

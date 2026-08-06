@@ -617,108 +617,6 @@ destroy.delete = (args: { empleado: number | { id: number } } | [empleado: numbe
     
     destroy.form = destroyForm
 /**
-* @see \App\Http\Controllers\EmpleadoController::accesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-export const accesoSistema = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: accesoSistema.url(args, options),
-    method: 'get',
-})
-
-accesoSistema.definition = {
-    methods: ["get","head"],
-    url: '/empleados/{empleado}/acceso-sistema',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\EmpleadoController::accesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-accesoSistema.url = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { empleado: args }
-    }
-
-            if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
-            args = { empleado: args.id }
-        }
-    
-    if (Array.isArray(args)) {
-        args = {
-                    empleado: args[0],
-                }
-    }
-
-    args = applyUrlDefaults(args)
-
-    const parsedArgs = {
-                        empleado: typeof args.empleado === 'object'
-                ? args.empleado.id
-                : args.empleado,
-                }
-
-    return accesoSistema.definition.url
-            .replace('{empleado}', parsedArgs.empleado.toString())
-            .replace(/\/+$/, '') + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\EmpleadoController::accesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-accesoSistema.get = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: accesoSistema.url(args, options),
-    method: 'get',
-})
-/**
-* @see \App\Http\Controllers\EmpleadoController::accesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-accesoSistema.head = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: accesoSistema.url(args, options),
-    method: 'head',
-})
-
-    /**
-* @see \App\Http\Controllers\EmpleadoController::accesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-    const accesoSistemaForm = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: accesoSistema.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\EmpleadoController::accesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-        accesoSistemaForm.get = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: accesoSistema.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\EmpleadoController::accesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-        accesoSistemaForm.head = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: accesoSistema.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    accesoSistema.form = accesoSistemaForm
-/**
 * @see \App\Http\Controllers\EmpleadoController::toggleEstado
  * @see app/Http/Controllers/EmpleadoController.php:806
  * @route '/empleados/{empleado}/toggle-estado'
@@ -959,7 +857,6 @@ show,
 edit,
 update,
 destroy,
-accesoSistema,
 toggleEstado,
 toggleAccesoSistema,
 crearRapido,

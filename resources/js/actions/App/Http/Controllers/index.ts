@@ -41,7 +41,6 @@ import PrestamoEventoController from './PrestamoEventoController'
 import PrestamoProveedorController from './PrestamoProveedorController'
 import ReportesController from './ReportesController'
 import Prestamos from './Prestamos'
-import NotificacionRecurrenteController from './NotificacionRecurrenteController'
 import FaviconController from './FaviconController'
 import VentaPublicController from './VentaPublicController'
 import PublicStockController from './PublicStockController'
@@ -154,7 +153,6 @@ PrestamoEventoController,
 PrestamoProveedorController,
 ReportesController,
 Prestamos,
-NotificacionRecurrenteController,
 FaviconController,
 VentaPublicController,
 PublicStockController,

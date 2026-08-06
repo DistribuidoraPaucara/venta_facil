@@ -616,108 +616,6 @@ destroy.delete = (args: { empleado: number | { id: number } } | [empleado: numbe
     
     destroy.form = destroyForm
 /**
-* @see \App\Http\Controllers\EmpleadoController::editAccesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-export const editAccesoSistema = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: editAccesoSistema.url(args, options),
-    method: 'get',
-})
-
-editAccesoSistema.definition = {
-    methods: ["get","head"],
-    url: '/empleados/{empleado}/acceso-sistema',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\EmpleadoController::editAccesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-editAccesoSistema.url = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { empleado: args }
-    }
-
-            if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
-            args = { empleado: args.id }
-        }
-    
-    if (Array.isArray(args)) {
-        args = {
-                    empleado: args[0],
-                }
-    }
-
-    args = applyUrlDefaults(args)
-
-    const parsedArgs = {
-                        empleado: typeof args.empleado === 'object'
-                ? args.empleado.id
-                : args.empleado,
-                }
-
-    return editAccesoSistema.definition.url
-            .replace('{empleado}', parsedArgs.empleado.toString())
-            .replace(/\/+$/, '') + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\EmpleadoController::editAccesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-editAccesoSistema.get = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: editAccesoSistema.url(args, options),
-    method: 'get',
-})
-/**
-* @see \App\Http\Controllers\EmpleadoController::editAccesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-editAccesoSistema.head = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: editAccesoSistema.url(args, options),
-    method: 'head',
-})
-
-    /**
-* @see \App\Http\Controllers\EmpleadoController::editAccesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-    const editAccesoSistemaForm = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: editAccesoSistema.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\EmpleadoController::editAccesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-        editAccesoSistemaForm.get = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: editAccesoSistema.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\EmpleadoController::editAccesoSistema
- * @see app/Http/Controllers/EmpleadoController.php:304
- * @route '/empleados/{empleado}/acceso-sistema'
- */
-        editAccesoSistemaForm.head = (args: { empleado: number | { id: number } } | [empleado: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: editAccesoSistema.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    editAccesoSistema.form = editAccesoSistemaForm
-/**
 * @see \App\Http\Controllers\EmpleadoController::toggleEstado
  * @see app/Http/Controllers/EmpleadoController.php:806
  * @route '/empleados/{empleado}/toggle-estado'
@@ -1395,6 +1293,6 @@ getRolSugeridoPorCargo.post = (options?: RouteQueryOptions): RouteDefinition<'po
         })
     
     getRolSugeridoPorCargo.form = getRolSugeridoPorCargoForm
-const EmpleadoController = { index, create, store, show, edit, update, destroy, editAccesoSistema, toggleEstado, toggleAccesoSistema, crearEmpleadoRapido, getDepartamentos, getTiposContrato, getEstados, getSupervisores, getRoles, getRolSugeridoPorCargo }
+const EmpleadoController = { index, create, store, show, edit, update, destroy, toggleEstado, toggleAccesoSistema, crearEmpleadoRapido, getDepartamentos, getTiposContrato, getEstados, getSupervisores, getRoles, getRolSugeridoPorCargo }
 
 export default EmpleadoController
