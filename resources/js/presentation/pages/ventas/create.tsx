@@ -906,6 +906,18 @@ export default function VentaForm() {
             updatedDetalles[index].subtotal = Number(cantidad) * Number(precio) - Number(descuento);
         }
 
+        // ✅ DEBUG: Loguear cambios en detalles
+        /* if (field === 'unidad_venta_id') {
+            console.log(`🔄 [updateDetail] Cambio de unidad_venta_id para detalle #${index}:`, {
+                anterior: detallesWithProducts[index].unidad_venta_id,
+                nuevo: numericValue,
+                precio_unitario: updatedDetalles[index].precio_unitario,
+                es_fraccionado: (updatedDetalles[index] as any).es_fraccionado,
+                detalle_antes: detallesWithProducts[index],
+                detalle_despues: updatedDetalles[index]
+            });
+        } */
+
         // ✅ CRÍTICO: Log del estado actual antes de actualizar
         if (field === 'precio_unitario') {
             console.log(`💰 [updateDetail] ANTES - Precio #${index}:`, {

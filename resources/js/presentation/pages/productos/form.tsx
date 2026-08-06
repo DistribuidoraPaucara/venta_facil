@@ -44,10 +44,10 @@ const initialProductoData: ProductoFormData = {
     visible_app: true, // ✨ NUEVO - Visible en app por defecto
     precios: [
         { monto: 0, tipo_precio_id: 1 },
-        { monto: 0, tipo_precio_id: 2 },
     ],
     codigos: [{ codigo: '' }],
     almacenes: [], // ✨ NUEVO: Stock por almacén y sector
+    globalSectorId: undefined, // ✨ NUEVO: Sector global para aplicar a todos los lotes
     conversiones: [], // ✨ NUEVO
 };
 
@@ -112,7 +112,7 @@ export default function ProductoForm({
         descriptionField: 'codigo',
     });
 
-    const { data, setData, processing, errors, recentlySuccessful, clearErrors } = useForm<ProductoFormData>(
+    const { data, setData, processing, errors, recentlySuccessful, clearErrors, reset } = useForm<ProductoFormData>(
         producto
             ? {
                   nombre: producto.nombre,
@@ -139,6 +139,7 @@ export default function ProductoForm({
                   precios: producto.precios?.length ? producto.precios : initialProductoData.precios,
                   codigos: producto.codigos?.length ? producto.codigos : [{ codigo: '' }],
                   almacenes: producto.stock_almacenes?.length ? producto.stock_almacenes : [], // ✨ NUEVO
+                  globalSectorId: undefined, // ✨ NUEVO: Sector global para aplicar a todos los lotes
                   conversiones: producto.conversiones?.length ? producto.conversiones : [], // ✨ NUEVO
               }
             : initialProductoData,
@@ -291,8 +292,6 @@ export default function ProductoForm({
 
         // Precios (solo los válidos)
         preciosValidos.forEach((p: Precio, i: number) => {
-            // Si el monto es 0 o negativo, no enviar
-            console.log(`🔍 Procesando precio ${i}:`, p.tipo_precio_id);
             formData.append(`precios[${i}][monto]`, String(p.monto));
             if (p.tipo_precio_id != null) {
                 formData.append(`precios[${i}][tipo_precio_id]`, String(p.tipo_precio_id));
@@ -319,8 +318,18 @@ export default function ProductoForm({
 
         // ✨ NUEVO: Almacenes y sectores - CON VALIDACIÓN Y AJUSTE
         if (data.almacenes && data.almacenes.length > 0) {
+            // 🔄 Aplicar sector global a todos los almacenes si está seleccionado
+            let almacenesConSector = data.almacenes as any[];
+            if ((data as any).globalSectorId) {
+                console.log(`✨ Aplicando sector global ${(data as any).globalSectorId} a todos los almacenes`);
+                almacenesConSector = almacenesConSector.map((a) => ({
+                    ...a,
+                    sector_id: (data as any).globalSectorId,
+                }));
+            }
+
             // 🔄 Validar y ajustar almacenes antes de enviar
-            const { validos, ajustes } = validarYAjustarAlmacenes(data.almacenes as any[]);
+            const { validos, ajustes } = validarYAjustarAlmacenes(almacenesConSector);
 
             // 📢 Si hay ajustes, notificar al usuario
             if (ajustes.size > 0) {
@@ -612,6 +621,15 @@ export default function ProductoForm({
 
             if (confirmed) {
                 localStorage.removeItem(DRAFT_KEY);
+                // Reset de todos los campos del formulario
+                reset();
+                // Reset de imágenes
+                setPerfilState(undefined);
+                setGaleriaState([]);
+                // Reset del tab activo
+                setActiveTab('datos');
+                // Mostrar notificación de éxito
+                NotificationService.success('Borrador limpiado correctamente');
             }
         } catch (err) {
             console.warn('Error al limpiar el borrador', err);

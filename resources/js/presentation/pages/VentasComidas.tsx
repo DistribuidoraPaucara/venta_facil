@@ -14,14 +14,15 @@
 import { useCarritoComidas } from '@/application/hooks/use-carrito-comidas';
 import { useClienteSearch } from '@/infrastructure/hooks/use-api-search';
 import AppLayout from '@/layouts/app-layout';
-import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { ProductosComidaSelector } from '@/presentation/components/ProductosComidaSelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import InputSearch from '@/presentation/components/ui/input-search';
+import ModalCrearCliente from '@/presentation/components/ui/modal-crear-cliente';
 import { Head } from '@inertiajs/react';
 import { Save, ShoppingCart, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
+import { NotificationService } from '@/infrastructure/services/notification.service';
 
 interface Cliente {
     id: number;
@@ -77,8 +78,9 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
     const [montoEfectivo, setMontoEfectivo] = useState<number | ''>(0);
     const [montoTransferencia, setMontoTransferencia] = useState<number | ''>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [ventaCreada, setVentaCreada] = useState<{ id: number; numero: string; fecha: string } | null>(null);
     const [mostrarSelector, setMostrarSelector] = useState(true);
+    const [showCreateClienteModal, setShowCreateClienteModal] = useState(false);
+    const [clienteSearchQuery, setClienteSearchQuery] = useState('');
 
     // Hook para búsqueda de clientes en tiempo real
     const { search: searchClientes } = useClienteSearch();
@@ -123,6 +125,41 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
         cargarDefectos();
     }, []); // ✅ Array vacío: ejecutar solo una vez al montar
 
+    // Función para abrir el modal de crear cliente
+    const handleCreateCliente = (searchQuery: string) => {
+        setClienteSearchQuery(searchQuery);
+        setShowCreateClienteModal(true);
+    };
+
+    // Función para manejar cuando se crea un cliente exitosamente
+    const handleClienteCreated = (cliente: Cliente) => {
+        // Actualizar el valor del cliente en el formulario
+        setClienteValue(cliente.id);
+        setClienteDisplay(cliente.nombre + (cliente.telefono ? ` (${cliente.telefono})` : ''));
+        setClienteSeleccionado(cliente);
+
+        // Crear una descripción completa del cliente para mostrar en la notificación
+        const descripcionCliente = [
+            cliente.nombre,
+            cliente.nit ? `NIT/CI: ${cliente.nit}` : '',
+            cliente.telefono ? `Tel: ${cliente.telefono}` : '',
+            cliente.email ? `Email: ${cliente.email}` : '',
+        ]
+            .filter(Boolean)
+            .join(' • ');
+
+        // Mostrar notificación detallada del cliente creado y seleccionado
+        try {
+            NotificationService.success(`✅ Cliente creado y seleccionado: ${descripcionCliente}`);
+        } catch (error) {
+            console.error('Error en NotificationService:', error);
+            toast.success(`✅ Cliente creado y seleccionado: ${cliente.nombre}`);
+        }
+
+        // Limpiar la query de búsqueda ya que ahora tenemos el cliente seleccionado
+        setClienteSearchQuery('');
+    };
+
     // 💳 Actualizar tipo de pago automáticamente según los montos
     useEffect(() => {
         const efectivo = Number(montoEfectivo) || 0;
@@ -152,10 +189,10 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
             }
         } else if (efectivo > 0 && transferencia > 0) {
             // Ambos > 0: usar MIXTO
-            const tipoPagoMixto = tiposPago.find((tp) => tp.codigo.toUpperCase() === 'EFECTIVO' || tp.nombre.toLowerCase().includes('efectivo'));
+            const tipoPagoMixto = tiposPago.find((tp) => tp.codigo.toUpperCase() === 'MIXTO' || tp.nombre.toLowerCase().includes('mixto'));
             nuevoTipoPago = tipoPagoMixto?.id.toString() || null;
             if (nuevoTipoPago) {
-                console.log('💳 Tipo de pago actualizado a EFECTIVO');
+                console.log('💳 Tipo de pago actualizado a MIXTO');
             }
         }
 
@@ -175,8 +212,6 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
         carrito.eliminarProducto(index);
         toast.success('Producto eliminado');
     };
-
-    const [showOutputModal, setShowOutputModal] = useState(false);
 
     const handleGuardarVenta = async () => {
         // Validaciones
@@ -240,9 +275,7 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
             });
 
             const result = await response.json();
-            console.group(`📥 RESPUESTA DEL BACKEND - Status: ${response.status}`);
-            console.log('Respuesta completa:', result);
-            console.groupEnd();
+
             if (result.success) {
                 // Mostrar mensaje con información del vuelto
                 const mensaje =
@@ -251,6 +284,7 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                         : '✅ Venta registrada exitosamente';
 
                 toast.success(mensaje);
+
                 // Limpiar formulario
                 carrito.limpiarCarrito();
                 setClienteValue(null);
@@ -260,15 +294,6 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                 setMontoEfectivo(0);
                 setMontoTransferencia(0);
                 setMostrarSelector(true);
-
-                // ✅ NUEVO: Guardar datos de la venta y mostrar modal de selección de salida
-                /* setVentaCreada({
-                    id: result.ventaId,
-                    numero: result.numero,
-                    fecha: result.ventaFecha,
-                });
-
-                setShowOutputModal(true); */
 
                 // Log en consola para debugging
                 console.log('💚 Venta creada:', {
@@ -350,7 +375,11 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                                         placeholder="CLIENTE GENERAL..."
                                         emptyText="No se encontraron clientes"
                                         allowScanner={false}
-                                        showCreateButton={false}
+                                        showCreateButton={true}
+                                        onCreateClick={handleCreateCliente}
+                                        createButtonText="Crear Cliente"
+                                        showCreateIconButton={true}
+                                        createIconButtonTitle="Crear nuevo cliente"
                                         className="w-full"
                                     />
                                     {clienteSeleccionado && (
@@ -581,22 +610,14 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                     </div>
                 </div>
             </div>
-            {/* Modal de Selección de Salida (Imprimir, Excel, PDF) */}
-            {ventaCreada && (
-                <OutputSelectionModal
-                    isOpen={showOutputModal}
-                    onClose={() => {
-                        setShowOutputModal(false);
-                        setVentaCreada(null);
-                    }}
-                    documentoId={ventaCreada.id}
-                    tipoDocumento="venta"
-                    documentoInfo={{
-                        numero: ventaCreada.numero,
-                        fecha: ventaCreada.fecha,
-                    }}
-                />
-            )}
+
+            {/* Modal para crear cliente */}
+            <ModalCrearCliente
+                isOpen={showCreateClienteModal}
+                onClose={() => setShowCreateClienteModal(false)}
+                onClienteCreated={handleClienteCreated}
+                searchQuery={clienteSearchQuery}
+            />
         </AppLayout>
     );
 }
