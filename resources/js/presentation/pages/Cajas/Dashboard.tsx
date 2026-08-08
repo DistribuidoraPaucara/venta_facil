@@ -91,6 +91,16 @@ interface Apertura {
   } | null;
 }
 
+interface ResumenDiarioTotal {
+  total_montos_apertura: number;
+  total_ingresos: number;
+  total_egresos: number;
+  efectivo_esperado: number;
+  turnos_count: number;
+  turnos_abiertos: number;
+  turnos_cerrados: number;
+}
+
 interface Props {
   cajas: Caja[];
   aperturas_hoy: Apertura[];
@@ -103,6 +113,7 @@ interface Props {
     efectivo_esperado: number;
     montos_apertura: number;
   };
+  resumen_diario_total?: ResumenDiarioTotal; // ✅ NUEVO (2026-08-07): Consolidado de todos los turnos
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -120,7 +131,39 @@ export default function Dashboard({
   cajas,
   aperturas_hoy,
   metricas,
+  resumen_diario_total, // ✅ NUEVO (2026-08-07): Consolidado de todos los turnos
 }: Props) {
+  // ✅ NUEVO (2026-08-07): Logs para debug - ver datos del backend en consola
+  console.log('🎯 [Dashboard] Props recibidas del backend:', {
+    cajas,
+    aperturas_hoy,
+    metricas,
+    resumen_diario_total,
+  });
+
+  console.log('📋 [Dashboard] Aperturas detalladas:', aperturas_hoy.map(apertura => ({
+    id: apertura.id,
+    caja_id: apertura.caja_id,
+    user_id: apertura.user_id,
+    monto_apertura: apertura.monto_apertura,
+    ingresos: apertura.ingresos,
+    egresos: apertura.egresos,
+    efectivo_esperado: apertura.efectivo_esperado,
+    fecha: apertura.fecha,
+    created_at: apertura.created_at,
+    cierre: apertura.cierre ? {
+      id: apertura.cierre.id,
+      monto_real: apertura.cierre.monto_real,
+      diferencia: apertura.cierre.diferencia,
+      fecha_cierre: apertura.cierre.fecha_cierre,
+      estado: apertura.cierre.estado,
+      created_at: apertura.cierre.created_at,
+    } : null,
+  })));
+
+  console.log('💰 [Dashboard] Resumen diario total:', resumen_diario_total);
+  console.log('🏪 [Dashboard] Cajas:', cajas);
+
   const [search, setSearch] = useState('');
   const [isDark, setIsDark] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'abierta' | 'cerrada'>('todos');
@@ -389,7 +432,7 @@ export default function Dashboard({
                 Gestión de Cajas
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Monitoreo en tiempo real de todas las cajas
+                Monitoreo en tiempo real de todas las cajas y sus aperturas/cierres, con métricas y reportes diarios.
               </p>
             </div>
             {/* ✅ NUEVO: Botón de Cierre Diario General */}
@@ -400,7 +443,7 @@ export default function Dashboard({
                 className="dark:border-slate-600 dark:text-white dark:hover:bg-slate-700"
               >
                 <FileText className="mr-2 h-4 w-4" />
-                Reportes Diarios
+                Mostrar Todas las Aperturas y Cierres
               </Button>
               {/* <Button
                 onClick={() => setMostrarModalCierre(true)}
@@ -413,197 +456,332 @@ export default function Dashboard({
           </div>
 
           {/* Métricas de Ingresos, Egresos y Efectivo Esperado */}
-          <MetricasCard metricas={metricas} />
+          {/* <MetricasCard metricas={metricas} /> */}
 
-          {/* Búsqueda y filtros */}
-          <Card className="p-2">
-            <div className="space-y-4">
-              {/* Búsqueda */}
-              <div className="flex gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                  <Input
-                    placeholder="Buscar por nombre, usuario o ID..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                  />
-                </div>
-                <Button
-                  onClick={() => setFiltrosVisibles(!filtrosVisibles)}
-                  variant="outline"
-                  className="dark:border-slate-600 dark:text-gray-300 dark:hover:bg-slate-700 dark:hover:text-white transition-colors"
-                >
-                  {filtrosVisibles ? '🔼 Ocultar Filtros' : '🔽 Mostrar Filtros'}
-                </Button>
+          {/* ✅ NUEVO (2026-08-07): Resumen Diario Consolidado (TODOS los turnos del día) */}
+          {resumen_diario_total && (
+            <Card className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-2 border-blue-200 dark:border-blue-800">
+              <div>
+                <h3 className="text-lg font-bold text-blue-900 dark:text-blue-200 flex items-center gap-2">
+                  📊 Resumen Diario Consolidado
+                  <Badge className="bg-blue-600 dark:bg-blue-700">{resumen_diario_total.turnos_count} turnos</Badge>
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  Consolidación de todos los turnos del día (abiertos + cerrados)
+                </p>
               </div>
 
-              {/* Filtros Avanzados */}
-              {filtrosVisibles && (
-                <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg space-y-4 border border-gray-200 dark:border-slate-700">
-                  <div className="flex flex-wrap gap-4">
-                    {/* Fila 1: Estado de Caja */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total de Montos de Apertura */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                        Estado de Caja
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Total Montos Apertura
                       </p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant={filtroEstado === 'todos' ? 'default' : 'outline'}
-                          onClick={() => setFiltroEstado('todos')}
-                          className={filtroEstado === 'todos' ? 'dark:bg-blue-700 dark:hover:bg-blue-800' : 'dark:border-slate-600 dark:text-gray-300 dark:hover:bg-slate-800'}
-                        >
-                          Todos
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={filtroEstado === 'abierta' ? 'default' : 'outline'}
-                          onClick={() => setFiltroEstado('abierta')}
-                          className={filtroEstado === 'abierta' ? 'dark:bg-green-700 dark:hover:bg-green-800' : 'dark:border-slate-600 dark:text-gray-300 dark:hover:bg-slate-800'}
-                        >
-                          🟢 Abierta
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={filtroEstado === 'cerrada' ? 'default' : 'outline'}
-                          onClick={() => setFiltroEstado('cerrada')}
-                          className={filtroEstado === 'cerrada' ? 'dark:bg-red-700 dark:hover:bg-red-800' : 'dark:border-slate-600 dark:text-gray-300 dark:hover:bg-slate-800'}
-                        >
-                          🔴 Cerrada
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Fila 4: Rango de Fechas */}
-                    <div>
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                        Rango de Fechas
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                        Bs. {resumen_diario_total.total_montos_apertura.toLocaleString('es-BO', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </p>
-                      <div className="flex gap-2 flex-wrap items-center">
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-gray-600 dark:text-gray-400">Desde:</label>
-                          <input
-                            type="date"
-                            value={fechaDesde}
-                            onChange={(e) => setFechaDesde(e.target.value)}
-                            className="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-gray-600 dark:text-gray-400">Hasta:</label>
-                          <input
-                            type="date"
-                            value={fechaHasta}
-                            onChange={(e) => setFechaHasta(e.target.value)}
-                            className="px-2 py-1 rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                          />
-                        </div>
-                        {(fechaDesde || fechaHasta) && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setFechaDesde('');
-                              setFechaHasta('');
-                            }}
-                            className="text-xs dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white"
-                          >
-                            Limpiar
-                          </Button>
-                        )}
-                      </div>
                     </div>
-                  </div>
-
-                  {/* Resumen de Filtros */}
-                  <div className="text-xs text-gray-600 dark:text-gray-400 pt-2 border-t border-gray-300 dark:border-slate-700">
-                    ✅ Mostrando <strong className="dark:text-gray-300">{cajasFiltradas.length}</strong> de <strong className="dark:text-gray-300">{cajas.length}</strong> cajas
+                    <div className="text-3xl">💰</div>
                   </div>
                 </div>
-              )}
-            </div>
-          </Card>
 
-          {/* Tabla de cajas */}
-          <div>
-            <Table>
-              <TableHeader>
-                <TableRow className="dark:border-slate-700">
-                  <TableHead className="dark:text-gray-300">Caja</TableHead>
-                  <TableHead className="dark:text-gray-300">Usuario</TableHead>
-                  <TableHead className="dark:text-gray-300">Estado</TableHead>
-                  <TableHead className="text-right dark:text-gray-300">Apertura</TableHead>
-                  <TableHead className="text-right dark:text-gray-300">Ingresos</TableHead>
-                  <TableHead className="text-right dark:text-gray-300">Egresos</TableHead>
-                  <TableHead className="text-right dark:text-gray-300">Efectivo Esperado</TableHead>
-                  <TableHead className="dark:text-gray-300">Última Actividad</TableHead>
-                  <TableHead className="text-right dark:text-gray-300">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cajasFiltradas.length > 0 ? (
-                  cajasFiltradas.map((caja) => {
-                    const estado = obtenerEstadoCaja(caja.id);
-                    const monto = obtenerMontoCaja(caja.id);
-                    const apertura = aperturas_hoy.find(
-                      (a) => a.caja_id === caja.id
-                    );
+                {/* Total de Ingresos */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-green-600 dark:text-green-400 uppercase">
+                        Total Ingresos
+                      </p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">
+                        +Bs. {resumen_diario_total.total_ingresos.toLocaleString('es-BO', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-3xl">📈</div>
+                  </div>
+                </div>
+
+                {/* Total de Egresos */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-red-600 dark:text-red-400 uppercase">
+                        Total Egresos
+                      </p>
+                      <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-2">
+                        -Bs. {resumen_diario_total.total_egresos.toLocaleString('es-BO', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-3xl">📉</div>
+                  </div>
+                </div>
+
+                {/* Efectivo Esperado Total */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase">
+                        Efectivo Esperado
+                      </p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">
+                        Bs. {resumen_diario_total.efectivo_esperado.toLocaleString('es-BO', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-3xl">🎯</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desglose de Turnos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Turnos Abiertos */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">🟢</div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Turnos Abiertos
+                      </p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {resumen_diario_total.turnos_abiertos}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Turnos Cerrados */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">🔴</div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Turnos Cerrados
+                      </p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        {resumen_diario_total.turnos_cerrados}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* ✅ NUEVO (2026-08-07): Tabla de Desglose de Turnos del Día */}
+          <Card className="p-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              📋 Desglose de Turnos del Día
+              <Badge className="bg-gray-600 dark:bg-gray-700">
+                {aperturas_hoy.length} turnos
+              </Badge>
+            </h3>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-100 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
+                    <TableHead className="text-gray-700 dark:text-gray-300 font-semibold text-xs">ID Apertura</TableHead>
+                    <TableHead className="text-gray-700 dark:text-gray-300 font-semibold text-xs">ID Cierre</TableHead>
+                    <TableHead className="text-gray-700 dark:text-gray-300 font-semibold">Usuario</TableHead>
+                    {/* <TableHead className="text-gray-700 dark:text-gray-300 font-semibold">Caja</TableHead> */}
+                    <TableHead className="text-gray-700 dark:text-gray-300 font-semibold">Apertura</TableHead>
+                    <TableHead className="text-gray-700 dark:text-gray-300 font-semibold">Cierre</TableHead>
+                    <TableHead className="text-right text-gray-700 dark:text-gray-300 font-semibold">Monto Apertura</TableHead>
+                    <TableHead className="text-right text-gray-700 dark:text-gray-300 font-semibold">Ingresos</TableHead>
+                    <TableHead className="text-right text-gray-700 dark:text-gray-300 font-semibold">Egresos</TableHead>
+                    <TableHead className="text-right text-gray-700 dark:text-gray-300 font-semibold">Esperado</TableHead>
+                    <TableHead className="text-center text-gray-700 dark:text-gray-300 font-semibold">Estado</TableHead>
+                    <TableHead className="text-center text-gray-700 dark:text-gray-300 font-semibold">Diferencia</TableHead>
+                    <TableHead className="text-center text-gray-700 dark:text-gray-300 font-semibold">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {aperturas_hoy.map((apertura) => {
+                    const caja = cajas.find(c => c.id === apertura.caja_id);
+                    const esCerrada = !!apertura.cierre;
+                    const diferencia = esCerrada
+                      ? (Number(apertura.cierre?.monto_real || 0) - Number(apertura.efectivo_esperado || 0))
+                      : null;
+
+                    // ✅ NUEVO (2026-08-07): Verificar si la apertura es antigua (abierta hace días)
+                    const fechaApertura = new Date(apertura.fecha);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+                    fechaApertura.setHours(0, 0, 0, 0);
+
+                    const esAperturaAntigua = fechaApertura < hoy && !esCerrada;
+                    const diasDesdeApertura = esCerrada
+                      ? 0
+                      : Math.floor((hoy.getTime() - fechaApertura.getTime()) / (1000 * 60 * 60 * 24));
 
                     return (
-                      <TableRow key={caja.id} className="dark:border-slate-700 hover:dark:bg-slate-700">
-                        <TableCell className="font-medium dark:text-white">
-                          #{caja.id}
+                      <TableRow
+                        key={apertura.id}
+                        className={`border-b border-gray-200 dark:border-slate-700 ${
+                          esCerrada
+                            ? 'bg-red-50 dark:bg-red-950/20'
+                            : esAperturaAntigua
+                            ? 'bg-yellow-50 dark:bg-yellow-950/20'  // ✅ Amarillo para cajas abiertas hace días
+                            : 'bg-green-50 dark:bg-green-950/20'
+                        } hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors`}
+                      >
+                        {/* ✅ NUEVO (2026-08-07): ID Apertura */}
+                        <TableCell className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/30">
+                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">
+                            #{apertura.id}
+                          </span>
                         </TableCell>
-                        <TableCell className="dark:text-gray-300">{caja.usuario.name}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              estado === 'abierta' ? 'default' : 'secondary'
-                            }
-                            className="dark:bg-slate-700 text-white dark:text-gray-300"
-                          >
-                            {estado === 'abierta'
-                              ? '🟢 Abierta'
-                              : '🔴 Cerrada'}
-                          </Badge>
+
+                        {/* ✅ NUEVO (2026-08-07): ID Cierre */}
+                        <TableCell className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/30">
+                          {esCerrada && apertura.cierre ? (
+                            <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 rounded">
+                              #{apertura.cierre.id}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </TableCell>
-                        <TableCell className="font-semibold text-right dark:text-white">
-                          Bs {apertura?.monto_apertura?.toFixed(2) || '0.00'}
+
+                        {/* Usuario */}
+                        <TableCell className="font-medium text-gray-900 dark:text-white">
+                          {caja?.usuario?.name || 'N/A'}
                         </TableCell>
-                        <TableCell className="text-right dark:text-green-400 font-semibold">
-                          Bs {apertura?.ingresos?.toFixed(2) || '0.00'}
+
+                        {/* Caja */}
+                        {/* <TableCell className="text-gray-700 dark:text-gray-300">
+                          {caja?.nombre || `Caja ${apertura.caja_id}`}
+                        </TableCell> */}
+
+                        {/* Hora Apertura */}
+                        <TableCell className={`text-sm ${esAperturaAntigua ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                          <div>
+                            {new Date(apertura.fecha).toLocaleTimeString('es-BO', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false
+                            })}
+                          </div>
+                          {esAperturaAntigua && (
+                            <div className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                              ⚠️ Hace {diasDesdeApertura} día{diasDesdeApertura > 1 ? 's' : ''}
+                            </div>
+                          )}
+                          {esAperturaAntigua && (
+                            <div className="text-xs text-orange-500 dark:text-orange-300">
+                              {new Date(apertura.fecha).toLocaleDateString('es-BO')}
+                            </div>
+                          )}
                         </TableCell>
-                        <TableCell className="text-right dark:text-red-400 font-semibold">
-                          Bs {apertura?.egresos?.toFixed(2) || '0.00'}
+
+                        {/* Hora Cierre */}
+                        <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                          {esCerrada && apertura.cierre
+                            ? new Date(apertura.cierre.fecha_cierre).toLocaleTimeString('es-BO', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                              })
+                            : '-'}
                         </TableCell>
-                        <TableCell className="text-right dark:text-purple-400 font-bold text-lg">
-                          Bs {apertura?.efectivo_esperado?.toFixed(2) || '0.00'}
+
+                        {/* Monto Apertura */}
+                        <TableCell className="text-right font-medium text-gray-900 dark:text-white">
+                          Bs. {Number(apertura.monto_apertura).toLocaleString('es-BO', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </TableCell>
-                        <TableCell>
-                          {(() => {
-                            const actividad = obtenerUltimaActividad(caja.id, caja.cierres_pendientes || 0);
-                            const colorClasses = {
-                              vacia: 'text-gray-500 dark:text-gray-400',
-                              abierta: 'text-green-600 dark:text-green-400 font-medium',
-                              'cerrada-pendiente': 'text-yellow-600 dark:text-yellow-400 font-medium',
-                              cerrada: 'text-blue-600 dark:text-blue-400',
-                            };
-                            return (
-                              <span className={`text-sm ${colorClasses[actividad.tipo as keyof typeof colorClasses]}`}>
-                                {actividad.texto}
-                              </span>
-                            );
-                          })()}
+
+                        {/* Ingresos */}
+                        <TableCell className="text-right text-green-600 dark:text-green-400 font-medium">
+                          +Bs. {Number(apertura.ingresos).toLocaleString('es-BO', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </TableCell>
-                        <TableCell className="text-right">
+
+                        {/* Egresos */}
+                        <TableCell className="text-right text-red-600 dark:text-red-400 font-medium">
+                          -Bs. {Number(apertura.egresos).toLocaleString('es-BO', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </TableCell>
+
+                        {/* Efectivo Esperado */}
+                        <TableCell className="text-right font-bold text-blue-600 dark:text-blue-400">
+                          Bs. {Number(apertura.efectivo_esperado).toLocaleString('es-BO', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </TableCell>
+
+                        {/* Estado */}
+                        <TableCell className="text-center">
+                          {esCerrada ? (
+                            <Badge className={`
+                              ${apertura.cierre?.estado === 'CONSOLIDADA'
+                                ? 'bg-green-600 dark:bg-green-700'
+                                : apertura.cierre?.estado === 'RECHAZADA'
+                                ? 'bg-red-600 dark:bg-red-700'
+                                : 'bg-yellow-600 dark:bg-yellow-700'}
+                            `}>
+                              {apertura.cierre?.estado || 'Cerrada'}
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-green-600 dark:bg-green-700">
+                              🟢 Abierta
+                            </Badge>
+                          )}
+                        </TableCell>
+
+                        {/* Diferencia */}
+                        <TableCell className="text-center">
+                          {esCerrada && diferencia !== null ? (
+                            <span className={`font-bold ${
+                              Math.abs(diferencia) < 0.01
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {diferencia >= 0 ? '+' : ''}Bs. {diferencia.toLocaleString('es-BO', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* ✅ NUEVO (2026-08-07): Acciones - Ver detalles de caja/apertura */}
+                        <TableCell className="text-center">
                           <Button
                             size="sm"
                             variant="ghost"
                             className="dark:hover:bg-slate-600 dark:text-gray-300"
+                            title={apertura.cierre ? 'Ver reporte diario' : 'Ver detalles de la caja'}
                             onClick={() => {
-                              console.log('Navegando a caja del usuario:', caja.user_id);
-                              router.visit(`/cajas/user/${caja.user_id}`);
+                              if (apertura.cierre) {
+                                console.log('Navegando a reporte diario:', apertura.cierre.id);
+                                router.visit(`/cajas/admin/reportes-diarios/${apertura.cierre.id}`);
+                              } else {
+                                console.log('Navegando a caja del usuario:', apertura.user_id);
+                                router.visit(`/cajas/user/${apertura.user_id}`);
+                              }
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -611,17 +789,18 @@ export default function Dashboard({
                         </TableCell>
                       </TableRow>
                     );
-                  })
-                ) : (
-                  <TableRow className="dark:border-slate-700">
-                    <TableCell colSpan={7} className="text-center py-4 text-gray-500 dark:text-gray-400">
-                      No se encontraron cajas
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  })}
+                </TableBody>
+              </Table>
+
+              {aperturas_hoy.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <p className="text-lg font-medium">No hay turnos registrados hoy</p>
+                  <p className="text-sm">Las aperturas de cajas aparecerán aquí</p>
+                </div>
+              )}
+            </div>
+          </Card>
 
           {/* ✅ NUEVO: Modal de Confirmación - Cierre Diario General */}
           <Dialog open={mostrarModalCierre} onOpenChange={setMostrarModalCierre}>

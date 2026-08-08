@@ -168,6 +168,42 @@ abstract class BaseWebSocketService
     }
 
     /**
+     * ✅ NUEVO: Enviar notificación a múltiples canales en una sola petición HTTP
+     * Más eficiente que múltiples llamadas - el servidor Node.js enruta a todos los destinatarios
+     *
+     * @param string $event Nombre del evento (ej: 'proforma.creada')
+     * @param array $data Datos del evento
+     * @param array $userIds IDs de usuarios específicos a notificar
+     * @param array $roles Roles a notificar (admins, cajeros, etc.)
+     * @return bool True si la notificación se envió exitosamente
+     */
+    public function notifyMultiChannel(string $event, array $data, array $userIds = [], array $roles = []): bool
+    {
+        // Filtrar arrays para evitar valores duplicados o nulos
+        $userIds = array_filter(array_unique($userIds));
+        $roles = array_filter(array_unique($roles));
+
+        // Si no hay destinatarios, no enviar
+        if (empty($userIds) && empty($roles)) {
+            Log::warning('notifyMultiChannel sin destinatarios', [
+                'event' => $event,
+                'user_ids' => $userIds,
+                'roles' => $roles,
+            ]);
+            return false;
+        }
+
+        // Enviar en UNA SOLA petición HTTP con todos los destinatarios
+        return $this->send('notify/multi-channel', [
+            'event' => $event,
+            'data' => $data,
+            'user_ids' => array_values($userIds),      // Re-indexar array
+            'roles' => array_values($roles),            // Re-indexar array
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
      * Broadcast a todos los usuarios conectados
      */
     public function broadcast(string $event, array $data): bool

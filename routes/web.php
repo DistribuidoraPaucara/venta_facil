@@ -325,6 +325,7 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
 
     // Rutas para gestión de empleados
     Route::resource('empleados', \App\Http\Controllers\EmpleadoController::class);
+    Route::get('empleados/{empleado}/acceso-sistema', [\App\Http\Controllers\EmpleadoController::class, 'editAccesoSistema'])->name('empleados.acceso-sistema');
     Route::patch('empleados/{empleado}/toggle-estado', [\App\Http\Controllers\EmpleadoController::class, 'toggleEstado'])->name('empleados.toggle-estado');
     Route::patch('empleados/{empleado}/toggle-acceso-sistema', [\App\Http\Controllers\EmpleadoController::class, 'toggleAccesoSistema'])->name('empleados.toggle-acceso-sistema');
     Route::post('empleados/crear-rapido', [\App\Http\Controllers\EmpleadoController::class, 'crearEmpleadoRapido'])->name('empleados.crear-rapido');
@@ -436,6 +437,9 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
             'auth' => ['user' => auth()->user()],
         ]);
     })->name('ventas-resort.index')->middleware('caja.abierta');
+
+    // ✅ NUEVO: API para buscar productos de comidas (permite venta sin stock)
+    Route::get('api/productos-comidas/buscar', [\App\Http\Controllers\ProductoController::class, 'buscarProductosComidas'])->name('api.productos-comidas.buscar');
 
     // ==========================================
     // RUTAS DE IMPRESIÓN - VENTAS
@@ -847,6 +851,11 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
             Route::post('draft/{borrador}/complete', [\App\Http\Controllers\InventarioInicialController::class, 'completeDraft'])->middleware('permission:inventario.ajuste.procesar')->name('draft.complete');
         });
 
+        // ✅ NUEVO (2026-08-07): Rutas para actualización masiva de stock
+        Route::prefix('actualizar-stock-masivo')->name('actualizar-stock-masivo.')->middleware('permission:inventario.ajuste.form')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'index'])->name('index');
+        });
+
         // Rutas para gestión de reservas de inventario
         Route::prefix('reservas')->name('reservas.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Inventario\ReservaProformaController::class, 'index'])->middleware('permission:inventario.reservas.index')->name('index');
@@ -1237,6 +1246,7 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     Route::prefix('egresos')->name('egresos.')->middleware('permission:egresos.index')->group(function () {
         Route::get('/', [\App\Http\Controllers\EgresosController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\EgresosController::class, 'create'])->name('create')->middleware('permission:egresos.create');
+        Route::get('{egreso}/imprimir', [\App\Http\Controllers\EgresosController::class, 'imprimir'])->name('imprimir')->where('egreso', '[0-9]+');
         Route::get('{egreso}', [\App\Http\Controllers\EgresosController::class, 'show'])->name('show');
     });
 
@@ -1249,6 +1259,10 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::get('stock', [\App\Http\Controllers\Prestamos\StockController::class, 'stock'])->name('stock');
         Route::get('alertas', [\App\Http\Controllers\Prestamos\AlertasController::class, 'alertas'])->name('alertas');
     });
+
+    // ✨ NUEVO: Notificaciones Recurrentes
+    Route::resource('notificaciones', \App\Http\Controllers\NotificacionRecurrenteController::class);
+    Route::post('notificaciones/{notificacion}/enviar', [\App\Http\Controllers\NotificacionRecurrenteController::class, 'enviarManual'])->name('notificaciones.enviar');
 });
 
 require __DIR__ . '/settings.php';
