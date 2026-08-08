@@ -17,6 +17,23 @@ class AdminAllPermissionsSeeder extends Seeder
             ['guard_name' => 'web']
         );
 
+        // Crear permisos faltantes de usuarios
+        $permisosRequeridos = [
+            'usuarios.index',
+            'usuarios.create',
+            'usuarios.show',
+            'usuarios.edit',
+            'usuarios.delete',
+            'usuarios.assign-permission',
+        ];
+
+        foreach ($permisosRequeridos as $permiso) {
+            Permission::firstOrCreate(
+                ['name' => $permiso],
+                ['guard_name' => 'web']
+            );
+        }
+
         // Obtener todos los permisos
         $allPermissions = Permission::all();
 
