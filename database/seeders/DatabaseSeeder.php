@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
         // Seed roles and permissions FIRST
         $this->call(RolesAndPermissionsSeeder::class);
 
+        // ✅ NUEVO: Asignar todos los permisos al admin
+        $this->call(AdminAllPermissionsSeeder::class);
+
         // NUEVO: Permisos específicos del Sidebar
         $this->call(SidebarPermissionsSeeder::class);
 
