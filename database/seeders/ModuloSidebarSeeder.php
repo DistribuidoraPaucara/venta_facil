@@ -660,9 +660,10 @@ class ModuloSidebarSeeder extends Seeder
         // Crear permisos en la BD (si no existen) - verificar por nombre primero
         $todosLosPermisos = array_unique(array_merge(...array_values($permisosPorRol)));
         foreach ($todosLosPermisos as $permiso) {
-            if (!Permission::where('name', $permiso)->exists()) {
-                Permission::create(['name' => $permiso, 'guard_name' => 'web']);
-            }
+            Permission::firstOrCreate(
+                ['name' => $permiso],
+                ['guard_name' => 'web']
+            );
         }
 
         // Asignar permisos a cada rol
