@@ -657,10 +657,12 @@ class ModuloSidebarSeeder extends Seeder
         $admin      = Role::firstOrCreate(['name' => 'admin'], ['guard_name' => 'web']);
         $cajero     = Role::firstOrCreate(['name' => 'cajero'], ['guard_name' => 'web']);
 
-        // Crear permisos en la BD (si no existen)
+        // Crear permisos en la BD (si no existen) - verificar por nombre primero
         $todosLosPermisos = array_unique(array_merge(...array_values($permisosPorRol)));
         foreach ($todosLosPermisos as $permiso) {
-            Permission::firstOrCreate(['name' => $permiso], ['guard_name' => 'web']);
+            if (!Permission::where('name', $permiso)->exists()) {
+                Permission::create(['name' => $permiso, 'guard_name' => 'web']);
+            }
         }
 
         // Asignar permisos a cada rol
