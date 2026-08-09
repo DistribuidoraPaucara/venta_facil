@@ -86,15 +86,25 @@ export const productosCSVService = {
    * Parsear CSV y convertir a array de FilaProductoCSV
    */
   parsearCSV(contenido: string, delimiter: string = ','): FilaProductoCSV[] {
-    const lineas = contenido.split('\n').filter((l) => l.trim());
+    // Remover BOM UTF-8 si existe
+    let textoLimpio = contenido.replace(/^﻿/, '');
+
+    const lineas = textoLimpio.split('\n').filter((l) => l.trim());
     if (lineas.length < 2) {
       throw new Error('El CSV debe tener al menos un encabezado y una fila de datos');
     }
 
-    // Parsear encabezado
-    const encabezado = lineas[0]
-      .split(delimiter)
-      .map((col) => col.trim().toLowerCase());
+    // Parsear encabezado (usar parseearCSVRow para manejar comillas correctamente)
+    const encabezadoRaw = this.parseearCSVRow(lineas[0], delimiter);
+    const encabezado = encabezadoRaw.map((col) =>
+      col
+        .trim()
+        .toLowerCase()
+        .replace(/^"|"$/g, '') // Remover comillas al inicio y final
+        .replace(/[""]/g, '') // Remover cualquier otra comilla
+    );
+
+    console.log('🔍 Encabezado parseado:', encabezado);
 
     // Mapeo de columnas
     const indiceNombre = encabezado.findIndex((col) =>
@@ -105,6 +115,7 @@ export const productosCSVService = {
     );
 
     if (indiceNombre === -1 || indiceCantidad === -1) {
+      console.error('❌ Encabezado no válido:', encabezado);
       throw new Error('El CSV debe tener columnas "Nombre Producto" y "Cantidad"');
     }
 
@@ -478,11 +489,9 @@ export const productosCSVService = {
     const headers = [
       'Nombre Producto',
       'Descripción',
-      'Principio Activo',
-      'Uso de Medicación',
       'SKU',
       'Código Barras',
-      'Almacén',
+      'Almacen',
       'Proveedor',
       'Unidad Medida',
       'Cantidad',
@@ -490,27 +499,25 @@ export const productosCSVService = {
       'Precio Venta',
       'Lote',
       'Fecha Vencimiento',
-      'Categoría',
+      'Categoria',
       'Marca',
     ];
 
     const ejemplo = [
-      'Paracetamol 500mg',
-      'Analgésico y antipirético',
-      'Paracetamol',
-      'Alivio de dolor leve a moderado y reducción de fiebre',
-      '',
-      '7501234567890',
-      'Almacén Central',
-      'Laboratorios ABC',
-      'TAB',
-      '100',
-      '8.50',
-      '12.00',
-      'LOTE2025A',
-      '31/12/2025',
-      'Medicamentos',
-      'Genérico',
+      'Arroz Premium Blanco Grano Largo',
+      'Arroz de grano largo, ideal para preparar platos gourmet',
+      'ARZ-001',
+      '7501234567891',
+      'Almacen Principal',
+      'Distribuidora de Alimentos Premium',
+      'UN',
+      '150',
+      '12.50',
+      '18.00',
+      'LOTE2025B',
+      '31/12/2026',
+      'Alimentos y Bebidas',
+      'Premium Resort',
     ];
 
     const filas = [headers, ejemplo];
