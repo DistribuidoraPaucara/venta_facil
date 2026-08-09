@@ -438,7 +438,7 @@ getRoles.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
  * @route '/api/notificaciones/{notificacion}'
  */
-const show5ec7f86f729e78e97a08fbb4405a3bc1 = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+const show5ec7f86f729e78e97a08fbb4405a3bc1 = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
     method: 'get',
 })
@@ -453,7 +453,7 @@ show5ec7f86f729e78e97a08fbb4405a3bc1.definition = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
  * @route '/api/notificaciones/{notificacion}'
  */
-show5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+show5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { notificacion: args }
     }
@@ -486,7 +486,7 @@ show5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: string | numbe
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
  * @route '/api/notificaciones/{notificacion}'
  */
-show5ec7f86f729e78e97a08fbb4405a3bc1.get = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+show5ec7f86f729e78e97a08fbb4405a3bc1.get = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
     method: 'get',
 })
@@ -495,7 +495,7 @@ show5ec7f86f729e78e97a08fbb4405a3bc1.get = (args: { notificacion: string | numbe
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
  * @route '/api/notificaciones/{notificacion}'
  */
-show5ec7f86f729e78e97a08fbb4405a3bc1.head = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+show5ec7f86f729e78e97a08fbb4405a3bc1.head = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
     method: 'head',
 })
@@ -505,7 +505,7 @@ show5ec7f86f729e78e97a08fbb4405a3bc1.head = (args: { notificacion: string | numb
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
  * @route '/api/notificaciones/{notificacion}'
  */
-    const show5ec7f86f729e78e97a08fbb4405a3bc1Form = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const show5ec7f86f729e78e97a08fbb4405a3bc1Form = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
         method: 'get',
     })
@@ -515,7 +515,7 @@ show5ec7f86f729e78e97a08fbb4405a3bc1.head = (args: { notificacion: string | numb
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
  * @route '/api/notificaciones/{notificacion}'
  */
-        show5ec7f86f729e78e97a08fbb4405a3bc1Form.get = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        show5ec7f86f729e78e97a08fbb4405a3bc1Form.get = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
             method: 'get',
         })
@@ -524,7 +524,7 @@ show5ec7f86f729e78e97a08fbb4405a3bc1.head = (args: { notificacion: string | numb
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
  * @route '/api/notificaciones/{notificacion}'
  */
-        show5ec7f86f729e78e97a08fbb4405a3bc1Form.head = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        show5ec7f86f729e78e97a08fbb4405a3bc1Form.head = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show5ec7f86f729e78e97a08fbb4405a3bc1.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
@@ -643,7 +643,7 @@ export const show = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
  * @route '/api/notificaciones/{notificacion}'
  */
-const update5ec7f86f729e78e97a08fbb4405a3bc1 = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+const update5ec7f86f729e78e97a08fbb4405a3bc1 = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
     method: 'put',
 })
@@ -658,7 +658,7 @@ update5ec7f86f729e78e97a08fbb4405a3bc1.definition = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
  * @route '/api/notificaciones/{notificacion}'
  */
-update5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+update5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { notificacion: args }
     }
@@ -691,7 +691,7 @@ update5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: string | num
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
  * @route '/api/notificaciones/{notificacion}'
  */
-update5ec7f86f729e78e97a08fbb4405a3bc1.put = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+update5ec7f86f729e78e97a08fbb4405a3bc1.put = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
     method: 'put',
 })
@@ -701,7 +701,7 @@ update5ec7f86f729e78e97a08fbb4405a3bc1.put = (args: { notificacion: string | num
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
  * @route '/api/notificaciones/{notificacion}'
  */
-    const update5ec7f86f729e78e97a08fbb4405a3bc1Form = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const update5ec7f86f729e78e97a08fbb4405a3bc1Form = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: update5ec7f86f729e78e97a08fbb4405a3bc1.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -716,7 +716,7 @@ update5ec7f86f729e78e97a08fbb4405a3bc1.put = (args: { notificacion: string | num
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
  * @route '/api/notificaciones/{notificacion}'
  */
-        update5ec7f86f729e78e97a08fbb4405a3bc1Form.put = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        update5ec7f86f729e78e97a08fbb4405a3bc1Form.put = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: update5ec7f86f729e78e97a08fbb4405a3bc1.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -845,7 +845,7 @@ export const update = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
  * @route '/api/notificaciones/{notificacion}'
  */
-const destroy5ec7f86f729e78e97a08fbb4405a3bc1 = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+const destroy5ec7f86f729e78e97a08fbb4405a3bc1 = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
     method: 'delete',
 })
@@ -860,7 +860,7 @@ destroy5ec7f86f729e78e97a08fbb4405a3bc1.definition = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
  * @route '/api/notificaciones/{notificacion}'
  */
-destroy5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+destroy5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { notificacion: args }
     }
@@ -893,7 +893,7 @@ destroy5ec7f86f729e78e97a08fbb4405a3bc1.url = (args: { notificacion: string | nu
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
  * @route '/api/notificaciones/{notificacion}'
  */
-destroy5ec7f86f729e78e97a08fbb4405a3bc1.delete = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+destroy5ec7f86f729e78e97a08fbb4405a3bc1.delete = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy5ec7f86f729e78e97a08fbb4405a3bc1.url(args, options),
     method: 'delete',
 })
@@ -903,7 +903,7 @@ destroy5ec7f86f729e78e97a08fbb4405a3bc1.delete = (args: { notificacion: string |
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
  * @route '/api/notificaciones/{notificacion}'
  */
-    const destroy5ec7f86f729e78e97a08fbb4405a3bc1Form = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const destroy5ec7f86f729e78e97a08fbb4405a3bc1Form = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: destroy5ec7f86f729e78e97a08fbb4405a3bc1.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'DELETE',
@@ -918,7 +918,7 @@ destroy5ec7f86f729e78e97a08fbb4405a3bc1.delete = (args: { notificacion: string |
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
  * @route '/api/notificaciones/{notificacion}'
  */
-        destroy5ec7f86f729e78e97a08fbb4405a3bc1Form.delete = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        destroy5ec7f86f729e78e97a08fbb4405a3bc1Form.delete = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: destroy5ec7f86f729e78e97a08fbb4405a3bc1.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'DELETE',
@@ -1024,7 +1024,7 @@ export const destroy = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/api/notificaciones/{notificacion}/enviar'
  */
-const enviarManual662a6437ff13c9d2a79569ce57de03f4 = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+const enviarManual662a6437ff13c9d2a79569ce57de03f4 = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: enviarManual662a6437ff13c9d2a79569ce57de03f4.url(args, options),
     method: 'post',
 })
@@ -1039,7 +1039,7 @@ enviarManual662a6437ff13c9d2a79569ce57de03f4.definition = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/api/notificaciones/{notificacion}/enviar'
  */
-enviarManual662a6437ff13c9d2a79569ce57de03f4.url = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+enviarManual662a6437ff13c9d2a79569ce57de03f4.url = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { notificacion: args }
     }
@@ -1072,7 +1072,7 @@ enviarManual662a6437ff13c9d2a79569ce57de03f4.url = (args: { notificacion: string
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/api/notificaciones/{notificacion}/enviar'
  */
-enviarManual662a6437ff13c9d2a79569ce57de03f4.post = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+enviarManual662a6437ff13c9d2a79569ce57de03f4.post = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: enviarManual662a6437ff13c9d2a79569ce57de03f4.url(args, options),
     method: 'post',
 })
@@ -1082,7 +1082,7 @@ enviarManual662a6437ff13c9d2a79569ce57de03f4.post = (args: { notificacion: strin
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/api/notificaciones/{notificacion}/enviar'
  */
-    const enviarManual662a6437ff13c9d2a79569ce57de03f4Form = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const enviarManual662a6437ff13c9d2a79569ce57de03f4Form = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: enviarManual662a6437ff13c9d2a79569ce57de03f4.url(args, options),
         method: 'post',
     })
@@ -1092,7 +1092,7 @@ enviarManual662a6437ff13c9d2a79569ce57de03f4.post = (args: { notificacion: strin
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/api/notificaciones/{notificacion}/enviar'
  */
-        enviarManual662a6437ff13c9d2a79569ce57de03f4Form.post = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        enviarManual662a6437ff13c9d2a79569ce57de03f4Form.post = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: enviarManual662a6437ff13c9d2a79569ce57de03f4.url(args, options),
             method: 'post',
         })
@@ -1103,7 +1103,7 @@ enviarManual662a6437ff13c9d2a79569ce57de03f4.post = (args: { notificacion: strin
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-const enviarManual3b1a1576a97e9463165c4263333bf2ae = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+const enviarManual3b1a1576a97e9463165c4263333bf2ae = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: enviarManual3b1a1576a97e9463165c4263333bf2ae.url(args, options),
     method: 'post',
 })
@@ -1118,7 +1118,7 @@ enviarManual3b1a1576a97e9463165c4263333bf2ae.definition = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-enviarManual3b1a1576a97e9463165c4263333bf2ae.url = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+enviarManual3b1a1576a97e9463165c4263333bf2ae.url = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { notificacion: args }
     }
@@ -1151,7 +1151,7 @@ enviarManual3b1a1576a97e9463165c4263333bf2ae.url = (args: { notificacion: string
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-enviarManual3b1a1576a97e9463165c4263333bf2ae.post = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+enviarManual3b1a1576a97e9463165c4263333bf2ae.post = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: enviarManual3b1a1576a97e9463165c4263333bf2ae.url(args, options),
     method: 'post',
 })
@@ -1161,7 +1161,7 @@ enviarManual3b1a1576a97e9463165c4263333bf2ae.post = (args: { notificacion: strin
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-    const enviarManual3b1a1576a97e9463165c4263333bf2aeForm = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const enviarManual3b1a1576a97e9463165c4263333bf2aeForm = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: enviarManual3b1a1576a97e9463165c4263333bf2ae.url(args, options),
         method: 'post',
     })
@@ -1171,7 +1171,7 @@ enviarManual3b1a1576a97e9463165c4263333bf2ae.post = (args: { notificacion: strin
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-        enviarManual3b1a1576a97e9463165c4263333bf2aeForm.post = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        enviarManual3b1a1576a97e9463165c4263333bf2aeForm.post = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: enviarManual3b1a1576a97e9463165c4263333bf2ae.url(args, options),
             method: 'post',
         })

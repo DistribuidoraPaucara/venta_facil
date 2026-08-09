@@ -354,139 +354,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     index.form = indexForm
 /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: create.url(options),
-    method: 'get',
-})
-
-create.definition = {
-    methods: ["get","head"],
-    url: '/ventas/create',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-create.url = (options?: RouteQueryOptions) => {
-    return create.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: create.url(options),
-    method: 'get',
-})
-/**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: create.url(options),
-    method: 'head',
-})
-
-    /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: create.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    create.form = createForm
-/**
-* @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:644
- * @route '/ventas'
- */
-export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
-    method: 'post',
-})
-
-store.definition = {
-    methods: ["post"],
-    url: '/ventas',
-} satisfies RouteDefinition<["post"]>
-
-/**
-* @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:644
- * @route '/ventas'
- */
-store.url = (options?: RouteQueryOptions) => {
-    return store.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:644
- * @route '/ventas'
- */
-store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
-    method: 'post',
-})
-
-    /**
-* @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:644
- * @route '/ventas'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:644
- * @route '/ventas'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
-/**
 * @see \App\Http\Controllers\VentaController::edit
  * @see app/Http/Controllers/VentaController.php:1053
  * @route '/ventas/{venta}/edit'
@@ -774,6 +641,139 @@ destroy.delete = (args: { venta: string | number } | [venta: string | number ] |
         })
     
     destroy.form = destroyForm
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: create.url(options),
+    method: 'get',
+})
+
+create.definition = {
+    methods: ["get","head"],
+    url: '/ventas/create',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+create.url = (options?: RouteQueryOptions) => {
+    return create.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: create.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: create.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
+/**
+* @see \App\Http\Controllers\VentaController::store
+ * @see app/Http/Controllers/VentaController.php:644
+ * @route '/ventas'
+ */
+export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+store.definition = {
+    methods: ["post"],
+    url: '/ventas',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\VentaController::store
+ * @see app/Http/Controllers/VentaController.php:644
+ * @route '/ventas'
+ */
+store.url = (options?: RouteQueryOptions) => {
+    return store.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\VentaController::store
+ * @see app/Http/Controllers/VentaController.php:644
+ * @route '/ventas'
+ */
+store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\VentaController::store
+ * @see app/Http/Controllers/VentaController.php:644
+ * @route '/ventas'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\VentaController::store
+ * @see app/Http/Controllers/VentaController.php:644
+ * @route '/ventas'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\ReporteVentasController::reporteProductosVendidos
  * @see app/Http/Controllers/ReporteVentasController.php:22
@@ -1815,11 +1815,11 @@ entregas,
 actualizarEstadoLogistico,
 checkCajaAbierta,
 index,
-create,
-store,
 edit,
 update,
 destroy,
+create,
+store,
 reporteProductosVendidos,
 reportes,
 formatosDisponibles,

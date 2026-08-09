@@ -415,9 +415,11 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/registrar-pagos', [\App\Http\Controllers\CuentaPorCobrarController::class, 'registrarPagos'])->name('cuentas-por-cobrar.registrar-pagos'); // ✅ NUEVO: Múltiples pagos
     Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/anular-pago/{pago}', [\App\Http\Controllers\CuentaPorCobrarController::class, 'anularPago'])->name('cuentas-por-cobrar.anular-pago');
 
-    // ✅ NUEVO: Aplicar middleware CheckCajaAbierta para validar que hay caja abierta
-    // Excluir 'show' porque lo definiremos después de las rutas específicas
-    Route::resource('ventas', \App\Http\Controllers\VentaController::class)->except(['show'])->middleware('caja.abierta');
+    // ✅ NUEVO: Aplicar middleware CheckCajaAbierta SOLO para crear/guardar ventas
+    // Index (listar) no requiere caja abierta
+    Route::resource('ventas', \App\Http\Controllers\VentaController::class)->except(['show', 'create', 'store']);
+    Route::get('ventas/create', [\App\Http\Controllers\VentaController::class, 'create'])->middleware('caja.abierta')->name('ventas.create');
+    Route::post('ventas', [\App\Http\Controllers\VentaController::class, 'store'])->middleware('caja.abierta')->name('ventas.store');
 
     // ✨ NUEVO: Ruta para interfaz de venta de comidas/helados
     Route::get('ventas-resort', function () {

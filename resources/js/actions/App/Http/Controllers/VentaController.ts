@@ -2947,84 +2947,6 @@ checkCajaAbierta.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
     
     checkCajaAbierta.form = checkCajaAbiertaForm
 /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: create.url(options),
-    method: 'get',
-})
-
-create.definition = {
-    methods: ["get","head"],
-    url: '/ventas/create',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-create.url = (options?: RouteQueryOptions) => {
-    return create.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: create.url(options),
-    method: 'get',
-})
-/**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: create.url(options),
-    method: 'head',
-})
-
-    /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: create.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:498
- * @route '/ventas/create'
- */
-        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    create.form = createForm
-/**
 * @see \App\Http\Controllers\VentaController::edit
  * @see app/Http/Controllers/VentaController.php:1053
  * @route '/ventas/{venta}/edit'
@@ -3121,6 +3043,84 @@ edit.head = (args: { venta: string | number } | [venta: string | number ] | stri
         })
     
     edit.form = editForm
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: create.url(options),
+    method: 'get',
+})
+
+create.definition = {
+    methods: ["get","head"],
+    url: '/ventas/create',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+create.url = (options?: RouteQueryOptions) => {
+    return create.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: create.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: create.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\VentaController::create
+ * @see app/Http/Controllers/VentaController.php:498
+ * @route '/ventas/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
  * @see app/Http/Controllers/VentaController.php:2043
@@ -3707,6 +3707,6 @@ destroyConfirmacion.delete = (args: { venta: string | number, confirmacion: stri
         })
     
     destroyConfirmacion.form = destroyConfirmacionForm
-const VentaController = { ventasCliente, registrarPago, imprimir, preview, ventasParaImpresion, search, searchWithPrestables, show, verificarStock, productosStockBajo, obtenerStockProducto, obtenerResumenStock, anular, verificarReversionStock, ejecutarReversionStock, index, store, update, destroy, checkCajaAbierta, create, edit, formatosDisponibles, aprobar, rechazar, exportarExcel, exportarPdf, storeConfirmacion, destroyConfirmacion }
+const VentaController = { ventasCliente, registrarPago, imprimir, preview, ventasParaImpresion, search, searchWithPrestables, show, verificarStock, productosStockBajo, obtenerStockProducto, obtenerResumenStock, anular, verificarReversionStock, ejecutarReversionStock, index, store, update, destroy, checkCajaAbierta, edit, create, formatosDisponibles, aprobar, rechazar, exportarExcel, exportarPdf, storeConfirmacion, destroyConfirmacion }
 
 export default VentaController
