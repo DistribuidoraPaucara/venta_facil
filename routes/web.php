@@ -429,6 +429,8 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         ]);
     });
 
+    Route::get('/debug-ventas-test', [\App\Http\Controllers\VentaController::class, 'index'])->name('debug.ventas.test');
+
     // ✅ NUEVO: Aplicar middleware CheckCajaAbierta SOLO para crear/guardar ventas
     // Index (listar) no requiere caja abierta
     Route::resource('ventas', \App\Http\Controllers\VentaController::class)->except(['show', 'create', 'store']);
