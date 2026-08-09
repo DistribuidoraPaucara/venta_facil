@@ -483,6 +483,13 @@ class VentaController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('🔴 VentaController::index - EXCEPCIÓN CAPTURADA', [
+                'mensaje' => $e->getMessage(),
+                'archivo' => $e->getFile(),
+                'linea' => $e->getLine(),
+                'stack' => $e->getTraceAsString(),
+            ]);
+
             if ($isApiRequest) {
                 return response()->json([
                     'success' => false,
