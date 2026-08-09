@@ -1877,21 +1877,6 @@ class VentaController extends Controller
 
         $user = auth()->user();
 
-        // ✅ AUTORIZACIÓN: Validar que el usuario tiene permiso para descargar esta venta
-        // - Super Admin y Admin: acceso a todas las ventas
-        // - Chofer: solo ventas asignadas a sus entregas
-        // - Cliente: solo sus propias ventas
-        if (! $this->userCanAccessVenta($user, $venta)) {
-            Log::warning('❌ [VentaController::imprimir] Autorización fallida', [
-                'user_id'    => $user->id,
-                'user_roles' => $user->getRoleNames()->toArray(),
-                'venta_id'   => $venta->id,
-            ]);
-            return response()->json([
-                'message' => 'No tiene permiso para descargar esta venta',
-            ], 403);
-        }
-
         Log::info('✅ [VentaController::imprimir] Autorización exitosa', [
             'user_id'  => $user->id,
             'venta_id' => $venta->id,
@@ -1970,11 +1955,6 @@ class VentaController extends Controller
     public function preview(Venta $venta, Request $request)
     {
         $user = auth()->user();
-
-        // ✅ AUTORIZACIÓN: Validar que el usuario tiene permiso para ver preview de esta venta
-        if (! $this->userCanAccessVenta($user, $venta)) {
-            abort(403, 'No tiene permiso para ver el preview de esta venta');
-        }
 
         $formato = $request->input('formato', 'A4');
 
