@@ -415,6 +415,20 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/registrar-pagos', [\App\Http\Controllers\CuentaPorCobrarController::class, 'registrarPagos'])->name('cuentas-por-cobrar.registrar-pagos'); // ✅ NUEVO: Múltiples pagos
     Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/anular-pago/{pago}', [\App\Http\Controllers\CuentaPorCobrarController::class, 'anularPago'])->name('cuentas-por-cobrar.anular-pago');
 
+    Route::get('/debug-ventas-2', function () {
+        $user = auth()->user();
+        $caja = $user ? \App\Models\Caja::where('user_id', $user->id)->where('activa', true)->first() : null;
+
+        return response()->json([
+            'authenticated' => !!$user,
+            'user_id' => $user?->id,
+            'user_name' => $user?->name,
+            'caja_abierta_id' => $caja?->id,
+            'tiene_caja_abierta' => !!$caja,
+            'caja_nombre' => $caja?->nombre,
+        ]);
+    });
+
     // ✅ NUEVO: Aplicar middleware CheckCajaAbierta SOLO para crear/guardar ventas
     // Index (listar) no requiere caja abierta
     Route::resource('ventas', \App\Http\Controllers\VentaController::class)->except(['show', 'create', 'store']);
