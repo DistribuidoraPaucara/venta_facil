@@ -5,8 +5,8 @@ import { Button } from '@/presentation/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/card'
 import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
-import { Checkbox } from '@/presentation/components/ui/checkbox'
 import InputError from '@/presentation/components/input-error'
+import AdvancedPermissionSelector from '@/presentation/components/roles/AdvancedPermissionSelector'
 import toast from 'react-hot-toast'
 import { Save } from 'lucide-react'
 import { type BreadcrumbItem } from '@/types'
@@ -54,16 +54,8 @@ export default function Create({ permissions }: PageProps) {
         })
     }
 
-    const handlePermissionChange = (permissionId: number, checked: boolean) => {
-        if (checked) {
-            setData('permissions', [...data.permissions, permissionId])
-        } else {
-            setData('permissions', data.permissions.filter(id => id !== permissionId))
-        }
-    }
-
-    const isPermissionSelected = (permissionId: number | string) => {
-        return data.permissions.includes(Number(permissionId))
+    const handlePermissionChange = (permissionIds: number[]) => {
+        setData('permissions', permissionIds)
     }
 
     return (
@@ -122,52 +114,27 @@ export default function Create({ permissions }: PageProps) {
                                     <InputError message={errors.guard_name} />
                                 </div>
                             </div>
-
-                            <div className="space-y-4">
-                                <Label>Permisos</Label>
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                    {Object.entries(permissions).map(([module, modulePermissions]) => (
-                                        <div key={module} className="space-y-3">
-                                            <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">
-                                                {module}
-                                            </h4>
-                                            <div className="space-y-2">
-                                                {modulePermissions.map((permission) => (
-                                                    <div key={permission.id} className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id={`permission-${permission.id}`}
-                                                            checked={isPermissionSelected(permission.id)}
-                                                            onCheckedChange={(checked) =>
-                                                                handlePermissionChange(Number(permission.id), checked as boolean)
-                                                            }
-                                                        />
-                                                        <Label
-                                                            htmlFor={`permission-${permission.id}`}
-                                                            className="text-sm font-normal"
-                                                        >
-                                                            {permission.name.replace(`${module}.`, '')}
-                                                        </Label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <InputError message={errors.permissions} />
-                            </div>
-
-                            <div className="flex justify-end space-x-2">
-                                <Button type="button" variant="outline" asChild>
-                                    <Link href={rolesService.indexUrl()}>Cancelar</Link>
-                                </Button>
-                                <Button type="submit" disabled={processing}>
-                                    <Save className="mr-2 h-4 w-4" />
-                                    {processing ? 'Creando...' : 'Crear Rol'}
-                                </Button>
-                            </div>
                         </form>
                     </CardContent>
                 </Card>
+
+                {/* Selector avanzado de permisos */}
+                <AdvancedPermissionSelector
+                    selectedPermissions={data.permissions}
+                    onChange={handlePermissionChange}
+                    permissionsData={permissions}
+                />
+
+                {/* Botones de acción */}
+                <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" asChild>
+                        <Link href={rolesService.indexUrl()}>Cancelar</Link>
+                    </Button>
+                    <Button onClick={handleSubmit} disabled={processing}>
+                        <Save className="mr-2 h-4 w-4" />
+                        {processing ? 'Creando...' : 'Crear Rol'}
+                    </Button>
+                </div>
             </div>
         </AppLayout>
     )

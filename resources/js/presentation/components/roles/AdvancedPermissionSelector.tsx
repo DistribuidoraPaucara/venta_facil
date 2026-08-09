@@ -9,9 +9,9 @@ import { AlertCircle, CheckCircle2, Search, ChevronDown, ChevronUp } from 'lucid
 import axios from 'axios';
 
 interface Permission {
-    id: number;
+    id: number | string;
     name: string;
-    description: string;
+    description?: string | null;
 }
 
 interface PermissionGroup {
@@ -23,6 +23,7 @@ interface AdvancedPermissionSelectorProps {
     onChange: (permissions: number[]) => void;
     disabled?: boolean;
     showStats?: boolean;
+    permissionsData?: PermissionGroup; // Props para pasar permisos del servidor
 }
 
 export default function AdvancedPermissionSelector({
@@ -30,14 +31,22 @@ export default function AdvancedPermissionSelector({
     onChange,
     disabled = false,
     showStats = true,
+    permissionsData,
 }: AdvancedPermissionSelectorProps) {
-    const [permissions, setPermissions] = useState<PermissionGroup>({});
+    const [permissions, setPermissions] = useState<PermissionGroup>(permissionsData || {});
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!permissionsData);
 
-    // Cargar permisos agrupados
+    // Cargar permisos agrupados (si no viene como props)
     useEffect(() => {
+        if (permissionsData) {
+            setPermissions(permissionsData);
+            setExpandedModules(new Set(Object.keys(permissionsData)));
+            setLoading(false);
+            return;
+        }
+
         const cargarPermisos = async () => {
             try {
                 const response = await axios.get('/roles-data/permissions-grouped');
@@ -52,7 +61,7 @@ export default function AdvancedPermissionSelector({
         };
 
         cargarPermisos();
-    }, []);
+    }, [permissionsData]);
 
     // Filtrar permisos por búsqueda
     const filteredPermissions = useMemo(() => {
@@ -63,7 +72,7 @@ export default function AdvancedPermissionSelector({
             const filteredPerms = perms.filter(
                 (p) =>
                     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    p.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
             );
             if (filteredPerms.length > 0) {
                 filtered[module] = filteredPerms;
@@ -90,7 +99,7 @@ export default function AdvancedPermissionSelector({
 
     const handleSelectAll = (module: string) => {
         const modulePerms = permissions[module];
-        const modulePermIds = modulePerms.map((p) => p.id);
+        const modulePermIds = modulePerms.map((p) => Number(p.id));
         const allSelected = modulePermIds.every((id) => selectedPermissions.includes(id));
 
         if (allSelected) {
@@ -118,7 +127,7 @@ export default function AdvancedPermissionSelector({
 
     const getModuleStats = (module: string) => {
         const modulePerms = permissions[module];
-        const selected = modulePerms.filter((p) => selectedPermissions.includes(p.id)).length;
+        const selected = modulePerms.filter((p) => selectedPermissions.includes(Number(p.id))).length;
         const total = modulePerms.length;
         return { selected, total };
     };
@@ -244,19 +253,19 @@ export default function AdvancedPermissionSelector({
 
                                     {/* Permisos del módulo */}
                                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                                        {modulePerms.map((permission) => (
+                                        {modulePerms.map((permission) => {
+                                            const permId = Number(permission.id);
+                                            return (
                                             <div
                                                 key={permission.id}
                                                 className="flex items-start space-x-3 rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-900"
                                             >
                                                 <Checkbox
                                                     id={`permission-${permission.id}`}
-                                                    checked={selectedPermissions.includes(
-                                                        permission.id
-                                                    )}
+                                                    checked={selectedPermissions.includes(permId)}
                                                     onCheckedChange={(checked) =>
                                                         handlePermissionChange(
-                                                            permission.id,
+                                                            permId,
                                                             checked as boolean
                                                         )
                                                     }
@@ -270,15 +279,18 @@ export default function AdvancedPermissionSelector({
                                                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                         {permission.name}
                                                     </div>
-                                                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                                                        {permission.description}
-                                                    </div>
+                                                    {permission.description && (
+                                                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                            {permission.description}
+                                                        </div>
+                                                    )}
                                                 </label>
-                                                {selectedPermissions.includes(permission.id) && (
+                                                {selectedPermissions.includes(permId) && (
                                                     <CheckCircle2 className="mt-1 h-4 w-4 text-green-600" />
                                                 )}
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </CardContent>
                             )}

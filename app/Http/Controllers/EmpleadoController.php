@@ -232,9 +232,9 @@ class EmpleadoController extends Controller
                     'user_id'               => $user ? $user->id : null,
                     // ✅ NUEVO: Asignar la empresa_id del usuario autenticado
                     'empresa_id'            => Auth::user()?->empresa_id,
-                    'ci'                    => $request->ci,
-                    'telefono'              => $request->telefono,
-                    'direccion'             => $request->direccion,
+                    'ci'                    => $request->ci ?: null,
+                    'telefono'              => $request->telefono ?: null,
+                    'direccion'             => $request->direccion ?: null,
                     'fecha_ingreso'         => $request->fecha_ingreso,
                     'estado'                => $request->estado ?? 'activo',
                     'puede_acceder_sistema' => $request->puede_acceder_sistema ?? false,
@@ -661,15 +661,15 @@ class EmpleadoController extends Controller
             $datosActualizacion = [];
 
             if ($request->has('ci')) {
-                $datosActualizacion['ci'] = $request->ci;
+                $datosActualizacion['ci'] = $request->ci ?: null;
             }
 
             if ($request->has('telefono')) {
-                $datosActualizacion['telefono'] = $request->telefono;
+                $datosActualizacion['telefono'] = $request->telefono ?: null;
             }
 
             if ($request->has('direccion')) {
-                $datosActualizacion['direccion'] = $request->direccion;
+                $datosActualizacion['direccion'] = $request->direccion ?: null;
             }
 
             if ($request->has('fecha_ingreso')) {

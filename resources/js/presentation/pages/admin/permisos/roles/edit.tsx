@@ -47,6 +47,7 @@ interface RoleListItem {
 interface PageProps {
     role: Role
     permissions: PermissionGroup
+    rolePermissions?: Array<{ id: number }>
     [key: string]: unknown
 }
 
@@ -61,7 +62,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ]
 
-export default function Edit({ role }: PageProps) {
+export default function Edit({ role, permissions }: PageProps) {
     const { data, setData, put, processing, errors } = useForm({
         name: role.name,
         guard_name: role.guard_name,
@@ -293,6 +294,7 @@ export default function Edit({ role }: PageProps) {
                 <AdvancedPermissionSelector
                     selectedPermissions={data.permissions}
                     onChange={handlePermissionChange}
+                    permissionsData={permissions}
                 />
 
                 {/* Botones de acción */}

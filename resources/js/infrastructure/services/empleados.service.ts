@@ -66,11 +66,7 @@ export class EmpleadosService extends GenericService<Empleado, EmpleadoFormData>
     validateData(data: EmpleadoFormData): string[] {
         const errors = super.validateData(data);
 
-        // Validar CI
-        if (!data.ci || String(data.ci).trim().length === 0) {
-            errors.push('La cédula de identidad es requerida');
-        }
-
+        // Validar CI (opcional)
         if (data.ci && String(data.ci).length < 6) {
             errors.push('La cédula debe tener al menos 6 caracteres');
         }
