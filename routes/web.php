@@ -418,6 +418,7 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     Route::get('/debug-ventas-2', function () {
         $user = auth()->user();
         $caja = $user ? \App\Models\Caja::where('user_id', $user->id)->where('activa', true)->first() : null;
+        $apertura = $user ? \App\Models\AperturaCaja::where('user_id', $user->id)->whereNull('fecha_cierre')->first() : null;
 
         return response()->json([
             'authenticated' => !!$user,
@@ -426,6 +427,8 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
             'caja_abierta_id' => $caja?->id,
             'tiene_caja_abierta' => !!$caja,
             'caja_nombre' => $caja?->nombre,
+            'apertura_caja_id' => $apertura?->id,
+            'tiene_apertura_caja' => !!$apertura,
         ]);
     });
 
