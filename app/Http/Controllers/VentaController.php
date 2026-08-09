@@ -2163,9 +2163,9 @@ class VentaController extends Controller
             'venta_id'   => $venta->id,
         ]);
 
-        // Super Admin y Admin: acceso a todas las ventas
-        if ($user->hasRole(['Super Admin', 'Admin', 'admin'])) {
-            Log::debug('✅ [userCanAccessVenta] Admin/Super Admin access granted');
+        // Super Admin, Admin y Cajero: acceso a todas las ventas
+        if ($user->hasRole(['Super Admin', 'Admin', 'admin', 'Cajero', 'cajero'])) {
+            Log::debug('✅ [userCanAccessVenta] Admin/Super Admin/Cajero access granted');
             return true;
         }
 
