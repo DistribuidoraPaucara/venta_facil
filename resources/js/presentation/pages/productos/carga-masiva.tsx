@@ -100,7 +100,7 @@ export default function CargaMasivaProductos({
       { title: 'Productos', href: productosService.indexUrl() },
       { title: 'Carga Masiva', href: '#' }
     ]}>
-      <Head title="ssCarga Masiva de Productos" />
+      <Head title="Carga Masiva de Productos" />
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Indicador de pasos */}

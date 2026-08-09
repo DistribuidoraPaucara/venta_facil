@@ -52,12 +52,16 @@ class SyncAllRoutesPermissionsSeeder extends Seeder
 
         if (!empty($permisosNuevos)) {
             foreach ($permisosNuevos as $permiso) {
-                Permission::create([
-                    'name' => $permiso,
-                    'guard_name' => 'web'
-                ]);
-                $this->command->line("  ✓ Creado: $permiso");
-                $contador++;
+                try {
+                    Permission::create([
+                        'name' => $permiso,
+                        'guard_name' => 'web'
+                    ]);
+                    $this->command->line("  ✓ Creado: $permiso");
+                    $contador++;
+                } catch (\Spatie\Permission\Exceptions\PermissionAlreadyExists $e) {
+                    // Ignorar si ya existe
+                }
             }
         }
 
