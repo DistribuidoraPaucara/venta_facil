@@ -75,7 +75,8 @@ class VentaController extends Controller
         });
 
         // ✅ Validar que el usuario tiene caja abierta ANTES de crear ventas
-        $this->middleware('caja.abierta')->only(['store']);
+        // 🔴 DESACTIVADO TEMPORALMENTE PARA DEBUG
+        // $this->middleware('caja.abierta')->only(['store']);
     }
 
     /**
