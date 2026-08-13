@@ -726,6 +726,9 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         // Dashboard admin (ver todas las cajas)
         Route::get('/dashboard', [\App\Http\Controllers\CajaController::class, 'dashboard'])->name('dashboard');
 
+        // ✅ NUEVO: Reporte Excel de cajas con movimientos
+        Route::get('/reporte-excel', [\App\Http\Controllers\CajaController::class, 'reporteExcel'])->name('reporte-excel');
+
         // ✅ NUEVO: Cierre Diario General Manual - Consolida todas las cajas activas
         Route::post('/cierre-diario', [\App\Http\Controllers\CajaController::class, 'cierreDiarioGeneral'])->name('cierre-diario');
 

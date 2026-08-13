@@ -435,8 +435,16 @@ export default function Dashboard({
                 Monitoreo en tiempo real de todas las cajas y sus aperturas/cierres, con métricas y reportes diarios.
               </p>
             </div>
-            {/* ✅ NUEVO: Botón de Cierre Diario General */}
-            <div className="flex gap-2">
+            {/* ✅ NUEVO: Botones de Cierre Diario General y Reporte Excel */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => window.location.href = '/cajas/admin/reporte-excel'}
+                variant="default"
+                className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                📊 Reporte Excel
+              </Button>
               <Button
                 onClick={() => router.visit('/cajas/admin/reportes-diarios')}
                 variant="outline"

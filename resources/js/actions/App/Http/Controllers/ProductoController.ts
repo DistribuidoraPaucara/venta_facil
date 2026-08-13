@@ -980,6 +980,84 @@ obtenerTodosSinRestriccion.head = (options?: RouteQueryOptions): RouteDefinition
     
     obtenerTodosSinRestriccion.form = obtenerTodosSinRestriccionForm
 /**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4232
+ * @route '/api/productos/para-actualizar-stock'
+ */
+export const obtenerProductosParaActualizarStock = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: obtenerProductosParaActualizarStock.url(options),
+    method: 'get',
+})
+
+obtenerProductosParaActualizarStock.definition = {
+    methods: ["get","head"],
+    url: '/api/productos/para-actualizar-stock',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4232
+ * @route '/api/productos/para-actualizar-stock'
+ */
+obtenerProductosParaActualizarStock.url = (options?: RouteQueryOptions) => {
+    return obtenerProductosParaActualizarStock.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4232
+ * @route '/api/productos/para-actualizar-stock'
+ */
+obtenerProductosParaActualizarStock.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: obtenerProductosParaActualizarStock.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4232
+ * @route '/api/productos/para-actualizar-stock'
+ */
+obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: obtenerProductosParaActualizarStock.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4232
+ * @route '/api/productos/para-actualizar-stock'
+ */
+    const obtenerProductosParaActualizarStockForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: obtenerProductosParaActualizarStock.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4232
+ * @route '/api/productos/para-actualizar-stock'
+ */
+        obtenerProductosParaActualizarStockForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerProductosParaActualizarStock.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4232
+ * @route '/api/productos/para-actualizar-stock'
+ */
+        obtenerProductosParaActualizarStockForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerProductosParaActualizarStock.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    obtenerProductosParaActualizarStock.form = obtenerProductosParaActualizarStockForm
+/**
 * @see \App\Http\Controllers\ProductoController::updateApi
  * @see app/Http/Controllers/ProductoController.php:1996
  * @route '/api/productos/{producto}'
@@ -2562,6 +2640,6 @@ buscarProductosComidas.head = (options?: RouteQueryOptions): RouteDefinition<'he
         })
     
     buscarProductosComidas.form = buscarProductosComidasForm
-const ProductoController = { indexApi, filtros, buscarApi, listarApi, showApi, obtenerStock, obtenerStockMultiples, storeApi, obtenerTodosSinRestriccion, updateApi, destroyApi, historialPrecios, importarProductosMasivos, validarProductosCSV, listarCargasMasivas, verCargaMasiva, revertirCargaMasiva, createModerno, getPaginados, getFiltrosData, index, create, store, edit, update, destroy, buscarProductosComidas }
+const ProductoController = { indexApi, filtros, buscarApi, listarApi, showApi, obtenerStock, obtenerStockMultiples, storeApi, obtenerTodosSinRestriccion, obtenerProductosParaActualizarStock, updateApi, destroyApi, historialPrecios, importarProductosMasivos, validarProductosCSV, listarCargasMasivas, verCargaMasiva, revertirCargaMasiva, createModerno, getPaginados, getFiltrosData, index, create, store, edit, update, destroy, buscarProductosComidas }
 
 export default ProductoController

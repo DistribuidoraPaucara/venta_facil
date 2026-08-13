@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\StockProducto;
 use App\Models\MovimientoInventario;
+use App\Models\Sector;
 use App\Services\Stock\MovimientoStockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,9 @@ use Inertia\Inertia;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use SplFileObject;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 
 /**
  * Controller: ActualizarStockMasivoController
@@ -43,13 +47,29 @@ class ActualizarStockMasivoController extends Controller
     }
 
     /**
+     * Descargar plantilla en el formato especificado (CSV o Excel)
+     *
+     * GET /api/actualizar-stock-masivo/descargar-plantilla?formato=csv|excel
+     */
+    public function descargarPlantilla(Request $request)
+    {
+        $formato = $request->query('formato', 'csv');
+
+        if ($formato === 'excel') {
+            return $this->descargarPlantillaExcel();
+        }
+
+        return $this->descargarPlantillaCSV();
+    }
+
+    /**
      * Descargar plantilla CSV con productos actuales
      *
      * Estructura: id,sku,nombre,cantidad_total,lote_fifo
      * - cantidad_total: suma de todos los lotes del producto
      * - lote_fifo: lote más antiguo (FIFO) para actualización
      */
-    public function descargarPlantilla()
+    private function descargarPlantillaCSV()
     {
         Log::info('📥 [ActualizarStockMasivo] Descargando plantilla CSV');
 
@@ -68,7 +88,7 @@ class ActualizarStockMasivoController extends Controller
             $csv->setDelimiter(',');
 
             // Escribir encabezados
-            $csv->insertOne(['id', 'sku', 'nombre', 'cantidad_total', 'lote_fifo']);
+            $csv->insertOne(['id', 'sku', 'nombre', 'cantidad_existente', 'cantidad', 'lote_fifo']);
 
             // Escribir datos de productos
             $productos->each(function ($producto) use ($csv) {
@@ -82,7 +102,8 @@ class ActualizarStockMasivoController extends Controller
                     $producto->id,
                     $producto->sku,
                     $producto->nombre,
-                    $cantidadTotal,
+                    $cantidadTotal, // Cantidad Existente (no editar)
+                    0, // Cantidad (editar - incremento/decremento)
                     $loteFifo ?? '', // Vacío si no hay lote
                 ]);
             });
@@ -106,7 +127,97 @@ class ActualizarStockMasivoController extends Controller
     }
 
     /**
-     * Procesar CSV cargado y actualizar stock
+     * Descargar plantilla en formato Excel
+     */
+    private function descargarPlantillaExcel()
+    {
+        Log::info('📥 [ActualizarStockMasivo] Descargando plantilla Excel');
+
+        try {
+            $almacenId = auth()->user()->empresa->almacen_id ?? 1;
+
+            // Obtener todos los productos con su stock en el almacén del usuario
+            $productos = Producto::with(['stock' => function ($query) use ($almacenId) {
+                $query->where('almacen_id', $almacenId)
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->orderBy('fecha_actualizacion', 'asc');
+            }])->get();
+
+            // Crear nuevo Spreadsheet
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Actualizar Stock');
+
+            // Configurar encabezados
+            $headers = ['ID', 'SKU', 'Nombre', 'Cantidad Existente', 'Cantidad', 'Lote FIFO'];
+            $sheet->fromArray([$headers], null, 'A1');
+
+            // Estilos para encabezados
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4472C4']],
+                'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
+            ];
+            $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
+
+            // Agregar datos de productos
+            $row = 2;
+            $productos->each(function ($producto) use ($sheet, &$row) {
+                $cantidadTotal = $producto->stock->sum('cantidad') ?? 0;
+                $loteFifo = $producto->stock->first()?->lote ?? '';
+
+                $sheet->setCellValue("A$row", $producto->id);
+                $sheet->setCellValue("B$row", $producto->sku);
+                $sheet->setCellValue("C$row", $producto->nombre);
+                $sheet->setCellValue("D$row", $cantidadTotal); // Cantidad Existente (no editar)
+                $sheet->setCellValue("E$row", 0); // Cantidad (editar - incremento/decremento)
+                $sheet->setCellValue("F$row", $loteFifo);
+
+                // Colorear columna D (Cantidad Existente) - gris claro indicando que no es editable
+                $greyStyle = [
+                    'fill' => [
+                        'fillType' => 'solid',
+                        'startColor' => ['rgb' => 'D3D3D3'],
+                    ],
+                ];
+                $sheet->getStyle("D$row")->applyFromArray($greyStyle);
+
+                $row++;
+            });
+
+            // Ajustar ancho de columnas
+            $sheet->getColumnDimension('A')->setWidth(10);
+            $sheet->getColumnDimension('B')->setWidth(15);
+            $sheet->getColumnDimension('C')->setWidth(30);
+            $sheet->getColumnDimension('D')->setWidth(18); // Cantidad Existente
+            $sheet->getColumnDimension('E')->setWidth(15); // Cantidad (editar)
+            $sheet->getColumnDimension('F')->setWidth(15); // Lote FIFO
+
+            // Crear writer y generar archivo
+            $writer = new Xlsx($spreadsheet);
+            $fileName = 'plantilla-actualizar-stock-' . date('Y-m-d-His') . '.xlsx';
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $fileName . '"');
+            header('Cache-Control: max-age=0');
+
+            $writer->save('php://output');
+            exit;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error descargando plantilla Excel', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors(['error' => 'Error al descargar plantilla: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Procesar CSV o Excel cargado y actualizar stock
+     *
+     * POST /api/actualizar-stock-masivo/procesar-archivo
      *
      * Formato esperado: id,sku,nombre,cantidad_total,lote_fifo
      * Lógica:
@@ -114,35 +225,70 @@ class ActualizarStockMasivoController extends Controller
      * - Si lote está especificado: actualizar ese lote específicamente
      * - Registra movimiento con lote_id para trazabilidad
      */
-    public function procesarCSV(Request $request)
+    public function procesarArchivo(Request $request)
     {
-        Log::info('📥 [ActualizarStockMasivo] Procesando CSV cargado');
+        Log::info('📥 [ActualizarStockMasivo] Procesando archivo cargado');
 
         $request->validate([
-            'csv' => 'required|file|mimes:csv,txt|max:10240', // 10MB max
+            'archivo' => 'required|file|mimes:csv,txt,xlsx|max:10240', // 10MB max
         ]);
 
         try {
             return DB::transaction(function () use ($request) {
-                $file = $request->file('csv');
-                $csv = Reader::createFromPath($file->getRealPath(), 'r');
-                $csv->setDelimiter(',');
-                $csv->setHeaderOffset(0); // Primera fila es encabezado
+                $file = $request->file('archivo');
+                $fileName = $file->getClientOriginalName();
+                $isExcel = in_array($file->getMimeType(), [
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.ms-excel'
+                ]) || str_ends_with($fileName, '.xlsx');
+
+                // Procesar según formato
+                if ($isExcel) {
+                    $filas = $this->leerExcel($file->getRealPath());
+                } else {
+                    $filas = $this->leerCSV($file->getRealPath());
+                }
 
                 $almacenId = auth()->user()->empresa->almacen_id ?? 1;
                 $registrosActualizados = 0;
                 $errores = [];
                 $movimientos = [];
 
-                // Procesar cada fila del CSV
-                foreach ($csv as $index => $fila) {
+                // Procesar cada fila
+                foreach ($filas as $index => $fila) {
                     try {
-                        $productoId = (int) ($fila['id'] ?? 0);
-                        $cantidadNueva = (int) ($fila['cantidad_total'] ?? 0);
-                        $loteFifo = trim($fila['lote_fifo'] ?? '');
+                        // Normalizar claves a minúsculas
+                        $filaNormalizada = array_change_key_case($fila, CASE_LOWER);
+
+                        $productoId = (int) ($filaNormalizada['id'] ?? 0);
+
+                        // Usar "cantidad" como incremento/decremento
+                        $incremento = (int) ($filaNormalizada['cantidad'] ?? 0);
+                        $cantidadExistente = (int) ($filaNormalizada['cantidad_existente'] ?? 0);
+                        $cantidadNueva = $cantidadExistente + $incremento;
+
+                        $loteFifo = trim($filaNormalizada['lote_fifo'] ?? '');
+
+                        Log::info('📦 [ActualizarStockMasivo] Fila procesada', [
+                            'fila' => $index + 2,
+                            'id_raw' => $filaNormalizada['id'] ?? 'N/A',
+                            'id_int' => $productoId,
+                            'existente' => $cantidadExistente,
+                            'incremento' => $incremento,
+                            'nueva' => $cantidadNueva,
+                        ]);
 
                         if (!$productoId) {
-                            $errores[] = "Fila " . ($index + 2) . ": ID de producto inválido";
+                            $errores[] = "Fila " . ($index + 2) . ": ID de producto inválido (valor: '{$filaNormalizada['id']}')";
+                            continue;
+                        }
+
+                        // No procesar si el incremento es 0
+                        if ($incremento === 0) {
+                            Log::info('⏭️ [ActualizarStockMasivo] Fila omitida (sin cambios)', [
+                                'fila' => $index + 2,
+                                'producto_id' => $productoId,
+                            ]);
                             continue;
                         }
 
@@ -158,7 +304,8 @@ class ActualizarStockMasivoController extends Controller
                             ->where('almacen_id', $almacenId)
                             ->sum('cantidad') ?? 0;
 
-                        $diferencia = $cantidadNueva - $stockActual;
+                        // Para archivo cargado, diferencia es el incremento especificado
+                        $diferencia = $incremento ?? ($cantidadNueva - $stockActual);
 
                         if ($diferencia !== 0 || $stockActual === 0) {
                             // Obtener o crear stock_producto
@@ -272,12 +419,21 @@ class ActualizarStockMasivoController extends Controller
             ->where('almacen_id', $almacenId)
             ->get();
 
+        // Obtener un sector válido del almacén
+        $sector = Sector::where('almacen_id', $almacenId)->first();
+        if (!$sector) {
+            Log::error('❌ No hay sectores disponibles para el almacén', [
+                'almacen_id' => $almacenId,
+            ]);
+            return null;
+        }
+
         // Si lote está vacío y no hay stock: crear con lote=null
         if (empty($loteFifo) && $stocks->isEmpty()) {
             $stockProducto = StockProducto::create([
                 'producto_id' => $productoId,
                 'almacen_id' => $almacenId,
-                'sector_id' => 1, // Primer sector
+                'sector_id' => $sector->id,
                 'lote' => null,
                 'cantidad' => $cantidadNueva,
                 'cantidad_disponible' => $cantidadNueva,
@@ -289,6 +445,7 @@ class ActualizarStockMasivoController extends Controller
             Log::info('📦 [ActualizarStockMasivo] Stock creado (lote=null)', [
                 'producto_id' => $productoId,
                 'cantidad' => $cantidadNueva,
+                'sector_id' => $sector->id,
             ]);
 
             return $stockProducto;
@@ -314,7 +471,7 @@ class ActualizarStockMasivoController extends Controller
             $stockProducto = StockProducto::create([
                 'producto_id' => $productoId,
                 'almacen_id' => $almacenId,
-                'sector_id' => 1, // Primer sector
+                'sector_id' => $sector->id,
                 'lote' => $loteFifo,
                 'cantidad' => $cantidadNueva,
                 'cantidad_disponible' => $cantidadNueva,
@@ -327,12 +484,154 @@ class ActualizarStockMasivoController extends Controller
                 'producto_id' => $productoId,
                 'lote' => $loteFifo,
                 'cantidad' => $cantidadNueva,
+                'sector_id' => $sector->id,
             ]);
 
             return $stockProducto;
         }
 
         return null;
+    }
+
+    /**
+     * Procesar CSV cargado (compatibilidad hacia atrás)
+     *
+     * POST /api/actualizar-stock-masivo/procesar-csv
+     */
+    public function procesarCSV(Request $request)
+    {
+        // Renombrar 'csv' a 'archivo' para compatibilidad
+        $request->merge(['archivo' => $request->file('csv')]);
+        return $this->procesarArchivo($request);
+    }
+
+    /**
+     * Actualizar stock desde tabla editable
+     *
+     * Recibe un array de cambios: [{producto_id, cantidad_nueva}, ...]
+     */
+    public function actualizarStockTabla(Request $request)
+    {
+        Log::info('📋 [ActualizarStockMasivo] Procesando cambios desde tabla');
+
+        $request->validate([
+            'cambios' => 'required|array',
+            'cambios.*.producto_id' => 'required|integer|exists:productos,id',
+            'cambios.*.cantidad_nueva' => 'required|integer|min:0',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request) {
+                $almacenId = auth()->user()->empresa->almacen_id ?? 1;
+                $registrosActualizados = 0;
+                $errores = [];
+                $movimientos = [];
+
+                // Procesar cada cambio
+                foreach ($request->input('cambios') as $cambio) {
+                    try {
+                        $productoId = (int) $cambio['producto_id'];
+                        $cantidadNueva = (int) $cambio['cantidad_nueva'];
+
+                        // Obtener producto
+                        $producto = Producto::find($productoId);
+                        if (!$producto) {
+                            $errores[] = "Producto ID $productoId no encontrado";
+                            continue;
+                        }
+
+                        // Obtener stock actual (suma de todos los lotes)
+                        $stockActual = StockProducto::where('producto_id', $productoId)
+                            ->where('almacen_id', $almacenId)
+                            ->sum('cantidad') ?? 0;
+
+                        // Para archivo cargado, diferencia es el incremento especificado
+                        $diferencia = $incremento ?? ($cantidadNueva - $stockActual);
+
+                        if ($diferencia !== 0 || $stockActual === 0) {
+                            // Obtener o crear stock_producto
+                            $stockProducto = $this->obtenerOCrearStockProducto(
+                                $productoId,
+                                $almacenId,
+                                '', // Sin lote especificado
+                                $cantidadNueva,
+                                $stockActual
+                            );
+
+                            if (!$stockProducto) {
+                                $errores[] = "No se pudo obtener/crear stock para {$producto->nombre}";
+                                continue;
+                            }
+
+                            // Crear movimiento en movimientos_inventario
+                            try {
+                                $movimiento = $this->crearMovimiento(
+                                    $productoId,
+                                    $stockProducto->id,
+                                    $diferencia,
+                                    $stockActual,
+                                    $cantidadNueva,
+                                    $producto,
+                                    $stockProducto->lote
+                                );
+
+                                if ($movimiento) {
+                                    $movimientos[] = $movimiento;
+                                }
+                            } catch (\Exception $e) {
+                                Log::error('❌ Error creando movimiento', [
+                                    'producto_id' => $productoId,
+                                    'error' => $e->getMessage(),
+                                ]);
+                                $errores[] = "Error en {$producto->nombre}: " . $e->getMessage();
+                            }
+                        }
+
+                        $registrosActualizados++;
+
+                        Log::info('✅ [ActualizarStockMasivo] Producto actualizado desde tabla', [
+                            'producto_id' => $productoId,
+                            'nombre' => $producto->nombre,
+                            'stock_anterior' => $stockActual,
+                            'stock_nuevo' => $cantidadNueva,
+                            'diferencia' => $diferencia,
+                        ]);
+
+                    } catch (\Exception $e) {
+                        Log::error('Error procesando cambio', [
+                            'error' => $e->getMessage(),
+                        ]);
+                        $errores[] = $e->getMessage();
+                    }
+                }
+
+                Log::info('✅ [ActualizarStockMasivo] Cambios procesados desde tabla', [
+                    'registros_actualizados' => $registrosActualizados,
+                    'errores_count' => count($errores),
+                    'movimientos_creados' => count($movimientos),
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'mensaje' => "$registrosActualizados productos actualizados",
+                    'registros_actualizados' => $registrosActualizados,
+                    'errores' => $errores,
+                    'movimientos_creados' => count($movimientos),
+                ]);
+
+            });
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error procesando cambios desde tabla', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al procesar cambios: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -367,5 +666,79 @@ class ActualizarStockMasivoController extends Controller
             ],
             numeroDocumento: 'AJUSTE-MASIVO-' . date('Ymd-His'),
         );
+    }
+
+    /**
+     * Leer datos del archivo CSV
+     */
+    private function leerCSV(string $filePath): array
+    {
+        $filas = [];
+        $csv = Reader::createFromPath($filePath, 'r');
+        $csv->setDelimiter(',');
+        $csv->setHeaderOffset(0);
+
+        foreach ($csv as $row) {
+            // Normalizar valores: trim y convertir a lowercase en encabezados
+            $filaNormalizada = [];
+            foreach ($row as $key => $value) {
+                $filaNormalizada[strtolower($key)] = trim($value ?? '');
+            }
+            $filas[] = $filaNormalizada;
+        }
+
+        return $filas;
+    }
+
+    /**
+     * Leer datos del archivo Excel
+     */
+    private function leerExcel(string $filePath): array
+    {
+        $filas = [];
+        $reader = new XlsxReader();
+        $spreadsheet = $reader->load($filePath);
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = null;
+        $rowIndex = 0;
+
+        foreach ($sheet->getRowIterator() as $row) {
+            $rowIndex++;
+            $rowData = [];
+
+            // Obtener todas las celdas de la fila
+            $cellIterator = $row->getCellIterator();
+            $cellIterator->setIterateOnlyExistingCells(false);
+
+            foreach ($cellIterator as $cell) {
+                $value = $cell->getValue();
+
+                // Convertir valores correctamente
+                if ($value === null || $value === '') {
+                    $rowData[] = '';
+                } else {
+                    // Convertir a string y limpiar
+                    $rowData[] = trim((string) $value);
+                }
+            }
+
+            // Primera fila son encabezados
+            if ($rowIndex === 1) {
+                $headers = $rowData;
+                continue;
+            }
+
+            // Crear array asociativo con los datos
+            if (!empty($headers) && !empty(array_filter($rowData))) {
+                $fila = [];
+                foreach ($headers as $i => $header) {
+                    $fila[trim($header)] = $rowData[$i] ?? '';
+                }
+                $filas[] = $fila;
+            }
+        }
+
+        return $filas;
     }
 }

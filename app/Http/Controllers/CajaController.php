@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class CajaController extends Controller
 {
@@ -2425,4 +2427,202 @@ class CajaController extends Controller
      * @param string|null $logoUrl URL del logo
      * @return string|null Data URI con imagen codificada en base64
      */
+
+    /**
+     * Exportar reporte de cajas en Excel
+     *
+     * GET /cajas/admin/reporte-excel?fecha=2026-08-12
+     */
+    public function reporteExcel(Request $request)
+    {
+        $fecha = $request->query('fecha', today()->toDateString());
+        $fechaObj = Carbon::createFromFormat('Y-m-d', $fecha);
+
+        try {
+            // Obtener todas las aperturas del día
+            $aperturas = AperturaCaja::with([
+                'caja',
+                'caja.usuario',
+                'movimientoCaja.tipoOperacion',
+                'movimientoCaja.usuario',
+                'cierre'
+            ])
+                ->whereDate('fecha', $fechaObj)
+                ->orderBy('caja_id')
+                ->orderBy('fecha')
+                ->get();
+
+            // Crear Spreadsheet
+            $spreadsheet = new Spreadsheet();
+
+            // Hoja 1: Movimientos Detallados
+            $hoja1 = $spreadsheet->getActiveSheet();
+            $hoja1->setTitle('Movimientos');
+            $this->crearHojaMovimientos($hoja1, $aperturas);
+
+            // Hoja 2: Resumen
+            $hoja2 = $spreadsheet->createSheet();
+            $hoja2->setTitle('Resumen');
+            $this->crearHojaResumen($hoja2, $aperturas, $fechaObj);
+
+            // Generar archivo
+            $writer = new Xlsx($spreadsheet);
+            $fileName = 'reporte-cajas-' . $fecha . '.xlsx';
+
+            // Enviar como descarga
+            return response()->stream(
+                function () use ($writer) {
+                    $writer->save('php://output');
+                },
+                200,
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                    'Cache-Control' => 'max-age=0',
+                    'Pragma' => 'public',
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('❌ Error generando reporte Excel de cajas', [
+                'error' => $e->getMessage(),
+                'fecha' => $fecha,
+            ]);
+            return back()->withErrors(['error' => 'Error al generar reporte: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Crear hoja de movimientos detallados
+     */
+    private function crearHojaMovimientos($sheet, $aperturas)
+    {
+        // Encabezados
+        $headers = ['Caja', 'Usuario', 'Hora Apertura', 'Tipo Operación', 'Descripción', 'Monto', 'Usuario Op.', 'Hora'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        // Estilos para encabezados
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4472C4']],
+            'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
+        ];
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+
+        $row = 2;
+        $totalGeneral = 0;
+
+        foreach ($aperturas as $apertura) {
+            $movimientos = $apertura->movimientoCaja ?? [];
+
+            if ($movimientos->isEmpty()) {
+                // Si no hay movimientos, mostrar fila vacía para la caja
+                $sheet->setCellValue("A$row", $apertura->caja->nombre);
+                $sheet->setCellValue("B$row", $apertura->caja->usuario->name ?? 'N/A');
+                $sheet->setCellValue("C$row", $apertura->fecha->format('H:i'));
+                $row++;
+            } else {
+                // Mostrar cada movimiento
+                foreach ($movimientos as $movimiento) {
+                    $sheet->setCellValue("A$row", $apertura->caja->nombre);
+                    $sheet->setCellValue("B$row", $apertura->caja->usuario->name ?? 'N/A');
+                    $sheet->setCellValue("C$row", $apertura->fecha->format('H:i'));
+                    $sheet->setCellValue("D$row", $movimiento->tipoOperacion->nombre ?? 'N/A');
+                    $sheet->setCellValue("E$row", $movimiento->observaciones ?? '');
+                    $sheet->setCellValue("F$row", $movimiento->monto);
+                    $sheet->setCellValue("G$row", $movimiento->usuario->name ?? 'N/A');
+                    $sheet->setCellValue("H$row", $movimiento->fecha ? $movimiento->fecha->format('H:i:s') : 'N/A');
+
+                    // Formato de moneda en columna F
+                    $sheet->getStyle("F$row")->getNumberFormat()->setFormatCode('"BS" #,##0.00');
+
+                    $totalGeneral += $movimiento->monto;
+                    $row++;
+                }
+            }
+        }
+
+        // Ajustar ancho de columnas
+        $sheet->getColumnDimension('A')->setWidth(15);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(15);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(30);
+        $sheet->getColumnDimension('F')->setWidth(15);
+        $sheet->getColumnDimension('G')->setWidth(20);
+        $sheet->getColumnDimension('H')->setWidth(12);
+    }
+
+    /**
+     * Crear hoja de resumen
+     */
+    private function crearHojaResumen($sheet, $aperturas, $fechaObj)
+    {
+        $row = 1;
+
+        // Título
+        $sheet->setCellValue("A$row", 'RESUMEN DE CAJAS');
+        $sheet->getStyle("A$row")->getFont()->setBold(true)->setSize(14);
+        $row += 2;
+
+        // Encabezados de resumen
+        $headers = ['Caja', 'Usuario', 'Total Movimientos', 'Cantidad Movimientos', 'Estado'];
+        $sheet->fromArray([$headers], null, "A$row");
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '70AD47']],
+        ];
+        $sheet->getStyle("A$row:E$row")->applyFromArray($headerStyle);
+        $row++;
+
+        $totalGeneral = 0;
+        $cantidadMovimientos = 0;
+
+        foreach ($aperturas as $apertura) {
+            $monto = $apertura->movimientoCaja->sum('monto') ?? 0;
+            $cantidad = $apertura->movimientoCaja->count();
+            $estado = $apertura->cierre ? 'Cerrada' : 'Abierta';
+
+            $sheet->setCellValue("A$row", $apertura->caja->nombre);
+            $sheet->setCellValue("B$row", $apertura->caja->usuario->name ?? 'N/A');
+            $sheet->setCellValue("C$row", $monto);
+            $sheet->setCellValue("D$row", $cantidad);
+            $sheet->setCellValue("E$row", $estado);
+
+            // Formato de moneda
+            $sheet->getStyle("C$row")->getNumberFormat()->setFormatCode('"BS" #,##0.00');
+
+            // Color según estado
+            $colorEstado = $estado === 'Cerrada' ? 'C6EFCE' : 'FFC7CE';
+            $estadoStyle = [
+                'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => $colorEstado]],
+            ];
+            $sheet->getStyle("E$row")->applyFromArray($estadoStyle);
+
+            $totalGeneral += $monto;
+            $cantidadMovimientos += $cantidad;
+            $row++;
+        }
+
+        // Fila de total
+        $row++;
+        $sheet->setCellValue("A$row", 'TOTAL GENERAL');
+        $sheet->getStyle("A$row")->getFont()->setBold(true)->setSize(12);
+        $sheet->setCellValue("C$row", $totalGeneral);
+        $sheet->setCellValue("D$row", $cantidadMovimientos);
+
+        $totalStyle = [
+            'font' => ['bold' => true, 'size' => 12],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => 'FFF2CC']],
+        ];
+        $sheet->getStyle("A$row:E$row")->applyFromArray($totalStyle);
+        $sheet->getStyle("C$row")->getNumberFormat()->setFormatCode('"BS" #,##0.00');
+
+        // Ajustar ancho de columnas
+        $sheet->getColumnDimension('A')->setWidth(15);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(15);
+    }
 }

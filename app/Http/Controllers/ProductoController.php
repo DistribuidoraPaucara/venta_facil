@@ -4223,4 +4223,52 @@ class ProductoController extends Controller
 
         return $this->mapearProductos($productos, $almacenId, 'venta', $clienteId);
     }
+
+    /**
+     * Obtener todos los productos con cantidad total para actualizar stock
+     *
+     * GET /api/productos/para-actualizar-stock
+     */
+    public function obtenerProductosParaActualizarStock(Request $request): JsonResponse
+    {
+        try {
+            $almacenId = auth()->user()->empresa->almacen_id ?? 1;
+
+            $productos = Producto::query()
+                ->select(['id', 'sku', 'nombre', 'categoria_id', 'activo'])
+                ->where('activo', true)
+                ->with([
+                    'categoria:id,nombre',
+                    'stock' => function ($query) use ($almacenId) {
+                        $query->where('almacen_id', $almacenId)
+                            ->select('producto_id', 'cantidad');
+                    }
+                ])
+                ->orderBy('nombre')
+                ->get()
+                ->map(function ($producto) {
+                    return [
+                        'id' => $producto->id,
+                        'sku' => $producto->sku,
+                        'nombre' => $producto->nombre,
+                        'categoria' => $producto->categoria?->nombre ?? 'Sin categoría',
+                        'cantidad_total' => $producto->stock->sum('cantidad') ?? 0,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $productos,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error obtienendo productos para actualizar stock', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener productos',
+            ], 500);
+        }
+    }
 }

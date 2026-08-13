@@ -701,6 +701,7 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
         Route::post('/', [ProductoController::class, 'storeApi']);
         Route::get('buscar', [ProductoController::class, 'buscarApi']);
         Route::get('sin-restriccion', [ProductoController::class, 'obtenerTodosSinRestriccion']);
+        Route::get('para-actualizar-stock', [ProductoController::class, 'obtenerProductosParaActualizarStock']);
         Route::get('{producto}', [ProductoController::class, 'showApi']);
         Route::put('{producto}', [ProductoController::class, 'updateApi']);
         Route::delete('{producto}', [ProductoController::class, 'destroyApi']);
@@ -1921,5 +1922,9 @@ Route::prefix('notificaciones')->group(function () {
 // ✅ NUEVO (2026-08-07): API para Actualización Masiva de Stock
 Route::prefix('actualizar-stock-masivo')->middleware('auth')->group(function () {
     Route::get('descargar-plantilla', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'descargarPlantilla'])->name('api.actualizar-stock-masivo.descargar-plantilla');
-    Route::post('procesar-csv', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'procesarCSV'])->name('api.actualizar-stock-masivo.procesar-csv');
+    Route::post('procesar-archivo', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'procesarArchivo'])->name('api.actualizar-stock-masivo.procesar-archivo');
+    Route::post('procesar-csv', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'procesarCSV'])->name('api.actualizar-stock-masivo.procesar-csv'); // Compatibilidad
 });
+
+// ✅ NUEVO: Endpoint para actualizar stock desde tabla editable
+Route::post('/inventario/actualizar-stock-tabla', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'actualizarStockTabla'])->middleware('auth')->name('api.inventario.actualizar-stock-tabla');

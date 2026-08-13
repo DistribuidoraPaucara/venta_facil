@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:52
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:54
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
  */
 export const descargarPlantilla = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ descargarPlantilla.definition = {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:52
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:54
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
  */
 descargarPlantilla.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ descargarPlantilla.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:52
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:54
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
  */
 descargarPlantilla.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ descargarPlantilla.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
 })
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:52
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:54
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
  */
 descargarPlantilla.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ descargarPlantilla.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 
     /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:52
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:54
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
  */
     const descargarPlantillaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ descargarPlantilla.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 
             /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:52
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:54
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
  */
         descargarPlantillaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ descargarPlantilla.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
         })
             /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:52
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:54
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
  */
         descargarPlantillaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -78,8 +78,63 @@ descargarPlantilla.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     
     descargarPlantilla.form = descargarPlantillaForm
 /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::procesarArchivo
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:228
+ * @route '/api/actualizar-stock-masivo/procesar-archivo'
+ */
+export const procesarArchivo = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: procesarArchivo.url(options),
+    method: 'post',
+})
+
+procesarArchivo.definition = {
+    methods: ["post"],
+    url: '/api/actualizar-stock-masivo/procesar-archivo',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::procesarArchivo
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:228
+ * @route '/api/actualizar-stock-masivo/procesar-archivo'
+ */
+procesarArchivo.url = (options?: RouteQueryOptions) => {
+    return procesarArchivo.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::procesarArchivo
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:228
+ * @route '/api/actualizar-stock-masivo/procesar-archivo'
+ */
+procesarArchivo.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: procesarArchivo.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::procesarArchivo
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:228
+ * @route '/api/actualizar-stock-masivo/procesar-archivo'
+ */
+    const procesarArchivoForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: procesarArchivo.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::procesarArchivo
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:228
+ * @route '/api/actualizar-stock-masivo/procesar-archivo'
+ */
+        procesarArchivoForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: procesarArchivo.url(options),
+            method: 'post',
+        })
+    
+    procesarArchivo.form = procesarArchivoForm
+/**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCSV
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:117
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:501
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
 export const procesarCSV = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +149,7 @@ procesarCSV.definition = {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCSV
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:117
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:501
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
 procesarCSV.url = (options?: RouteQueryOptions) => {
@@ -103,7 +158,7 @@ procesarCSV.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCSV
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:117
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:501
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
 procesarCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +168,7 @@ procesarCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCSV
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:117
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:501
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
     const procesarCSVForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +178,7 @@ procesarCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCSV
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:117
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:501
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
         procesarCSVForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -133,8 +188,63 @@ procesarCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     
     procesarCSV.form = procesarCSVForm
 /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:513
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+export const actualizarStockTabla = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: actualizarStockTabla.url(options),
+    method: 'post',
+})
+
+actualizarStockTabla.definition = {
+    methods: ["post"],
+    url: '/api/inventario/actualizar-stock-tabla',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:513
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+actualizarStockTabla.url = (options?: RouteQueryOptions) => {
+    return actualizarStockTabla.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:513
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+actualizarStockTabla.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: actualizarStockTabla.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:513
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+    const actualizarStockTablaForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: actualizarStockTabla.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:513
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+        actualizarStockTablaForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: actualizarStockTabla.url(options),
+            method: 'post',
+        })
+    
+    actualizarStockTabla.form = actualizarStockTablaForm
+/**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:38
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:42
  * @route '/inventario/actualizar-stock-masivo'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +259,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:38
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:42
  * @route '/inventario/actualizar-stock-masivo'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -158,7 +268,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:38
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:42
  * @route '/inventario/actualizar-stock-masivo'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -167,7 +277,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:38
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:42
  * @route '/inventario/actualizar-stock-masivo'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -177,7 +287,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:38
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:42
  * @route '/inventario/actualizar-stock-masivo'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -187,7 +297,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:38
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:42
  * @route '/inventario/actualizar-stock-masivo'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -196,7 +306,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:38
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:42
  * @route '/inventario/actualizar-stock-masivo'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -210,6 +320,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     index.form = indexForm
-const ActualizarStockMasivoController = { descargarPlantilla, procesarCSV, index }
+const ActualizarStockMasivoController = { descargarPlantilla, procesarArchivo, procesarCSV, actualizarStockTabla, index }
 
 export default ActualizarStockMasivoController
