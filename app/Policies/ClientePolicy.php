@@ -114,9 +114,17 @@ class ClientePolicy
      * ✅ Editar cliente
      * Super-Admin, Admin: editan cualquier cliente
      * Preventista: solo SUS clientes
+     * Cualquier usuario con permisos: clientes.edit, clientes.edit-own O clientes.manage
      */
     public function update(User $user, Cliente $cliente): bool
     {
+        // ✅ Verificar permisos generales primero
+        if ($user->hasPermissionTo('clientes.edit') ||
+            $user->hasPermissionTo('clientes.edit-own') ||
+            $user->hasPermissionTo('clientes.manage')) {
+            return true;
+        }
+
         // ✅ Preventista (cualquier variante): editar solo SUS clientes
         if ($user->hasRole(['Preventista', 'preventista'])) {
             // Verificar que sea el preventista asignado al cliente
@@ -124,9 +132,7 @@ class ClientePolicy
                 return false;
             }
 
-            // Verificar permisos: clientes.edit-own O clientes.manage
-            return $user->hasPermissionTo('clientes.edit-own') ||
-                   $user->hasPermissionTo('clientes.manage');
+            return true;
         }
 
         // Super-Admin y Admin son autorizados en before()
