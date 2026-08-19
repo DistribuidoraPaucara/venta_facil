@@ -1930,3 +1930,9 @@ Route::prefix('actualizar-stock-masivo')->middleware('auth')->group(function () 
 
 // ✅ NUEVO: Endpoint para actualizar stock desde tabla editable
 Route::post('/inventario/actualizar-stock-tabla', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'actualizarStockTabla'])->middleware('auth')->name('api.inventario.actualizar-stock-tabla');
+
+// ✅ NUEVO (2026-08-12): API para Descargar Logs
+Route::middleware(['auth:sanctum,web'])->group(function () {
+    Route::get('admin/logs/download', [\App\Http\Controllers\Api\LogsController::class, 'download'])->name('api.logs.download');
+    Route::get('admin/logs/view', [\App\Http\Controllers\Api\LogsController::class, 'view'])->name('api.logs.view');
+});

@@ -11,6 +11,7 @@ use App\Services\Stock\StockService;
 use App\Services\Traits\LogsOperations;
 use App\Services\Traits\ManagesTransactions;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 /**
@@ -603,7 +604,7 @@ class VentaService
      * @param int $perPage
      * @param array $filtros Puede incluir: estado, estado_documento_id, cliente_id, usuario_id, fecha_desde, fecha_hasta, numero, search, monto_min, monto_max, moneda_id
      */
-    public function listar(int $perPage = 15, array $filtros = [], string $sortBy = 'id', string $sortOrder = 'desc'): LengthAwarePaginator
+    public function listar(int $perPage = 15, array $filtros = [], string $sortBy = 'id', string $sortOrder = 'desc'): Paginator | LengthAwarePaginator
     {
         return $this->read(function () use ($perPage, $filtros, $sortBy, $sortOrder) {
             // ✅ ACTUALIZADO: Cargar todas las relaciones necesarias para el frontend
@@ -729,9 +730,13 @@ class VentaService
             $sortBy = in_array(strtolower($sortBy), $camposPermitidos) ? $sortBy : 'id';
             $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'asc' : 'desc';
 
+            // ✅ CORREGIDO (2026-08-13): Usar simplePaginate() cuando NO hay filtros
+            // Esto evita el count() de todos los registros
+            $paginationMethod = $tieneFiltrosBusqueda ? 'paginate' : 'simplePaginate';
+
             $resultado = $query
                 ->orderBy($sortBy, $sortOrder)
-                ->paginate($perPage);
+                ->{$paginationMethod}($perPage);
 
             return $resultado;
         });

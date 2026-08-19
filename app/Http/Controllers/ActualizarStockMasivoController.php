@@ -65,8 +65,9 @@ class ActualizarStockMasivoController extends Controller
     /**
      * Descargar plantilla CSV con productos actuales
      *
-     * Estructura: id,sku,nombre,cantidad_total,lote_fifo
-     * - cantidad_total: suma de todos los lotes del producto
+     * Estructura: id,sku,nombre,cantidad_existente,cantidad_incrementar,lote_fifo
+     * - cantidad_existente: suma de todos los lotes del producto (solo lectura)
+     * - cantidad_incrementar: valores para aumentar (+) o disminuir (-) el stock
      * - lote_fifo: lote más antiguo (FIFO) para actualización
      */
     private function descargarPlantillaCSV()
@@ -81,14 +82,14 @@ class ActualizarStockMasivoController extends Controller
                 $query->where('almacen_id', $almacenId)
                     ->orderBy('fecha_vencimiento', 'asc')
                     ->orderBy('fecha_actualizacion', 'asc');
-            }])->get();
+            }])->orderBy('nombre', 'asc')->get();
 
             // Crear CSV en memoria
             $csv = Writer::createFromString('');
             $csv->setDelimiter(',');
 
             // Escribir encabezados
-            $csv->insertOne(['id', 'sku', 'nombre', 'cantidad_existente', 'cantidad', 'lote_fifo']);
+            $csv->insertOne(['id', 'sku', 'nombre', 'cantidad_existente', 'cantidad_incrementar', 'lote_fifo']);
 
             // Escribir datos de productos
             $productos->each(function ($producto) use ($csv) {
@@ -103,7 +104,7 @@ class ActualizarStockMasivoController extends Controller
                     $producto->sku,
                     $producto->nombre,
                     $cantidadTotal, // Cantidad Existente (no editar)
-                    0, // Cantidad (editar - incremento/decremento)
+                    0, // Cantidad_Incrementar (editar - incremento/decremento)
                     $loteFifo ?? '', // Vacío si no hay lote
                 ]);
             });
@@ -141,7 +142,7 @@ class ActualizarStockMasivoController extends Controller
                 $query->where('almacen_id', $almacenId)
                     ->orderBy('fecha_vencimiento', 'asc')
                     ->orderBy('fecha_actualizacion', 'asc');
-            }])->get();
+            }])->orderBy('nombre', 'asc')->get();
 
             // Crear nuevo Spreadsheet
             $spreadsheet = new Spreadsheet();
@@ -149,7 +150,7 @@ class ActualizarStockMasivoController extends Controller
             $sheet->setTitle('Actualizar Stock');
 
             // Configurar encabezados
-            $headers = ['ID', 'SKU', 'Nombre', 'Cantidad Existente', 'Cantidad', 'Lote FIFO'];
+            $headers = ['ID', 'SKU', 'Nombre', 'Cantidad Existente', 'Cantidad_Incrementar', 'Lote FIFO'];
             $sheet->fromArray([$headers], null, 'A1');
 
             // Estilos para encabezados
@@ -170,7 +171,7 @@ class ActualizarStockMasivoController extends Controller
                 $sheet->setCellValue("B$row", $producto->sku);
                 $sheet->setCellValue("C$row", $producto->nombre);
                 $sheet->setCellValue("D$row", $cantidadTotal); // Cantidad Existente (no editar)
-                $sheet->setCellValue("E$row", 0); // Cantidad (editar - incremento/decremento)
+                $sheet->setCellValue("E$row", 0); // Cantidad_Incrementar (editar - incremento/decremento)
                 $sheet->setCellValue("F$row", $loteFifo);
 
                 // Colorear columna D (Cantidad Existente) - gris claro indicando que no es editable
@@ -190,7 +191,7 @@ class ActualizarStockMasivoController extends Controller
             $sheet->getColumnDimension('B')->setWidth(15);
             $sheet->getColumnDimension('C')->setWidth(30);
             $sheet->getColumnDimension('D')->setWidth(18); // Cantidad Existente
-            $sheet->getColumnDimension('E')->setWidth(15); // Cantidad (editar)
+            $sheet->getColumnDimension('E')->setWidth(20); // Cantidad_Incrementar (editar)
             $sheet->getColumnDimension('F')->setWidth(15); // Lote FIFO
 
             // Crear writer y generar archivo
@@ -219,7 +220,7 @@ class ActualizarStockMasivoController extends Controller
      *
      * POST /api/actualizar-stock-masivo/procesar-archivo
      *
-     * Formato esperado: id,sku,nombre,cantidad_total,lote_fifo
+     * Formato esperado: id,sku,nombre,cantidad_existente,cantidad_incrementar,lote_fifo
      * Lógica:
      * - Si lote está vacío y no hay stock: crear con lote=null
      * - Si lote está especificado: actualizar ese lote específicamente
@@ -262,9 +263,15 @@ class ActualizarStockMasivoController extends Controller
 
                         $productoId = (int) ($filaNormalizada['id'] ?? 0);
 
-                        // Usar "cantidad" como incremento/decremento
-                        $incremento = (int) ($filaNormalizada['cantidad'] ?? 0);
-                        $cantidadExistente = (int) ($filaNormalizada['cantidad_existente'] ?? 0);
+                        // Usar "cantidad_incrementar" como incremento/decremento
+                        $incremento = (int) ($filaNormalizada['cantidad_incrementar'] ?? 0);
+
+                        // Obtener stock actual en tiempo real (no usar valor desactualizado de la plantilla)
+                        $stockActualEnTiempo = StockProducto::where('producto_id', $productoId)
+                            ->where('almacen_id', $almacenId)
+                            ->sum('cantidad') ?? 0;
+
+                        $cantidadExistente = $stockActualEnTiempo;
                         $cantidadNueva = $cantidadExistente + $incremento;
 
                         $loteFifo = trim($filaNormalizada['lote_fifo'] ?? '');
@@ -308,45 +315,114 @@ class ActualizarStockMasivoController extends Controller
                         $diferencia = $incremento ?? ($cantidadNueva - $stockActual);
 
                         if ($diferencia !== 0 || $stockActual === 0) {
-                            // Obtener o crear stock_producto
-                            $stockProducto = $this->obtenerOCrearStockProducto(
-                                $productoId,
-                                $almacenId,
-                                $loteFifo,
-                                $cantidadNueva,
-                                $stockActual
-                            );
+                            // Manejar múltiples lotes correctamente
+                            $stocks = StockProducto::where('producto_id', $productoId)
+                                ->where('almacen_id', $almacenId)
+                                ->orderBy('fecha_vencimiento', 'asc')
+                                ->orderBy('fecha_actualizacion', 'asc')
+                                ->get();
 
-                            if (!$stockProducto) {
-                                $errores[] = "Fila " . ($index + 2) . ": No se pudo obtener/crear stock para el producto";
-                                continue;
-                            }
-
-                            // Crear movimiento en movimientos_inventario
-                            // El servicio se encarga de actualizar el stock automáticamente
-                            try {
-                                $movimiento = $this->crearMovimiento(
+                            if ($stocks->isEmpty()) {
+                                // Si no hay stock, crear uno
+                                $stockProducto = $this->obtenerOCrearStockProducto(
                                     $productoId,
-                                    $stockProducto->id,
-                                    $diferencia,
-                                    $stockActual,
+                                    $almacenId,
+                                    $loteFifo,
                                     $cantidadNueva,
-                                    $producto,
-                                    $stockProducto->lote
+                                    $stockActual
                                 );
 
-                                if ($movimiento) {
-                                    $movimientos[] = $movimiento;
+                                if (!$stockProducto) {
+                                    $errores[] = "Fila " . ($index + 2) . ": No se pudo obtener/crear stock para el producto";
+                                    continue;
                                 }
-                            } catch (\Exception $e) {
-                                Log::error('❌ Error creando movimiento', [
-                                    'fila' => $index + 2,
-                                    'producto_id' => $productoId,
-                                    'tipo_movimiento' => 'AJUSTE_MASIVO',
-                                    'error' => $e->getMessage(),
-                                    'trace' => $e->getTraceAsString(),
-                                ]);
-                                $errores[] = "Fila " . ($index + 2) . ": " . $e->getMessage();
+
+                                try {
+                                    $movimiento = $this->crearMovimiento(
+                                        $productoId,
+                                        $stockProducto->id,
+                                        $diferencia,
+                                        $stockActual,
+                                        $cantidadNueva,
+                                        $producto,
+                                        $stockProducto->lote
+                                    );
+
+                                    if ($movimiento) {
+                                        $movimientos[] = $movimiento;
+                                    }
+                                } catch (\Exception $e) {
+                                    Log::error('❌ Error creando movimiento', [
+                                        'fila' => $index + 2,
+                                        'producto_id' => $productoId,
+                                        'tipo_movimiento' => 'AJUSTE_MASIVO',
+                                        'error' => $e->getMessage(),
+                                    ]);
+                                    $errores[] = "Fila " . ($index + 2) . ": " . $e->getMessage();
+                                }
+                            } else {
+                                // Si hay múltiples lotes, distribuir el cambio entre ellos FIFO
+                                $diferenciaRestante = $diferencia;
+
+                                foreach ($stocks as $stock) {
+                                    if ($diferenciaRestante === 0) break;
+
+                                    $cambioEnEsteStock = 0;
+
+                                    if ($diferenciaRestante > 0) {
+                                        // Incremento: agregar a este stock
+                                        $cambioEnEsteStock = $diferenciaRestante;
+                                        $diferenciaRestante = 0;
+                                    } else {
+                                        // Decremento: restar de este stock FIFO
+                                        $cantidadDisponible = $stock->cantidad;
+                                        if ($cantidadDisponible + $diferenciaRestante >= 0) {
+                                            $cambioEnEsteStock = $diferenciaRestante;
+                                            $diferenciaRestante = 0;
+                                        } else {
+                                            $cambioEnEsteStock = -$cantidadDisponible;
+                                            $diferenciaRestante += $cantidadDisponible;
+                                        }
+                                    }
+
+                                    if ($cambioEnEsteStock !== 0) {
+                                        try {
+                                            // Determinar el tipo según si es incremento o decremento
+                                            $tipoMovimiento = $cambioEnEsteStock > 0
+                                                ? MovimientoInventario::TIPO_AJUSTE_MASIVO
+                                                : MovimientoInventario::TIPO_SALIDA_AJUSTE;
+
+                                            // Pasar con su signo para registrar en movimientos_inventario correctamente
+                                            // El servicio usa abs() internamente
+                                            $movimiento = $this->crearMovimientoConTipo(
+                                                $productoId,
+                                                $stock->id,
+                                                $cambioEnEsteStock, // Con signo: +20 o -30
+                                                $tipoMovimiento,
+                                                $stock->cantidad,
+                                                $stock->cantidad + $cambioEnEsteStock,
+                                                $producto,
+                                                $stock->lote
+                                            );
+
+                                            if ($movimiento) {
+                                                $movimientos[] = $movimiento;
+                                            }
+                                        } catch (\Exception $e) {
+                                            Log::error('❌ Error creando movimiento en lote', [
+                                                'fila' => $index + 2,
+                                                'producto_id' => $productoId,
+                                                'stock_id' => $stock->id,
+                                                'error' => $e->getMessage(),
+                                            ]);
+                                            $errores[] = "Fila " . ($index + 2) . ": " . $e->getMessage();
+                                        }
+                                    }
+                                }
+
+                                if ($diferenciaRestante !== 0) {
+                                    $errores[] = "Fila " . ($index + 2) . ": No hay suficiente stock para disminuir $diferenciaRestante unidades";
+                                }
                             }
                         }
 
@@ -632,6 +708,39 @@ class ActualizarStockMasivoController extends Controller
                 'error' => 'Error al procesar cambios: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Crear movimiento con tipo específico
+     */
+    private function crearMovimientoConTipo(
+        int $productoId,
+        int $stockProductoId,
+        int $cantidad,
+        string $tipo,
+        int $stockAnterior,
+        int $stockNuevo,
+        Producto $producto,
+        ?string $lote = null
+    )
+    {
+        return $this->movimientoStockService->registrarMovimientoYActualizar(
+            stockProductoId: $stockProductoId,
+            cantidad: $cantidad,
+            tipo: $tipo,
+            referencia_tipo: 'ajuste_masivo',
+            referencia_id: $productoId,
+            metadataAdicional: [
+                'producto_id' => $productoId,
+                'producto_nombre' => $producto->nombre,
+                'lote' => $lote ?? 'null',
+                'stock_anterior' => $stockAnterior,
+                'stock_nuevo' => $stockNuevo,
+                'tipo_ajuste' => 'Carga masiva de stock',
+                'fecha_carga' => now()->toDateTimeString(),
+            ],
+            numeroDocumento: 'AJUSTE-MASIVO-' . date('Ymd-His'),
+        );
     }
 
     /**

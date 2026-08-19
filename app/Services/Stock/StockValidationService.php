@@ -79,6 +79,7 @@ class StockValidationService
             MovimientoInventario::TIPO_RESERVA_PROFORMA => $this->validarProforma($stock, $cantidad),
             MovimientoInventario::TIPO_LIBERACION_RESERVA => $this->validarLiberacion($stock, $cantidad),
             MovimientoInventario::TIPO_SALIDA_VENTA => $this->validarVentaDirecta($stock, $cantidad),
+            MovimientoInventario::TIPO_SALIDA_AJUSTE => $this->validarAjusteMasivo($stock, $cantidad),  // ✅ NUEVO (2026-08-19): Ajuste negativo masivo
             MovimientoInventario::TIPO_CONSUMO_RESERVA => $this->validarVentaConsumo($stock, $cantidad),
             // ✅ NUEVO: Comidas - Seguimiento sin descuento de stock
             MovimientoInventario::TIPO_SALIDA_COMIDA => null, // Comida: solo seguimiento, no valida stock
@@ -183,6 +184,24 @@ class StockValidationService
                 "Stock: {$stock->id}, " .
                 "Total: {$stock->cantidad}, " .
                 "Solicitado para vender: {$cantidadAVender}"
+            );
+        }
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-19): Validar ajuste masivo (salida)
+     * Solo valida que el total sea suficiente, permite afectar reservado
+     */
+    private function validarAjusteMasivo(StockProducto $stock, int $cantidad): void
+    {
+        $cantidadARestar = abs($cantidad);
+
+        if ($stock->cantidad < $cantidadARestar) {
+            throw new InvalidArgumentException(
+                "❌ No hay suficiente stock total para ajuste masivo. " .
+                "Stock: {$stock->id}, " .
+                "Total: {$stock->cantidad}, " .
+                "Solicitado para restar: {$cantidadARestar}"
             );
         }
     }

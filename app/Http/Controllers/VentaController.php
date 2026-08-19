@@ -221,7 +221,7 @@ class VentaController extends Controller
             $sortBy    = $request->input('sort_by', 'id');      // Campo por el que ordenar (default: id)
             $sortOrder = $request->input('sort_order', 'desc'); // Orden ascendente o descendente (default: desc)
 
-            // Extraer filtros del request
+            // Extraer filtros del request (SIN parámetros de ordenamiento)
             $filtros = [
                 'id'                  => $request->input('id'),
                 'id_desde'            => $request->input('id_desde'), // ✅ NUEVO: Rango de ID desde
@@ -243,10 +243,11 @@ class VentaController extends Controller
                 'tipo_venta'          => $request->input('tipo_venta'),
                 'estado_pago'         => $request->input('estado_pago'),      // ✅ NUEVO: Para filtro de estado de pago
                 'estado_logistico'    => $request->input('estado_logistico'), // ✅ NUEVO: Para filtro de estado logístico
-                                                                              // ✅ AGREGAR: Parámetros de ordenamiento para que se envíen al frontend y al botón de impresión
-                'sort_by'             => $sortBy,
-                'sort_order'          => $sortOrder,
             ];
+
+            // ✅ CORREGIDO (2026-08-13): sort_by/sort_order NO van en $filtros
+            // Ir en el array de filtros los rompe la optimización de 200 registros
+            // Ya se pasan directamente a listar()
 
             // ✅ VERIFICACIÓN DE ROL: Si el usuario tiene rol "Cliente", filtrar solo sus ventas
             if (auth()->check()) {
@@ -284,10 +285,10 @@ class VentaController extends Controller
             }
 
             // Delegar al Service
-            // ✅ MODIFICADO: por defecto 20 registros por página para mejor UX en móvil
+            // ✅ ACTUALIZADO (2026-08-13): por defecto 200 registros (últimas 200 con optimización)
             // ✅ NUEVO: Pasar parámetros de ordenamiento
             $ventasPaginadas = $this->ventaService->listar(
-                perPage: $request->input('per_page', 20),
+                perPage: $request->input('per_page', 200),
                 filtros: array_filter($filtros), // Solo filtros no vacíos
                 sortBy: $sortBy,
                 sortOrder: $sortOrder

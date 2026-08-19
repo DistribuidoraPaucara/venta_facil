@@ -106,6 +106,13 @@ class MovimientoStockService
                         $nuevaDisponible
                     ),
 
+                    MovimientoInventario::TIPO_SALIDA_AJUSTE => $this->aplicarAjusteMasivoSalida(  // ✅ NUEVO (2026-08-19): Ajuste negativo masivo
+                        $cantidad,
+                        $nuevoTotal,
+                        $nuevaReservada,
+                        $nuevaDisponible
+                    ),
+
                     MovimientoInventario::TIPO_CONSUMO_RESERVA => $this->aplicarVentaConsumo(
                         $cantidad,
                         $nuevoTotal,
@@ -499,6 +506,32 @@ class MovimientoStockService
         $nuevoTotal += $cantidadAEntrar;
         $nuevaDisponible += $cantidadAEntrar;
         // Reservado NO cambia
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-19): Aplicar ajuste masivo (salida)
+     * Resta del total (puede afectar disponible Y/O reservado)
+     */
+    private function aplicarAjusteMasivoSalida(
+        int $cantidad,
+        int &$nuevoTotal,
+        int &$nuevaReservada,
+        int &$nuevaDisponible
+    ): void {
+        $cantidadARestar = abs($cantidad);
+        $nuevoTotal -= $cantidadARestar;
+
+        // Si hay reservado, reduce también
+        if ($nuevaReservada > 0) {
+            $cantidadDelReservado = min($nuevaReservada, $cantidadARestar);
+            $nuevaReservada -= $cantidadDelReservado;
+            $cantidadARestar -= $cantidadDelReservado;
+        }
+
+        // El resto viene del disponible
+        if ($cantidadARestar > 0) {
+            $nuevaDisponible -= $cantidadARestar;
+        }
     }
 
     /**

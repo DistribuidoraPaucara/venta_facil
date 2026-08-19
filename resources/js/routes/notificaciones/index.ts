@@ -600,7 +600,7 @@ destroy.delete = (args: { notificacione: string | number } | [notificacione: str
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-export const enviar = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const enviar = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: enviar.url(args, options),
     method: 'post',
 })
@@ -615,7 +615,7 @@ enviar.definition = {
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-enviar.url = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+enviar.url = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { notificacion: args }
     }
@@ -648,7 +648,7 @@ enviar.url = (args: { notificacion: string | number | { id: string | number } } 
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-enviar.post = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+enviar.post = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: enviar.url(args, options),
     method: 'post',
 })
@@ -658,7 +658,7 @@ enviar.post = (args: { notificacion: string | number | { id: string | number } }
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-    const enviarForm = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const enviarForm = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: enviar.url(args, options),
         method: 'post',
     })
@@ -668,7 +668,7 @@ enviar.post = (args: { notificacion: string | number | { id: string | number } }
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
  * @route '/notificaciones/{notificacion}/enviar'
  */
-        enviarForm.post = (args: { notificacion: string | number | { id: string | number } } | [notificacion: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        enviarForm.post = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: enviar.url(args, options),
             method: 'post',
         })
