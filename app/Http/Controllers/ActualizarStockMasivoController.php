@@ -338,10 +338,16 @@ class ActualizarStockMasivoController extends Controller
                                 }
 
                                 try {
-                                    $movimiento = $this->crearMovimiento(
+                                    // Determinar el tipo según si es incremento o decremento
+                                    $tipoMovimiento = $diferencia > 0
+                                        ? MovimientoInventario::TIPO_AJUSTE_MASIVO
+                                        : MovimientoInventario::TIPO_SALIDA_AJUSTE;
+
+                                    $movimiento = $this->crearMovimientoConTipo(
                                         $productoId,
                                         $stockProducto->id,
                                         $diferencia,
+                                        $tipoMovimiento,
                                         $stockActual,
                                         $cantidadNueva,
                                         $producto,
@@ -641,10 +647,16 @@ class ActualizarStockMasivoController extends Controller
 
                             // Crear movimiento en movimientos_inventario
                             try {
-                                $movimiento = $this->crearMovimiento(
+                                // Determinar el tipo según si es incremento o decremento
+                                $tipoMovimiento = $diferencia > 0
+                                    ? MovimientoInventario::TIPO_AJUSTE_MASIVO
+                                    : MovimientoInventario::TIPO_SALIDA_AJUSTE;
+
+                                $movimiento = $this->crearMovimientoConTipo(
                                     $productoId,
                                     $stockProducto->id,
                                     $diferencia,
+                                    $tipoMovimiento,
                                     $stockActual,
                                     $cantidadNueva,
                                     $producto,
