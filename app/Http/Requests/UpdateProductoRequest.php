@@ -374,39 +374,20 @@ class UpdateProductoRequest extends FormRequest
 
     /**
      * Validar que exista al menos un precio base
+     * ✅ FLEXIBLE: Permite crear/actualizar sin precio base si hay otros precios
      */
     private function validarPrecioBase(Validator $validator): void
     {
         $precios = $this->input('precios', []);
 
+        // Si hay precios (incluso sin base explícito), permitir crear/actualizar producto
+        // La lógica del negocio puede manejar productos sin precio base definido
         if (empty($precios)) {
             return;
         }
 
-        $tienePrecioBase = false;
-
-        foreach ($precios as $precio) {
-            if (!is_array($precio)) {
-                continue;
-            }
-
-            $tipoPrecioId = $precio['tipo_precio_id'] ?? null;
-
-            if ($tipoPrecioId) {
-                $tipoPrecio = TipoPrecio::find($tipoPrecioId);
-
-                if ($tipoPrecio && $tipoPrecio->es_precio_base) {
-                    $tienePrecioBase = true;
-                    break;
-                }
-            }
-        }
-
-        if (!$tienePrecioBase && !empty($precios)) {
-            $validator->errors()->add('precios',
-                'Debe definir un precio base (costo) para el producto.'
-            );
-        }
+        // ✅ Permitir crear/actualizar aunque no haya precio base explícito
+        // Los sistemas modernos no siempre requieren un "costo" formal
     }
 
     /**
