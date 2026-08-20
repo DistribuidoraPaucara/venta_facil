@@ -323,12 +323,12 @@ class ActualizarStockMasivoController extends Controller
                                 ->get();
 
                             if ($stocks->isEmpty()) {
-                                // Si no hay stock, crear uno
+                                // Si no hay stock, crear uno (SIN la cantidad nueva, será actualizado por el movimiento)
                                 $stockProducto = $this->obtenerOCrearStockProducto(
                                     $productoId,
                                     $almacenId,
                                     $loteFifo,
-                                    $cantidadNueva,
+                                    0, // Pasar 0, no $cantidadNueva (el movimiento se encargará de actualizar)
                                     $stockActual
                                 );
 
@@ -621,16 +621,16 @@ class ActualizarStockMasivoController extends Controller
                             ->where('almacen_id', $almacenId)
                             ->sum('cantidad') ?? 0;
 
-                        // Para archivo cargado, diferencia es el incremento especificado
-                        $diferencia = $incremento ?? ($cantidadNueva - $stockActual);
+                        // Calcular diferencia (lo que hay que sumar/restar)
+                        $diferencia = $cantidadNueva - $stockActual;
 
                         if ($diferencia !== 0 || $stockActual === 0) {
-                            // Obtener o crear stock_producto
+                            // Obtener o crear stock_producto (SIN la cantidad nueva, será actualizado por el movimiento)
                             $stockProducto = $this->obtenerOCrearStockProducto(
                                 $productoId,
                                 $almacenId,
                                 '', // Sin lote especificado
-                                $cantidadNueva,
+                                0, // Pasar 0, no $cantidadNueva (el movimiento se encargará de actualizar)
                                 $stockActual
                             );
 
