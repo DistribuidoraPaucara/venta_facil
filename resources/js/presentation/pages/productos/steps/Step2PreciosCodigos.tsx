@@ -262,7 +262,7 @@ function Step2PreciosCodigos(props: Step2Props) {
     // ✨ Handler para recalcular monto basado en porcentaje editado (al hacer clic en botón refresh)
     const handleRecalcularPorcentaje = (tipoPrecioId: number) => {
         const costo = Number(props.precioCosto ?? 0);
-        if (!Number.isFinite(costo) || costo <= 0) {
+        if (!Number.isFinite(costo) || costo < 0) {
             console.log('⏭️ No se puede recalcular: costo inválido');
             return;
         }
