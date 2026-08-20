@@ -452,10 +452,6 @@ class ProductoController extends Controller
                             $porcentaje = ($esBase || $montoBase <= 0) ? 0.0 : (($monto - $montoBase) / max($montoBase, 1)) * 100;
                             $nombre     = $p['nombre'] ?? $tipoPrecio->nombre;
 
-                            // ✅ Validar que el porcentaje_ganancia no exceda el límite de la columna (999.99)
-                            if ($porcentaje > 999.99) {
-                                throw new \Exception("El margen de ganancia para '{$nombre}' es demasiado alto ({$porcentaje}%). El margen máximo permitido es 999.99%. Por favor, verifica que el precio de costo esté correctamente ingresado.");
-                            }
 
                             $precioExistente->update([
                                 'nombre'                     => $nombre,
@@ -477,10 +473,6 @@ class ProductoController extends Controller
                         // Generar nombre automáticamente basado en el tipo de precio
                         $nombre = $p['nombre'] ?? $tipoPrecio->nombre;
 
-                        // ✅ Validar que el porcentaje_ganancia no exceda el límite de la columna (999.99)
-                        if ($porcentaje > 999.99) {
-                            throw new \Exception("El margen de ganancia para '{$nombre}' es demasiado alto ({$porcentaje}%). El margen máximo permitido es 999.99%. Por favor, verifica que el precio de costo esté correctamente ingresado.");
-                        }
 
                         PrecioProducto::create([
                             'producto_id'                => $producto->id,
@@ -980,10 +972,6 @@ class ProductoController extends Controller
                                 $porcentaje = ($esBase || $montoBase <= 0) ? 0.0 : (($monto - $montoBase) / max($montoBase, 1)) * 100;
                                 $nombre     = $precioData['nombre'] ?? $tipoPrecio->nombre;
 
-                                // ✅ Validar que el porcentaje_ganancia no exceda el límite de la columna (999.99)
-                                if ($porcentaje > 999.99) {
-                                    throw new \Exception("El margen de ganancia para '{$nombre}' es demasiado alto ({$porcentaje}%). El margen máximo permitido es 999.99%. Por favor, verifica que el precio de costo esté correctamente ingresado.");
-                                }
 
                                 $precioExistente->update([
                                     'nombre'                     => $nombre,
@@ -1006,10 +994,6 @@ class ProductoController extends Controller
                             // Generar nombre automáticamente basado en el tipo de precio
                             $nombre = $precioData['nombre'] ?? $tipoPrecio->nombre;
 
-                            // ✅ Validar que el porcentaje_ganancia no exceda el límite de la columna (999.99)
-                            if ($porcentaje > 999.99) {
-                                throw new \Exception("El margen de ganancia para '{$nombre}' es demasiado alto ({$porcentaje}%). El margen máximo permitido es 999.99%. Por favor, verifica que el precio de costo esté correctamente ingresado.");
-                            }
 
                             PrecioProducto::create([
                                 'producto_id'                => $producto->id,
