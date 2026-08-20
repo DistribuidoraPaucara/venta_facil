@@ -134,7 +134,7 @@ procesarArchivo.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
     procesarArchivo.form = procesarArchivoForm
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCsv
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:577
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:583
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
 export const procesarCsv = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -149,7 +149,7 @@ procesarCsv.definition = {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCsv
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:577
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:583
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
 procesarCsv.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ procesarCsv.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCsv
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:577
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:583
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
 procesarCsv.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -168,7 +168,7 @@ procesarCsv.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCsv
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:577
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:583
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
     const procesarCsvForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -178,7 +178,7 @@ procesarCsv.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::procesarCsv
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:577
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:583
  * @route '/api/actualizar-stock-masivo/procesar-csv'
  */
         procesarCsvForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

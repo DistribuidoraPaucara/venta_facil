@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:589
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:595
  * @route '/api/inventario/actualizar-stock-tabla'
  */
 export const actualizarStockTabla = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ actualizarStockTabla.definition = {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:589
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:595
  * @route '/api/inventario/actualizar-stock-tabla'
  */
 actualizarStockTabla.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ actualizarStockTabla.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:589
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:595
  * @route '/api/inventario/actualizar-stock-tabla'
  */
 actualizarStockTabla.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -35,7 +35,7 @@ actualizarStockTabla.post = (options?: RouteQueryOptions): RouteDefinition<'post
 
     /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:589
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:595
  * @route '/api/inventario/actualizar-stock-tabla'
  */
     const actualizarStockTablaForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -45,7 +45,7 @@ actualizarStockTabla.post = (options?: RouteQueryOptions): RouteDefinition<'post
 
             /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:589
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:595
  * @route '/api/inventario/actualizar-stock-tabla'
  */
         actualizarStockTablaForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
