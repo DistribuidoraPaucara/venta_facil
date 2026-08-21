@@ -218,6 +218,84 @@ impresion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     impresion.form = impresionForm
 /**
+* @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @route '/reportes/ventas-diario-cajas'
+ */
+export const ventasDiarioCajas = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: ventasDiarioCajas.url(options),
+    method: 'get',
+})
+
+ventasDiarioCajas.definition = {
+    methods: ["get","head"],
+    url: '/reportes/ventas-diario-cajas',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @route '/reportes/ventas-diario-cajas'
+ */
+ventasDiarioCajas.url = (options?: RouteQueryOptions) => {
+    return ventasDiarioCajas.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @route '/reportes/ventas-diario-cajas'
+ */
+ventasDiarioCajas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: ventasDiarioCajas.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @route '/reportes/ventas-diario-cajas'
+ */
+ventasDiarioCajas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: ventasDiarioCajas.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @route '/reportes/ventas-diario-cajas'
+ */
+    const ventasDiarioCajasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: ventasDiarioCajas.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @route '/reportes/ventas-diario-cajas'
+ */
+        ventasDiarioCajasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: ventasDiarioCajas.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @route '/reportes/ventas-diario-cajas'
+ */
+        ventasDiarioCajasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: ventasDiarioCajas.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    ventasDiarioCajas.form = ventasDiarioCajasForm
+/**
 * @see \App\Http\Controllers\ReporteVisitasController::visitas
  * @see app/Http/Controllers/ReporteVisitasController.php:19
  * @route '/reportes/visitas'
@@ -300,6 +378,7 @@ const reportes = {
 exportarZip,
 codigosBarra,
 impresion,
+ventasDiarioCajas,
 precios,
 ganancias,
 credito,

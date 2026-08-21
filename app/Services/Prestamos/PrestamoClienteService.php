@@ -13,6 +13,7 @@ use App\Models\PrestableStock;
 use App\Models\AlmacenPrestable;
 use App\Services\Prestamos\PrestableStockAdvancedService;
 use App\Services\MovimientoPrestableService;
+use App\Events\DevolucionClienteRegistrada;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -837,8 +838,25 @@ class PrestamoClienteService
                     'monto_garantia_devuelta_total' => $montoGarantiaTotal,
                 ]);
 
-                return $devolucion->load('detalles');
+                return $devolucion;
             });
+
+            // ✅ NUEVO: Disparar evento DESPUÉS de la transacción
+            // Esto garantiza que los datos están guardados en la BD
+            if ($devolucion) {
+                Log::info('🔔🔔🔔 A PUNTO DE DISPARAR EVENTO DevolucionClienteRegistrada', [
+                    'devolcion_id' => $devolucion->id,
+                    'event_class' => DevolucionClienteRegistrada::class,
+                ]);
+
+                event(new DevolucionClienteRegistrada($devolucion->load('detalles')));
+
+                Log::info('✅ EVENTO DevolucionClienteRegistrada DISPARADO EXITOSAMENTE', [
+                    'devolcion_id' => $devolucion->id,
+                ]);
+            }
+
+            return $devolucion;
         } catch (\Exception $e) {
             Log::error('❌ Error registrando devolución', [
                 'error' => $e->getMessage(),

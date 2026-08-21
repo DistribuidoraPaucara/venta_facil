@@ -61,6 +61,7 @@ import EmpresaController from './EmpresaController'
 import CodigoBarraController from './CodigoBarraController'
 import ReporteCodigosBarraController from './ReporteCodigosBarraController'
 import ReporteController from './ReporteController'
+import ReporteDiarioVentasController from './ReporteDiarioVentasController'
 import UnidadMedidaController from './UnidadMedidaController'
 import TipoPrecioController from './TipoPrecioController'
 import PrecioRangoController from './PrecioRangoController'
@@ -175,6 +176,7 @@ EmpresaController,
 CodigoBarraController,
 ReporteCodigosBarraController,
 ReporteController,
+ReporteDiarioVentasController,
 UnidadMedidaController,
 TipoPrecioController,
 PrecioRangoController,

@@ -138,13 +138,23 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         return [
             'ventas'         => [
-                'ventas.index', 'ventas.create', 'ventas.store', 'ventas.show', 'ventas.edit', 'ventas.update', 'ventas.destroy',
+                'ventas.index', 'ventas.create', 'ventas.store', 'ventas.show', 'ventas.edit', 'ventas.update', 'ventas.delete', 'ventas.destroy',
+                'ventas.approve', 'ventas.reject', 'ventas.payments', // ✅ NUEVO: Acciones específicas de ventas
+                'ventas.manage', // ✅ NUEVO: Permiso general para heredar en todas las rutas
                 'ventas.detalles.index', 'ventas.detalles.store', 'ventas.detalles.update', 'ventas.detalles.destroy',
                 'ventas.verificar-stock', 'ventas.stock.bajo', 'ventas.stock.producto', 'ventas.stock.verificar', 'ventas.stock.resumen',
             ],
+            'devoluciones'   => [
+                'devoluciones.index', 'devoluciones.show', 'devoluciones.create', 'devoluciones.store', 'devoluciones.edit', 'devoluciones.update', 'devoluciones.destroy',
+            ],
+            'servicios'      => [
+                'servicios.index', 'servicios.create', 'servicios.store', 'servicios.show', 'servicios.edit', 'servicios.update', 'servicios.destroy',
+                'servicios.manage', // ✅ NUEVO: Permiso general
+            ],
             'proformas'      => [
-                'proformas.index', 'proformas.create', 'proformas.store', 'proformas.show', 'proformas.edit', 'proformas.update',
+                'proformas.index', 'proformas.create', 'proformas.store', 'proformas.show', 'proformas.edit', 'proformas.update', 'proformas.destroy',
                 'proformas.aprobar', 'proformas.rechazar', 'proformas.convertir-venta',
+                'proformas.manage', // ✅ NUEVO: Permiso general para heredar en todas las rutas
             ],
             'compras'        => [
                 'compras.index', 'compras.create', 'compras.store', 'compras.show', 'compras.edit', 'compras.update', 'compras.destroy',

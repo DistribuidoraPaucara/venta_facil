@@ -65,6 +65,8 @@ use App\Listeners\CreateCajaMovementFromDetallePagoVenta;
 use App\Listeners\SendCreditoPagoRegistradoNotification;
 use App\Listeners\SendCreditoVencidoNotification;
 use App\Listeners\SendCreditoCriticoNotification;
+use App\Events\DevolucionClienteRegistrada;
+use App\Listeners\SendDevolucionClienteRegistradaNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 /**
@@ -156,6 +158,14 @@ class EventServiceProvider extends ServiceProvider
 
         CreditoCritico::class => [
             SendCreditoCriticoNotification::class, // ✅ NUEVO: Notificar cuando crédito crítico
+        ],
+
+        // ══════════════════════════════════════════════════════════
+        // DEVOLUCIÓN DE PRÉSTAMO EVENTS
+        // ══════════════════════════════════════════════════════════
+
+        DevolucionClienteRegistrada::class => [
+            SendDevolucionClienteRegistradaNotification::class, // ✅ Notificar cuando se registra devolución de cliente
         ],
 
         // ══════════════════════════════════════════════════════════

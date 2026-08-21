@@ -223,6 +223,11 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         ->name('reportes.impresion')
         ->middleware('permission:reportes.view');
 
+    // ✅ NUEVO: Reporte Diario de Ventas por Cajas
+    Route::get('reportes/ventas-diario-cajas', [\App\Http\Controllers\ReporteDiarioVentasController::class, 'index'])
+        ->middleware('permission:ventas.index|ventas.manage')
+        ->name('reportes.ventas-diario-cajas');
+
     Route::resource('unidades', \App\Http\Controllers\UnidadMedidaController::class)->parameters(['unidades' => 'unidad'])->middleware('permission:unidades.manage');
 
     // Rutas para gestión de tipos de precio
@@ -407,13 +412,26 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
 
     // Rutas para gestión de ventas
     // ✅ Ruta específica para verificar caja abierta (ANTES del resource para evitar conflictos)
-    Route::get('ventas/check-caja-abierta', [\App\Http\Controllers\VentaController::class, 'checkCajaAbierta'])->name('ventas.check-caja-abierta');
+    Route::get('ventas/check-caja-abierta', [\App\Http\Controllers\VentaController::class, 'checkCajaAbierta'])
+        ->middleware('permission:ventas.index|ventas.manage')
+        ->name('ventas.check-caja-abierta');
 
-    // ✅ Rutas para cuentas por cobrar
-    Route::get('ventas/cuentas-por-cobrar/check-caja-abierta', [\App\Http\Controllers\CuentaPorCobrarController::class, 'checkCajaAbierta'])->name('cuentas-por-cobrar.check-caja-abierta');
-    Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/registrar-pago', [\App\Http\Controllers\CuentaPorCobrarController::class, 'registrarPago'])->name('cuentas-por-cobrar.registrar-pago');
-    Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/registrar-pagos', [\App\Http\Controllers\CuentaPorCobrarController::class, 'registrarPagos'])->name('cuentas-por-cobrar.registrar-pagos'); // ✅ NUEVO: Múltiples pagos
-    Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/anular-pago/{pago}', [\App\Http\Controllers\CuentaPorCobrarController::class, 'anularPago'])->name('cuentas-por-cobrar.anular-pago');
+    // ✅ Rutas para cuentas por cobrar - Heredan permisos del rol
+    Route::get('ventas/cuentas-por-cobrar/check-caja-abierta', [\App\Http\Controllers\CuentaPorCobrarController::class, 'checkCajaAbierta'])
+        ->middleware('permission:ventas.index|ventas.manage')
+        ->name('cuentas-por-cobrar.check-caja-abierta');
+
+    Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/registrar-pago', [\App\Http\Controllers\CuentaPorCobrarController::class, 'registrarPago'])
+        ->middleware('permission:ventas.payments|ventas.manage')
+        ->name('cuentas-por-cobrar.registrar-pago');
+
+    Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/registrar-pagos', [\App\Http\Controllers\CuentaPorCobrarController::class, 'registrarPagos'])
+        ->middleware('permission:ventas.payments|ventas.manage')
+        ->name('cuentas-por-cobrar.registrar-pagos'); // ✅ NUEVO: Múltiples pagos
+
+    Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/anular-pago/{pago}', [\App\Http\Controllers\CuentaPorCobrarController::class, 'anularPago'])
+        ->middleware('permission:ventas.payments|ventas.manage')
+        ->name('cuentas-por-cobrar.anular-pago');
 
     Route::get('/debug-ventas-2', function () {
         $user = auth()->user();
@@ -436,11 +454,20 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         return response()->json(['test' => 'ok', 'timestamp' => now()]);
     });
 
-    // ✅ NUEVO: Aplicar middleware CheckCajaAbierta SOLO para crear/guardar ventas
-    // Index (listar) no requiere caja abierta
-    Route::resource('ventas', \App\Http\Controllers\VentaController::class)->except(['show', 'create', 'store']);
-    Route::get('ventas/create', [\App\Http\Controllers\VentaController::class, 'create'])->middleware('caja.abierta')->name('ventas.create');
-    Route::post('ventas', [\App\Http\Controllers\VentaController::class, 'store'])->middleware('caja.abierta')->name('ventas.store');
+    // ✅ PERMISOS HEREDADOS DEL ROL: Todas las rutas requieren que el usuario o su rol tenga el permiso
+    // ✅ Index (listar) no requiere caja abierta, pero SÍ requiere permiso
+    Route::resource('ventas', \App\Http\Controllers\VentaController::class)
+        ->except(['show', 'create', 'store'])
+        ->middleware('permission:ventas.index|ventas.manage');
+
+    // Create y Store requieren caja abierta + permiso
+    Route::get('ventas/create', [\App\Http\Controllers\VentaController::class, 'create'])
+        ->middleware(['permission:ventas.create|ventas.manage', 'caja.abierta'])
+        ->name('ventas.create');
+
+    Route::post('ventas', [\App\Http\Controllers\VentaController::class, 'store'])
+        ->middleware(['permission:ventas.create|ventas.manage', 'caja.abierta'])
+        ->name('ventas.store');
 
     // ✨ NUEVO: Ruta para interfaz de venta de comidas/helados
     Route::get('ventas-resort', function () {
@@ -476,25 +503,21 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     // ==========================================
     // RUTAS ADICIONALES PARA MÓDULO DE VENTAS
     // ==========================================
-    Route::prefix('ventas')->name('ventas.')->group(function () {
+    Route::prefix('ventas')->name('ventas.')->middleware('permission:ventas.index|ventas.manage')->group(function () {
         // ✅ NUEVO: Reporte de productos vendidos - ANTES de rutas genéricas
         Route::get('reporte-productos-vendidos/imprimir', [\App\Http\Controllers\ReporteVentasController::class, 'imprimirReporte'])
-            ->name('reporte-productos-vendidos.imprimir')
-            ->middleware('permission:ventas.index');
+            ->name('reporte-productos-vendidos.imprimir');
 
         Route::get('reporte-productos-vendidos', [\App\Http\Controllers\ReporteVentasController::class, 'productosVendidos'])
-            ->name('reporte-productos-vendidos')
-            ->middleware('permission:ventas.index');
+            ->name('reporte-productos-vendidos');
 
         // ✅ NUEVO: Impresión directa a impresora (sin diálogos)
         Route::post('reporte-productos-vendidos/imprimir-directo', [\App\Http\Controllers\ReporteVentasController::class, 'imprimirDirecto'])
-            ->name('reporte-productos-vendidos.imprimir-directo')
-            ->middleware('permission:ventas.index');
+            ->name('reporte-productos-vendidos.imprimir-directo');
 
         // ✅ NUEVO: Reporte de ventas por producto (con filtros de fecha)
         Route::get('reportes/ventas-por-producto', [\App\Http\Controllers\ReporteController::class, 'ventasPorProducto'])
-            ->name('reportes.ventas-por-producto')
-            ->middleware('permission:ventas.index');
+            ->name('reportes.ventas-por-producto');
 
         // Rutas sin parámetros dinámicos PRIMERO
         // IMPORTANTE: Las rutas sin parámetros dinámicos DEBEN ir ANTES de las que sí tienen parámetros
@@ -509,11 +532,22 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         // ✅ NUEVO: Anular cuenta por cobrar
         Route::post('cuentas-por-cobrar/{cuentaPorCobrar}/anular', [\App\Http\Controllers\CuentaPorCobrarController::class, 'anularCuenta'])->name('cuentas-por-cobrar.anular');
 
-        // Acciones personalizadas (POST)
-        Route::post('{venta}/anular', [\App\Http\Controllers\VentaController::class, 'anular'])->name('anular');
-        Route::post('{venta}/aprobar', [\App\Http\Controllers\VentaController::class, 'aprobar'])->name('aprobar');
-        Route::post('{venta}/rechazar', [\App\Http\Controllers\VentaController::class, 'rechazar'])->name('rechazar');
-        Route::post('{venta}/registrar-pago', [\App\Http\Controllers\VentaController::class, 'registrarPago'])->name('registrar-pago');
+        // Acciones personalizadas (POST) - heredan el middleware del grupo
+        Route::post('{venta}/anular', [\App\Http\Controllers\VentaController::class, 'anular'])
+            ->middleware('permission:ventas.delete|ventas.manage')
+            ->name('anular');
+
+        Route::post('{venta}/aprobar', [\App\Http\Controllers\VentaController::class, 'aprobar'])
+            ->middleware('permission:ventas.approve|ventas.manage')
+            ->name('aprobar');
+
+        Route::post('{venta}/rechazar', [\App\Http\Controllers\VentaController::class, 'rechazar'])
+            ->middleware('permission:ventas.reject|ventas.manage')
+            ->name('rechazar');
+
+        Route::post('{venta}/registrar-pago', [\App\Http\Controllers\VentaController::class, 'registrarPago'])
+            ->middleware('permission:ventas.payments|ventas.manage')
+            ->name('registrar-pago');
 
         // Rutas con parámetros dinámicos van al final
         // ⚠️ IMPORTANTE: Restringir {venta} a solo números para no capturar rutas de texto
@@ -539,16 +573,22 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     // ==========================================
     // DEVOLUCIONES - MÓDULO DE DEVOLUCIONES Y CAMBIOS
     // ==========================================
-    // Devoluciones: lista y detalle general
+    // Devoluciones: lista y detalle general - Heredan permisos del rol
     Route::get('devoluciones', [\App\Http\Controllers\DevolucionController::class, 'index'])
+        ->middleware('permission:devoluciones.index|ventas.manage')
         ->name('devoluciones.index');
+
     Route::get('devoluciones/{devolucion}', [\App\Http\Controllers\DevolucionController::class, 'show'])
+        ->middleware('permission:devoluciones.show|ventas.manage')
         ->name('devoluciones.show');
 
     // Devoluciones: crear desde una venta específica (nested resource)
     Route::get('ventas/{venta}/devoluciones/create', [\App\Http\Controllers\DevolucionController::class, 'create'])
+        ->middleware('permission:devoluciones.create|ventas.manage')
         ->name('devoluciones.create');
+
     Route::post('ventas/{venta}/devoluciones', [\App\Http\Controllers\DevolucionController::class, 'store'])
+        ->middleware('permission:devoluciones.create|ventas.manage')
         ->name('devoluciones.store');
 
     // ✅ NUEVO: Registrar confirmación de entrega desde pantalla de venta
@@ -560,13 +600,21 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     // ==========================================
     // SERVICIOS - MÓDULO DE SERVICIOS (INYECCIONES, CONSULTAS, ETC.)
     // ==========================================
+    // Todas las rutas heredan permisos del rol del usuario
     Route::get('servicios', [\App\Http\Controllers\ServicioController::class, 'index'])
+        ->middleware('permission:servicios.index|servicios.manage')
         ->name('servicios.index');
+
     Route::get('servicios/create', [\App\Http\Controllers\ServicioController::class, 'create'])
+        ->middleware('permission:servicios.create|servicios.manage')
         ->name('servicios.create');
+
     Route::post('servicios', [\App\Http\Controllers\ServicioController::class, 'store'])
+        ->middleware('permission:servicios.create|servicios.manage')
         ->name('servicios.store');
+
     Route::get('servicios/{servicio}', [\App\Http\Controllers\ServicioController::class, 'show'])
+        ->middleware('permission:servicios.show|servicios.manage')
         ->name('servicios.show');
 
     // ==========================================
@@ -574,7 +622,8 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     // ==========================================
     // Vistas Inertia que reciben datos desde ApiProformaController
     // Todas las acciones (aprobar, rechazar, convertir) van a /api/proformas/*
-    Route::prefix('proformas')->name('proformas.')->group(function () {
+    // ✅ Permisos heredados del rol del usuario
+    Route::prefix('proformas')->name('proformas.')->middleware('permission:proformas.index|proformas.manage')->group(function () {
         // Vista: Lista de proformas (usa ProformaController::index)
         Route::get('/', [\App\Http\Controllers\ProformaController::class, 'index'])->name('index');
 

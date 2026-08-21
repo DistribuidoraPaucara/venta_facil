@@ -730,8 +730,9 @@ class VentaService
             $sortBy = in_array(strtolower($sortBy), $camposPermitidos) ? $sortBy : 'id';
             $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'asc' : 'desc';
 
-            // ✅ CORREGIDO (2026-08-13): Usar simplePaginate() cuando NO hay filtros
-            // Esto evita el count() de todos los registros
+            // ✅ CORREGIDO (2026-08-21): Determinar si hay filtros activos
+            // Esto evita el count() de todos los registros cuando no hay filtros
+            $tieneFiltrosBusqueda = !empty(array_filter($filtros, fn($v) => $v !== null && $v !== ''));
             $paginationMethod = $tieneFiltrosBusqueda ? 'paginate' : 'simplePaginate';
 
             $resultado = $query
