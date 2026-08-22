@@ -518,6 +518,7 @@ class ProductoController extends Controller
                                 'receta_id'          => $receta->id,
                                 'producto_id'        => $ing['producto_id'],
                                 'cantidad_requerida' => $ing['cantidad_requerida'] ?? 1,
+                                'unidad_medida_id'   => $ing['unidad_medida_id'] ?? null, // 🏭 NUEVO: Guardar unidad de medida
                             ]);
                         }
 
@@ -1351,6 +1352,7 @@ class ProductoController extends Controller
                                 'receta_id'          => $receta->id,
                                 'producto_id'        => $ing['producto_id'],
                                 'cantidad_requerida' => $ing['cantidad_requerida'] ?? 1,
+                                'unidad_medida_id'   => $ing['unidad_medida_id'] ?? null, // 🏭 NUEVO: Guardar unidad de medida
                             ]);
                         }
 
