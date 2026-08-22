@@ -303,39 +303,42 @@ export default function Step3Conversiones({
             </p>
 
             {/* Conversiones comunes sugeridas */}
-            {conversionesComunes.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                  💡 Conversiones comunes:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {conversionesComunes.map((conv, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        console.log('📌 Click en conversión común:', conv.factor_conversion);
-                        setFormConversion(prev => ({
-                          ...prev,
-                          factor_conversion: String(conv.factor_conversion)
-                        }));
-                      }}
-                      className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors border border-blue-300 dark:border-blue-700 cursor-pointer"
-                      title={`Usar factor ${conv.factor_conversion} (usado ${conv.frecuencia}×)`}
-                    >
-                      {conv.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {loadingConversiones && (
-              <div className="text-xs text-muted-foreground italic">
-                Cargando conversiones comunes...
-              </div>
-            )}
+            {console.log('🔍 DEBUG - conversionesComunes:', conversionesComunes)}
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+              {conversionesComunes.length > 0 ? (
+                <>
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    💡 Conversiones comunes ({conversionesComunes.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {conversionesComunes.map((conv, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          console.log('📌 Click en conversión común:', conv.factor_conversion);
+                          setFormConversion(prev => ({
+                            ...prev,
+                            factor_conversion: String(conv.factor_conversion)
+                          }));
+                        }}
+                        className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors border border-blue-300 dark:border-blue-700 cursor-pointer"
+                        title={`Usar factor ${conv.factor_conversion}`}
+                      >
+                        {conv.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                loadingConversiones && (
+                  <div className="text-xs text-muted-foreground italic">
+                    Cargando conversiones comunes...
+                  </div>
+                )
+              )}
+            </div>
           </div>
 
           {/* Conversión Principal */}
