@@ -4,6 +4,7 @@ import { Button } from '@/presentation/components/ui/button';
 import { Checkbox } from '@/presentation/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import SearchSelect from '@/presentation/components/ui/search-select';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import type { ConversionUnidad } from '@/domain/entities/productos';
 import axios from 'axios';
@@ -275,17 +276,22 @@ export default function Step3Conversiones({
         </Tooltip>
       </div>
 
-      {/* Botón Toggle Formulario */}
-      <button
+      {/* Toggle Formulario - Encabezado clickeable */}
+      <div
         onClick={() => setShowForm(!showForm)}
-        className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold rounded-lg transition-all"
+        className="flex items-center justify-between px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
       >
-        {showForm ? '▼ Ocultar Formulario' : '▶ Agregar Nueva Conversión'}
-      </button>
+        <h4 className="font-semibold text-blue-900 dark:text-blue-100">➕ Agregar Nueva Conversión</h4>
+        {showForm ? (
+          <ChevronUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        )}
+      </div>
 
       {/* Formulario de Conversión (Colapsable) */}
       {showForm && (
-      <div className="space-y-4 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg animate-in fade-in">
+      <div className="space-y-4 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg animate-in fade-in mt-2">
         <h4 className="font-semibold">
           {editingIndex !== null ? '✏️ Editar Conversión' : '➕ Nueva Conversión'}
         </h4>
