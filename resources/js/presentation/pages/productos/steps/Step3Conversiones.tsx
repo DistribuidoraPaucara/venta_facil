@@ -283,11 +283,14 @@ export default function Step3Conversiones({
                 type="number"
                 step="0.000001"
                 min="0"
-                value={formConversion.factor_conversion}
-                onChange={(e) => setFormConversion(prev => ({
-                  ...prev,
-                  factor_conversion: e.target.value
-                }))}
+                value={formConversion.factor_conversion || ''}
+                onChange={(e) => {
+                  console.log('📝 Cambio en factor:', e.target.value);
+                  setFormConversion(prev => ({
+                    ...prev,
+                    factor_conversion: e.target.value
+                  }));
+                }}
                 placeholder="Ej: 100"
                 className="flex-1"
               />
