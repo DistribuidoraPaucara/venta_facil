@@ -41,6 +41,7 @@ class Producto extends Model
         'visible_app',
         'precio_compra',
         'precio_venta',
+        'es_de_produccion', // 🏭 NUEVO - Indica si el producto es resultado de una receta de producción
     ];
 
     protected function casts(): array
@@ -57,6 +58,7 @@ class Producto extends Model
             'es_producto_comida' => 'boolean', // ✨ NUEVO
             'permite_venta_sin_stock' => 'boolean', // ✨ NUEVO
             'visible_app' => 'boolean',
+            'es_de_produccion' => 'boolean', // 🏭 NUEVO - Indica si es producto de receta
             'fecha_creacion' => 'datetime',
             'precio_compra' => 'decimal:2',
             'precio_venta' => 'decimal:2',
@@ -174,6 +176,14 @@ class Producto extends Model
     public function adicionales()
     {
         return $this->hasMany(AdicionalesProducto::class, 'producto_id');
+    }
+
+    /**
+     * Relación: Receta del producto (si es producto de producción)
+     */
+    public function receta()
+    {
+        return $this->hasOne(\App\Models\Receta::class, 'producto_id');
     }
 
     /**
@@ -1264,5 +1274,41 @@ class Producto extends Model
     public function prestablesRelacionados()
     {
         return $this->hasMany(ProductoRelacionadoPrestable::class);
+    }
+
+    // ==================== 🏭 RELACIONES PRODUCCIÓN ====================
+
+    /**
+     * Producciones de este producto
+     */
+    public function producciones()
+    {
+        return $this->hasMany(Produccion::class);
+    }
+
+    /**
+     * Recetas donde este producto es ingrediente
+     */
+    public function ingredientesEn()
+    {
+        return $this->belongsToMany(Receta::class, 'receta_ingredientes')
+            ->withPivot(['cantidad_requerida'])
+            ->withTimestamps();
+    }
+
+    // Scopes
+    public function scopeElaborados($query)
+    {
+        return $query->where('tipo_producto', 'elaborado_cafeteria');
+    }
+
+    public function scopeMateriaPrima($query)
+    {
+        return $query->where('tipo_producto', 'materia_prima');
+    }
+
+    public function scopeComprados($query)
+    {
+        return $query->where('tipo_producto', 'comprado');
     }
 }

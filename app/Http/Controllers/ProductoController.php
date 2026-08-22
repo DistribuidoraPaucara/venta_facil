@@ -15,6 +15,8 @@ use App\Models\MovimientoInventario;
 use App\Models\PrecioProducto;
 use App\Models\Producto;
 use App\Models\Proveedor;
+use App\Models\Receta;
+use App\Models\RecetaIngrediente;
 use App\Models\Sector;
 use App\Models\StockProducto;
 use App\Models\TipoAjusteInventario;
@@ -372,7 +374,8 @@ class ProductoController extends Controller
                     'limite_venta'            => $data['limite_venta'] ?? null,      // ✨ NUEVO
                     'principio_activo'        => $data['principio_activo'] ?? null,  // ✨ NUEVO - Campo para farmacias
                     'uso_de_medicacion'       => $data['uso_de_medicacion'] ?? null, // ✨ NUEVO - Campo para farmacias
-                    'visible_app'             => $data['visible_app'] ?? true,       // ✨ NUEVO - Visible en app
+                    'visible_app'             => $data['visible_app'] ?? true,        // ✨ NUEVO - Visible en app
+                    'es_de_produccion'        => $data['es_de_produccion'] ?? false,   // 🏭 NUEVO - Indicador de producción
                 ]);
 
                 // Gestionar códigos de barra usando la nueva tabla
@@ -485,6 +488,39 @@ class ProductoController extends Controller
                             'porcentaje_ganancia'        => $porcentaje,
                             'activo'                     => true,
                             'fecha_ultima_actualizacion' => now(),
+                        ]);
+                    }
+                }
+
+                // 🏭 NUEVO: Crear receta y ingredientes si es_de_produccion = true
+                if ($data['es_de_produccion'] ?? false) {
+                    $ingredientes = $data['ingredientes'] ?? [];
+                    if (!empty($ingredientes)) {
+                        // Crear la receta
+                        $receta = Receta::create([
+                            'producto_id'   => $producto->id,
+                            'descripcion'   => $data['descripcion'] ?? '',
+                            'instrucciones' => $data['instrucciones'] ?? null,
+                            'activa'        => true,
+                        ]);
+
+                        // Crear ingredientes
+                        foreach ($ingredientes as $index => $ing) {
+                            if (empty($ing['producto_id'])) {
+                                continue;
+                            }
+
+                            RecetaIngrediente::create([
+                                'receta_id'          => $receta->id,
+                                'producto_id'        => $ing['producto_id'],
+                                'cantidad_requerida' => $ing['cantidad_requerida'] ?? 1,
+                            ]);
+                        }
+
+                        Log::info('🏭 Receta creada con ingredientes', [
+                            'producto_id'      => $producto->id,
+                            'receta_id'        => $receta->id,
+                            'ingredientes_qty' => count(array_filter(array_column($ingredientes, 'producto_id'))),
                         ]);
                     }
                 }
@@ -899,7 +935,8 @@ class ProductoController extends Controller
                     'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? $producto->permite_venta_sin_stock, // ✅ NUEVO - Permitir venta sin stock
                     'principio_activo'        => $data['principio_activo'] ?? $producto->principio_activo,               // ✨ NUEVO - Campo para farmacias
                     'uso_de_medicacion'       => $data['uso_de_medicacion'] ?? $producto->uso_de_medicacion,             // ✨ NUEVO - Campo para farmacias
-                    'visible_app'             => $data['visible_app'] ?? $producto->visible_app,                         // ✨ NUEVO - Visible en app
+                    'visible_app'             => $data['visible_app'] ?? $producto->visible_app,                  // ✨ NUEVO - Visible en app
+                    'es_de_produccion'        => $data['es_de_produccion'] ?? $producto->es_de_produccion,          // 🏭 NUEVO - Indicador de producción
                     'activo'                  => $data['activo'] ?? $producto->activo,
                 ]);
 
@@ -1244,6 +1281,70 @@ class ProductoController extends Controller
                                 'fecha_actualizacion' => now(),
                             ]);
                         }
+                    }
+                }
+
+                // 🏭 NUEVO: Actualizar receta e ingredientes si es_de_produccion = true
+                if ($data['es_de_produccion'] ?? false) {
+                    $ingredientes = $data['ingredientes'] ?? [];
+                    $receta = $producto->receta;
+
+                    if (!empty($ingredientes)) {
+                        // Si no existe receta, crearla
+                        if (!$receta) {
+                            $receta = Receta::create([
+                                'producto_id' => $producto->id,
+                                'empresa_id'  => $producto->empresa_id,
+                                'nombre'      => "{$producto->nombre} - Receta",
+                                'descripcion' => $data['descripcion'] ?? '',
+                                'activo'      => true,
+                            ]);
+                        } else {
+                            // Actualizar descripción de la receta
+                            $receta->update([
+                                'descripcion'   => $data['descripcion'] ?? '',
+                                'instrucciones' => $data['instrucciones'] ?? null,
+                            ]);
+                        }
+
+                        // Eliminar ingredientes actuales
+                        $receta->ingredientes()->delete();
+
+                        // Crear nuevos ingredientes
+                        foreach ($ingredientes as $ing) {
+                            if (empty($ing['producto_id'])) {
+                                continue;
+                            }
+
+                            RecetaIngrediente::create([
+                                'receta_id'          => $receta->id,
+                                'producto_id'        => $ing['producto_id'],
+                                'cantidad_requerida' => $ing['cantidad_requerida'] ?? 1,
+                            ]);
+                        }
+
+                        Log::info('🏭 Receta actualizada con ingredientes', [
+                            'producto_id'      => $producto->id,
+                            'receta_id'        => $receta->id,
+                            'ingredientes_qty' => count(array_filter(array_column($ingredientes, 'producto_id'))),
+                        ]);
+                    } elseif ($receta) {
+                        // Si es_de_produccion=true pero no hay ingredientes, eliminar la receta
+                        $receta->ingredientes()->delete();
+                        $receta->delete();
+                        Log::info('🏭 Receta eliminada (no hay ingredientes)', [
+                            'producto_id' => $producto->id,
+                        ]);
+                    }
+                } else {
+                    // Si es_de_produccion=false, eliminar receta si existe
+                    $receta = $producto->receta;
+                    if ($receta) {
+                        $receta->ingredientes()->delete();
+                        $receta->delete();
+                        Log::info('🏭 Receta eliminada (producto no es de producción)', [
+                            'producto_id' => $producto->id,
+                        ]);
                     }
                 }
             });

@@ -149,6 +149,15 @@ class StoreProductoRequest extends FormRequest
             // Visibilidad en app
             'visible_app'              => ['nullable', 'boolean'], // ✨ NUEVO
 
+            // 🏭 NUEVO: Indicador de Producción
+            'es_de_produccion'         => ['nullable', 'boolean'],
+
+            // 🏭 NUEVO: Ingredientes de Receta (OBLIGATORIO si es_de_produccion = true)
+            'ingredientes'             => ['nullable', 'array'],
+            'ingredientes.*.producto_id' => ['required_with:ingredientes', 'integer', 'exists:productos,id'],
+            'ingredientes.*.cantidad_requerida' => ['required_with:ingredientes', 'numeric', 'gt:0'],
+            'ingredientes.*.unidad_medida_id' => ['nullable', 'integer', 'exists:unidades_medida,id'],
+
             // ✨ NUEVO: Almacenes y stock (TODOS OPCIONALES)
             'almacenes'                => ['nullable', 'array'],
             'almacenes.*.almacen_id'   => ['required_with:almacenes', 'integer', 'exists:almacenes,id'],
@@ -242,6 +251,18 @@ class StoreProductoRequest extends FormRequest
 
             'visible_app.boolean'                      => 'La visibilidad en app debe ser verdadero o falso.',
 
+            'es_de_produccion.boolean'                 => 'El indicador de producción debe ser verdadero o falso.',
+
+            'ingredientes.array'                       => 'Los ingredientes deben ser un arreglo.',
+            'ingredientes.*.producto_id.required_with' => 'El ID del producto es obligatorio en cada ingrediente.',
+            'ingredientes.*.producto_id.integer'       => 'El ID del producto debe ser un número entero.',
+            'ingredientes.*.producto_id.exists'        => 'El producto seleccionado no existe.',
+            'ingredientes.*.cantidad_requerida.required_with' => 'La cantidad es obligatoria en cada ingrediente.',
+            'ingredientes.*.cantidad_requerida.numeric' => 'La cantidad debe ser un número.',
+            'ingredientes.*.cantidad_requerida.gt'     => 'La cantidad debe ser mayor que 0.',
+            'ingredientes.*.unidad_medida_id.integer'  => 'El ID de la unidad debe ser un número entero.',
+            'ingredientes.*.unidad_medida_id.exists'   => 'La unidad de medida seleccionada no existe.',
+
             'almacenes.array'                          => 'Los almacenes deben ser un arreglo.',
             'almacenes.*.almacen_id.required_with'     => 'El ID del almacén es obligatorio en cada entrada.',
             'almacenes.*.almacen_id.integer'           => 'El ID del almacén debe ser un número entero.',
@@ -308,6 +329,8 @@ class StoreProductoRequest extends FormRequest
 
             'visible_app'      => 'visible en app',
 
+            'es_de_produccion' => 'es de producción',
+
             'almacenes'         => 'almacenes',
             'almacenes.*.almacen_id' => 'ID del almacén',
             'almacenes.*.sector_id' => 'ID del sector',
@@ -334,6 +357,7 @@ class StoreProductoRequest extends FormRequest
             $this->validarMarcaActiva($validator);
             $this->validarCategoriaActiva($validator);
             $this->validarConversiones($validator);
+            $this->validarIngredientes($validator); // 🏭 NUEVO
             $this->validarAlmacenes($validator); // ✨ NUEVO
         });
     }
@@ -544,6 +568,48 @@ class StoreProductoRequest extends FormRequest
                     "La cantidad total ({$stock}) debe ser mayor o igual a disponible ({$disponible}) + reservada ({$reservada}) = {$suma}."
                 );
             }
+        }
+    }
+
+    /**
+     * 🏭 NUEVO: Validar ingredientes de receta
+     */
+    private function validarIngredientes(Validator $validator): void
+    {
+        $esDeProduccion = $this->boolean('es_de_produccion');
+        $ingredientes = $this->input('ingredientes', []);
+
+        // Si es de producción, debe tener al menos un ingrediente
+        if ($esDeProduccion && empty($ingredientes)) {
+            $validator->errors()->add('ingredientes',
+                'Los productos de producción deben tener al menos un ingrediente.'
+            );
+            return;
+        }
+
+        // Si no hay ingredientes, validación pasada
+        if (empty($ingredientes)) {
+            return;
+        }
+
+        // Validar que no haya productos duplicados
+        $productosIds = [];
+        foreach ($ingredientes as $index => $ingrediente) {
+            if (!is_array($ingrediente)) {
+                continue;
+            }
+
+            $productoId = $ingrediente['producto_id'] ?? null;
+            if (!$productoId) {
+                continue;
+            }
+
+            if (in_array($productoId, $productosIds)) {
+                $validator->errors()->add("ingredientes.{$index}.producto_id",
+                    'No puedes usar el mismo producto como ingrediente más de una vez.'
+                );
+            }
+            $productosIds[] = $productoId;
         }
     }
 
