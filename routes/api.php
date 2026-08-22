@@ -702,6 +702,7 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
         Route::get('buscar', [ProductoController::class, 'buscarApi']);
         Route::get('sin-restriccion', [ProductoController::class, 'obtenerTodosSinRestriccion']);
         Route::get('para-actualizar-stock', [ProductoController::class, 'obtenerProductosParaActualizarStock']);
+        Route::get('conversiones/comunes', [ProductoController::class, 'conversionesComunes']);
         Route::get('{producto}', [ProductoController::class, 'showApi']);
         Route::put('{producto}', [ProductoController::class, 'updateApi']);
         Route::delete('{producto}', [ProductoController::class, 'destroyApi']);

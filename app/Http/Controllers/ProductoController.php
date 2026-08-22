@@ -4389,4 +4389,80 @@ class ProductoController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtiene las conversiones más comunes de la BD
+     * Agrupa por (unidad_base, unidad_destino) y cuenta frecuencia
+     */
+    public function conversionesComunes(Request $request): JsonResponse
+    {
+        try {
+            $unidadBaseId = $request->integer('unidad_base_id');
+            $unidadDestinoId = $request->integer('unidad_destino_id');
+
+            $query = DB::table('conversiones_unidad_producto')
+                ->select(
+                    'unidad_base_id',
+                    'unidad_destino_id',
+                    'factor_conversion',
+                    DB::raw('COUNT(*) as frecuencia')
+                )
+                ->where('activo', true)
+                ->groupBy('unidad_base_id', 'unidad_destino_id', 'factor_conversion')
+                ->orderByDesc('frecuencia')
+                ->limit(100);
+
+            // Si se especifica unidad base, filtrar
+            if ($unidadBaseId > 0) {
+                $query->where('unidad_base_id', $unidadBaseId);
+            }
+
+            // Si se especifica unidad destino, filtrar
+            if ($unidadDestinoId > 0) {
+                $query->where('unidad_destino_id', $unidadDestinoId);
+            }
+
+            $conversiones = $query
+                ->with(['unidadBase', 'unidadDestino'])
+                ->get()
+                ->map(function ($conv) {
+                    $unidadBase = UnidadMedida::find($conv->unidad_base_id);
+                    $unidadDestino = UnidadMedida::find($conv->unidad_destino_id);
+
+                    return [
+                        'unidad_base_id' => $conv->unidad_base_id,
+                        'unidad_base_nombre' => $unidadBase?->nombre,
+                        'unidad_base_codigo' => $unidadBase?->codigo,
+                        'unidad_destino_id' => $conv->unidad_destino_id,
+                        'unidad_destino_nombre' => $unidadDestino?->nombre,
+                        'unidad_destino_codigo' => $unidadDestino?->codigo,
+                        'factor_conversion' => (float) $conv->factor_conversion,
+                        'frecuencia' => $conv->frecuencia,
+                        'label' => sprintf(
+                            '1 %s = %s %s (%d×)',
+                            $unidadBase?->codigo ?? 'UNK',
+                            $conv->factor_conversion,
+                            $unidadDestino?->codigo ?? 'UNK',
+                            $conv->frecuencia
+                        ),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $conversiones,
+                'total' => $conversiones->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error obteniendo conversiones comunes', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener conversiones',
+            ], 500);
+        }
+    }
 }

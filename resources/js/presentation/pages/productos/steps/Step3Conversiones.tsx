@@ -5,6 +5,7 @@ import { Checkbox } from '@/presentation/components/ui/checkbox';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { useState, useEffect } from 'react';
 import type { ConversionUnidad } from '@/domain/entities/productos';
+import axios from 'axios';
 
 interface Option { value: number | string; label: string; description?: string }
 
@@ -47,6 +48,8 @@ export default function Step3Conversiones({
   const [formConversion, setFormConversion] = useState<FormConversion>(initialFormConversion);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [validationError, setValidationError] = useState<string>('');
+  const [conversionesComunes, setConversionesComunes] = useState<any[]>([]);
+  const [loadingConversiones, setLoadingConversiones] = useState(false);
 
   const conversiones = data.conversiones || [];
 
@@ -59,6 +62,38 @@ export default function Step3Conversiones({
       }));
     }
   }, [unidadBase?.id, editingIndex]);
+
+  // Cargar conversiones comunes cuando se selecciona una unidad destino
+  useEffect(() => {
+    const cargarConversionesComunes = async () => {
+      if (!formConversion.unidad_destino_id || !unidadBase?.id) {
+        setConversionesComunes([]);
+        return;
+      }
+
+      setLoadingConversiones(true);
+      try {
+        const response = await axios.get('/api/productos/conversiones/comunes', {
+          params: {
+            unidad_base_id: unidadBase.id,
+            unidad_destino_id: formConversion.unidad_destino_id,
+          }
+        });
+
+        if (response.data.success) {
+          setConversionesComunes(response.data.data);
+          console.log('✅ Conversiones comunes cargadas:', response.data.data);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando conversiones comunes:', error);
+        setConversionesComunes([]);
+      } finally {
+        setLoadingConversiones(false);
+      }
+    };
+
+    cargarConversionesComunes();
+  }, [formConversion.unidad_destino_id, unidadBase?.id]);
 
   const handleAddConversion = () => {
     setValidationError('');
@@ -263,6 +298,37 @@ export default function Step3Conversiones({
             <p className="text-xs text-muted-foreground">
               Cuántas unidades destino hay en 1 unidad base
             </p>
+
+            {/* Conversiones comunes sugeridas */}
+            {conversionesComunes.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  💡 Conversiones comunes:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {conversionesComunes.map((conv, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setFormConversion(prev => ({
+                        ...prev,
+                        factor_conversion: String(conv.factor_conversion)
+                      }))}
+                      className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors border border-blue-300 dark:border-blue-700"
+                      title={`Usar factor ${conv.factor_conversion} (usado ${conv.frecuencia}×)`}
+                    >
+                      {conv.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {loadingConversiones && (
+              <div className="text-xs text-muted-foreground italic">
+                Cargando conversiones comunes...
+              </div>
+            )}
           </div>
 
           {/* Conversión Principal */}
