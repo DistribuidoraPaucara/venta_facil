@@ -471,9 +471,9 @@ export default function ActualizarStockMasivo() {
                               )}
                             </TableCell>
                             <TableCell className="text-center px-1 md:px-4">
-                              {tienesCambio && incremento !== 0 ? (
-                                <Badge className={`text-xs md:text-sm ${incremento > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'}`}>
-                                  {incremento > 0 ? '+' : ''}{incremento}
+                              {tienesCambio && cambio.cantidad !== 0 ? (
+                                <Badge className={`text-xs md:text-sm ${cambio.cantidad > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'}`}>
+                                  {cambio.cantidad > 0 ? '+' : ''}{cambio.cantidad_convertida.toFixed(2)}
                                 </Badge>
                               ) : (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">—</span>
