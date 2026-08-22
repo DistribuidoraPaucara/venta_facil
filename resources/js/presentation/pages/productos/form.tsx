@@ -385,9 +385,8 @@ export default function ProductoForm({
             ingredientesState.forEach((ing, i: number) => {
                 formData.append(`ingredientes[${i}][producto_id]`, String(ing.producto_id));
                 formData.append(`ingredientes[${i}][cantidad_requerida]`, String(ing.cantidad_requerida));
-                if (ing.unidad_medida_id) {
-                    formData.append(`ingredientes[${i}][unidad_medida_id]`, String(ing.unidad_medida_id));
-                }
+                // 🏭 NUEVO: Siempre enviar unidad_medida_id, incluso si está vacío o es null
+                formData.append(`ingredientes[${i}][unidad_medida_id]`, ing.unidad_medida_id ? String(ing.unidad_medida_id) : '');
             });
             console.log('🏭 Ingredientes enviados:', ingredientesState);
         }
