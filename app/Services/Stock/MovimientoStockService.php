@@ -433,8 +433,8 @@ class MovimientoStockService
      * Reduce disponible, aumenta reservada (total no cambia)
      */
     private function aplicarReservaProforma(
-        int $cantidad,
-        int &$nuevoTotal,
+        float $cantidad,
+        float &$nuevoTotal,
         int &$nuevaReservada,
         int &$nuevaDisponible
     ): void {
@@ -449,8 +449,8 @@ class MovimientoStockService
      * Aumenta disponible, reduce reservada (total no cambia)
      */
     private function aplicarLiberacionReserva(
-        int $cantidad,
-        int &$nuevoTotal,
+        float $cantidad,
+        float &$nuevoTotal,
         int &$nuevaReservada,
         int &$nuevaDisponible
     ): void {
@@ -465,8 +465,8 @@ class MovimientoStockService
      * Reduce total y disponible (reservado no cambia)
      */
     private function aplicarVentaDirecta(
-        int $cantidad,
-        int &$nuevoTotal,
+        float $cantidad,
+        float &$nuevoTotal,
         int &$nuevaReservada,
         int &$nuevaDisponible
     ): void {
@@ -481,8 +481,8 @@ class MovimientoStockService
      * Reduce total y reservado (disponible no cambia)
      */
     private function aplicarVentaConsumo(
-        int $cantidad,
-        int &$nuevoTotal,
+        float $cantidad,
+        float &$nuevoTotal,
         int &$nuevaReservada,
         int &$nuevaDisponible
     ): void {
@@ -497,10 +497,10 @@ class MovimientoStockService
      * Aumenta total y disponible (reservado no cambia)
      */
     private function aplicarEntrada(
-        int $cantidad,
-        int &$nuevoTotal,
-        int &$nuevaReservada,
-        int &$nuevaDisponible
+        float $cantidad,
+        float &$nuevoTotal,
+        float &$nuevaReservada,
+        float &$nuevaDisponible
     ): void {
         $cantidadAEntrar = abs($cantidad);
         $nuevoTotal += $cantidadAEntrar;
@@ -513,10 +513,10 @@ class MovimientoStockService
      * Resta del total (puede afectar disponible Y/O reservado)
      */
     private function aplicarAjusteMasivoSalida(
-        int $cantidad,
-        int &$nuevoTotal,
-        int &$nuevaReservada,
-        int &$nuevaDisponible
+        float $cantidad,
+        float &$nuevoTotal,
+        float &$nuevaReservada,
+        float &$nuevaDisponible
     ): void {
         $cantidadARestar = abs($cantidad);
         $nuevoTotal -= $cantidadARestar;
@@ -542,11 +542,11 @@ class MovimientoStockService
         string $tipo,
         string $referencia_tipo,
         int $referencia_id,
-        int $cantidad,
-        int $cantidadAnterior,
-        int $cantidadPosterior,
-        int $reservadaAnterior,
-        int $reservadaPosterior,
+        float $cantidad,
+        float $cantidadAnterior,
+        float $cantidadPosterior,
+        float $reservadaAnterior,
+        float $reservadaPosterior,
         array $metadataAdicional = []
     ): string {
         $observacion = [
@@ -577,8 +577,8 @@ class MovimientoStockService
      * Solo registra auditoría sin cambiar cantidades
      */
     private function aplicarSeguimientoComida(
-        int $cantidad,
-        int &$nuevoTotal,
+        float $cantidad,
+        float &$nuevoTotal,
         int &$nuevaReservada,
         int &$nuevaDisponible
     ): void {
