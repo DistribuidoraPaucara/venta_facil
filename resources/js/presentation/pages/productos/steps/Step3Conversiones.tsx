@@ -249,7 +249,7 @@ export default function Step3Conversiones({
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-start">
           {/* Unidad Base */}
           <div className="space-y-2">
             <Label>Unidad Base (Almacenamiento)</Label>

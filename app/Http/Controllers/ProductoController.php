@@ -4391,8 +4391,8 @@ class ProductoController extends Controller
     }
 
     /**
-     * Obtiene las conversiones más comunes de la BD
-     * Agrupa por (unidad_base, unidad_destino) y cuenta frecuencia
+     * Obtiene conversiones comunes (de BD + predefinidas)
+     * Prioriza conversiones de BD pero siempre muestra conversiones típicas
      */
     public function conversionesComunes(Request $request): JsonResponse
     {
@@ -4400,6 +4400,42 @@ class ProductoController extends Controller
             $unidadBaseId = $request->integer('unidad_base_id');
             $unidadDestinoId = $request->integer('unidad_destino_id');
 
+            // Conversiones comunes predefinidas (factor típico)
+            $conversionesPredefinidas = [
+                ['base' => 2, 'destino' => 3, 'factor' => 1000],      // KG → G
+                ['base' => 4, 'destino' => 8, 'factor' => 1000],      // LT → ML
+                ['base' => 7, 'destino' => 1, 'factor' => 12],        // CAJA → UN
+                ['base' => 7, 'destino' => 6, 'factor' => 4],         // CAJA → PAQ
+            ];
+
+            // Filtrar predefinidas si se especifica unidad base o destino
+            $predefinidas = collect($conversionesPredefinidas)
+                ->when($unidadBaseId > 0, fn($c) => $c->where('base', $unidadBaseId))
+                ->when($unidadDestinoId > 0, fn($c) => $c->where('destino', $unidadDestinoId))
+                ->map(function ($conv) {
+                    $unidadBase = UnidadMedida::find($conv['base']);
+                    $unidadDestino = UnidadMedida::find($conv['destino']);
+
+                    return [
+                        'unidad_base_id' => $conv['base'],
+                        'unidad_base_nombre' => $unidadBase?->nombre,
+                        'unidad_base_codigo' => $unidadBase?->codigo,
+                        'unidad_destino_id' => $conv['destino'],
+                        'unidad_destino_nombre' => $unidadDestino?->nombre,
+                        'unidad_destino_codigo' => $unidadDestino?->codigo,
+                        'factor_conversion' => (float) $conv['factor'],
+                        'frecuencia' => 999,  // Marcar como predefinida
+                        'label' => sprintf(
+                            '1 %s = %s %s (📌 común)',
+                            $unidadBase?->codigo ?? 'UNK',
+                            $conv['factor'],
+                            $unidadDestino?->codigo ?? 'UNK'
+                        ),
+                    ];
+                })
+                ->values();
+
+            // Obtener conversiones de la BD
             $query = DB::table('conversiones_unidad_producto')
                 ->select(
                     'unidad_base_id',
@@ -4409,20 +4445,17 @@ class ProductoController extends Controller
                 )
                 ->where('activo', true)
                 ->groupBy('unidad_base_id', 'unidad_destino_id', 'factor_conversion')
-                ->orderByDesc('frecuencia')
-                ->limit(100);
+                ->orderByDesc('frecuencia');
 
-            // Si se especifica unidad base, filtrar
             if ($unidadBaseId > 0) {
                 $query->where('unidad_base_id', $unidadBaseId);
             }
-
-            // Si se especifica unidad destino, filtrar
             if ($unidadDestinoId > 0) {
                 $query->where('unidad_destino_id', $unidadDestinoId);
             }
 
             $conversiones = $query
+                ->limit(100)
                 ->get()
                 ->map(function ($conv) {
                     $unidadBase = UnidadMedida::find($conv->unidad_base_id);
@@ -4447,10 +4480,13 @@ class ProductoController extends Controller
                     ];
                 });
 
+            // Combinar: primero las de BD (si las hay), luego las predefinidas
+            $resultado = $conversiones->concat($predefinidas)->values();
+
             return response()->json([
                 'success' => true,
-                'data' => $conversiones,
-                'total' => $conversiones->count(),
+                'data' => $resultado,
+                'total' => $resultado->count(),
             ]);
         } catch (\Exception $e) {
             Log::error('❌ Error obteniendo conversiones comunes', [

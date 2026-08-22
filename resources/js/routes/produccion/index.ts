@@ -1,6 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1354
  * @route '/produccion/recetas-manager'
  */
 export const recetasManager = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +14,7 @@ recetasManager.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1354
  * @route '/produccion/recetas-manager'
  */
 recetasManager.url = (options?: RouteQueryOptions) => {
@@ -22,7 +22,7 @@ recetasManager.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1354
  * @route '/produccion/recetas-manager'
  */
 recetasManager.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -30,7 +30,7 @@ recetasManager.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1354
  * @route '/produccion/recetas-manager'
  */
 recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -39,7 +39,7 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 })
 
     /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1354
  * @route '/produccion/recetas-manager'
  */
     const recetasManagerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -48,7 +48,7 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     })
 
             /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1354
  * @route '/produccion/recetas-manager'
  */
         recetasManagerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -56,7 +56,7 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
             method: 'get',
         })
             /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1354
  * @route '/produccion/recetas-manager'
  */
         recetasManagerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -71,7 +71,7 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     
     recetasManager.form = recetasManagerForm
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1359
  * @route '/produccion/registro-produccion'
  */
 export const registroProduccion = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -85,7 +85,7 @@ registroProduccion.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1359
  * @route '/produccion/registro-produccion'
  */
 registroProduccion.url = (options?: RouteQueryOptions) => {
@@ -93,7 +93,7 @@ registroProduccion.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1359
  * @route '/produccion/registro-produccion'
  */
 registroProduccion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -101,7 +101,7 @@ registroProduccion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
     method: 'get',
 })
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1359
  * @route '/produccion/registro-produccion'
  */
 registroProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -110,7 +110,7 @@ registroProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 })
 
     /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1359
  * @route '/produccion/registro-produccion'
  */
     const registroProduccionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -119,7 +119,7 @@ registroProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     })
 
             /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1359
  * @route '/produccion/registro-produccion'
  */
         registroProduccionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -127,7 +127,7 @@ registroProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
             method: 'get',
         })
             /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1359
  * @route '/produccion/registro-produccion'
  */
         registroProduccionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -142,7 +142,7 @@ registroProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     
     registroProduccion.form = registroProduccionForm
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1364
  * @route '/produccion/reporte-produccion'
  */
 export const reporteProduccion = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -156,7 +156,7 @@ reporteProduccion.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1364
  * @route '/produccion/reporte-produccion'
  */
 reporteProduccion.url = (options?: RouteQueryOptions) => {
@@ -164,7 +164,7 @@ reporteProduccion.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1364
  * @route '/produccion/reporte-produccion'
  */
 reporteProduccion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -172,7 +172,7 @@ reporteProduccion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
     method: 'get',
 })
 /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1364
  * @route '/produccion/reporte-produccion'
  */
 reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -181,7 +181,7 @@ reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 })
 
     /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1364
  * @route '/produccion/reporte-produccion'
  */
     const reporteProduccionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -190,7 +190,7 @@ reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     })
 
             /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1364
  * @route '/produccion/reporte-produccion'
  */
         reporteProduccionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -198,7 +198,7 @@ reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
             method: 'get',
         })
             /**
- * @see [serialized-closure]:2
+ * @see routes/web.php:1364
  * @route '/produccion/reporte-produccion'
  */
         reporteProduccionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
