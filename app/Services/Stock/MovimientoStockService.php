@@ -174,10 +174,12 @@ class MovimientoStockService
                 // ✅ NUEVO (2026-06-28): Capturar TOTALES del producto DESPUÉS (centralizado)
                 $totalesDespues = $this->capturarTotalesDelProducto($stock->producto_id, $stock->almacen_id);
 
+                // Verificar con tolerancia para permitir pequeñas diferencias de punto flotante
+                $tolerancia = 0.01;
                 if (
-                    (int) $stockActualizado->cantidad !== $nuevoTotal ||
-                    (int) $stockActualizado->cantidad_reservada !== $nuevaReservada ||
-                    (int) $stockActualizado->cantidad_disponible !== $nuevaDisponible
+                    abs((float) $stockActualizado->cantidad - $nuevoTotal) > $tolerancia ||
+                    abs((float) $stockActualizado->cantidad_reservada - $nuevaReservada) > $tolerancia ||
+                    abs((float) $stockActualizado->cantidad_disponible - $nuevaDisponible) > $tolerancia
                 ) {
                     throw new Exception(
                         "❌ INCONSISTENCIA CRÍTICA: Valores calculados NO coinciden con BD después de actualizar. " .
