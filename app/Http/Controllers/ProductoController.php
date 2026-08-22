@@ -859,6 +859,29 @@ class ProductoController extends Controller
 
         $payload['es_fraccionado'] = (bool) $producto->es_fraccionado;
         $payload['es_combo']       = (bool) $producto->es_combo;
+        $payload['es_de_produccion'] = (bool) $producto->es_de_produccion; // 🏭 NUEVO
+
+        // 🏭 NUEVO: Cargar receta con ingredientes si es de producción
+        $receta = $producto->receta;
+        if ($receta) {
+            $payload['receta'] = [
+                'id'           => $receta->id,
+                'descripcion'  => $receta->descripcion,
+                'instrucciones' => $receta->instrucciones,
+                'activa'       => (bool) $receta->activa,
+                'ingredientes' => $receta->ingredientes()
+                    ->with('ingrediente:id,nombre')
+                    ->get()
+                    ->map(function ($ing) {
+                        return [
+                            'producto_id'        => $ing->producto_id,
+                            'producto_nombre'    => $ing->ingrediente?->nombre,
+                            'cantidad_requerida' => (float) $ing->cantidad_requerida,
+                            'unidad_medida_id'   => $ing->unidad_medida_id,
+                        ];
+                    })->toArray(),
+            ];
+        }
 
         $empresa = auth()->user()?->empresa;
 

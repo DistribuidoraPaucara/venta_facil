@@ -112,8 +112,20 @@ export default function ProductoForm({
         unidad_medida_id?: number | string;
         unidad_nombre?: string;
     }
+
+    // 🏭 NUEVO: Cargar ingredientes desde la receta del producto editado
+    const getInitialIngredientes = (): Ingrediente[] => {
+        if (!producto || !producto.receta) return [];
+        return (producto.receta.ingredientes || []).map((ing: any) => ({
+            producto_id: ing.producto_id,
+            producto_nombre: ing.producto_nombre,
+            cantidad_requerida: ing.cantidad_requerida,
+            unidad_medida_id: ing.unidad_medida_id,
+        }));
+    };
+
     const [ingredientesState, setIngredientesState] = useState<Ingrediente[]>(
-        (producto as any)?.receta?.ingredientes ?? []
+        getInitialIngredientes()
     );
 
     // 🏭 NUEVO: Convertir productos de props al formato esperado
