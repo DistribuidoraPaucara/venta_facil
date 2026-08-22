@@ -68,11 +68,11 @@ class StockValidationService
      * Validar que una transacción es posible antes de ejecutarla
      *
      * @param StockProducto $stock
-     * @param int $cantidad Cantidad a mover (positivo o negativo)
+     * @param float $cantidad Cantidad a mover (positivo o negativo)
      * @param string $tipo Tipo de movimiento
      * @throws InvalidArgumentException
      */
-    public function validarOperacionPosible(StockProducto $stock, int $cantidad, string $tipo): void
+    public function validarOperacionPosible(StockProducto $stock, float $cantidad, string $tipo): void
     {
         match ($tipo) {
             // Salidas: Validar disponibilidad
@@ -118,13 +118,15 @@ class StockValidationService
     }
 
     /**
-     * Validar que la suma es consistente
+     * Validar que la suma es consistente (permite pequeñas diferencias de punto flotante)
      */
     private function validarConsistencia($stock): void
     {
         $suma = $stock->cantidad_reservada + $stock->cantidad_disponible;
+        $diferencia = abs($suma - $stock->cantidad);
 
-        if ($suma !== (int)$stock->cantidad) {
+        // Permitir pequeñas diferencias por redondeo de punto flotante (tolerancia: 0.01)
+        if ($diferencia > 0.01) {
             throw new InvalidArgumentException(
                 "❌ Stock inconsistente. " .
                 "Stock ID: {$stock->id}, " .
@@ -140,7 +142,7 @@ class StockValidationService
     /**
      * Validar que hay suficiente disponible para reservar (Proforma)
      */
-    private function validarProforma(StockProducto $stock, int $cantidad): void
+    private function validarProforma(StockProducto $stock, float $cantidad): void
     {
         $cantidadAReservar = abs($cantidad);
 
@@ -157,7 +159,7 @@ class StockValidationService
     /**
      * Validar que hay suficiente reservado para liberar
      */
-    private function validarLiberacion(StockProducto $stock, int $cantidad): void
+    private function validarLiberacion(StockProducto $stock, float $cantidad): void
     {
         $cantidadALiberar = abs($cantidad);
 
@@ -174,7 +176,7 @@ class StockValidationService
     /**
      * Validar que hay suficiente total para venta directa
      */
-    private function validarVentaDirecta(StockProducto $stock, int $cantidad): void
+    private function validarVentaDirecta(StockProducto $stock, float $cantidad): void
     {
         $cantidadAVender = abs($cantidad);
 
@@ -192,7 +194,7 @@ class StockValidationService
      * ✅ NUEVO (2026-08-19): Validar ajuste masivo (salida)
      * Solo valida que el total sea suficiente, permite afectar reservado
      */
-    private function validarAjusteMasivo(StockProducto $stock, int $cantidad): void
+    private function validarAjusteMasivo(StockProducto $stock, float $cantidad): void
     {
         $cantidadARestar = abs($cantidad);
 
@@ -209,7 +211,7 @@ class StockValidationService
     /**
      * Validar que hay suficiente reservado para consumo
      */
-    private function validarVentaConsumo(StockProducto $stock, int $cantidad): void
+    private function validarVentaConsumo(StockProducto $stock, float $cantidad): void
     {
         $cantidadAConsumir = abs($cantidad);
 
