@@ -4357,7 +4357,7 @@ class ProductoController extends Controller
                 ->where('activo', true)
                 ->with([
                     'categoria:id,nombre',
-                    'unidad:id,nombre,simbolo',
+                    'unidad:id,nombre,codigo',
                     'stock' => function ($query) use ($almacenId) {
                         $query->where('almacen_id', $almacenId)
                             ->select('producto_id', 'cantidad');
@@ -4365,7 +4365,7 @@ class ProductoController extends Controller
                     'conversiones' => function ($query) {
                         $query->where('activo', true)->select('id', 'producto_id', 'unidad_destino_id', 'factor_conversion');
                     },
-                    'conversiones.unidadDestino:id,nombre,simbolo'
+                    'conversiones.unidadDestino:id,nombre,codigo'
                 ])
                 ->orderBy('nombre')
                 ->get()
