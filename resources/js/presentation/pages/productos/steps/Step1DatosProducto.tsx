@@ -248,11 +248,11 @@ function Step1DatosProducto({
                             <TooltipContent>Busca productos existentes por nombre para cargarlos automáticamente</TooltipContent>
                         </Tooltip>
                     </div>
-                    {lastProductSearchQuery && lastProductSearchQuery.length >= 2 && !productSearchResultsFound && (
+                    {/* {lastProductSearchQuery && lastProductSearchQuery.length >= 2 && !productSearchResultsFound && (
                         <div className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-200">
                             ⚠️ No encontramos "{lastProductSearchQuery}". Puedes crear uno nuevo con este nombre.
                         </div>
-                    )}
+                    )} */}
                 </div>
                 <div>
                     <div className="mb-1 flex items-center gap-2">
@@ -317,6 +317,7 @@ function Step1DatosProducto({
                                 error={errors.proveedor_id}
                                 showCreateIconButton={true}
                                 createIconButtonTitle="Crear nuevo proveedor con el nombre buscado"
+                                isSelected={!!data.proveedor_id}
                                 onCreateClick={(searchQuery) => {
                                     if (!searchQuery || searchQuery.length < 2) {
                                         NotificationService.warning('Por favor escribe al menos 2 caracteres para el proveedor');
@@ -407,11 +408,11 @@ function Step1DatosProducto({
                             </TooltipContent>
                         </Tooltip>
                     </div>
-                    {lastSearchQuery && lastSearchQuery.length >= 2 && !searchResultsFound && (
+                    {/* {lastSearchQuery && lastSearchQuery.length >= 2 && !searchResultsFound && (
                         <div className="mt-1 px-1 text-xs font-semibold text-amber-700 dark:text-amber-200">
                             ⚠️ No encontramos "{lastSearchQuery}" en la base de datos. Puedes crearlo haciendo clic en el botón ➕.
                         </div>
-                    )}
+                    )} */}
                 </div>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
