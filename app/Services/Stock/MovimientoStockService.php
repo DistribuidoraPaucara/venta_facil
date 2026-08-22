@@ -33,7 +33,7 @@ class MovimientoStockService
      * Las dos operaciones son inseparables para mantener consistencia
      *
      * @param int $stockProductoId
-     * @param int $cantidad Positivo: suma, Negativo: resta
+     * @param float $cantidad Positivo: suma, Negativo: resta (soporta decimales para conversiones)
      * @param string $tipo Tipo de movimiento (PROFORMA, VENTA_DIRECTA, etc)
      * @param string $referencia_tipo Qué originó el movimiento (proforma, venta, etc)
      * @param int $referencia_id ID de la proforma, venta, etc
@@ -43,7 +43,7 @@ class MovimientoStockService
      */
     public function registrarMovimientoYActualizar(
         int $stockProductoId,
-        int $cantidad,
+        float $cantidad,
         string $tipo,
         string $referencia_tipo,
         int $referencia_id,
@@ -71,9 +71,9 @@ class MovimientoStockService
                 $this->validacion->validarOperacionPosible($stock, $cantidad, $tipo);
 
                 // 3️⃣ Guardar estado ANTERIOR (para auditoría)
-                $cantidadAnterior = (int)$stock->cantidad;
-                $reservadaAnterior = (int)$stock->cantidad_reservada;
-                $disponibleAnterior = (int)$stock->cantidad_disponible;
+                $cantidadAnterior = (float)$stock->cantidad;
+                $reservadaAnterior = (float)$stock->cantidad_reservada;
+                $disponibleAnterior = (float)$stock->cantidad_disponible;
 
                 // ✅ NUEVO (2026-06-28): Capturar TOTALES del producto ANTES (centralizado)
                 $totalesAntes = $this->capturarTotalesDelProducto($stock->producto_id, $stock->almacen_id);
