@@ -100,6 +100,13 @@ export default function Step3Conversiones({
         if (response.data.success) {
           setConversionesComunes(response.data.data);
           console.log('✅ Conversiones comunes cargadas:', response.data.data);
+
+          // 🎯 CARGAR AUTOMÁTICAMENTE LA PRIMERA CONVERSIÓN AL INPUT
+          if (response.data.data && response.data.data.length > 0) {
+            const primerFactor = response.data.data[0].factor_conversion;
+            console.log('⚡ Cargando automáticamente factor:', primerFactor);
+            cargarFactorDirecto(primerFactor);
+          }
         }
       } catch (error) {
         console.error('❌ Error cargando conversiones comunes:', error);
