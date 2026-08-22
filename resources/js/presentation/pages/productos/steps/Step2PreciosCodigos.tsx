@@ -739,7 +739,49 @@ function Step2PreciosCodigos(props: Step2Props) {
             return nuevo;
         });
 
-        if (huboCambios) {
+        // 💰 NUEVO: Si hay cambios y hay conversiones, también calcular precios por unidad destino
+        if (huboCambios && props.data.es_fraccionado && props.data.conversiones && props.data.conversiones.length > 0) {
+            console.log('💰 Calculando precios por unidad destino desde sincronización...');
+            const actualizadosConUnidades = [...actualizados];
+
+            actualizados.forEach((precio: Precio) => {
+                const tipoId = Number(precio.tipo_precio_id);
+                const montoBase = Number(precio.monto);
+
+                if (!isNaN(montoBase) && montoBase > 0) {
+                    // Para cada conversión, calcular el precio en la unidad destino
+                    props.data.conversiones?.forEach((conv: any) => {
+                        const montoDestino = montoBase / conv.factor_conversion;
+
+                        // Buscar si ya existe un precio para este tipo_precio_id y unidad_destino_id
+                        const indexDestino = actualizadosConUnidades.findIndex(
+                            (p: Precio) =>
+                                Number(p.tipo_precio_id) === tipoId &&
+                                Number(p.unidad_medida_id) === Number(conv.unidad_destino_id)
+                        );
+
+                        if (indexDestino >= 0) {
+                            // Actualizar el monto
+                            actualizadosConUnidades[indexDestino] = {
+                                ...actualizadosConUnidades[indexDestino],
+                                monto: parseFloat(montoDestino.toFixed(6)),
+                            };
+                        } else {
+                            // Crear uno nuevo
+                            actualizadosConUnidades.push({
+                                tipo_precio_id: tipoId,
+                                monto: parseFloat(montoDestino.toFixed(6)),
+                                unidad_medida_id: conv.unidad_destino_id,
+                                moneda: precio.moneda || 'BOB',
+                            } as Precio);
+                        }
+                    });
+                }
+            });
+
+            console.log('📤 Actualizando precios en el estado (incluyendo unidades destino)');
+            setPrecios(actualizadosConUnidades);
+        } else if (huboCambios) {
             console.log('📤 Actualizando precios en el estado');
             setPrecios(actualizados);
         } else {
