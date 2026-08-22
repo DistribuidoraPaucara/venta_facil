@@ -20,6 +20,7 @@ class DetalleVenta extends Model
         'tipo_precio_id',      // ✅ NUEVO: ID del tipo de precio seleccionado
         'tipo_precio_nombre',   // ✅ NUEVO: Nombre del tipo de precio (referencia rápida)
         'combo_items_seleccionados', // ✅ NUEVO: Items del combo seleccionados (JSON)
+        'produccion_id', // 🏭 PRODUCCIÓN: ID de producción (para productos elaborados)
     ];
 
     protected function casts(): array
@@ -74,5 +75,23 @@ class DetalleVenta extends Model
     public function tipoPrecio()
     {
         return $this->belongsTo(TipoPrecio::class, 'tipo_precio_id');
+    }
+
+    // ==================== 🏭 RELACIONES PRODUCCIÓN ====================
+
+    /**
+     * Producción asociada (si es producto elaborado en cafetería)
+     */
+    public function produccion()
+    {
+        return $this->belongsTo(Produccion::class);
+    }
+
+    /**
+     * Adiciones agregadas a este detalle (para productos comprados)
+     */
+    public function adiciones()
+    {
+        return $this->hasMany(AdicionVenta::class, 'detalle_venta_id');
     }
 }

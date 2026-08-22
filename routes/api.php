@@ -1936,3 +1936,55 @@ Route::middleware(['auth:sanctum,web'])->group(function () {
     Route::get('admin/logs/download', [\App\Http\Controllers\Api\LogsController::class, 'download'])->name('api.logs.download');
     Route::get('admin/logs/view', [\App\Http\Controllers\Api\LogsController::class, 'view'])->name('api.logs.view');
 });
+
+// ==================== 🏭 API MÓDULO PRODUCCIÓN ====================
+
+// Gestión de Recetas
+Route::prefix('recetas')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [\App\Http\Controllers\RecetaController::class, 'index'])->name('api.recetas.index');
+    Route::post('/', [\App\Http\Controllers\RecetaController::class, 'store'])->name('api.recetas.store');
+    Route::get('{receta}', [\App\Http\Controllers\RecetaController::class, 'show'])->name('api.recetas.show');
+    Route::put('{receta}', [\App\Http\Controllers\RecetaController::class, 'update'])->name('api.recetas.update');
+    Route::delete('{receta}', [\App\Http\Controllers\RecetaController::class, 'destroy'])->name('api.recetas.destroy');
+
+    // Gestión de ingredientes
+    Route::post('{receta}/ingredientes', [\App\Http\Controllers\RecetaController::class, 'agregarIngrediente'])->name('api.recetas.ingredientes.store');
+    Route::delete('{receta}/ingredientes/{ingrediente}', [\App\Http\Controllers\RecetaController::class, 'quitarIngrediente'])->name('api.recetas.ingredientes.destroy');
+    Route::put('{receta}/ingredientes/{ingrediente}', [\App\Http\Controllers\RecetaController::class, 'actualizarIngrediente'])->name('api.recetas.ingredientes.update');
+
+    // Productos disponibles para ingredientes
+    Route::get('productos/disponibles', [\App\Http\Controllers\RecetaController::class, 'productosDisponibles'])->name('api.recetas.productos-disponibles');
+});
+
+// Gestión de Producciones
+Route::prefix('producciones')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [\App\Http\Controllers\ProduccionController::class, 'index'])->name('api.producciones.index');
+    Route::post('/', [\App\Http\Controllers\ProduccionController::class, 'store'])->name('api.producciones.store');
+    Route::get('{produccion}', [\App\Http\Controllers\ProduccionController::class, 'show'])->name('api.producciones.show');
+    Route::put('{produccion}', [\App\Http\Controllers\ProduccionController::class, 'update'])->name('api.producciones.update');
+    Route::delete('{produccion}', [\App\Http\Controllers\ProduccionController::class, 'destroy'])->name('api.producciones.destroy');
+
+    // Producciones del día
+    Route::get('dia/{fecha?}', [\App\Http\Controllers\ProduccionController::class, 'delDia'])->name('api.producciones.dia');
+
+    // Reportes
+    Route::get('reporte/dia/{fecha?}', [\App\Http\Controllers\ProduccionController::class, 'reporteDia'])->name('api.producciones.reporte-dia');
+
+    // Productos disponibles para producir
+    Route::get('productos/disponibles', [\App\Http\Controllers\ProduccionController::class, 'productosDisponibles'])->name('api.producciones.productos-disponibles');
+});
+
+// 📊 Descargar reporte de producción en Excel
+Route::get('produccion/reporte/excel', [\App\Http\Controllers\ProduccionController::class, 'descargarReporteExcel'])
+    ->middleware('auth:sanctum')
+    ->name('api.produccion.reporte-excel');
+
+// Gestión de Adiciones de Venta
+Route::prefix('adiciones-venta')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [\App\Http\Controllers\AdicionVentaController::class, 'index'])->name('api.adiciones-venta.index');
+    Route::post('/', [\App\Http\Controllers\AdicionVentaController::class, 'store'])->name('api.adiciones-venta.store');
+    Route::delete('{adicion}', [\App\Http\Controllers\AdicionVentaController::class, 'destroy'])->name('api.adiciones-venta.destroy');
+
+    // Productos disponibles
+    Route::get('productos/disponibles', [\App\Http\Controllers\AdicionVentaController::class, 'productosDisponibles'])->name('api.adiciones-venta.productos-disponibles');
+});

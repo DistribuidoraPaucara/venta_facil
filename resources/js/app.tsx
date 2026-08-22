@@ -12,11 +12,23 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { ToastContainer } from 'react-toastify';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { initializeTheme } from '@/presentation/hooks/use-appearance';
 import { configureAxios } from '@/infrastructure/config/axios.config';
 import { EstadosProvider } from '@/application/contexts/EstadosContext';
 import { NotificationsProvider } from '@/application/contexts/notifications-context';
 import { WebSocketProvider } from '@/application/contexts/WebSocketContext';
+
+// 🏭 Crear QueryClient para TanStack Query (usado en módulo producción)
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 5, // 5 minutos
+            gcTime: 1000 * 60 * 10, // 10 minutos (anteriormente cacheTime)
+            retry: 1,
+        },
+    },
+});
 
 // Get appName from window props injected by Laravel, fallback to env, then 'Laravel'
 const getAppName = (): string => {
@@ -145,7 +157,7 @@ createInertiaApp({
         }
 
         root.render(
-            <>
+            <QueryClientProvider client={queryClient}>
                 <WebSocketProvider
                     autoConnect={true}
                     sanctumToken={sanctumToken}
@@ -170,7 +182,7 @@ createInertiaApp({
                     pauseOnHover
                     theme="light"
                 />
-            </>
+            </QueryClientProvider>
         );
     },
     progress: {

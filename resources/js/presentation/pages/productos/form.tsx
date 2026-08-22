@@ -741,8 +741,11 @@ export default function ProductoForm({
                     </div>
                 </div>
 
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Izquierda: Tabs de edición (2/3 del ancho) */}
+                    <div className="lg:col-span-2">
                 <Tabs defaultValue="datos" className="w-full">
-                    <TabsList className={`flex flex-wrap items-center justify-center border-b border-border bg-background`}>
+                    <TabsList className={`flex flex-wrap items-center justify-start border-b border-border bg-background gap-2`}>
                         <TabsTrigger value="datos">Datos del producto</TabsTrigger>
 
                         {permite_productos_fraccionados && data.es_fraccionado && <TabsTrigger value="conversiones">✨ Conversiones</TabsTrigger>}
@@ -750,7 +753,6 @@ export default function ProductoForm({
                         <TabsTrigger value="precios">Precios y códigos</TabsTrigger>
                         {data.es_de_produccion && <TabsTrigger value="ingredientes">🏭 Ingredientes</TabsTrigger>}
                         <TabsTrigger value="almacenes">Almacenes</TabsTrigger>
-                        <TabsTrigger value="imagenes">Imágenes</TabsTrigger>
                         {isEditing && (producto as any)?.es_combo && <TabsTrigger value="combos">📦 Combos</TabsTrigger>}
                     </TabsList>
 
@@ -845,14 +847,6 @@ export default function ProductoForm({
                             />
                         </TabsContent>
 
-                        <TabsContent value="imagenes" className="mt-2 space-y-2">
-                            <Step4Imagenes
-                                data={{ perfil: perfilState ?? undefined, galeria: galeriaState ?? [] }}
-                                setPerfil={setPerfil}
-                                addGaleria={addGaleria}
-                                removeGaleria={removeGaleria}
-                            />
-                        </TabsContent>
                     </form>
 
                     {/* ✨ NUEVA PESTAÑA: Rango de Precios - FUERA DEL FORMULARIO PRINCIPAL */}
@@ -883,6 +877,21 @@ export default function ProductoForm({
                         </TabsContent>
                     )}
                 </Tabs>
+                    </div>
+
+                    {/* Derecha: Imágenes siempre visible (1/3 del ancho) */}
+                    <div className="lg:col-span-1">
+                        <div className="sticky top-6 rounded-lg border border-border bg-card p-6">
+                            <h3 className="mb-4 text-lg font-semibold">📸 Imágenes del Producto</h3>
+                            <Step4Imagenes
+                                data={{ perfil: perfilState ?? undefined, galeria: galeriaState ?? [] }}
+                                setPerfil={setPerfil}
+                                addGaleria={addGaleria}
+                                removeGaleria={removeGaleria}
+                            />
+                        </div>
+                    </div>
+                </div>
 
                 <div className="mt-2 flex w-full items-end justify-end gap-2 border-t border-t-border p-2">
                     <Button asChild variant="outline" disabled={processing}>

@@ -39,7 +39,9 @@ class ReporteDiarioVentasService
      */
     private function obtenerResumenGeneral(Carbon $inicio, Carbon $fin): array
     {
-        $ventas = Venta::whereBetween('created_at', [$inicio, $fin])->get();
+        $ventas = Venta::whereBetween('created_at', [$inicio, $fin])
+            ->with('detalles.producto')
+            ->get();
 
         return [
             'total_ventas' => round($ventas->sum('total'), 2),
@@ -48,6 +50,7 @@ class ReporteDiarioVentasService
             'cajas_activas' => $this->contarCajasActivas($inicio, $fin),
             'por_tipo_pago' => $this->desglosePorTipoPago($ventas),
             'por_estado' => $this->desglosePorEstado($ventas),
+            'productos_top' => $this->obtenerProductosTop($ventas, 5),
         ];
     }
 
@@ -87,10 +90,15 @@ class ReporteDiarioVentasService
      */
     private function obtenerDetallesPorCaja($ventasPorCaja): array
     {
-        return $ventasPorCaja->map(function ($caja) {
+        // Obtener el total máximo para identificar la caja con más ventas
+        $totalesPorCaja = $ventasPorCaja->map(fn($c) => $c['ventas']->sum('total'));
+        $maxVentas = $totalesPorCaja->max();
+
+        return $ventasPorCaja->map(function ($caja) use ($maxVentas) {
             $ventas = $caja['ventas'];
             $totalVentas = $ventas->sum('total');
             $cantidadVentas = $ventas->count();
+            $esMaxima = $totalVentas == $maxVentas && $maxVentas > 0;
 
             return [
                 'caja' => [
@@ -100,6 +108,7 @@ class ReporteDiarioVentasService
                     'usuario' => $caja['usuario_nombre'],
                     'usuario_id' => $caja['usuario_id'],
                 ],
+                'es_maxima' => $esMaxima,
                 'horario' => [
                     'apertura' => $caja['fecha_apertura']->format('H:i:s'),
                     'cierre' => $caja['cierre'] ? $caja['cierre']->fecha_cierre->format('H:i:s') : null,
@@ -117,6 +126,7 @@ class ReporteDiarioVentasService
                 'por_tipo_pago' => $this->desglosePorTipoPago($ventas),
                 'por_estado' => $this->desglosePorEstado($ventas),
                 'top_clientes' => $this->obtenerTopClientes($ventas, 5),
+                'productos_top' => $this->obtenerProductosTopPorCaja($ventas, 5),
                 'cantidad_detalles' => $cantidadVentas,
                 'detalles_ventas' => $this->formatearVentas($ventas),
             ];
@@ -243,5 +253,131 @@ class ReporteDiarioVentasService
         $minutos = $diff->i;
 
         return "{$horas}h {$minutos}m";
+    }
+
+    /**
+     * Obtener productos más vendidos del día
+     */
+    private function obtenerProductosTop($ventas, $limite = 5): array
+    {
+        if ($ventas->isEmpty()) {
+            return [];
+        }
+
+        $productosVendidos = [];
+
+        foreach ($ventas as $venta) {
+            // Cargar detalles si no están cargados
+            if (!$venta->relationLoaded('detalles')) {
+                $venta->load('detalles.producto');
+            }
+
+            if ($venta->detalles && $venta->detalles->isNotEmpty()) {
+                foreach ($venta->detalles as $detalle) {
+                    // Asegurar que el producto está cargado
+                    if (!$detalle->relationLoaded('producto') && $detalle->producto_id) {
+                        $detalle->load('producto');
+                    }
+
+                    $productoNombre = $detalle->producto->nombre ?? 'Desconocido';
+
+                    if (!isset($productosVendidos[$productoNombre])) {
+                        $productosVendidos[$productoNombre] = [
+                            'nombre' => $productoNombre,
+                            'cantidad' => 0,
+                            'monto' => 0,
+                        ];
+                    }
+
+                    $cantidad = (int)($detalle->cantidad ?? 0);
+                    $subtotal = (float)($detalle->subtotal ?? 0);
+
+                    $productosVendidos[$productoNombre]['cantidad'] += $cantidad;
+                    $productosVendidos[$productoNombre]['monto'] += $subtotal;
+                }
+            }
+        }
+
+        if (empty($productosVendidos)) {
+            return [];
+        }
+
+        uasort($productosVendidos, fn($a, $b) => $b['monto'] <=> $a['monto']);
+
+        $resultado = array_slice(
+            array_map(fn($p) => [
+                'nombre' => $p['nombre'],
+                'cantidad' => (int)$p['cantidad'],
+                'monto' => round($p['monto'], 2),
+            ], $productosVendidos),
+            0,
+            $limite
+        );
+
+        // 🔴 CRÍTICO: Convertir a array indexado (no asociativo) para que Inertia lo serialice como array
+        return array_values($resultado);
+    }
+
+    /**
+     * Obtener productos más vendidos por caja
+     */
+    private function obtenerProductosTopPorCaja($ventas, $limite = 5): array
+    {
+        if ($ventas->isEmpty()) {
+            return [];
+        }
+
+        $productosVendidos = [];
+
+        foreach ($ventas as $venta) {
+            // Cargar detalles si no están cargados
+            if (!$venta->relationLoaded('detalles')) {
+                $venta->load('detalles.producto');
+            }
+
+            if ($venta->detalles && $venta->detalles->isNotEmpty()) {
+                foreach ($venta->detalles as $detalle) {
+                    // Asegurar que el producto está cargado
+                    if (!$detalle->relationLoaded('producto') && $detalle->producto_id) {
+                        $detalle->load('producto');
+                    }
+
+                    $productoNombre = $detalle->producto->nombre ?? 'Desconocido';
+
+                    if (!isset($productosVendidos[$productoNombre])) {
+                        $productosVendidos[$productoNombre] = [
+                            'nombre' => $productoNombre,
+                            'cantidad' => 0,
+                            'monto' => 0,
+                        ];
+                    }
+
+                    $cantidad = (int)($detalle->cantidad ?? 0);
+                    $subtotal = (float)($detalle->subtotal ?? 0);
+
+                    $productosVendidos[$productoNombre]['cantidad'] += $cantidad;
+                    $productosVendidos[$productoNombre]['monto'] += $subtotal;
+                }
+            }
+        }
+
+        if (empty($productosVendidos)) {
+            return [];
+        }
+
+        uasort($productosVendidos, fn($a, $b) => $b['monto'] <=> $a['monto']);
+
+        $resultado = array_slice(
+            array_map(fn($p) => [
+                'nombre' => $p['nombre'],
+                'cantidad' => (int)$p['cantidad'],
+                'monto' => round($p['monto'], 2),
+            ], $productosVendidos),
+            0,
+            $limite
+        );
+
+        // 🔴 CRÍTICO: Convertir a array indexado (no asociativo) para que Inertia lo serialice como array
+        return array_values($resultado);
     }
 }

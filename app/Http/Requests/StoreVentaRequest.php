@@ -81,6 +81,13 @@ class StoreVentaRequest extends FormRequest
             'detalles.*.combo_items_seleccionados.*.combo_item_id' => 'nullable|integer|exists:combo_items,id',
             'detalles.*.combo_items_seleccionados.*.producto_id' => 'nullable|integer|exists:productos,id',
             'detalles.*.combo_items_seleccionados.*.incluido' => 'nullable|boolean',
+            // 🏭 NUEVO: Validación para producción (productos elaborados)
+            'detalles.*.produccion_id' => 'nullable|exists:producciones,id',
+            // 🏭 NUEVO: Validación para adiciones (productos comprados)
+            'detalles.*.adiciones' => 'nullable|array',
+            'detalles.*.adiciones.*.producto_id' => 'required_if:detalles.*.adiciones,not_empty|exists:productos,id',
+            'detalles.*.adiciones.*.cantidad' => 'required_if:detalles.*.adiciones,not_empty|numeric|min:0.000001',
+            'detalles.*.adiciones.*.precio_unitario' => 'required_if:detalles.*.adiciones,not_empty|numeric|min:0.01',
             // ✅ NUEVO (2026-03-02): Validación para monto_pagado_inicial
             'monto_pagado_inicial' => 'nullable|numeric|min:0',
 

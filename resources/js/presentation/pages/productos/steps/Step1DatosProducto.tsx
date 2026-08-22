@@ -35,6 +35,7 @@ export interface Step1Props {
         principio_activo?: string | null; // ✨ NUEVO - Ingrediente activo para medicamentos
         uso_de_medicacion?: string | null; // ✨ NUEVO - Indicaciones de uso para medicamentos
         visible_app?: boolean; // ✨ NUEVO - Visible en app
+        es_de_produccion?: boolean; // 🏭 NUEVO - Indica si es producto de una receta de producción
     };
     errors: Record<string, string>;
     categoriasOptions: Option[];
@@ -699,6 +700,21 @@ function Step1DatosProducto({
                     }
                     hint="Desactiva esta opción si quieres ocultarlo de los clientes en la app"
                     colorScheme="green"
+                />
+
+                <FeatureToggle
+                    id="es_de_produccion"
+                    checked={!!data.es_de_produccion}
+                    onCheckedChange={(v) => setData('es_de_produccion', !!v)}
+                    icon="🏭"
+                    title="Es Producto de Producción"
+                    description={
+                        data.es_de_produccion
+                            ? '✅ Este producto es resultado de una receta de producción'
+                            : '❌ Este es un producto básico sin receta'
+                    }
+                    hint="Activa esta opción si este producto se elabora internamente con una receta que asocia otros productos como ingredientes"
+                    colorScheme="orange"
                 />
             </div>
 

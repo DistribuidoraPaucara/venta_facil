@@ -60,6 +60,9 @@ export interface Producto extends BaseEntity {
   principio_activo?: string | null; // ✨ NUEVO: Ingrediente activo para medicamentos
   uso_de_medicacion?: string | null; // ✨ NUEVO: Indicaciones de uso para medicamentos
   visible_app?: boolean; // ✨ NUEVO: Visible en app móvil
+  tipo_producto?: string; // 🏭 NUEVO: Tipo: comprado, elaborado_cafeteria, materia_prima
+  requiere_receta?: boolean; // 🏭 NUEVO: Si requiere receta
+  unidad_medida?: string | null; // 🏭 NUEVO: Unidad de medida para producción
   categoria_id?: Id;
   marca_id?: Id;
   proveedor_id?: Id;
@@ -117,6 +120,9 @@ export interface ProductoFormData extends BaseFormData {
   principio_activo?: string | null; // ✨ NUEVO: Ingrediente activo para medicamentos
   uso_de_medicacion?: string | null; // ✨ NUEVO: Indicaciones de uso para medicamentos
   visible_app?: boolean; // ✨ NUEVO: Visible en app móvil
+  tipo_producto?: string; // 🏭 NUEVO: Tipo: comprado, elaborado_cafeteria, materia_prima
+  requiere_receta?: boolean; // 🏭 NUEVO: Si requiere receta (solo para elaborados)
+  unidad_medida?: string | null; // 🏭 NUEVO: Unidad de medida para producción
   precios: Precio[];
   codigos: CodigoBarra[];
   almacenes?: StockAlmacen[];

@@ -228,6 +228,11 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         ->middleware('permission:ventas.index|ventas.manage')
         ->name('reportes.ventas-diario-cajas');
 
+    // ✅ Descargar reporte en Excel
+    Route::get('reportes/ventas-diario-cajas/excel', [\App\Http\Controllers\ReporteDiarioVentasController::class, 'descargarExcel'])
+        ->middleware('permission:ventas.index|ventas.manage')
+        ->name('reportes.ventas-diario-cajas.excel');
+
     Route::resource('unidades', \App\Http\Controllers\UnidadMedidaController::class)->parameters(['unidades' => 'unidad'])->middleware('permission:unidades.manage');
 
     // Rutas para gestión de tipos de precio
@@ -1342,6 +1347,24 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     // ✅ NUEVO (2026-08-12): Rutas para descargar/ver logs
     Route::get('logs/view', [\App\Http\Controllers\Api\LogsController::class, 'view'])->name('logs.view');
     Route::get('logs/download', [\App\Http\Controllers\Api\LogsController::class, 'download'])->name('logs.download');
+
+    // 🏭 NUEVO: MÓDULO DE PRODUCCIÓN (FASE 3-5)
+    Route::prefix('produccion')->name('produccion.')->group(function () {
+        // Gestión de Recetas
+        Route::get('recetas-manager', function () {
+            return Inertia::render('produccion/recetas-manager');
+        })->name('recetas-manager');
+
+        // Registro de Producción
+        Route::get('registro-produccion', function () {
+            return Inertia::render('produccion/registro-produccion');
+        })->name('registro-produccion');
+
+        // Reportes de Producción
+        Route::get('reporte-produccion', function () {
+            return Inertia::render('produccion/reporte-produccion');
+        })->name('reporte-produccion');
+    });
 });
 
 require __DIR__ . '/settings.php';

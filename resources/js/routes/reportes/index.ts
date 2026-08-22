@@ -1,5 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 import codigosBarra from './codigos-barra'
+import ventasDiarioCajas from './ventas-diario-cajas'
 import precios from './precios'
 import ganancias from './ganancias'
 import credito from './credito'
@@ -219,7 +220,7 @@ impresion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     impresion.form = impresionForm
 /**
 * @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
- * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:24
  * @route '/reportes/ventas-diario-cajas'
  */
 export const ventasDiarioCajas = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -234,7 +235,7 @@ ventasDiarioCajas.definition = {
 
 /**
 * @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
- * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:24
  * @route '/reportes/ventas-diario-cajas'
  */
 ventasDiarioCajas.url = (options?: RouteQueryOptions) => {
@@ -243,7 +244,7 @@ ventasDiarioCajas.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
- * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:24
  * @route '/reportes/ventas-diario-cajas'
  */
 ventasDiarioCajas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -252,7 +253,7 @@ ventasDiarioCajas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
 })
 /**
 * @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
- * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:24
  * @route '/reportes/ventas-diario-cajas'
  */
 ventasDiarioCajas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -262,7 +263,7 @@ ventasDiarioCajas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
     /**
 * @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
- * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:24
  * @route '/reportes/ventas-diario-cajas'
  */
     const ventasDiarioCajasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -272,7 +273,7 @@ ventasDiarioCajas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
             /**
 * @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
- * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:24
  * @route '/reportes/ventas-diario-cajas'
  */
         ventasDiarioCajasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -281,7 +282,7 @@ ventasDiarioCajas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
         })
             /**
 * @see \App\Http\Controllers\ReporteDiarioVentasController::ventasDiarioCajas
- * @see app/Http/Controllers/ReporteDiarioVentasController.php:21
+ * @see app/Http/Controllers/ReporteDiarioVentasController.php:24
  * @route '/reportes/ventas-diario-cajas'
  */
         ventasDiarioCajasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -15,6 +15,7 @@ class RecetaIngrediente extends Model
         'receta_id',
         'producto_id',
         'cantidad_requerida',
+        'unidad_medida_id',
     ];
 
     protected function casts(): array

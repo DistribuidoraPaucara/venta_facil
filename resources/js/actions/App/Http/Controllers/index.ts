@@ -43,6 +43,9 @@ import PrestamoProveedorController from './PrestamoProveedorController'
 import ReportesController from './ReportesController'
 import Prestamos from './Prestamos'
 import ActualizarStockMasivoController from './ActualizarStockMasivoController'
+import RecetaController from './RecetaController'
+import ProduccionController from './ProduccionController'
+import AdicionVentaController from './AdicionVentaController'
 import FaviconController from './FaviconController'
 import VentaPublicController from './VentaPublicController'
 import PublicStockController from './PublicStockController'
@@ -158,6 +161,9 @@ PrestamoProveedorController,
 ReportesController,
 Prestamos,
 ActualizarStockMasivoController,
+RecetaController,
+ProduccionController,
+AdicionVentaController,
 FaviconController,
 VentaPublicController,
 PublicStockController,
