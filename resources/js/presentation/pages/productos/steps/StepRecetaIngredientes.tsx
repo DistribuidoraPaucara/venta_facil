@@ -33,10 +33,12 @@ export default function StepRecetaIngredientes({
     console.log('📦 StepRecetaIngredientes - unidadesDisponibles:', unidadesDisponibles);
     console.log('📦 StepRecetaIngredientes - ingredientes:', ingredientes);
     const addIngrediente = () => {
+        // 🏭 NUEVO: Seleccionar por defecto la unidad "UN" (Unidad)
+        const unidadUN = unidadesDisponibles.find((u: any) => u.codigo === 'UN');
         const nuevoIngrediente: Ingrediente = {
             producto_id: '',
             cantidad_requerida: 1,
-            unidad_medida_id: unidadesDisponibles[0]?.id || '',
+            unidad_medida_id: unidadUN?.id || unidadesDisponibles[0]?.id || '',
         };
         setIngredientes([...ingredientes, nuevoIngrediente]);
     };
