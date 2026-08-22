@@ -318,36 +318,10 @@ export default function Step3Conversiones({
                 placeholder="Ej: 100"
                 className="flex-1 font-bold text-base"
               />
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                {unidadBase?.nombre} → Destino
-              </span>
             </div>
             <p className="text-xs text-muted-foreground">
               Cuántas unidades destino hay en 1 unidad base
             </p>
-
-            {/* Conversiones comunes sugeridas */}
-            {console.log('🔍 DEBUG - conversionesComunes:', conversionesComunes)}
-            {conversionesComunes.length > 0 && (
-              <div className="mt-4 p-4 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 rounded">
-                <p className="text-xs font-bold mb-2">💡 Conversiones comunes - Haz clic para cargar:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {conversionesComunes.map((conv, idx) => (
-                    <input
-                      key={idx}
-                      type="button"
-                      value={conv.label}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        cargarFactorDirecto(conv.factor_conversion);
-                      }}
-                      className="px-2 py-2 text-xs font-bold bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded cursor-pointer border-2 border-yellow-600 active:scale-95"
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
             {loadingConversiones && (
               <div className="mt-3 text-xs text-muted-foreground italic">
                 Cargando conversiones comunes...
@@ -357,15 +331,21 @@ export default function Step3Conversiones({
 
           {/* Conversión Principal */}
           <div className="space-y-2 flex items-end pb-2">
-            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-700 flex-1">
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-700 flex-1 hover:shadow-md transition-shadow">
               <Checkbox
                 id="es_principal"
                 checked={formConversion.es_conversion_principal}
                 onCheckedChange={handlePrincipalChange}
+                className="w-5 h-5"
               />
-              <Label htmlFor="es_principal" className="font-medium cursor-pointer text-sm">
-                Conversión Principal (por defecto)
-              </Label>
+              <div className="flex flex-col gap-1 flex-1">
+                <Label htmlFor="es_principal" className="font-bold cursor-pointer text-sm text-blue-900 dark:text-blue-100">
+                  ⭐ Usar como conversión predeterminada
+                </Label>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Se aplicará automáticamente en operaciones de venta
+                </p>
+              </div>
             </div>
           </div>
         </div>
