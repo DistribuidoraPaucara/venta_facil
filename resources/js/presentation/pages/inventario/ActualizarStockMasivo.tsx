@@ -414,7 +414,8 @@ export default function ActualizarStockMasivo() {
                     <TableBody>
                       {productosFiltrados.map((producto) => {
                         const tienesCambio = producto.id in cambiosTabla;
-                        const cambio = cambiosTabla[producto.id] || { cantidad: 0, unidad_id: producto.unidad_medida_id, cantidad_convertida: 0 };
+                        const unidadBase = producto.unidad_medida_id || 1;
+                        const cambio = cambiosTabla[producto.id] || { cantidad: 0, unidad_id: unidadBase, cantidad_convertida: 0 };
                         const stockFinal = producto.cantidad_total + cambio.cantidad_convertida;
                         const unidadActual = cambio.unidad_id === producto.unidad_medida_id
                           ? producto.unidad_nombre
@@ -443,7 +444,7 @@ export default function ActualizarStockMasivo() {
                                   className="w-12 md:w-16 px-1 md:px-2 py-1 text-xs md:text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <select
-                                  value={cambio.unidad_id}
+                                  value={String(cambio.unidad_id || unidadBase)}
                                   onChange={(e) => handleCambioTabla(producto.id, String(cambio.cantidad), Number(e.target.value))}
                                   className="px-1 md:px-2 py-1 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
