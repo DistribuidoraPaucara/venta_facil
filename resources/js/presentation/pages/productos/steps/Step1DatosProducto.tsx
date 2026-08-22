@@ -474,7 +474,7 @@ function Step1DatosProducto({
                     <div className="flex items-center justify-between gap-2">
                         <label className="text-sm font-medium">Unidad de medida</label>
                         <a
-                            href="/unidades-medida/create"
+                            href="/unidades/create"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"

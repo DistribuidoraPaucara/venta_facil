@@ -44,9 +44,7 @@ const initialProductoData: ProductoFormData = {
     uso_de_medicacion: null, // ✨ NUEVO
     visible_app: true, // ✨ NUEVO - Visible en app por defecto
     es_de_produccion: false, // 🏭 NUEVO - Es producto de producción
-    precios: [
-        { monto: 0, tipo_precio_id: 1 },
-    ],
+    precios: [{ monto: 0, tipo_precio_id: 1 }],
     codigos: [{ codigo: '' }],
     almacenes: [], // ✨ NUEVO: Stock por almacén y sector
     globalSectorId: undefined, // ✨ NUEVO: Sector global para aplicar a todos los lotes
@@ -100,6 +98,9 @@ export default function ProductoForm({
     // Estado para controlar el tab activo (siempre inicia en "datos")
     const [activeTab, setActiveTab] = useState<string>('datos');
 
+    // 🎨 Estado para mostrar/ocultar panel de imágenes
+    const [showImages, setShowImages] = useState<boolean>(false);
+
     // ✅ Estado separado para imágenes (no van en useForm por ser objetos complejos)
     const [perfilState, setPerfilState] = useState<Imagen | undefined>(producto?.perfil ?? undefined);
     const [galeriaState, setGaleriaState] = useState<Imagen[]>(producto?.galeria ?? []);
@@ -124,14 +125,10 @@ export default function ProductoForm({
         }));
     };
 
-    const [ingredientesState, setIngredientesState] = useState<Ingrediente[]>(
-        getInitialIngredientes()
-    );
+    const [ingredientesState, setIngredientesState] = useState<Ingrediente[]>(getInitialIngredientes());
 
     // 🏭 NUEVO: Convertir productos de props al formato esperado
-    const productosDisponibles = Array.isArray(productos)
-        ? (productos as any[]).map((p: any) => ({ id: p.id, nombre: p.nombre }))
-        : [];
+    const productosDisponibles = Array.isArray(productos) ? (productos as any[]).map((p: any) => ({ id: p.id, nombre: p.nombre })) : [];
 
     // 🔍 DEBUG
     useEffect(() => {
@@ -766,14 +763,12 @@ export default function ProductoForm({
 
             <div className="px-2 py-1">
                 <div className="flex flex-wrap items-center justify-between p-2">
-                    {!isEditing && (
-                        <div>
-                            <div className="text-bold text-xl">{isEditing ? `Editar: ${producto.nombre}` : 'Nuevo'}</div>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {isEditing ? 'Modifica los datos del producto' : 'Agrega un nuevo producto al inventario'}
-                            </p>
-                        </div>
-                    )}
+                    <div>
+                        <div className="text-bold text-xl">{isEditing ? `Editar: ${producto.nombre}` : 'Nuevo'}</div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            {isEditing ? 'Modifica los datos del producto' : 'Agrega un nuevo producto al inventario'}
+                        </p>
+                    </div>
                     <div className="flex items-center gap-2">
                         {!isEditing && (
                             <Button type="button" variant="destructive" size="sm" onClick={clearDraft}>
@@ -783,187 +778,204 @@ export default function ProductoForm({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Izquierda: Tabs de edición (2/3 del ancho) */}
-                    <div className="lg:col-span-2">
-                        {/* 🏢 NUEVO: Resumen de totales de almacenes - SIEMPRE VISIBLE */}
-                        {(data.almacenes || []).length > 0 && (() => {
-                            const totales = calcularTotalesAlmacenes();
-                            return (
-                                <div className="mb-4 rounded-lg border border-border bg-card p-3">
-                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                                        {/* Total General */}
-                                        <div className="rounded-md border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950/50">
-                                            <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                                                📦 Total General: <span className="text-sm">{totales.cantidad.toFixed(2)}</span>
-                                            </div>
+                {/* 🏢 NUEVO: Resumen de totales de almacenes - SIEMPRE VISIBLE */}
+                {(data.almacenes || []).length > 0 &&
+                    (() => {
+                        const totales = calcularTotalesAlmacenes();
+                        return (
+                            <div className="mb-4 rounded-lg border border-border bg-card p-3">
+                                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                                    {/* Total General */}
+                                    <div className="rounded-md border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950/50">
+                                        <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                                            📦 Total General: <span className="text-sm">{totales.cantidad.toFixed(2)}</span>
                                         </div>
+                                    </div>
 
-                                        {/* Total Disponible */}
-                                        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-800 dark:bg-emerald-950/50">
-                                            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                                                ✅ Disponible: <span className="text-sm">{totales.disponible.toFixed(2)}</span>
-                                            </div>
+                                    {/* Total Disponible */}
+                                    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-800 dark:bg-emerald-950/50">
+                                        <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                                            ✅ Disponible: <span className="text-sm">{totales.disponible.toFixed(2)}</span>
                                         </div>
+                                    </div>
 
-                                        {/* Total Reservada */}
-                                        <div className="rounded-md border border-amber-200 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-950/50">
-                                            <div className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                                🔒 Reservado: <span className="text-sm">{totales.reservada.toFixed(2)}</span>
-                                            </div>
+                                    {/* Total Reservada */}
+                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-950/50">
+                                        <div className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                            🔒 Reservado: <span className="text-sm">{totales.reservada.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 </div>
-                            );
-                        })()}
+                            </div>
+                        );
+                    })()}
 
-                <Tabs defaultValue="datos" className="w-full">
-                    <TabsList className={`flex flex-wrap items-center justify-start border-b border-border bg-background gap-2`}>
-                        <TabsTrigger value="datos">Datos del producto</TabsTrigger>
+                <div className={`grid grid-cols-1 gap-6 ${showImages ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
+                    {/* Izquierda: Tabs de edición */}
+                    <div className={showImages ? 'lg:col-span-2' : 'w-full'}>
+                        <Tabs defaultValue="datos" className="w-full">
+                            <TabsList className={`flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background`}>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <TabsTrigger value="datos">Datos del producto</TabsTrigger>
+                                    {permite_productos_fraccionados && data.es_fraccionado && (
+                                        <TabsTrigger value="conversiones">✨ Conversiones</TabsTrigger>
+                                    )}
+                                    {/* {isEditing && <TabsTrigger value="precio-rango">Rango de Precios</TabsTrigger>} */}
+                                    <TabsTrigger value="precios">Precios y códigos</TabsTrigger>
+                                    {data.es_de_produccion && <TabsTrigger value="ingredientes">🏭 Ingredientes</TabsTrigger>}
+                                    <TabsTrigger value="almacenes">Almacenes</TabsTrigger>
+                                    {isEditing && (producto as any)?.es_combo && <TabsTrigger value="combos">📦 Combos</TabsTrigger>}
+                                </div>
 
-                        {permite_productos_fraccionados && data.es_fraccionado && <TabsTrigger value="conversiones">✨ Conversiones</TabsTrigger>}
-                        {isEditing && <TabsTrigger value="precio-rango">Rango de Precios</TabsTrigger>}
-                        <TabsTrigger value="precios">Precios y códigos</TabsTrigger>
-                        {data.es_de_produccion && <TabsTrigger value="ingredientes">🏭 Ingredientes</TabsTrigger>}
-                        <TabsTrigger value="almacenes">Almacenes</TabsTrigger>
-                        {isEditing && (producto as any)?.es_combo && <TabsTrigger value="combos">📦 Combos</TabsTrigger>}
-                    </TabsList>
+                                {/* 🎨 Botón para toggliar panel de imágenes */}
+                                <Button
+                                    type="button"
+                                    variant={showImages ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setShowImages(!showImages)}
+                                    className="ml-auto"
+                                    title={showImages ? "Ocultar imágenes" : "Mostrar imágenes"}
+                                >
+                                    {showImages ? "📸 Ocultar" : "📸 Mostrar"}
+                                </Button>
+                            </TabsList>
 
-                    <form onSubmit={submit} className="space-y-2">
-                        <TabsContent value="datos" className="mt-4 space-y-4">
-                            <Step1DatosProducto
-                                data={data}
-                                errors={errors}
-                                categoriasOptions={categoriasSelect.filteredOptions}
-                                marcasOptions={marcasSelect.filteredOptions}
-                                unidadesOptions={unidadesSelect.filteredOptions}
-                                setData={setData}
-                                getInputClassName={getInputClassName}
-                                permite_productos_fraccionados={permite_productos_fraccionados} // ✨ NUEVO
-                                es_farmacia={es_farmacia} // ✨ NUEVO
-                                visible_app={data.visible_app} // ✨ NUEVO
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="precios" className="space-y-2">
-                            <Step2PreciosCodigos
-                                data={{
-                                    precios: data.precios,
-                                    codigos: data.codigos,
-                                    es_fraccionado: data.es_fraccionado, // ✨ NUEVO
-                                    unidad_medida_id: data.unidad_medida_id, // ✨ NUEVO
-                                    conversiones: data.conversiones, // ✨ NUEVO
-                                }}
-                                errors={errors}
-                                tipos_precio={tipos_precio}
-                                porcentajeInteres={porcentajeInteres}
-                                precioCosto={data.precios?.find((p: Precio) => Number(p.tipo_precio_id) === 1)?.monto ?? 0}
-                                isEditing={isEditing}
-                                addPrecio={() => {}}
-                                removePrecio={() => {}}
-                                setPrecio={setPrecio}
-                                setPrecios={setPrecios}
-                                toggleTipoPrecio={toggleTipoPrecio}
-                                getTipoPrecioInfo={() => undefined}
-                                calcularGanancia={() => ({ ganancia: 0, porcentaje: 0 })}
-                                addCodigo={addCodigo}
-                                removeCodigo={removeCodigo}
-                                setCodigo={setCodigo}
-                                historial_precios={historial_precios}
-                                unidades={unidades} // ✨ NUEVO
-                            />
-                        </TabsContent>
-
-                        {/* ✨ NUEVA PESTAÑA: Conversiones de Unidades */}
-                        {permite_productos_fraccionados && (
-                            <TabsContent value="conversiones" className="mt-6 space-y-6">
-                                {data.es_fraccionado && (
-                                    <Step3Conversiones
+                            <form onSubmit={submit} className="space-y-2">
+                                <TabsContent value="datos" className="mt-4 space-y-4">
+                                    <Step1DatosProducto
                                         data={data}
-                                        unidadesOptions={unidadesSelect.filteredOptions}
-                                        unidadBase={unidades.find((u) => u.id === Number(data.unidad_medida_id))}
-                                        setData={setData}
                                         errors={errors}
+                                        categoriasOptions={categoriasSelect.filteredOptions}
+                                        marcasOptions={marcasSelect.filteredOptions}
+                                        unidadesOptions={unidadesSelect.filteredOptions}
+                                        setData={setData}
+                                        getInputClassName={getInputClassName}
+                                        permite_productos_fraccionados={permite_productos_fraccionados} // ✨ NUEVO
+                                        es_farmacia={es_farmacia} // ✨ NUEVO
+                                        visible_app={data.visible_app} // ✨ NUEVO
+                                    />
+                                </TabsContent>
+
+                                <TabsContent value="precios" className="space-y-2">
+                                    <Step2PreciosCodigos
+                                        data={{
+                                            precios: data.precios,
+                                            codigos: data.codigos,
+                                            es_fraccionado: data.es_fraccionado, // ✨ NUEVO
+                                            unidad_medida_id: data.unidad_medida_id, // ✨ NUEVO
+                                            conversiones: data.conversiones, // ✨ NUEVO
+                                        }}
+                                        errors={errors}
+                                        tipos_precio={tipos_precio}
+                                        porcentajeInteres={porcentajeInteres}
+                                        precioCosto={data.precios?.find((p: Precio) => Number(p.tipo_precio_id) === 1)?.monto ?? 0}
+                                        isEditing={isEditing}
+                                        addPrecio={() => {}}
+                                        removePrecio={() => {}}
+                                        setPrecio={setPrecio}
+                                        setPrecios={setPrecios}
+                                        toggleTipoPrecio={toggleTipoPrecio}
+                                        getTipoPrecioInfo={() => undefined}
+                                        calcularGanancia={() => ({ ganancia: 0, porcentaje: 0 })}
+                                        addCodigo={addCodigo}
+                                        removeCodigo={removeCodigo}
+                                        setCodigo={setCodigo}
+                                        historial_precios={historial_precios}
+                                        unidades={unidades} // ✨ NUEVO
+                                    />
+                                </TabsContent>
+
+                                {/* ✨ NUEVA PESTAÑA: Conversiones de Unidades */}
+                                {permite_productos_fraccionados && (
+                                    <TabsContent value="conversiones" className="mt-6 space-y-6">
+                                        {data.es_fraccionado && (
+                                            <Step3Conversiones
+                                                data={data}
+                                                unidadesOptions={unidadesSelect.filteredOptions}
+                                                unidadBase={unidades.find((u) => u.id === Number(data.unidad_medida_id))}
+                                                setData={setData}
+                                                errors={errors}
+                                            />
+                                        )}
+                                    </TabsContent>
+                                )}
+
+                                {/* 🏭 NUEVA PESTAÑA: Ingredientes de Receta */}
+                                {data.es_de_produccion && (
+                                    <TabsContent value="ingredientes" className="space-y-6">
+                                        <StepRecetaIngredientes
+                                            ingredientes={ingredientesState}
+                                            setIngredientes={setIngredientesState}
+                                            productosDisponibles={productosDisponibles}
+                                            unidadesDisponibles={unidades}
+                                            errors={errors}
+                                        />
+                                    </TabsContent>
+                                )}
+
+                                <TabsContent value="almacenes" className="space-y-6">
+                                    <Step3Almacenes
+                                        data={{ almacenes: data.almacenes || [] }}
+                                        setData={setData}
+                                        almacenesOptions={almacenes.map((a) => ({
+                                            value: String(a.id),
+                                            label: a.nombre,
+                                        }))}
+                                        sectores={sectores} // ✨ NUEVO: Pasar sectores pre-cargados
+                                        addAlmacen={addAlmacen}
+                                        setAlmacen={setAlmacen}
+                                        removeAlmacen={removeAlmacen}
+                                        setSectorConSincronizacion={setSectorConSincronizacion}
+                                        canEditStockQuantities={canEditStockQuantities} // ✨ NUEVO: Pasar permiso para editar cantidades
+                                        handleCantidadTotalChange={handleCantidadTotalChange}
+                                    />
+                                </TabsContent>
+                            </form>
+
+                            {/* ✨ NUEVA PESTAÑA: Rango de Precios - FUERA DEL FORMULARIO PRINCIPAL */}
+                            <TabsContent value="precio-rango" className="mt-2 space-y-2">
+                                {producto?.id && (
+                                    <Step5PrecioRango
+                                        productoId={producto.id}
+                                        tiposPrecio={
+                                            tipos_precio?.map((t: any) => ({
+                                                id: t.value ?? t.id,
+                                                nombre: t.label ?? t.nombre,
+                                                codigo: t.code ?? t.codigo,
+                                            })) || []
+                                        }
+                                        isEditing={isEditing}
                                     />
                                 )}
                             </TabsContent>
-                        )}
 
-                        {/* 🏭 NUEVA PESTAÑA: Ingredientes de Receta */}
-                        {data.es_de_produccion && (
-                            <TabsContent value="ingredientes" className="space-y-6">
-                                <StepRecetaIngredientes
-                                    ingredientes={ingredientesState}
-                                    setIngredientes={setIngredientesState}
-                                    productosDisponibles={productosDisponibles}
-                                    unidadesDisponibles={unidades}
-                                    errors={errors}
+                            {isEditing && producto?.id && (producto as any)?.es_combo && (
+                                <TabsContent value="combos" className="mt-6 space-y-6">
+                                    <div className="flex flex-col items-center justify-center space-y-4 py-12">
+                                        <p className="text-muted-foreground">Gestiona los componentes de este combo</p>
+                                        <Button asChild>
+                                            <Link href={`/combos/${producto.id}/edit`}>Ir a Editar Combo</Link>
+                                        </Button>
+                                    </div>
+                                </TabsContent>
+                            )}
+                        </Tabs>
+                    </div>
+
+                    {/* Derecha: Panel de imágenes (oculto por defecto) */}
+                    {showImages && (
+                        <div className="lg:col-span-1">
+                            <div className="sticky top-6 rounded-lg border border-border bg-card p-2">
+                                <h3 className="mb-4 text-lg font-semibold">📸 Imágenes del Producto</h3>
+                                <Step4Imagenes
+                                    data={{ perfil: perfilState ?? undefined, galeria: galeriaState ?? [] }}
+                                    setPerfil={setPerfil}
+                                    addGaleria={addGaleria}
+                                    removeGaleria={removeGaleria}
                                 />
-                            </TabsContent>
-                        )}
-
-                        <TabsContent value="almacenes" className="space-y-6">
-                            <Step3Almacenes
-                                data={{ almacenes: data.almacenes || [] }}
-                                setData={setData}
-                                almacenesOptions={almacenes.map((a) => ({
-                                    value: String(a.id),
-                                    label: a.nombre,
-                                }))}
-                                sectores={sectores} // ✨ NUEVO: Pasar sectores pre-cargados
-                                addAlmacen={addAlmacen}
-                                setAlmacen={setAlmacen}
-                                removeAlmacen={removeAlmacen}
-                                setSectorConSincronizacion={setSectorConSincronizacion}
-                                canEditStockQuantities={canEditStockQuantities} // ✨ NUEVO: Pasar permiso para editar cantidades
-                                handleCantidadTotalChange={handleCantidadTotalChange}
-                            />
-                        </TabsContent>
-
-                    </form>
-
-                    {/* ✨ NUEVA PESTAÑA: Rango de Precios - FUERA DEL FORMULARIO PRINCIPAL */}
-                    <TabsContent value="precio-rango" className="mt-2 space-y-2">
-                        {producto?.id && (
-                            <Step5PrecioRango
-                                productoId={producto.id}
-                                tiposPrecio={
-                                    tipos_precio?.map((t: any) => ({
-                                        id: t.value ?? t.id,
-                                        nombre: t.label ?? t.nombre,
-                                        codigo: t.code ?? t.codigo,
-                                    })) || []
-                                }
-                                isEditing={isEditing}
-                            />
-                        )}
-                    </TabsContent>
-
-                    {isEditing && producto?.id && (producto as any)?.es_combo && (
-                        <TabsContent value="combos" className="mt-6 space-y-6">
-                            <div className="flex flex-col items-center justify-center space-y-4 py-12">
-                                <p className="text-muted-foreground">Gestiona los componentes de este combo</p>
-                                <Button asChild>
-                                    <Link href={`/combos/${producto.id}/edit`}>Ir a Editar Combo</Link>
-                                </Button>
                             </div>
-                        </TabsContent>
-                    )}
-                </Tabs>
-                    </div>
-
-                    {/* Derecha: Imágenes siempre visible (1/3 del ancho) */}
-                    <div className="lg:col-span-1">
-                        <div className="sticky top-6 rounded-lg border border-border bg-card p-2">
-                            <h3 className="mb-4 text-lg font-semibold">📸 Imágenes del Producto</h3>
-                            <Step4Imagenes
-                                data={{ perfil: perfilState ?? undefined, galeria: galeriaState ?? [] }}
-                                setPerfil={setPerfil}
-                                addGaleria={addGaleria}
-                                removeGaleria={removeGaleria}
-                            />
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <div className="mt-2 flex w-full items-end justify-end gap-2 border-t border-t-border p-2">

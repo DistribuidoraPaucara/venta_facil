@@ -163,54 +163,10 @@ export default function Step3Almacenes({
     };
 
     return (
-        <div className="mt-2">
-            {/* ✨ RESUMEN TOTAL DE TODOS LOS ALMACENES */}
-            {(data.almacenes || []).length > 0 &&
-                (() => {
-                    const totalGeneral = {
-                        cantidad: 0,
-                        disponible: 0,
-                        reservada: 0,
-                    };
-
-                    (data.almacenes || []).forEach((a: StockAlmacen) => {
-                        totalGeneral.cantidad += Number(a.cantidad ?? a.stock ?? 0);
-                        totalGeneral.disponible += Number(a.cantidad_disponible ?? 0);
-                        totalGeneral.reservada += Number(a.cantidad_reservada ?? 0);
-                    });
-
-                    return (
-                        <div className="mt-2">
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                {/* Total General */}
-                                <div className="justify-content items-center rounded-md border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950/50">
-                                    <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">Total General: {totalGeneral.cantidad.toFixed(2)}</div>
-                                </div>
-
-                                {/* Total Disponible */}
-                                <div className="justify-content items-center rounded-md border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-800 dark:bg-emerald-950/50">
-                                    <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Disponible para vender: {totalGeneral.disponible.toFixed(2)}</div>
-                                </div>
-
-                                {/* Total Reservada */}
-                                <div className="justify-content items-center rounded-md border border-amber-200 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-950/50">
-                                    <div className="text-xs font-semibold text-amber-700 dark:text-amber-300">Reservado: {totalGeneral.reservada.toFixed(2)}</div>
-                                </div>
-                            </div>
-
-                            {/* Información adicional */}
-                            {/* <div className="mt-3 border-t border-slate-300 pt-3 dark:border-slate-700">
-                                <div className="text-xs text-slate-600 dark:text-slate-400">
-                                    📦 <span className="font-semibold">{(data.almacenes || []).length}</span> almacén
-                                    {(data.almacenes || []).length !== 1 ? 'es' : ''} asociado {(data.almacenes || []).length !== 1 ? 's' : ''}
-                                </div>
-                            </div> */}
-                        </div>
-                    );
-                })()}
+        <div className="mt-2">            
             <div className="w-full items-center justify-between gap-2 mt-4 space-y-6">
                 {/* SECCIÓN 1: SECTOR GLOBAL */}
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950/30">
                     <div className="flex items-center gap-2 mb-2">
                         <Label className="block text-sm font-medium">🏢 Asignar Sector</Label>
                         <Tooltip>
@@ -227,7 +183,7 @@ export default function Step3Almacenes({
 
                     <div className="space-y-3">
                         <div>
-                            <div className="flex items-center gap-1 mb-2">
+                            {/* <div className="flex items-center gap-1 mb-2">
                                 <Label className="block text-xs font-semibold text-foreground">Sector *</Label>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -239,7 +195,7 @@ export default function Step3Almacenes({
                                         Ubicación física dentro del almacén donde se guardan los lotes
                                     </TooltipContent>
                                 </Tooltip>
-                            </div>
+                            </div> */}
                             <SearchSelect
                                 id="sector-global"
                                 placeholder="Seleccione un sector"
@@ -253,32 +209,6 @@ export default function Step3Almacenes({
                                 allowClear={true}
                             />
                         </div>
-
-                        {/* Botón para guardar sector seleccionado */}
-                        {/* <Button
-                            type="button"
-                            size="sm"
-                            variant="default"
-                            onClick={() => {
-                                // Solo guardar el globalSectorId en data, la aplicación ocurre al guardar el formulario
-                                if (globalSectorId !== undefined) {
-                                    setData('globalSectorId', globalSectorId);
-                                }
-                            }}
-                            disabled={!globalSectorId}
-                        >
-                            ✨ Guardar sector seleccionado
-                        </Button> */}
-
-                        {/* Resumen de aplicación */}
-                        {/* {globalSectorId && (data.almacenes || []).length > 0 && (
-                            <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/30">
-                                <p className="text-xs text-blue-700 dark:text-blue-300">
-                                    ℹ️ El sector se aplicará a <span className="font-bold">{(data.almacenes || []).length}</span>{' '}
-                                    lote{(data.almacenes || []).length !== 1 ? 's' : ''} cuando guardes el formulario.
-                                </p>
-                            </div>
-                        )} */}
                     </div>
                 </div>
 
@@ -291,7 +221,7 @@ export default function Step3Almacenes({
                                 onClick={() => setExpandedAlmacenes(!expandedAlmacenes)}
                                 className="flex items-center gap-2 text-sm font-medium hover:text-blue-600 transition-colors"
                             >
-                                {expandedAlmacenes ? '▼' : '▶'} Gestión de Almacenes ({(data.almacenes || []).length})
+                                {expandedAlmacenes ? '▼' : '▶'} Gestión de Almacenes y Lotes ({(data.almacenes || []).length})
                             </button>
                             <Button type="button" size="sm" onClick={() => addAlmacen()} variant="outline" aria-label="Agregar almacén">
                                 📦Añadir almacén
