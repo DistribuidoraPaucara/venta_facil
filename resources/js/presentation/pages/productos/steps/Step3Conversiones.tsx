@@ -304,13 +304,12 @@ export default function Step3Conversiones({
 
             {/* Conversiones comunes sugeridas */}
             {console.log('🔍 DEBUG - conversionesComunes:', conversionesComunes)}
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
-              {conversionesComunes.length > 0 ? (
-                <>
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                    💡 Conversiones comunes ({conversionesComunes.length}):
-                  </p>
-                  <div className="flex flex-wrap gap-2">
+            {conversionesComunes.length > 0 && (
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-300 dark:border-green-700 rounded">
+                <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-2">
+                  💡 Conversiones comunes ({conversionesComunes.length}):
+                </p>
+                <div className="flex flex-wrap gap-2">
                     {conversionesComunes.map((conv, idx) => (
                       <button
                         key={idx}
@@ -329,16 +328,15 @@ export default function Step3Conversiones({
                         {conv.label}
                       </button>
                     ))}
-                  </div>
-                </>
-              ) : (
-                loadingConversiones && (
-                  <div className="text-xs text-muted-foreground italic">
-                    Cargando conversiones comunes...
-                  </div>
-                )
-              )}
-            </div>
+                </div>
+              </div>
+            )}
+
+            {loadingConversiones && (
+              <div className="mt-3 text-xs text-muted-foreground italic">
+                Cargando conversiones comunes...
+              </div>
+            )}
           </div>
 
           {/* Conversión Principal */}
