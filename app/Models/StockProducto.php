@@ -30,9 +30,9 @@ class StockProducto extends Model
     protected function casts(): array
     {
         return [
-            'cantidad' => 'int',
-            'cantidad_reservada' => 'int',
-            'cantidad_disponible' => 'int',
+            'cantidad' => 'decimal:4',
+            'cantidad_reservada' => 'decimal:4',
+            'cantidad_disponible' => 'decimal:4',
             'precio_costo' => 'decimal:2',
             'fecha_actualizacion' => 'datetime',
             'fecha_vencimiento' => 'date',
@@ -200,7 +200,7 @@ class StockProducto extends Model
      * IMPORTANTE: Este método debe llamarse dentro de una transacción DB
      * y el stock debe obtenerse con lockForUpdate() previamente
      */
-    public function reservar(int $cantidad): bool
+    public function reservar(float $cantidad): bool
     {
         // Validación de cantidad
         if ($cantidad <= 0) {
@@ -257,7 +257,7 @@ class StockProducto extends Model
         return true;
     }
 
-    public function liberarReserva(int $cantidad): bool
+    public function liberarReserva(float $cantidad): bool
     {
         // Validación de cantidad
         if ($cantidad <= 0) {
