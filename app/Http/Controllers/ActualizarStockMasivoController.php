@@ -736,10 +736,10 @@ class ActualizarStockMasivoController extends Controller
     private function crearMovimientoConTipo(
         int $productoId,
         int $stockProductoId,
-        int $cantidad,
+        float $cantidad,
         string $tipo,
-        int $stockAnterior,
-        int $stockNuevo,
+        float $stockAnterior,
+        float $stockNuevo,
         Producto $producto,
         ?string $lote = null
     )
