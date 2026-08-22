@@ -77,10 +77,10 @@ export default function Step4Imagenes({ data, setPerfil, addGaleria, removeGaler
         <div className="text-xs text-muted-foreground">Agrega la foto de perfil y las imágenes de la galería</div>
       </div> */}
       <div className="grid grid-cols-1 lg:grid-cols-1">
-        <div className="space-y-4">
+        <div className="space-y-2">
           <div className="relative space-y-2">
             <div>
-              <p className="text-base font-semibold mb-2">Foto de producto</p>
+              {/* <p className="text-base font-semibold mb-2">Foto de producto</p> */}
               <div className="flex gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>

@@ -681,6 +681,21 @@ export default function ProductoForm({
         }
     };
 
+    // 🏢 NUEVO: Calcular totales de almacenes para mostrar siempre
+    const calcularTotalesAlmacenes = () => {
+        const totales = {
+            cantidad: 0,
+            disponible: 0,
+            reservada: 0,
+        };
+        (data.almacenes || []).forEach((a) => {
+            totales.cantidad += Number(a.cantidad ?? a.stock ?? 0);
+            totales.disponible += Number(a.cantidad_disponible ?? 0);
+            totales.reservada += Number(a.cantidad_reservada ?? 0);
+        });
+        return totales;
+    };
+
     const setPerfil = (file: File | undefined) => {
         setPerfilState(file ? { file } : undefined);
     };
@@ -771,6 +786,37 @@ export default function ProductoForm({
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Izquierda: Tabs de edición (2/3 del ancho) */}
                     <div className="lg:col-span-2">
+                        {/* 🏢 NUEVO: Resumen de totales de almacenes - SIEMPRE VISIBLE */}
+                        {(data.almacenes || []).length > 0 && (() => {
+                            const totales = calcularTotalesAlmacenes();
+                            return (
+                                <div className="mb-4 rounded-lg border border-border bg-card p-3">
+                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                                        {/* Total General */}
+                                        <div className="rounded-md border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950/50">
+                                            <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                                                📦 Total General: <span className="text-sm">{totales.cantidad.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Total Disponible */}
+                                        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-800 dark:bg-emerald-950/50">
+                                            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                                                ✅ Disponible: <span className="text-sm">{totales.disponible.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Total Reservada */}
+                                        <div className="rounded-md border border-amber-200 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-950/50">
+                                            <div className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                                🔒 Reservado: <span className="text-sm">{totales.reservada.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                 <Tabs defaultValue="datos" className="w-full">
                     <TabsList className={`flex flex-wrap items-center justify-start border-b border-border bg-background gap-2`}>
                         <TabsTrigger value="datos">Datos del producto</TabsTrigger>
