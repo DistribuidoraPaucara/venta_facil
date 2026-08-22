@@ -14,6 +14,7 @@ import Step3Almacenes, { validarYAjustarAlmacenes } from './steps/Step3Almacenes
 import Step3Conversiones from './steps/Step3Conversiones'; // ✨ NUEVO
 import Step4Imagenes from './steps/Step4Imagenes';
 import Step5PrecioRango from './steps/Step5PrecioRango'; // ✨ NUEVO
+import StepRecetaIngredientes from './steps/StepRecetaIngredientes'; // 🏭 NUEVO: Ingredientes de receta
 
 // Estado del formulario tipado para evitar 'any' implícitos
 // Usamos el tipo original de ProductoFormData
@@ -42,6 +43,7 @@ const initialProductoData: ProductoFormData = {
     principio_activo: null, // ✨ NUEVO
     uso_de_medicacion: null, // ✨ NUEVO
     visible_app: true, // ✨ NUEVO - Visible en app por defecto
+    es_de_produccion: false, // 🏭 NUEVO - Es producto de producción
     precios: [
         { monto: 0, tipo_precio_id: 1 },
     ],
@@ -101,6 +103,21 @@ export default function ProductoForm({
     const [perfilState, setPerfilState] = useState<Imagen | undefined>(producto?.perfil ?? undefined);
     const [galeriaState, setGaleriaState] = useState<Imagen[]>(producto?.galeria ?? []);
 
+    // 🏭 Estado separado para ingredientes de receta
+    interface Ingrediente {
+        producto_id: number | string;
+        producto_nombre?: string;
+        cantidad_requerida: number;
+        unidad_medida_id?: number | string;
+        unidad_nombre?: string;
+    }
+    const [ingredientesState, setIngredientesState] = useState<Ingrediente[]>(
+        (producto as any)?.receta?.ingredientes ?? []
+    );
+
+    // 🏭 NUEVO: Estado para lista de productos disponibles como ingredientes
+    const [productosDisponibles, setProductosDisponibles] = useState<Array<{ id: number | string; nombre: string }>>([]);
+
     const DRAFT_KEY = 'producto_form_draft_v1';
 
     // Configurar hooks de búsqueda para cada entidad
@@ -136,6 +153,7 @@ export default function ProductoForm({
                   principio_activo: producto.principio_activo ?? null, // ✨ NUEVO
                   uso_de_medicacion: producto.uso_de_medicacion ?? null, // ✨ NUEVO
                   visible_app: producto.visible_app ?? true, // ✨ NUEVO - Visible en app
+                  es_de_produccion: producto.es_de_produccion ?? false, // 🏭 NUEVO - Es producto de producción
                   precios: producto.precios?.length ? producto.precios : initialProductoData.precios,
                   codigos: producto.codigos?.length ? producto.codigos : [{ codigo: '' }],
                   almacenes: producto.stock_almacenes?.length ? producto.stock_almacenes : [], // ✨ NUEVO
@@ -221,6 +239,39 @@ export default function ProductoForm({
         }
     }, [errors]);
 
+    // 🏭 NUEVO: Cargar lista de productos disponibles como ingredientes
+    useEffect(() => {
+        const cargarProductos = async () => {
+            try {
+                const respuesta = await fetch('/api/productos?limit=1000');
+                if (!respuesta.ok) throw new Error('Error al cargar productos');
+                const datos = await respuesta.json();
+
+                // Mapear la respuesta al formato esperado
+                const productosLista = Array.isArray(datos.data)
+                    ? datos.data.map((p: any) => ({ id: p.id, nombre: p.nombre }))
+                    : [];
+
+                setProductosDisponibles(productosLista);
+            } catch (error) {
+                console.error('Error cargando productos:', error);
+                // Intentar alternativa con el servicio
+                try {
+                    const respuesta = await fetch(productosService.indexUrl() + '?limit=1000');
+                    if (respuesta.ok) {
+                        const datos = await respuesta.json();
+                        const productosLista = datos.data?.map((p: any) => ({ id: p.id, nombre: p.nombre })) || [];
+                        setProductosDisponibles(productosLista);
+                    }
+                } catch (altError) {
+                    console.error('Error alternativo cargando productos:', altError);
+                }
+            }
+        };
+
+        cargarProductos();
+    }, []); // Solo ejecutar una vez al montar
+
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -237,20 +288,35 @@ export default function ProductoForm({
             return; // ✅ IMPORTANTE: Detener aquí, no continuar
         }
 
-        // Advertencia si no hay precios, pero permitir guardar
+        // 🏭 NUEVO: Validación de precios y ingredientes según si es producto de producción
         const preciosValidos = (data.precios || []).filter((p: Precio) => Number(p.monto) > 0);
-        if (preciosValidos.length === 0) {
-            const confirmed = await NotificationService.confirm(
-                '⚠️ El producto no tiene ningún precio definido. No podrá venderse hasta que definas al menos un precio. ¿Deseas continuar?',
-                {
-                    confirmText: 'Guardar sin precio',
-                    cancelText: 'Cancelar',
-                },
-            );
+        const esDeProduccion = data.es_de_produccion;
 
-            if (!confirmed) {
-                setActiveTab('precios');
-                return;
+        // Validar ingredientes si es producto de producción
+        if (esDeProduccion && ingredientesState.length === 0) {
+            NotificationService.error('❌ Los productos de producción deben tener al menos un ingrediente');
+            setActiveTab('ingredientes');
+            return;
+        }
+
+        if (preciosValidos.length === 0) {
+            // Si es de producción, los precios son opcionales (se usarán solo para cálculos internos)
+            if (esDeProduccion) {
+                // No mostrar advertencia, continuar directamente
+            } else {
+                // Para productos normales, advertir pero permitir continuar
+                const confirmed = await NotificationService.confirm(
+                    '⚠️ El producto no tiene ningún precio definido. No podrá venderse hasta que definas al menos un precio. ¿Deseas continuar?',
+                    {
+                        confirmText: 'Guardar sin precio',
+                        cancelText: 'Cancelar',
+                    },
+                );
+
+                if (!confirmed) {
+                    setActiveTab('precios');
+                    return;
+                }
             }
         }
 
@@ -276,6 +342,7 @@ export default function ProductoForm({
             principio_activo: data.principio_activo ?? '', // ✨ NUEVO - Campos de medicamento para farmacias
             uso_de_medicacion: data.uso_de_medicacion ?? '', // ✨ NUEVO - Campos de medicamento para farmacias
             visible_app: data.visible_app ? 1 : 0, // ✨ NUEVO - Visible en app
+            es_de_produccion: data.es_de_produccion ? 1 : 0, // 🏭 NUEVO - Es producto de producción
         }).forEach(([k, v]) => formData.append(k, String(v ?? '')));
 
         // Imágenes (desde estado separado)
@@ -314,6 +381,18 @@ export default function ProductoForm({
         // Si no hay códigos válidos, no enviar el campo (el backend creará uno automáticamente)
         if (codigosValidos.length === 0) {
             // No enviamos nada, el backend se encargará
+        }
+
+        // 🏭 NUEVO: Ingredientes de receta
+        if (data.es_de_produccion && ingredientesState.length > 0) {
+            ingredientesState.forEach((ing, i: number) => {
+                formData.append(`ingredientes[${i}][producto_id]`, String(ing.producto_id));
+                formData.append(`ingredientes[${i}][cantidad_requerida]`, String(ing.cantidad_requerida));
+                if (ing.unidad_medida_id) {
+                    formData.append(`ingredientes[${i}][unidad_medida_id]`, String(ing.unidad_medida_id));
+                }
+            });
+            console.log('🏭 Ingredientes enviados:', ingredientesState);
         }
 
         // ✨ NUEVO: Almacenes y sectores - CON VALIDACIÓN Y AJUSTE
@@ -673,6 +752,7 @@ export default function ProductoForm({
                         {permite_productos_fraccionados && data.es_fraccionado && <TabsTrigger value="conversiones">✨ Conversiones</TabsTrigger>}
                         {isEditing && <TabsTrigger value="precio-rango">Rango de Precios</TabsTrigger>}
                         <TabsTrigger value="precios">Precios y códigos</TabsTrigger>
+                        {data.es_de_produccion && <TabsTrigger value="ingredientes">🏭 Ingredientes</TabsTrigger>}
                         <TabsTrigger value="almacenes">Almacenes</TabsTrigger>
                         <TabsTrigger value="imagenes">Imágenes</TabsTrigger>
                         {isEditing && (producto as any)?.es_combo && <TabsTrigger value="combos">📦 Combos</TabsTrigger>}
@@ -735,6 +815,19 @@ export default function ProductoForm({
                                         errors={errors}
                                     />
                                 )}
+                            </TabsContent>
+                        )}
+
+                        {/* 🏭 NUEVA PESTAÑA: Ingredientes de Receta */}
+                        {data.es_de_produccion && (
+                            <TabsContent value="ingredientes" className="space-y-6">
+                                <StepRecetaIngredientes
+                                    ingredientes={ingredientesState}
+                                    setIngredientes={setIngredientesState}
+                                    productosDisponibles={productosDisponibles}
+                                    unidadesDisponibles={unidades}
+                                    errors={errors}
+                                />
                             </TabsContent>
                         )}
 
