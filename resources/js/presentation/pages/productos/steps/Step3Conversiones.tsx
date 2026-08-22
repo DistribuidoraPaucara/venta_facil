@@ -280,10 +280,9 @@ export default function Step3Conversiones({
             <Label>Factor de Conversión *</Label>
             <div className="flex items-center gap-2">
               <Input
-                type="number"
-                step="0.000001"
-                min="0"
-                value={formConversion.factor_conversion || ''}
+                type="text"
+                inputMode="decimal"
+                value={String(formConversion.factor_conversion)}
                 onChange={(e) => {
                   console.log('📝 Cambio en factor:', e.target.value);
                   setFormConversion(prev => ({
@@ -292,7 +291,7 @@ export default function Step3Conversiones({
                   }));
                 }}
                 placeholder="Ej: 100"
-                className="flex-1"
+                className="flex-1 font-bold text-base"
               />
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {unidadBase?.nombre} → Destino
@@ -312,18 +311,16 @@ export default function Step3Conversiones({
                 <div className="flex flex-wrap gap-2">
                     {conversionesComunes.map((conv, idx) => (
                       <button
-                        key={idx}
+                        key={`conv-${idx}-${conv.factor_conversion}`}
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          console.log('📌 Click en conversión común:', conv.factor_conversion);
-                          setFormConversion(prev => ({
-                            ...prev,
+                        onClick={() => {
+                          console.log('📌 CLICK:', conv.factor_conversion);
+                          setFormConversion({
+                            ...formConversion,
                             factor_conversion: String(conv.factor_conversion)
-                          }));
+                          });
                         }}
-                        className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors border border-blue-300 dark:border-blue-700 cursor-pointer"
-                        title={`Usar factor ${conv.factor_conversion}`}
+                        className="px-3 py-1 text-xs bg-green-200 dark:bg-green-700 text-green-900 dark:text-green-100 rounded font-bold hover:bg-green-300 dark:hover:bg-green-600 transition-colors border-2 border-green-500 cursor-pointer"
                       >
                         {conv.label}
                       </button>
