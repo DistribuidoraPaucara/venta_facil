@@ -129,6 +129,9 @@ export default function ProductoForm({
 
     const DRAFT_KEY = 'producto_form_draft_v1';
 
+    // 🏭 NUEVO: Obtener unidad de medida "UN" por defecto
+    const unidadUNId = (unidades as any[])?.find((u: any) => u.codigo === 'UN')?.id || '';
+
     // Configurar hooks de búsqueda para cada entidad
     const categoriasSelect = useEntitySelect(categorias);
     const marcasSelect = useEntitySelect(marcas);
@@ -136,6 +139,12 @@ export default function ProductoForm({
     const unidadesSelect = useEntitySelect(unidades, {
         searchFields: ['nombre', 'codigo'],
         descriptionField: 'codigo',
+    });
+
+    // 🏭 NUEVO: Datos iniciales con unidad "UN" por defecto
+    const getInitialData = (): ProductoFormData => ({
+        ...initialProductoData,
+        unidad_medida_id: unidadUNId, // Usar "UN" por defecto
     });
 
     const { data, setData, processing, errors, recentlySuccessful, clearErrors, reset } = useForm<ProductoFormData>(
@@ -169,7 +178,7 @@ export default function ProductoForm({
                   globalSectorId: undefined, // ✨ NUEVO: Sector global para aplicar a todos los lotes
                   conversiones: producto.conversiones?.length ? producto.conversiones : [], // ✨ NUEVO
               }
-            : initialProductoData,
+            : getInitialData(),
     );
 
     console.log('💾 useForm data inicializada:', data);
