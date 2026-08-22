@@ -4353,14 +4353,19 @@ class ProductoController extends Controller
             $almacenId = auth()->user()->empresa->almacen_id ?? 1;
 
             $productos = Producto::query()
-                ->select(['id', 'sku', 'nombre', 'categoria_id', 'activo'])
+                ->select(['id', 'sku', 'nombre', 'categoria_id', 'activo', 'unidad_medida_id'])
                 ->where('activo', true)
                 ->with([
                     'categoria:id,nombre',
+                    'unidad:id,nombre,simbolo',
                     'stock' => function ($query) use ($almacenId) {
                         $query->where('almacen_id', $almacenId)
                             ->select('producto_id', 'cantidad');
-                    }
+                    },
+                    'conversiones' => function ($query) {
+                        $query->where('activo', true)->select('id', 'producto_id', 'unidad_destino_id', 'factor_conversion');
+                    },
+                    'conversiones.unidadDestino:id,nombre,simbolo'
                 ])
                 ->orderBy('nombre')
                 ->get()
@@ -4371,6 +4376,16 @@ class ProductoController extends Controller
                         'nombre' => $producto->nombre,
                         'categoria' => $producto->categoria?->nombre ?? 'Sin categoría',
                         'cantidad_total' => $producto->stock->sum('cantidad') ?? 0,
+                        'unidad_medida_id' => $producto->unidad_medida_id,
+                        'unidad_nombre' => $producto->unidad?->nombre ?? 'UN',
+                        'conversiones' => $producto->conversiones->map(function ($conv) {
+                            return [
+                                'id' => $conv->id,
+                                'unidad_destino_id' => $conv->unidad_destino_id,
+                                'unidad_destino_nombre' => $conv->unidadDestino?->nombre ?? 'UN',
+                                'factor_conversion' => $conv->factor_conversion,
+                            ];
+                        })->toArray(),
                     ];
                 });
 

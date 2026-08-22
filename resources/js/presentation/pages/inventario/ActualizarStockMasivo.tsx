@@ -41,10 +41,19 @@ interface Producto {
   nombre: string;
   categoria: string;
   cantidad_total: number;
+  unidad_medida_id: number;           // ✅ NUEVO
+  unidad_nombre: string;              // ✅ NUEVO
+  conversiones: any[];                // ✅ NUEVO
+}
+
+interface CambioTabla {
+  cantidad: number;
+  unidad_id: number;
+  cantidad_convertida: number;
 }
 
 interface TablaEdicion {
-  [key: number]: number;
+  [key: number]: CambioTabla;
 }
 
 export default function ActualizarStockMasivo() {
@@ -185,19 +194,49 @@ export default function ActualizarStockMasivo() {
     }
   };
 
-  // ✅ Manejar cambio de incremento en la tabla
-  const handleCambioTabla = (productoId: number, incremento: string) => {
-    const valor = parseInt(incremento, 10);
-    if (!isNaN(valor)) {
+  // ✅ Calcular cantidad convertida según unidad
+  const calcularConversion = (producto: Producto, cantidad: number, unidadDestino: number): number => {
+    if (unidadDestino === producto.unidad_medida_id) {
+      return cantidad; // Sin conversión
+    }
+
+    const conversion = producto.conversiones?.find(
+      (c: any) => c.unidad_destino_id === unidadDestino
+    );
+
+    if (conversion) {
+      return cantidad / conversion.factor_conversion;
+    }
+
+    return cantidad; // Sin conversión encontrada
+  };
+
+  // ✅ Manejar cambio de cantidad/unidad en la tabla
+  const handleCambioTabla = (productoId: number, cantidad: string, unidadId?: number) => {
+    const producto = productos.find(p => p.id === productoId);
+    if (!producto) return;
+
+    const valor = parseInt(cantidad, 10);
+    const unidad = unidadId || producto.unidad_medida_id;
+
+    if (!isNaN(valor) && valor > 0) {
+      const cantidadConvertida = calcularConversion(producto, valor, unidad);
       setCambiosTabla(prev => ({
         ...prev,
-        [productoId]: valor,
+        [productoId]: {
+          cantidad: valor,
+          unidad_id: unidad,
+          cantidad_convertida: cantidadConvertida
+        },
       }));
-    } else if (incremento === '' || incremento === '-') {
-      // Permitir que se borre el input
+    } else if (cantidad === '' || cantidad === '-') {
       setCambiosTabla(prev => ({
         ...prev,
-        [productoId]: 0,
+        [productoId]: {
+          cantidad: 0,
+          unidad_id: unidad,
+          cantidad_convertida: 0
+        },
       }));
     }
   };
@@ -206,12 +245,14 @@ export default function ActualizarStockMasivo() {
   const guardarCambiosTabla = async () => {
     // Filtrar solo los cambios con incremento diferente a 0
     const cambiosFiltrados = Object.entries(cambiosTabla)
-      .filter(([, incremento]) => incremento !== 0)
-      .map(([productoId, incremento]) => {
+      .filter(([, cambio]) => cambio.cantidad !== 0)
+      .map(([productoId, cambio]) => {
         const producto = productos.find(p => p.id === parseInt(productoId, 10));
         return {
           producto_id: parseInt(productoId, 10),
-          cantidad_nueva: (producto?.cantidad_total || 0) + incremento,
+          cantidad_nueva: (producto?.cantidad_total || 0) + cambio.cantidad_convertida,
+          unidad_id: cambio.unidad_id,
+          cantidad_original: cambio.cantidad,
         };
       });
 
@@ -373,8 +414,11 @@ export default function ActualizarStockMasivo() {
                     <TableBody>
                       {productosFiltrados.map((producto) => {
                         const tienesCambio = producto.id in cambiosTabla;
-                        const incremento = cambiosTabla[producto.id] || 0;
-                        const stockFinal = producto.cantidad_total + incremento;
+                        const cambio = cambiosTabla[producto.id] || { cantidad: 0, unidad_id: producto.unidad_medida_id, cantidad_convertida: 0 };
+                        const stockFinal = producto.cantidad_total + cambio.cantidad_convertida;
+                        const unidadActual = cambio.unidad_id === producto.unidad_medida_id
+                          ? producto.unidad_nombre
+                          : producto.conversiones?.find((c: any) => c.unidad_destino_id === cambio.unidad_id)?.unidad_destino_nombre || producto.unidad_nombre;
 
                         return (
                           <TableRow key={producto.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 text-xs md:text-sm">
@@ -387,21 +431,40 @@ export default function ActualizarStockMasivo() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs md:text-sm text-right text-gray-900 dark:text-white font-semibold px-1 md:px-4">
-                              {producto.cantidad_total}
+                              {producto.cantidad_total} {producto.unidad_nombre}
                             </TableCell>
-                            <TableCell className="text-right px-1 md:px-4">
-                              <input
-                                type="number"
-                                placeholder="0"
-                                value={tienesCambio && incremento !== 0 ? incremento : ''}
-                                onChange={(e) => handleCambioTabla(producto.id, e.target.value)}
-                                className="w-16 md:w-20 px-1 md:px-2 py-1 text-xs md:text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              />
+                            <TableCell className="text-right px-1 md:px-4 space-y-1">
+                              <div className="flex gap-1">
+                                <input
+                                  type="number"
+                                  placeholder="0"
+                                  value={tienesCambio && cambio.cantidad !== 0 ? cambio.cantidad : ''}
+                                  onChange={(e) => handleCambioTabla(producto.id, e.target.value, cambio.unidad_id)}
+                                  className="w-12 md:w-16 px-1 md:px-2 py-1 text-xs md:text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <select
+                                  value={cambio.unidad_id}
+                                  onChange={(e) => handleCambioTabla(producto.id, String(cambio.cantidad), Number(e.target.value))}
+                                  className="px-1 md:px-2 py-1 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value={producto.unidad_medida_id}>{producto.unidad_nombre}</option>
+                                  {producto.conversiones?.map((conv: any) => (
+                                    <option key={conv.id} value={conv.unidad_destino_id}>
+                                      {conv.unidad_destino_nombre}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              {cambio.cantidad_convertida !== cambio.cantidad && cambio.cantidad > 0 && (
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  = {cambio.cantidad_convertida.toFixed(2)} {producto.unidad_nombre}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell className="text-xs md:text-sm text-right text-gray-900 dark:text-white font-semibold px-1 md:px-4 hidden sm:table-cell">
-                              {tienesCambio && incremento !== 0 ? (
-                                <span className={incremento > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                                  {stockFinal}
+                              {tienesCambio && cambio.cantidad !== 0 ? (
+                                <span className={cambio.cantidad > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                  {stockFinal.toFixed(2)}
                                 </span>
                               ) : (
                                 <span className="text-gray-400 dark:text-gray-500">{producto.cantidad_total}</span>

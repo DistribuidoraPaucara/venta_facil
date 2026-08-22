@@ -590,7 +590,8 @@ class ActualizarStockMasivoController extends Controller
     /**
      * Actualizar stock desde tabla editable
      *
-     * Recibe un array de cambios: [{producto_id, cantidad_nueva}, ...]
+     * Recibe un array de cambios: [{producto_id, cantidad_nueva, unidad_id, cantidad_original}, ...]
+     * cantidad_nueva ya viene convertida a la unidad base del producto
      */
     public function actualizarStockTabla(Request $request)
     {
@@ -599,7 +600,9 @@ class ActualizarStockMasivoController extends Controller
         $request->validate([
             'cambios' => 'required|array',
             'cambios.*.producto_id' => 'required|integer|exists:productos,id',
-            'cambios.*.cantidad_nueva' => 'required|integer|min:0',
+            'cambios.*.cantidad_nueva' => 'required|numeric|min:0',
+            'cambios.*.unidad_id' => 'integer',
+            'cambios.*.cantidad_original' => 'numeric',
         ]);
 
         try {
@@ -613,7 +616,9 @@ class ActualizarStockMasivoController extends Controller
                 foreach ($request->input('cambios') as $cambio) {
                     try {
                         $productoId = (int) $cambio['producto_id'];
-                        $cantidadNueva = (int) $cambio['cantidad_nueva'];
+                        $cantidadNueva = (float) $cambio['cantidad_nueva'];
+                        $unidadId = (int) ($cambio['unidad_id'] ?? 0);
+                        $cantidadOriginal = (float) ($cambio['cantidad_original'] ?? 0);
 
                         // Obtener producto
                         $producto = Producto::find($productoId);
@@ -628,6 +633,7 @@ class ActualizarStockMasivoController extends Controller
                             ->sum('cantidad') ?? 0;
 
                         // Calcular diferencia (lo que hay que sumar/restar)
+                        // Nota: cantidadNueva ya viene convertida a la unidad base del producto
                         $diferencia = $cantidadNueva - $stockActual;
 
                         if ($diferencia !== 0 || $stockActual === 0) {
@@ -683,6 +689,8 @@ class ActualizarStockMasivoController extends Controller
                             'stock_anterior' => $stockActual,
                             'stock_nuevo' => $cantidadNueva,
                             'diferencia' => $diferencia,
+                            'unidad_id' => $unidadId,
+                            'cantidad_original' => $cantidadOriginal,
                         ]);
 
                     } catch (\Exception $e) {
