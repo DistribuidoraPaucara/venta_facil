@@ -4423,7 +4423,6 @@ class ProductoController extends Controller
             }
 
             $conversiones = $query
-                ->with(['unidadBase', 'unidadDestino'])
                 ->get()
                 ->map(function ($conv) {
                     $unidadBase = UnidadMedida::find($conv->unidad_base_id);
