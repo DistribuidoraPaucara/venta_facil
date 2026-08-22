@@ -892,7 +892,7 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                             step="0.01"
                                                             min="0"
                                                             data-precio-monto
-                                                            value={precioSel ? (precioSel.monto === 0 ? '' : precioSel.monto) : ''}
+                                                            value={precioSel ? precioSel.monto : 0}
                                                             onChange={(e) => {
                                                                 if (precioIdx >= 0) {
                                                                     manualOverrideIdsRef.current.add(currId);
