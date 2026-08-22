@@ -417,9 +417,22 @@ function Step1DatosProducto({
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                        <label className="text-sm font-medium">Categoría</label>
+                        <a
+                            href="/categorias/create"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                            title="Crear nueva categoría"
+                        >
+                            <span>+</span>
+                            <span>Crear</span>
+                        </a>
+                    </div>
                     <SearchSelect
                         id="categoria"
-                        label="Categoría"
+                        label=""
                         placeholder="Seleccione una categoría"
                         value={data.categoria_id ?? ''}
                         options={categoriasOptions}
@@ -431,9 +444,22 @@ function Step1DatosProducto({
                     />
                 </div>
                 <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                        <label className="text-sm font-medium">Marca</label>
+                        <a
+                            href="/marcas/create"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                            title="Crear nueva marca"
+                        >
+                            <span>+</span>
+                            <span>Crear</span>
+                        </a>
+                    </div>
                     <SearchSelect
                         id="marca"
-                        label="Marca"
+                        label=""
                         placeholder="Seleccione una marca"
                         value={data.marca_id ?? ''}
                         options={marcasOptions}
@@ -445,9 +471,22 @@ function Step1DatosProducto({
                     />
                 </div>
                 <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                        <label className="text-sm font-medium">Unidad de medida</label>
+                        <a
+                            href="/unidades-medida/create"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                            title="Crear nueva unidad de medida"
+                        >
+                            <span>+</span>
+                            <span>Crear</span>
+                        </a>
+                    </div>
                     <SearchSelect
                         id="unidad_medida_id"
-                        label="Unidad de medida"
+                        label=""
                         placeholder="Seleccione una unidad"
                         value={data.unidad_medida_id ?? unidadesOptions.find((u) => u.description === 'UN')?.value ?? ''}
                         options={unidadesOptions}
