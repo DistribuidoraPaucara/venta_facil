@@ -2,6 +2,7 @@ import { Label } from '@/presentation/components/ui/label';
 import { Input } from '@/presentation/components/ui/input';
 import { Button } from '@/presentation/components/ui/button';
 import { Checkbox } from '@/presentation/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { useState, useEffect, useRef } from 'react';
 import type { ConversionUnidad } from '@/domain/entities/productos';
@@ -251,14 +252,26 @@ export default function Step3Conversiones({
   return (
     <div className="space-y-6">
       {/* Sección de Información */}
-      <div className="space-y-2 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <h3 className="font-semibold text-blue-900 dark:text-blue-100">Gestionar Conversiones de Unidades</h3>
-        <p className="text-sm text-blue-800 dark:text-blue-300">
-          <strong>Unidad Base (Almacenamiento):</strong> {unidadBase ? `${unidadBase.nombre} (${unidadBase.codigo})` : 'No definida'}
-        </p>
-        <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
-          Ejemplo: Si compras en CAJAS pero vendes en TABLETAS, define: 1 CAJA = 100 TABLETAS
-        </p>
+      {/* Título con ayuda emergente */}
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="font-semibold text-lg">Gestionar Conversiones de Unidades</h3>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+              <span className="text-xs font-bold">?</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-xs">
+            <div className="space-y-2">
+              <p className="font-semibold">Unidad Base (Almacenamiento)</p>
+              <p>{unidadBase ? `${unidadBase.nombre} (${unidadBase.codigo})` : 'No definida'}</p>
+              <hr className="border-gray-400" />
+              <p className="text-xs italic">
+                💡 Ejemplo: Si compras en CAJAS pero vendes en TABLETAS, define: 1 CAJA = 100 TABLETAS
+              </p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Formulario de Conversión */}
