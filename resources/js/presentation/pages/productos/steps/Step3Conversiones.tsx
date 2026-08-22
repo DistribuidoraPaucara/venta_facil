@@ -304,29 +304,25 @@ export default function Step3Conversiones({
             {/* Conversiones comunes sugeridas */}
             {console.log('🔍 DEBUG - conversionesComunes:', conversionesComunes)}
             {conversionesComunes.length > 0 && (
-              <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-300 dark:border-green-700 rounded">
-                <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-2">
-                  💡 Conversiones comunes ({conversionesComunes.length}):
-                </p>
-                <div className="flex flex-wrap gap-2">
-                    {conversionesComunes.map((conv) => (
-                      <div
-                        key={String(conv.factor_conversion)}
-                        onClick={() => {
-                          console.log('✅ ACTUALIZAR INPUT:', conv.factor_conversion);
-                          setFormConversion({
-                            unidad_base_id: formConversion.unidad_base_id,
-                            unidad_destino_id: formConversion.unidad_destino_id,
-                            factor_conversion: String(conv.factor_conversion),
-                            activo: formConversion.activo,
-                            es_conversion_principal: formConversion.es_conversion_principal
-                          });
-                        }}
-                        className="px-3 py-2 text-xs bg-yellow-300 dark:bg-yellow-600 text-yellow-900 dark:text-yellow-100 rounded font-bold hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors border-2 border-yellow-500 cursor-pointer active:scale-95"
-                      >
-                        {conv.label}
-                      </div>
-                    ))}
+              <div className="mt-4 p-4 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 rounded">
+                <p className="text-xs font-bold mb-2">💡 Conversiones comunes - Haz clic para cargar:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {conversionesComunes.map((conv, idx) => (
+                    <input
+                      key={idx}
+                      type="button"
+                      value={conv.label}
+                      onClick={() => {
+                        const newFactor = String(conv.factor_conversion);
+                        console.log('🔥 INPUT BUTTON CLICK - Cargando:', newFactor);
+                        setFormConversion(prev => ({
+                          ...prev,
+                          factor_conversion: newFactor
+                        }));
+                      }}
+                      className="px-2 py-2 text-xs font-bold bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded cursor-pointer border-2 border-yellow-600"
+                    />
+                  ))}
                 </div>
               </div>
             )}
