@@ -229,6 +229,7 @@ function Step1DatosProducto({
                                 error={errors.nombre}
                                 showCreateIconButton={false}
                                 displayValue={data.nombre}
+                                isSelected={!!(data.nombre && data.nombre.trim().length > 0)}
                             />
                         </div>
                         <Tooltip>

@@ -954,7 +954,7 @@ export default function ProductoForm({
 
                     {/* Derecha: Imágenes siempre visible (1/3 del ancho) */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-6 rounded-lg border border-border bg-card p-6">
+                        <div className="sticky top-6 rounded-lg border border-border bg-card p-2">
                             <h3 className="mb-4 text-lg font-semibold">📸 Imágenes del Producto</h3>
                             <Step4Imagenes
                                 data={{ perfil: perfilState ?? undefined, galeria: galeriaState ?? [] }}
