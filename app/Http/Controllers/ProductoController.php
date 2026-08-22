@@ -302,6 +302,9 @@ class ProductoController extends Controller
             'ubicacion_fisica' => $a->ubicacion_fisica,
         ]);
 
+        $productosActivos = Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        Log::info('🏭 Productos cargados para create():', ['cantidad' => $productosActivos->count(), 'productos' => $productosActivos->pluck('nombre')]);
+
         return Inertia::render('productos/form', [
             'producto'                       => null,
             'categorias'                     => Categoria::orderBy('nombre')->get(['id', 'nombre']),
@@ -314,7 +317,7 @@ class ProductoController extends Controller
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
             'permite_productos_fraccionados' => $empresa?->permite_productos_fraccionados ?? false,
             'es_farmacia'                    => $empresa?->es_farmacia ?? false,
-            'productos'                      => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']), // 🏭 NUEVO: Para ingredientes
+            'productos'                      => $productosActivos, // 🏭 NUEVO: Para ingredientes
         ]);
     }
 
@@ -891,6 +894,9 @@ class ProductoController extends Controller
             'ubicacion_fisica' => $a->ubicacion_fisica,
         ]);
 
+        $productosActivos = Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        Log::info('🏭 Productos cargados para edit():', ['cantidad' => $productosActivos->count(), 'producto_id' => $producto->id]);
+
         return Inertia::render('productos/form', [
             'producto'                       => $payload,
             'categorias'                     => Categoria::orderBy('nombre')->get(['id', 'nombre']),
@@ -903,7 +909,7 @@ class ProductoController extends Controller
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
             'permite_productos_fraccionados' => $empresa?->permite_productos_fraccionados ?? false,
             'es_farmacia'                    => $empresa?->es_farmacia ?? false,
-            'productos'                      => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']), // 🏭 NUEVO: Para ingredientes
+            'productos'                      => $productosActivos, // 🏭 NUEVO: Para ingredientes
         ]);
     }
 

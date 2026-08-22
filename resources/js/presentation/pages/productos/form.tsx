@@ -121,6 +121,12 @@ export default function ProductoForm({
         ? (productos as any[]).map((p: any) => ({ id: p.id, nombre: p.nombre }))
         : [];
 
+    // 🔍 DEBUG
+    useEffect(() => {
+        console.log('📦 Productos recibidos en form.tsx:', productos);
+        console.log('📦 Productos disponibles convertidos:', productosDisponibles);
+    }, [productos]);
+
     const DRAFT_KEY = 'producto_form_draft_v1';
 
     // Configurar hooks de búsqueda para cada entidad
