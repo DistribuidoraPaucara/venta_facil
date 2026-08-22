@@ -691,7 +691,7 @@ function Step1DatosProducto({
                         checked={!!data.es_fraccionado}
                         onCheckedChange={(v) => setData('es_fraccionado', !!v)}
                         icon="⚡"
-                        title="Productos Fraccionados"
+                        title="Fraccionar Producto"
                         description="Permite fraccionamiento de este producto en diferentes unidades de medida."
                         colorScheme="blue"
                     />

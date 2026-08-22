@@ -542,6 +542,51 @@ export default function ProductoForm({
         const next = [...data.precios];
         // Mantener el valor tal cual (string o number) para no romper el input controlado
         next[i] = { ...next[i], [key]: value } as Precio;
+
+        // 💰 NUEVO: Si cambia el monto de un precio base, calcular automáticamente los precios por unidad destino
+        if (key === 'monto' && data.es_fraccionado && data.conversiones && data.conversiones.length > 0) {
+            const precioActualizado = next[i];
+            const tipoId = Number(precioActualizado.tipo_precio_id);
+            const montoBase = Number(value);
+
+            // Solo calcular si es un número válido > 0
+            if (!isNaN(montoBase) && montoBase > 0) {
+                // Para cada conversión, buscar o crear el precio en la unidad destino
+                data.conversiones.forEach((conv: any) => {
+                    const montoDestino = montoBase / conv.factor_conversion;
+
+                    // Buscar si ya existe un precio para este tipo_precio_id y unidad_destino_id
+                    const indexDestino = next.findIndex(
+                        (p: Precio) =>
+                            Number(p.tipo_precio_id) === tipoId &&
+                            Number(p.unidad_medida_id) === Number(conv.unidad_destino_id)
+                    );
+
+                    if (indexDestino >= 0) {
+                        // Si existe, actualizar el monto
+                        next[indexDestino] = {
+                            ...next[indexDestino],
+                            monto: parseFloat(montoDestino.toFixed(6)), // Evitar errores de decimales
+                        };
+                    } else {
+                        // Si no existe, crear uno nuevo
+                        next.push({
+                            tipo_precio_id: tipoId,
+                            monto: parseFloat(montoDestino.toFixed(6)),
+                            unidad_medida_id: conv.unidad_destino_id,
+                            moneda: precioActualizado.moneda || 'BOB',
+                        } as Precio);
+                    }
+                });
+
+                console.log('💰 Precios por unidad calculados automáticamente:', {
+                    tipoId,
+                    montoBase,
+                    conversiones: data.conversiones.length,
+                });
+            }
+        }
+
         setData('precios', next);
     };
 
@@ -836,7 +881,7 @@ export default function ProductoForm({
                                     className="ml-auto"
                                     title={showImages ? "Ocultar imágenes" : "Mostrar imágenes"}
                                 >
-                                    {showImages ? "📸 Ocultar" : "📸 Mostrar"}
+                                    {showImages ? "📸 Ocultar Imagen" : "📸 Mostrar Imagen"}
                                 </Button>
                             </TabsList>
 
