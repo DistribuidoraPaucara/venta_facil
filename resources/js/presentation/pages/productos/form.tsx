@@ -70,6 +70,7 @@ export default function ProductoForm({
     es_farmacia, // ✨ NUEVO - Indica si la empresa es farmacia
     almacenes = [], // ✨ NUEVO - Almacenes disponibles
     sectores = {}, // ✨ NUEVO - Sectores pre-cargados por almacén
+    productos = [], // 🏭 NUEVO - Productos disponibles como ingredientes
 }: ProductoFormPagePropsExtended) {
     // 🔐 Obtener permisos del usuario desde Inertia
     const { auth } = usePage().props as any;
@@ -115,8 +116,10 @@ export default function ProductoForm({
         (producto as any)?.receta?.ingredientes ?? []
     );
 
-    // 🏭 NUEVO: Estado para lista de productos disponibles como ingredientes
-    const [productosDisponibles, setProductosDisponibles] = useState<Array<{ id: number | string; nombre: string }>>([]);
+    // 🏭 NUEVO: Convertir productos de props al formato esperado
+    const productosDisponibles = Array.isArray(productos)
+        ? (productos as any[]).map((p: any) => ({ id: p.id, nombre: p.nombre }))
+        : [];
 
     const DRAFT_KEY = 'producto_form_draft_v1';
 
@@ -238,30 +241,6 @@ export default function ProductoForm({
             NotificationService.error(`❌ ${firstError}`);
         }
     }, [errors]);
-
-    // 🏭 NUEVO: Cargar lista de productos disponibles como ingredientes
-    useEffect(() => {
-        const cargarProductos = async () => {
-            try {
-                const respuesta = await fetch('/api/app/productos?limit=1000');
-                if (!respuesta.ok) throw new Error('Error al cargar productos');
-                const datos = await respuesta.json();
-
-                // Mapear la respuesta al formato esperado
-                const productosLista = Array.isArray(datos.data)
-                    ? datos.data.map((p: any) => ({ id: p.id, nombre: p.nombre }))
-                    : Array.isArray(datos)
-                    ? datos.map((p: any) => ({ id: p.id, nombre: p.nombre }))
-                    : [];
-
-                setProductosDisponibles(productosLista);
-            } catch (error) {
-                console.error('Error cargando productos:', error);
-            }
-        };
-
-        cargarProductos();
-    }, []); // Solo ejecutar una vez al montar
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();

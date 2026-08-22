@@ -314,6 +314,7 @@ class ProductoController extends Controller
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
             'permite_productos_fraccionados' => $empresa?->permite_productos_fraccionados ?? false,
             'es_farmacia'                    => $empresa?->es_farmacia ?? false,
+            'productos'                      => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']), // 🏭 NUEVO: Para ingredientes
         ]);
     }
 
@@ -902,6 +903,7 @@ class ProductoController extends Controller
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
             'permite_productos_fraccionados' => $empresa?->permite_productos_fraccionados ?? false,
             'es_farmacia'                    => $empresa?->es_farmacia ?? false,
+            'productos'                      => Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']), // 🏭 NUEVO: Para ingredientes
         ]);
     }
 
