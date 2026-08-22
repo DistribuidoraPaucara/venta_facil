@@ -243,29 +243,20 @@ export default function ProductoForm({
     useEffect(() => {
         const cargarProductos = async () => {
             try {
-                const respuesta = await fetch('/api/productos?limit=1000');
+                const respuesta = await fetch('/api/app/productos?limit=1000');
                 if (!respuesta.ok) throw new Error('Error al cargar productos');
                 const datos = await respuesta.json();
 
                 // Mapear la respuesta al formato esperado
                 const productosLista = Array.isArray(datos.data)
                     ? datos.data.map((p: any) => ({ id: p.id, nombre: p.nombre }))
+                    : Array.isArray(datos)
+                    ? datos.map((p: any) => ({ id: p.id, nombre: p.nombre }))
                     : [];
 
                 setProductosDisponibles(productosLista);
             } catch (error) {
                 console.error('Error cargando productos:', error);
-                // Intentar alternativa con el servicio
-                try {
-                    const respuesta = await fetch(productosService.indexUrl() + '?limit=1000');
-                    if (respuesta.ok) {
-                        const datos = await respuesta.json();
-                        const productosLista = datos.data?.map((p: any) => ({ id: p.id, nombre: p.nombre })) || [];
-                        setProductosDisponibles(productosLista);
-                    }
-                } catch (altError) {
-                    console.error('Error alternativo cargando productos:', altError);
-                }
             }
         };
 
