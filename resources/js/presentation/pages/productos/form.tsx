@@ -269,6 +269,14 @@ export default function ProductoForm({
         }
     }, [errors]);
 
+    // 🏢 NUEVO: Auto-agregar primer almacén al crear producto nuevo
+    useEffect(() => {
+        if (!isEditing && (!data.almacenes || data.almacenes.length === 0) && almacenes.length > 0) {
+            // Usar setTimeout para asegurar que la función addAlmacen esté lista
+            setTimeout(() => addAlmacen(), 0);
+        }
+    }, [isEditing]);
+
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -586,8 +594,27 @@ export default function ProductoForm({
     // ✨ NUEVO: Funciones para manejar almacenes y sectores
     const addAlmacen = (prefill?: any) => {
         const nuevosAlmacenes = [...(data.almacenes || [])];
+
+        // 🏢 NUEVO: Si no hay prefill y es creación (no edición), seleccionar automáticamente el primer almacén y sector
+        let almacenDefault = prefill;
+        if (!prefill && !isEditing && almacenes.length > 0) {
+            const primerAlmacen = almacenes[0];
+            const primerSector = sectores?.[primerAlmacen.id]?.[0];
+            almacenDefault = {
+                almacen_id: primerAlmacen.id,
+                almacen_nombre: primerAlmacen.nombre,
+                sector_id: primerSector?.value,
+                sector_nombre: primerSector?.label,
+                cantidad: 0,
+                cantidad_disponible: 0,
+                cantidad_reservada: 0,
+                lote: '',
+                fecha_vencimiento: '',
+            };
+        }
+
         nuevosAlmacenes.push(
-            prefill || {
+            almacenDefault || {
                 almacen_id: undefined,
                 almacen_nombre: '',
                 sector_id: undefined,

@@ -186,7 +186,7 @@ export default function Step4Imagenes({ data, setPerfil, addGaleria, removeGaler
         </Dialog>
 
         {/* GALERÍA DE IMÁGENES */}
-        <div className="space-y-4 mt-6 pt-6 border-t border-border">
+        {/* <div className="space-y-4 mt-6 pt-6 border-t border-border">
           <div>
             <p className="text-base font-semibold mb-2">Galería de imágenes</p>
             <div className="flex gap-2">
@@ -252,7 +252,7 @@ export default function Step4Imagenes({ data, setPerfil, addGaleria, removeGaler
               <p className="text-sm text-muted-foreground">No hay imágenes en la galería</p>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
     </div>
   );

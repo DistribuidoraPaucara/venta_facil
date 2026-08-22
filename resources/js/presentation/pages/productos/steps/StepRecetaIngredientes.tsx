@@ -177,7 +177,7 @@ export default function StepRecetaIngredientes({
             </Button>
 
             {/* Resumen */}
-            {ingredientes.length > 0 && (
+            {/* {ingredientes.length > 0 && (
                 <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/20">
                     <div className="flex items-center justify-between">
                         <div>
@@ -192,7 +192,7 @@ export default function StepRecetaIngredientes({
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Errores */}
             {Object.keys(errors).length > 0 && (
