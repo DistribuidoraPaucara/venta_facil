@@ -51,6 +51,7 @@ export default function Step3Conversiones({
   const [validationError, setValidationError] = useState<string>('');
   const [conversionesComunes, setConversionesComunes] = useState<any[]>([]);
   const [loadingConversiones, setLoadingConversiones] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const factorInputRef = useRef<HTMLInputElement>(null);
 
   const conversiones = data.conversiones || [];
@@ -274,8 +275,17 @@ export default function Step3Conversiones({
         </Tooltip>
       </div>
 
-      {/* Formulario de Conversión (Siempre visible) */}
-      <div className="space-y-4 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg">
+      {/* Botón Toggle Formulario */}
+      <button
+        onClick={() => setShowForm(!showForm)}
+        className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold rounded-lg transition-all"
+      >
+        {showForm ? '▼ Ocultar Formulario' : '▶ Agregar Nueva Conversión'}
+      </button>
+
+      {/* Formulario de Conversión (Colapsable) */}
+      {showForm && (
+      <div className="space-y-4 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg animate-in fade-in">
         <h4 className="font-semibold">
           {editingIndex !== null ? '✏️ Editar Conversión' : '➕ Nueva Conversión'}
         </h4>
@@ -382,6 +392,7 @@ export default function Step3Conversiones({
           )}
         </div>
       </div>
+      )}
 
       {/* Tabla de Conversiones */}
       {conversiones.length > 0 && (
