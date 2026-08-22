@@ -442,14 +442,16 @@ class StockProducto extends Model
                 );
             }
 
-            // ✅ VALIDAR INVARIANTE: cantidad = cantidad_disponible + cantidad_reservada
+            // ✅ VALIDAR INVARIANTE: cantidad = cantidad_disponible + cantidad_reservada (con tolerancia de punto flotante)
             if ($stockProducto->cantidad !== null &&
                 $stockProducto->cantidad_disponible !== null &&
                 $stockProducto->cantidad_reservada !== null) {
 
                 $suma = $stockProducto->cantidad_disponible + $stockProducto->cantidad_reservada;
+                $diferencia = abs($stockProducto->cantidad - $suma);
 
-                if ($suma !== $stockProducto->cantidad) {
+                // Permitir pequeñas diferencias por redondeo de punto flotante (tolerancia: 0.01)
+                if ($diferencia > 0.01) {
                     \Illuminate\Support\Facades\Log::error('❌ INVARIANTE ROTO: cantidad != (disponible + reservada)', [
                         'stock_producto_id' => $stockProducto->id,
                         'producto_id' => $stockProducto->producto_id,
@@ -457,10 +459,9 @@ class StockProducto extends Model
                         'cantidad_disponible' => $stockProducto->cantidad_disponible,
                         'cantidad_reservada' => $stockProducto->cantidad_reservada,
                         'suma_parcial' => $suma,
-                        'diferencia' => $stockProducto->cantidad - $suma,
+                        'diferencia' => $diferencia,
                     ]);
 
-                    $diferencia = $stockProducto->cantidad - $suma;
                     throw new \Exception(
                         "INVARIANTE DE STOCK ROTO: cantidad debe ser = (disponible + reservada). " .
                         "Total: {$stockProducto->cantidad}, " .
