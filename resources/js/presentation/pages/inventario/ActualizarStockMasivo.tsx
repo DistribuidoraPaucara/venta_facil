@@ -216,7 +216,7 @@ export default function ActualizarStockMasivo() {
     const producto = productos.find(p => p.id === productoId);
     if (!producto) return;
 
-    const valor = parseInt(cantidad, 10);
+    const valor = parseFloat(cantidad);
     const unidad = unidadId || producto.unidad_medida_id;
 
     if (!isNaN(valor) && valor > 0) {
@@ -317,7 +317,7 @@ export default function ActualizarStockMasivo() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
             📊 Actualizar Stock Masivo
           </h1>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
             Edita los productos directamente en la tabla o utiliza la carga de CSV
           </p>
         </div>
@@ -349,7 +349,7 @@ export default function ActualizarStockMasivo() {
         {/* Sección Principal - Tabla de Edición Directa */}
         {pestaña === 'tabla' && (
           <Card className="p-4 md:p-6">
-            <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-4">📋 Productos en Inventario</h3>
+            {/* <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-4">📋 Productos en Inventario</h3> */}
 
             {cargandoProductos ? (
               <div className="flex justify-center py-8">
@@ -363,7 +363,7 @@ export default function ActualizarStockMasivo() {
             ) : (
               <div>
                 {/* Buscador */}
-                <div className="mb-4 flex items-center gap-2">
+                <div className="mb-2 flex items-center gap-2">
                   <div className="relative flex-1 min-w-0">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 md:w-5 h-4 md:h-5 text-gray-400 flex-shrink-0" />
                     <input
@@ -438,6 +438,7 @@ export default function ActualizarStockMasivo() {
                               <div className="flex gap-1">
                                 <input
                                   type="number"
+                                  step="any"
                                   placeholder="0"
                                   value={tienesCambio && cambio.cantidad !== 0 ? cambio.cantidad : ''}
                                   onChange={(e) => handleCambioTabla(producto.id, e.target.value, cambio.unidad_id)}
