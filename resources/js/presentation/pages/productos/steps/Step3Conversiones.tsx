@@ -3,7 +3,7 @@ import { Input } from '@/presentation/components/ui/input';
 import { Button } from '@/presentation/components/ui/button';
 import { Checkbox } from '@/presentation/components/ui/checkbox';
 import SearchSelect from '@/presentation/components/ui/search-select';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ConversionUnidad } from '@/domain/entities/productos';
 import axios from 'axios';
 
@@ -50,8 +50,25 @@ export default function Step3Conversiones({
   const [validationError, setValidationError] = useState<string>('');
   const [conversionesComunes, setConversionesComunes] = useState<any[]>([]);
   const [loadingConversiones, setLoadingConversiones] = useState(false);
+  const factorInputRef = useRef<HTMLInputElement>(null);
 
   const conversiones = data.conversiones || [];
+
+  const cargarFactorDirecto = (factor: number) => {
+    console.log('🚀 CARGAR FACTOR DIRECTO:', factor);
+    const strFactor = String(factor);
+
+    // Actualizar el input directamente
+    if (factorInputRef.current) {
+      factorInputRef.current.value = strFactor;
+    }
+
+    // Actualizar el estado
+    setFormConversion(prev => ({
+      ...prev,
+      factor_conversion: strFactor
+    }));
+  };
 
   // Auto-asignar la unidad base cuando cambia
   useEffect(() => {
@@ -280,6 +297,7 @@ export default function Step3Conversiones({
             <Label>Factor de Conversión *</Label>
             <div className="flex items-center gap-2">
               <Input
+                ref={factorInputRef}
                 type="text"
                 inputMode="decimal"
                 value={String(formConversion.factor_conversion)}
@@ -312,15 +330,11 @@ export default function Step3Conversiones({
                       key={idx}
                       type="button"
                       value={conv.label}
-                      onClick={() => {
-                        const newFactor = String(conv.factor_conversion);
-                        console.log('🔥 INPUT BUTTON CLICK - Cargando:', newFactor);
-                        setFormConversion(prev => ({
-                          ...prev,
-                          factor_conversion: newFactor
-                        }));
+                      onClick={(e) => {
+                        e.preventDefault();
+                        cargarFactorDirecto(conv.factor_conversion);
                       }}
-                      className="px-2 py-2 text-xs font-bold bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded cursor-pointer border-2 border-yellow-600"
+                      className="px-2 py-2 text-xs font-bold bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded cursor-pointer border-2 border-yellow-600 active:scale-95"
                     />
                   ))}
                 </div>
