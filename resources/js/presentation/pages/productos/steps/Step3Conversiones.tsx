@@ -309,21 +309,23 @@ export default function Step3Conversiones({
                   💡 Conversiones comunes ({conversionesComunes.length}):
                 </p>
                 <div className="flex flex-wrap gap-2">
-                    {conversionesComunes.map((conv, idx) => (
-                      <button
-                        key={`conv-${idx}-${conv.factor_conversion}`}
-                        type="button"
+                    {conversionesComunes.map((conv) => (
+                      <div
+                        key={String(conv.factor_conversion)}
                         onClick={() => {
-                          console.log('📌 CLICK:', conv.factor_conversion);
+                          console.log('✅ ACTUALIZAR INPUT:', conv.factor_conversion);
                           setFormConversion({
-                            ...formConversion,
-                            factor_conversion: String(conv.factor_conversion)
+                            unidad_base_id: formConversion.unidad_base_id,
+                            unidad_destino_id: formConversion.unidad_destino_id,
+                            factor_conversion: String(conv.factor_conversion),
+                            activo: formConversion.activo,
+                            es_conversion_principal: formConversion.es_conversion_principal
                           });
                         }}
-                        className="px-3 py-1 text-xs bg-green-200 dark:bg-green-700 text-green-900 dark:text-green-100 rounded font-bold hover:bg-green-300 dark:hover:bg-green-600 transition-colors border-2 border-green-500 cursor-pointer"
+                        className="px-3 py-2 text-xs bg-yellow-300 dark:bg-yellow-600 text-yellow-900 dark:text-yellow-100 rounded font-bold hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors border-2 border-yellow-500 cursor-pointer active:scale-95"
                       >
                         {conv.label}
-                      </button>
+                      </div>
                     ))}
                 </div>
               </div>
