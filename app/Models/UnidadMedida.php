@@ -11,5 +11,16 @@ class UnidadMedida extends Model
 
     protected $table = 'unidades_medida';
 
-    protected $fillable = ['codigo', 'nombre', 'activo'];
+    protected $fillable = ['codigo', 'nombre', 'activo', 'abreviatura', 'tipo', 'orden'];
+
+    protected $casts = [
+        'activo' => 'boolean',
+        'orden' => 'integer',
+    ];
+
+    // ✅ NUEVO (2026-08-23): Scope para filtrar unidades activas
+    public function scopeActivas($query)
+    {
+        return $query->where('activo', true);
+    }
 }
