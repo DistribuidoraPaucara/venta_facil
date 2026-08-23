@@ -47,8 +47,7 @@ interface ProductoComidaConAdicionales {
 interface UnidadMedida {
     id: number;
     nombre: string;
-    abreviatura: string;
-    tipo: string;
+    codigo: string; // ✅ ACTUALIZADO (2026-08-23): Usar 'codigo' como abreviatura
 }
 
 interface AdicionalConCantidad {
@@ -718,7 +717,7 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
                                                                         >
                                                                             {unidadesMedida.map(unidad => (
                                                                                 <option key={unidad.id} value={unidad.id}>
-                                                                                    {unidad.abreviatura}
+                                                                                    {unidad.codigo}
                                                                                 </option>
                                                                             ))}
                                                                         </select>

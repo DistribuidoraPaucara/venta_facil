@@ -98,8 +98,7 @@ class AdicionalesProductoController extends Controller
     public function unidadesMedida(): JsonResponse
     {
         $unidades = \App\Models\UnidadMedida::activas()
-            ->orderBy('orden')
-            ->get(['id', 'nombre', 'abreviatura', 'tipo']);
+            ->get(['id', 'nombre', 'codigo']); // ✅ Usar 'codigo' como abreviatura
 
         return response()->json([
             'success' => true,

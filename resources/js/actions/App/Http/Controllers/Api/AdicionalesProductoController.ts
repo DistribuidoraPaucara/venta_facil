@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:112
  * @route '/api/productos-comida'
  */
 export const productosComida = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ productosComida.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:112
  * @route '/api/productos-comida'
  */
 productosComida.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ productosComida.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:112
  * @route '/api/productos-comida'
  */
 productosComida.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ productosComida.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:112
  * @route '/api/productos-comida'
  */
 productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
     /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:112
  * @route '/api/productos-comida'
  */
     const productosComidaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
             /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:112
  * @route '/api/productos-comida'
  */
         productosComidaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
         })
             /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:112
  * @route '/api/productos-comida'
  */
         productosComidaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
