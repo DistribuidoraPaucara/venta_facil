@@ -113,6 +113,13 @@ class MovimientoStockService
                         $nuevaDisponible
                     ),
 
+                    MovimientoInventario::TIPO_SALIDA_PRODUCCION => $this->aplicarAjusteMasivoSalida(  // ✅ NUEVO (2026-08-22): Consumo de ingredientes en producción
+                        $cantidad,
+                        $nuevoTotal,
+                        $nuevaReservada,
+                        $nuevaDisponible
+                    ),
+
                     MovimientoInventario::TIPO_CONSUMO_RESERVA => $this->aplicarVentaConsumo(
                         $cantidad,
                         $nuevoTotal,
@@ -242,9 +249,12 @@ class MovimientoStockService
                     $metadataAdicional
                 );
 
+                // ✅ NUEVO (2026-08-22): Para salidas, guardar cantidad como negativa en BD
+                $cantidadAGuardar = $this->debeSerNegativa($tipo) ? -abs($cantidad) : abs($cantidad);
+
                 $movimiento = MovimientoInventario::create([
                     'stock_producto_id' => $stockProductoId,
-                    'cantidad' => $cantidad,
+                    'cantidad' => $cantidadAGuardar,
                     // ✅ LOTE ESPECÍFICO (valores del lote individual)
                     'cantidad_anterior' => $cantidadAnterior,
                     'cantidad_posterior' => $nuevoTotal,
@@ -604,5 +614,22 @@ class MovimientoStockService
             MovimientoInventario::TIPO_AJUSTE_MASIVO => 'Ajuste masivo de stock (carga CSV)', // ✅ NUEVO (2026-08-07)
             default => $tipo,
         };
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-22): Determinar si un tipo de movimiento debe guardarse como negativo
+     * Las salidas (SALIDA_VENTA, SALIDA_AJUSTE, SALIDA_PRODUCCION) se guardan como negativas
+     * para que sea intuitivo ver -1.6 = salida en lugar de +1.6 = salida
+     */
+    private function debeSerNegativa(string $tipo): bool
+    {
+        return in_array($tipo, [
+            MovimientoInventario::TIPO_SALIDA_VENTA,
+            MovimientoInventario::TIPO_SALIDA_AJUSTE,
+            MovimientoInventario::TIPO_SALIDA_PRODUCCION,
+            MovimientoInventario::TIPO_SALIDA_COMIDA,
+            MovimientoInventario::TIPO_SALIDA_COMIDA_SIN_STOCK,
+            MovimientoInventario::TIPO_LIBERACION_RESERVA,  // Es una "salida" de reserva
+        ]);
     }
 }

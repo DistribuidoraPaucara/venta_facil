@@ -20,6 +20,7 @@ class DetalleVenta extends Model
         'tipo_precio_id',      // ✅ NUEVO: ID del tipo de precio seleccionado
         'tipo_precio_nombre',   // ✅ NUEVO: Nombre del tipo de precio (referencia rápida)
         'combo_items_seleccionados', // ✅ NUEVO: Items del combo seleccionados (JSON)
+        'componentes_seleccionados', // ✅ NUEVO (2026-08-22): Componentes/adicionales seleccionados (JSON)
         'produccion_id', // 🏭 PRODUCCIÓN: ID de producción (para productos elaborados)
     ];
 
@@ -31,10 +32,35 @@ class DetalleVenta extends Model
             'descuento' => 'float',
             'subtotal' => 'float',
             'combo_items_seleccionados' => 'array', // ✅ NUEVO: Castear JSON a array
+            'componentes_seleccionados' => 'array', // ✅ NUEVO (2026-08-22): Castear componentes JSON a array
         ];
     }
 
     public function getComboItemsSeleccionadosAttribute($value)
+    {
+        // Si es null o vacío, retornar array vacío
+        if (empty($value)) {
+            return [];
+        }
+
+        // Si ya es un array, retornarlo
+        if (is_array($value)) {
+            return $value;
+        }
+
+        // Si es un string, intentar parsearlo como JSON
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-22): Accessor para componentes/adicionales seleccionados
+     */
+    public function getComponentesSeleccionadosAttribute($value)
     {
         // Si es null o vacío, retornar array vacío
         if (empty($value)) {
@@ -93,5 +119,13 @@ class DetalleVenta extends Model
     public function adiciones()
     {
         return $this->hasMany(AdicionVenta::class, 'detalle_venta_id');
+    }
+
+    /**
+     * ✨ NUEVO: Productos adicionales de este detalle de venta
+     */
+    public function adicionales()
+    {
+        return $this->hasMany(VentaDetalleAdicional::class);
     }
 }

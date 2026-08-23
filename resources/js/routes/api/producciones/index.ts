@@ -414,7 +414,7 @@ destroy.delete = (args: { produccion: number | { id: number } } | [produccion: n
     destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\ProduccionController::dia
- * @see app/Http/Controllers/ProduccionController.php:219
+ * @see app/Http/Controllers/ProduccionController.php:317
  * @route '/api/producciones/dia/{fecha?}'
  */
 export const dia = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -429,7 +429,7 @@ dia.definition = {
 
 /**
 * @see \App\Http\Controllers\ProduccionController::dia
- * @see app/Http/Controllers/ProduccionController.php:219
+ * @see app/Http/Controllers/ProduccionController.php:317
  * @route '/api/producciones/dia/{fecha?}'
  */
 dia.url = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -461,7 +461,7 @@ dia.url = (args?: { fecha?: string | number } | [fecha: string | number ] | stri
 
 /**
 * @see \App\Http\Controllers\ProduccionController::dia
- * @see app/Http/Controllers/ProduccionController.php:219
+ * @see app/Http/Controllers/ProduccionController.php:317
  * @route '/api/producciones/dia/{fecha?}'
  */
 dia.get = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -470,7 +470,7 @@ dia.get = (args?: { fecha?: string | number } | [fecha: string | number ] | stri
 })
 /**
 * @see \App\Http\Controllers\ProduccionController::dia
- * @see app/Http/Controllers/ProduccionController.php:219
+ * @see app/Http/Controllers/ProduccionController.php:317
  * @route '/api/producciones/dia/{fecha?}'
  */
 dia.head = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -480,7 +480,7 @@ dia.head = (args?: { fecha?: string | number } | [fecha: string | number ] | str
 
     /**
 * @see \App\Http\Controllers\ProduccionController::dia
- * @see app/Http/Controllers/ProduccionController.php:219
+ * @see app/Http/Controllers/ProduccionController.php:317
  * @route '/api/producciones/dia/{fecha?}'
  */
     const diaForm = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -490,7 +490,7 @@ dia.head = (args?: { fecha?: string | number } | [fecha: string | number ] | str
 
             /**
 * @see \App\Http\Controllers\ProduccionController::dia
- * @see app/Http/Controllers/ProduccionController.php:219
+ * @see app/Http/Controllers/ProduccionController.php:317
  * @route '/api/producciones/dia/{fecha?}'
  */
         diaForm.get = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -499,7 +499,7 @@ dia.head = (args?: { fecha?: string | number } | [fecha: string | number ] | str
         })
             /**
 * @see \App\Http\Controllers\ProduccionController::dia
- * @see app/Http/Controllers/ProduccionController.php:219
+ * @see app/Http/Controllers/ProduccionController.php:317
  * @route '/api/producciones/dia/{fecha?}'
  */
         diaForm.head = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -515,7 +515,7 @@ dia.head = (args?: { fecha?: string | number } | [fecha: string | number ] | str
     dia.form = diaForm
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
- * @see app/Http/Controllers/ProduccionController.php:251
+ * @see app/Http/Controllers/ProduccionController.php:349
  * @route '/api/producciones/reporte/dia/{fecha?}'
  */
 export const reporteDia = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -530,7 +530,7 @@ reporteDia.definition = {
 
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
- * @see app/Http/Controllers/ProduccionController.php:251
+ * @see app/Http/Controllers/ProduccionController.php:349
  * @route '/api/producciones/reporte/dia/{fecha?}'
  */
 reporteDia.url = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -562,7 +562,7 @@ reporteDia.url = (args?: { fecha?: string | number } | [fecha: string | number ]
 
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
- * @see app/Http/Controllers/ProduccionController.php:251
+ * @see app/Http/Controllers/ProduccionController.php:349
  * @route '/api/producciones/reporte/dia/{fecha?}'
  */
 reporteDia.get = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -571,7 +571,7 @@ reporteDia.get = (args?: { fecha?: string | number } | [fecha: string | number ]
 })
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
- * @see app/Http/Controllers/ProduccionController.php:251
+ * @see app/Http/Controllers/ProduccionController.php:349
  * @route '/api/producciones/reporte/dia/{fecha?}'
  */
 reporteDia.head = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -581,7 +581,7 @@ reporteDia.head = (args?: { fecha?: string | number } | [fecha: string | number 
 
     /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
- * @see app/Http/Controllers/ProduccionController.php:251
+ * @see app/Http/Controllers/ProduccionController.php:349
  * @route '/api/producciones/reporte/dia/{fecha?}'
  */
     const reporteDiaForm = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -591,7 +591,7 @@ reporteDia.head = (args?: { fecha?: string | number } | [fecha: string | number 
 
             /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
- * @see app/Http/Controllers/ProduccionController.php:251
+ * @see app/Http/Controllers/ProduccionController.php:349
  * @route '/api/producciones/reporte/dia/{fecha?}'
  */
         reporteDiaForm.get = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -600,7 +600,7 @@ reporteDia.head = (args?: { fecha?: string | number } | [fecha: string | number 
         })
             /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
- * @see app/Http/Controllers/ProduccionController.php:251
+ * @see app/Http/Controllers/ProduccionController.php:349
  * @route '/api/producciones/reporte/dia/{fecha?}'
  */
         reporteDiaForm.head = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -616,7 +616,7 @@ reporteDia.head = (args?: { fecha?: string | number } | [fecha: string | number 
     reporteDia.form = reporteDiaForm
 /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
- * @see app/Http/Controllers/ProduccionController.php:329
+ * @see app/Http/Controllers/ProduccionController.php:427
  * @route '/api/producciones/productos/disponibles'
  */
 export const productosDisponibles = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -631,7 +631,7 @@ productosDisponibles.definition = {
 
 /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
- * @see app/Http/Controllers/ProduccionController.php:329
+ * @see app/Http/Controllers/ProduccionController.php:427
  * @route '/api/producciones/productos/disponibles'
  */
 productosDisponibles.url = (options?: RouteQueryOptions) => {
@@ -640,7 +640,7 @@ productosDisponibles.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
- * @see app/Http/Controllers/ProduccionController.php:329
+ * @see app/Http/Controllers/ProduccionController.php:427
  * @route '/api/producciones/productos/disponibles'
  */
 productosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -649,7 +649,7 @@ productosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 })
 /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
- * @see app/Http/Controllers/ProduccionController.php:329
+ * @see app/Http/Controllers/ProduccionController.php:427
  * @route '/api/producciones/productos/disponibles'
  */
 productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -659,7 +659,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
     /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
- * @see app/Http/Controllers/ProduccionController.php:329
+ * @see app/Http/Controllers/ProduccionController.php:427
  * @route '/api/producciones/productos/disponibles'
  */
     const productosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -669,7 +669,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
             /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
- * @see app/Http/Controllers/ProduccionController.php:329
+ * @see app/Http/Controllers/ProduccionController.php:427
  * @route '/api/producciones/productos/disponibles'
  */
         productosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -678,7 +678,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
         })
             /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
- * @see app/Http/Controllers/ProduccionController.php:329
+ * @see app/Http/Controllers/ProduccionController.php:427
  * @route '/api/producciones/productos/disponibles'
  */
         productosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

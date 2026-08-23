@@ -37,6 +37,11 @@ class RecetaIngrediente extends Model
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    public function unidadMedida()
+    {
+        return $this->belongsTo(UnidadMedida::class, 'unidad_medida_id');
+    }
+
     public function produccionesUsadas()
     {
         return $this->hasMany(ProduccionIngrediente::class);

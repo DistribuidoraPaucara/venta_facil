@@ -93,10 +93,26 @@ class AdicionalesProductoController extends Controller
     }
 
     /**
+     * Obtener unidades de medida activas
+     */
+    public function unidadesMedida(): JsonResponse
+    {
+        $unidades = \App\Models\UnidadMedida::activas()
+            ->orderBy('orden')
+            ->get(['id', 'nombre', 'abreviatura', 'tipo']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $unidades,
+        ]);
+    }
+
+    /**
      * Obtener productos de comida con precios correctos
      */
     public function productosComida(): JsonResponse
     {
+        // ✅ ACTUALIZADO (2026-08-23): Devolver TODOS los productos con campos de adicionales
         $productos = Producto::where('activo', true)
             ->whereHas('precios', function($q) {
                 // Solo productos que tienen un precio activo de tipo VENTA
@@ -123,14 +139,12 @@ class AdicionalesProductoController extends Controller
                     $q->select('id', 'producto_id', 'cantidad_disponible');
                 }
             ])
-            ->orderBy('id', 'desc')
-            ->get(['id', 'nombre', 'sku', 'descripcion', 'precio_venta', 'permite_venta_sin_stock', 'es_producto_comida'])
+            ->orderBy('nombre', 'asc') // ✅ ACTUALIZADO (2026-08-23): Orden alfabético en lugar de por ID
+            ->get(['id', 'nombre', 'sku', 'descripcion', 'precio_venta', 'permite_venta_sin_stock', 'es_producto_comida', 'puede_tener_producto_adicional', 'es_producto_adicional'])
             ->filter(function($producto) {
-                // ✅ FILTRO: Solo mostrar productos que cumplan al menos una condición:
-                // 1. Permiten venta sin stock (permite_venta_sin_stock = true)
-                // 2. Tienen stock disponible (cantidad > 0)
-                $disponibilidad = $producto->stock->sum('cantidad_disponible') ?? 0;
-                return $producto->permite_venta_sin_stock || $disponibilidad > 0;
+                // ✅ ACTUALIZADO (2026-08-23): Mostrar todos productos (remover filtro de stock innecesario)
+                // El whereHas ya valida que tienen precios activos
+                return true;
             });
 
         // Mapear productos para incluir el precio de VENTA correcto y disponibilidad
@@ -160,13 +174,16 @@ class AdicionalesProductoController extends Controller
             return [
                 'id' => $producto->id,
                 'nombre' => $producto->nombre,
-                'sku' => $producto->sku, // ✅ NUEVO: Incluir SKU
+                'sku' => $producto->sku,
                 'descripcion' => $producto->descripcion,
                 'precio_venta' => $montoVenta,
                 'es_producto_comida' => $producto->es_producto_comida,
-                'permite_venta_sin_stock' => (bool) $producto->permite_venta_sin_stock, // ✅ NUEVO: Incluir permite_venta_sin_stock
-                'disponibilidad' => (int) $disponibilidad, // ✅ NUEVO: Incluir disponibilidad total
+                'permite_venta_sin_stock' => (bool) $producto->permite_venta_sin_stock,
+                'disponibilidad' => (int) $disponibilidad,
                 'imagen_url' => $imagenPrincipal,
+                // ✅ NUEVO (2026-08-23): Campos de adicionales
+                'puede_tener_producto_adicional' => (bool) $producto->puede_tener_producto_adicional,
+                'es_producto_adicional' => (bool) $producto->es_producto_adicional,
                 'adicionales' => $producto->adicionales,
             ];
         });

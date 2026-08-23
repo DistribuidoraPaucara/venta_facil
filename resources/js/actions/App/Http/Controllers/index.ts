@@ -8,6 +8,7 @@ import NotificacionRecurrenteController from './NotificacionRecurrenteController
 import TipoOperacionCajaController from './TipoOperacionCajaController'
 import ProductoController from './ProductoController'
 import ComboController from './ComboController'
+import ProductoComponenteController from './ProductoComponenteController'
 import VentaController from './VentaController'
 import CompraController from './CompraController'
 import PrecioController from './PrecioController'
@@ -45,6 +46,8 @@ import Prestamos from './Prestamos'
 import ActualizarStockMasivoController from './ActualizarStockMasivoController'
 import RecetaController from './RecetaController'
 import ProduccionController from './ProduccionController'
+import ProduccionMasivaController from './ProduccionMasivaController'
+import RegistroProduccionController from './RegistroProduccionController'
 import AdicionVentaController from './AdicionVentaController'
 import FaviconController from './FaviconController'
 import VentaPublicController from './VentaPublicController'
@@ -126,6 +129,7 @@ NotificacionRecurrenteController,
 TipoOperacionCajaController,
 ProductoController,
 ComboController,
+ProductoComponenteController,
 VentaController,
 CompraController,
 PrecioController,
@@ -163,6 +167,8 @@ Prestamos,
 ActualizarStockMasivoController,
 RecetaController,
 ProduccionController,
+ProduccionMasivaController,
+RegistroProduccionController,
 AdicionVentaController,
 FaviconController,
 VentaPublicController,

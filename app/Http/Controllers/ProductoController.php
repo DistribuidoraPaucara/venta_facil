@@ -371,6 +371,8 @@ class ProductoController extends Controller
                     'es_alquilable'           => false,
                     'es_producto_comida'      => $data['es_producto_comida'] ?? false,      // 🍦 NUEVO - Producto de comida/helado sin stock
                     'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? false, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables
+                    'es_producto_adicional'   => $data['es_producto_adicional'] ?? false,     // ✨ NUEVO - Indica si es un adicional
+                    'puede_tener_producto_adicional' => $data['puede_tener_producto_adicional'] ?? false, // ✨ NUEVO - Indica si puede tener adicionales
                     'categoria_id'            => $data['categoria_id'] ?? null,
                     'marca_id'                => $data['marca_id'] ?? null,
                     'proveedor_id'            => $data['proveedor_id'] ?? null,
@@ -793,6 +795,8 @@ class ProductoController extends Controller
             'activo'                    => (bool) $producto->activo,
             'es_producto_comida'        => (bool) $producto->es_producto_comida,
             'permite_venta_sin_stock'   => (bool) $producto->permite_venta_sin_stock,
+            'es_producto_adicional'     => (bool) $producto->es_producto_adicional,           // ✨ NUEVO
+            'puede_tener_producto_adicional' => (bool) $producto->puede_tener_producto_adicional, // ✨ NUEVO
             'stock_minimo'              => $producto->stock_minimo ? (int) $producto->stock_minimo : null,
             'stock_maximo'              => $producto->stock_maximo ? (int) $producto->stock_maximo : null,
             'limite_venta'              => $producto->limite_venta ? (int) $producto->limite_venta : null, // ✨ NUEVO
@@ -861,6 +865,7 @@ class ProductoController extends Controller
         $payload['es_fraccionado'] = (bool) $producto->es_fraccionado;
         $payload['es_combo']       = (bool) $producto->es_combo;
         $payload['es_de_produccion'] = (bool) $producto->es_de_produccion; // 🏭 NUEVO
+        $payload['visible_app']    = (bool) $producto->visible_app; // ✨ NUEVO - Visible en app
 
         // 🏭 NUEVO: Cargar receta con ingredientes si es de producción
         $receta = $producto->receta;
@@ -965,6 +970,8 @@ class ProductoController extends Controller
                     'limite_venta'            => $data['limite_venta'] ?? $producto->limite_venta,                       // ✨ NUEVO
                     'es_producto_comida'      => $data['es_producto_comida'] ?? $producto->es_producto_comida,           // 🍦 NUEVO - Producto de comida/helado sin stock
                     'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? $producto->permite_venta_sin_stock, // ✅ NUEVO - Permitir venta sin stock
+                    'es_producto_adicional'   => $data['es_producto_adicional'] ?? $producto->es_producto_adicional,     // ✨ NUEVO - Indica si es un adicional
+                    'puede_tener_producto_adicional' => $data['puede_tener_producto_adicional'] ?? $producto->puede_tener_producto_adicional, // ✨ NUEVO - Indica si puede tener adicionales
                     'principio_activo'        => $data['principio_activo'] ?? $producto->principio_activo,               // ✨ NUEVO - Campo para farmacias
                     'uso_de_medicacion'       => $data['uso_de_medicacion'] ?? $producto->uso_de_medicacion,             // ✨ NUEVO - Campo para farmacias
                     'visible_app'             => $data['visible_app'] ?? $producto->visible_app,                  // ✨ NUEVO - Visible en app

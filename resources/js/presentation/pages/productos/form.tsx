@@ -37,6 +37,8 @@ const initialProductoData: ProductoFormData = {
     es_fraccionado: false, // ✨ NUEVO
     es_producto_comida: false, // 🍦 NUEVO - Producto de comida/helado sin stock
     permite_venta_sin_stock: false, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables en farmacias
+    es_producto_adicional: false, // ✨ NUEVO - Indica si es un adicional
+    puede_tener_producto_adicional: false, // ✨ NUEVO - Indica si puede tener adicionales
     stock_minimo: 0,
     stock_maximo: 50,
     limite_venta: null, // ✨ NUEVO
@@ -174,6 +176,8 @@ export default function ProductoForm({
                   es_fraccionado: producto.es_fraccionado ?? false, // ✨ NUEVO
                   es_producto_comida: producto.es_producto_comida ?? false, // 🍦 NUEVO - Producto de comida/helado
                   permite_venta_sin_stock: producto.permite_venta_sin_stock ?? false, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables en farmacias
+                  es_producto_adicional: producto.es_producto_adicional ?? false, // ✨ NUEVO - Indica si es un adicional
+                  puede_tener_producto_adicional: producto.puede_tener_producto_adicional ?? false, // ✨ NUEVO - Indica si puede tener adicionales
                   stock_minimo: producto.stock_minimo ?? 0,
                   stock_maximo: producto.stock_maximo ?? 50,
                   limite_venta: producto.limite_venta ?? null, // ✨ NUEVO
@@ -338,6 +342,8 @@ export default function ProductoForm({
             activo: data.activo ? 1 : 0,
             es_producto_comida: data.es_producto_comida ? 1 : 0, // 🍦 NUEVO - Producto de comida/helado sin stock
             permite_venta_sin_stock: data.permite_venta_sin_stock ? 1 : 0, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables en farmacias
+            es_producto_adicional: data.es_producto_adicional ? 1 : 0, // ✨ NUEVO - Indica si es un adicional
+            puede_tener_producto_adicional: data.puede_tener_producto_adicional ? 1 : 0, // ✨ NUEVO - Indica si puede tener adicionales
             stock_minimo: data.stock_minimo ?? '',
             stock_maximo: data.stock_maximo ?? '',
             limite_venta: data.limite_venta ? String(data.limite_venta) : '', // ✨ NUEVO - Enviar solo si tiene valor

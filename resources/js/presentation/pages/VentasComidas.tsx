@@ -49,9 +49,18 @@ interface ProductoComidaConAdicionales {
         nombre: string;
         precio_venta: number;
         adicionales?: Adicional[];
+        es_producto_adicional?: boolean;
+        puede_tener_producto_adicional?: boolean;
     };
     adicionalesSeleccionados: number[];
     cantidad: number;
+    // ✅ NUEVO (2026-08-23): Detalles de adicionales seleccionados
+    adicionales_detalles?: Array<{
+        id: number;
+        nombre: string;
+        precio_venta: number;
+        es_producto_adicional?: boolean;
+    }>;
 }
 
 interface VentasComidaspageProps {
@@ -81,6 +90,8 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
     const [mostrarSelector, setMostrarSelector] = useState(true);
     const [showCreateClienteModal, setShowCreateClienteModal] = useState(false);
     const [clienteSearchQuery, setClienteSearchQuery] = useState('');
+    // ✅ NUEVO (2026-08-23): Estado para expandir/contraer productos en carrito
+    const [productosExpandidos, setProductosExpandidos] = useState<Set<number>>(new Set());
 
     // Hook para búsqueda de clientes en tiempo real
     const { search: searchClientes } = useClienteSearch();
@@ -202,7 +213,8 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
     }, [montoEfectivo, montoTransferencia, tiposPago, tipoPagoId]);
 
     const handleAgregarProducto = (detalle: ProductoComidaConAdicionales) => {
-        const adicionalesDetalles = detalle.producto.adicionales?.filter((a) => detalle.adicionalesSeleccionados.includes(a.id)) || [];
+        // ✅ ACTUALIZADO (2026-08-23): Usar detalles de adicionales que vienen del selector
+        const adicionalesDetalles = detalle.adicionales_detalles || [];
 
         carrito.agregarProducto(detalle as any, adicionalesDetalles);
         toast.success(`${detalle.producto.nombre} agregado al carrito`);
@@ -255,9 +267,16 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                     producto_id: item.producto_id,
                     nombre: item.nombre_producto,
                     precio_base: item.precio_base,
-                    adicionales_ids: item.adicionalesSeleccionados,
+                    // ✅ NUEVO (2026-08-23): Enviar adicionales en formato correcto para el backend
+                    adicionales: item.adicionales_formato || [],
                     cantidad: item.cantidad,
                     subtotal: item.precio_total,
+                    // ✅ NUEVO (2026-08-22): Componentes/adicionales del producto
+                    componentes: (item.componentes || []).map(comp => ({
+                        componente_id: comp.componente_id,
+                        cantidad: comp.cantidad_total_necesaria,
+                        precio: comp.precio_unitario,
+                    })),
                 })),
                 total: carrito.calcularTotal(),
                 es_venta_comida: true,
@@ -490,55 +509,138 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         {/* Items listado */}
-                                        <div className="max-h-64 space-y-2 overflow-y-auto">
+                                        <div className="max-h-96 space-y-2 overflow-y-auto">
                                             {carrito.items.map((item, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="flex items-center justify-between rounded bg-gray-50 p-2 dark:bg-gray-900/50"
-                                                >
-                                                    <div className="flex-1 text-sm">
-                                                        <p className="font-medium text-gray-900 dark:text-white">{item.nombre_producto}</p>
-                                                        {(item.adicionales_detalles || []).length > 0 && (
-                                                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                                                                +{(item.adicionales_detalles || []).map((a) => a.nombre).join(', ')}
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Controles de cantidad */}
-                                                    <div className="mx-2 flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => carrito.decrementarCantidad(idx)}
-                                                            disabled={item.cantidad <= 1}
-                                                            className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
-                                                        >
-                                                            −
-                                                        </button>
-                                                        <span className="w-6 text-center font-semibold text-gray-900 dark:text-white">
-                                                            {item.cantidad}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => carrito.incrementarCantidad(idx)}
-                                                            className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
-                                                        >
-                                                            +
-                                                        </button>
-                                                    </div>
-
-                                                    <span className="text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-white">
-                                                        {formatCurrency(item.precio_total)}
-                                                    </span>
-
-                                                    {/* Botón eliminar */}
-                                                    <button
+                                                <div key={idx} className="rounded border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900/50">
+                                                    {/* Encabezado del producto - Cambié de button a div para evitar botones anidados */}
+                                                    <div
                                                         onClick={() => {
-                                                            carrito.eliminarProducto(idx);
-                                                            toast.success('Producto eliminado del carrito');
+                                                            const newSet = new Set(productosExpandidos);
+                                                            if (newSet.has(idx)) {
+                                                                newSet.delete(idx);
+                                                            } else {
+                                                                newSet.add(idx);
+                                                            }
+                                                            setProductosExpandidos(newSet);
                                                         }}
-                                                        className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
+                                                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer"
                                                     >
-                                                        🗑️
-                                                    </button>
+                                                        <div className="flex-1 text-left">
+                                                            <p className="font-medium text-gray-900 dark:text-white">{item.nombre_producto}</p>
+                                                            {(item.adicionales_detalles || []).length > 0 && (
+                                                                <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                                    +{(item.adicionales_detalles || []).length} adicional{(item.adicionales_detalles || []).length !== 1 ? 'es' : ''}
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Controles de cantidad */}
+                                                        <div className="mx-2 flex items-center gap-1">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    carrito.decrementarCantidad(idx);
+                                                                }}
+                                                                disabled={item.cantidad <= 1}
+                                                                className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                                                            >
+                                                                −
+                                                            </button>
+                                                            <span className="w-6 text-center font-semibold text-gray-900 dark:text-white text-xs">
+                                                                {item.cantidad}
+                                                            </span>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    carrito.incrementarCantidad(idx);
+                                                                }}
+                                                                className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+
+                                                        <span className="text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-white mx-2">
+                                                            {formatCurrency(item.precio_total)}
+                                                        </span>
+
+                                                        {/* Botón eliminar */}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                carrito.eliminarProducto(idx);
+                                                                toast.success('Producto eliminado del carrito');
+                                                            }}
+                                                            className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Detalles expandibles */}
+                                                    {productosExpandidos.has(idx) && (item.adicionales_detalles || []).length > 0 && (
+                                                        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2">
+                                                            {(item.adicionales_detalles || []).map((adicional) => (
+                                                                <div key={adicional.id} className="flex items-center justify-between gap-2 bg-white dark:bg-gray-900/30 p-2 rounded border border-gray-200 dark:border-gray-700 flex-wrap">
+                                                                    <div className="flex-1 min-w-fit">
+                                                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{adicional.nombre}</p>
+                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                            Original: {formatCurrency(adicional.precio_original)}
+                                                                        </p>
+                                                                        {/* ✅ NUEVO (2026-08-23): Mostrar cantidad y unidad */}
+                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                            Cantidad: {adicional.cantidad} {adicional.unidad_medida_nombre || 'g'}
+                                                                        </p>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2">
+                                                                        {/* ✅ NUEVO (2026-08-23): Input para editar cantidad */}
+                                                                        <div className="flex items-center gap-1">
+                                                                            <input
+                                                                                type="number"
+                                                                                min="1"
+                                                                                step="1"
+                                                                                value={adicional.cantidad}
+                                                                                onChange={(e) => {
+                                                                                    carrito.editarCantidadAdicional(idx, adicional.id, Number(e.target.value) || 1);
+                                                                                }}
+                                                                                className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                                                                title="Editar cantidad"
+                                                                            />
+                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                                                                {adicional.unidad_medida_nombre || 'g'}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {/* Input para editar precio */}
+                                                                        <input
+                                                                            type="number"
+                                                                            step="0.01"
+                                                                            min="0"
+                                                                            value={adicional.precio_actual}
+                                                                            onChange={(e) => {
+                                                                                carrito.editarPrecioAdicional(idx, adicional.id, Number(e.target.value) || 0);
+                                                                            }}
+                                                                            className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                                                            title="Editar precio"
+                                                                        />
+
+                                                                        {/* Botón eliminar adicional */}
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                carrito.eliminarAdicional(idx, adicional.id);
+                                                                                toast.success('Adicional eliminado');
+                                                                            }}
+                                                                            className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition"
+                                                                            title="Eliminar adicional"
+                                                                        >
+                                                                            ✕
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>

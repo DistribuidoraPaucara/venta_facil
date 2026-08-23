@@ -110,7 +110,7 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 {/* Header */}
                 <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex items-center justify-between">
                     <h2 className="text-2xl font-bold">Nueva Producción</h2>
@@ -122,8 +122,8 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Fecha */}
                     <div>
-                        <label className="block font-bold mb-2">Fecha</label>
-                        <div className="p-3 bg-gray-100 rounded-lg text-gray-700 font-medium">
+                        <label className="block font-bold mb-2 dark:text-white">Fecha</label>
+                        <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 font-medium">
                             {new Date(fechaSeleccionada + 'T00:00:00').toLocaleDateString('es-ES', {
                                 weekday: 'long',
                                 year: 'numeric',
@@ -135,11 +135,11 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
 
                     {/* Producto */}
                     <div>
-                        <label className="block font-bold mb-2">Producto a Producir *</label>
+                        <label className="block font-bold mb-2 dark:text-white">Producto a Producir *</label>
                         <select
                             value={formData.producto_id}
                             onChange={(e) => handleProductoChange(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                         >
                             <option value="">Selecciona un producto</option>
                             {productosDisponibles?.map((p: any) => (
@@ -149,7 +149,7 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
                             ))}
                         </select>
                         {errors.producto_id && (
-                            <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                            <p className="text-red-600 dark:text-red-400 text-sm mt-1 flex items-center gap-1">
                                 <AlertCircle className="w-4 h-4" /> {errors.producto_id}
                             </p>
                         )}
@@ -157,7 +157,7 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
 
                     {/* Cantidad Producida */}
                     <div>
-                        <label className="block font-bold mb-2">Cantidad Producida *</label>
+                        <label className="block font-bold mb-2 dark:text-white">Cantidad Producida *</label>
                         <input
                             type="number"
                             step="0.001"
@@ -165,10 +165,10 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
                             value={formData.cantidad_producida}
                             onChange={(e) => setFormData({ ...formData, cantidad_producida: e.target.value })}
                             placeholder="Ej: 12.5"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                         />
                         {errors.cantidad_producida && (
-                            <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                            <p className="text-red-600 dark:text-red-400 text-sm mt-1 flex items-center gap-1">
                                 <AlertCircle className="w-4 h-4" /> {errors.cantidad_producida}
                             </p>
                         )}
@@ -176,15 +176,15 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
 
                     {/* Ingredientes */}
                     {ingredientes.length > 0 && (
-                        <div className="border-t pt-6">
-                            <h3 className="font-bold text-lg mb-4">Ingredientes Utilizados</h3>
+                        <div className="border-t dark:border-gray-700 pt-6">
+                            <h3 className="font-bold text-lg mb-4 dark:text-white">Ingredientes Utilizados</h3>
                             <div className="space-y-3">
                                 {ingredientes.map((ingrediente, index) => (
-                                    <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                                        <p className="font-medium text-sm mb-2">{ingrediente.nombre}</p>
+                                    <div key={index} className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                                        <p className="font-medium text-sm mb-2 dark:text-white">{ingrediente.nombre}</p>
                                         <div className="flex gap-3 items-end">
                                             <div className="flex-1">
-                                                <label className="block text-xs font-bold text-gray-600 mb-1">
+                                                <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">
                                                     Cantidad Utilizada
                                                 </label>
                                                 <input
@@ -196,10 +196,10 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
                                                         handleIngredienteChange(index, 'cantidad_usada', e.target.value)
                                                     }
                                                     placeholder="0"
-                                                    className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500"
+                                                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:ring-2 focus:ring-green-500 dark:bg-gray-600 dark:text-white"
                                                 />
                                             </div>
-                                            <p className="text-xs text-gray-600">
+                                            <p className="text-xs text-gray-600 dark:text-gray-400">
                                                 (Requerida: {ingrediente.cantidad_requerida})
                                             </p>
                                         </div>
@@ -211,22 +211,22 @@ export default function FormProduccion({ fechaSeleccionada, onClose, onSuccess }
 
                     {/* Observaciones */}
                     <div>
-                        <label className="block font-bold mb-2">Observaciones</label>
+                        <label className="block font-bold mb-2 dark:text-white">Observaciones</label>
                         <textarea
                             value={formData.observaciones}
                             onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
                             rows={3}
                             placeholder="Ej: Producción realizada con atraso, ingredientes de calidad superior"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                         />
                     </div>
 
                     {/* Botones */}
-                    <div className="flex gap-3 border-t pt-6">
+                    <div className="flex gap-3 border-t dark:border-gray-700 pt-6">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                         >
                             Cancelar
                         </button>

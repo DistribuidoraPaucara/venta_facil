@@ -23,13 +23,16 @@ interface Adicional {
 interface ProductoComida {
     id: number;
     nombre: string;
-    sku: string; // ✅ NUEVO: Agregar SKU
+    sku: string;
     descripcion: string;
     precio_venta: number;
     es_producto_comida: boolean;
     imagen_url?: string | null;
     permite_venta_sin_stock?: boolean;
     disponibilidad?: number;
+    // ✅ NUEVO (2026-08-23): Campos de adicionales
+    puede_tener_producto_adicional?: boolean;
+    es_producto_adicional?: boolean;
     adicionales?: Adicional[];
 }
 
@@ -37,6 +40,21 @@ interface ProductoComidaConAdicionales {
     producto: ProductoComida;
     adicionalesSeleccionados: number[];
     cantidad: number;
+    // ✅ NUEVO (2026-08-23): Detalles de los adicionales seleccionados
+    adicionales_detalles?: ProductoComida[];
+}
+
+interface UnidadMedida {
+    id: number;
+    nombre: string;
+    abreviatura: string;
+    tipo: string;
+}
+
+interface AdicionalConCantidad {
+    id: number;
+    cantidad: number;
+    unidad_medida_id: number;
 }
 
 interface ProductosComidaSelectorProps {
@@ -61,12 +79,15 @@ const formatCurrency = (value: number): string => {
 
 export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarPrecio, onEliminar, productosEnCarrito = [] }: ProductosComidaSelectorProps) {
     const [productos, setProductos] = useState<ProductoComida[]>([]);
+    const [unidadesMedida, setUnidadesMedida] = useState<UnidadMedida[]>([]); // ✅ NUEVO (2026-08-23): Unidades de medida
     const [cargando, setCargando] = useState(true);
     const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoComida | null>(null);
     const [adicionalesSeleccionados, setAdicionalesSeleccionados] = useState<number[]>([]);
+    const [adicionalesConCantidad, setAdicionalesConCantidad] = useState<Map<number, AdicionalConCantidad>>(new Map()); // ✅ NUEVO (2026-08-23): Cantidad y unidad por adicional
     const [cantidad, setCantidad] = useState(1);
     const [precioBaseEditable, setPrecioBaseEditable] = useState(0);
     const [busqueda, setBusqueda] = useState<string>('');
+    const [busquedaAdicionales, setBusquedaAdicionales] = useState<string>(''); // ✅ NUEVO (2026-08-23): Búsqueda en adicionales
 
     // Obtener cantidad de un producto en el carrito
     const getCantidadEnCarrito = (productoId: number): number => {
@@ -93,41 +114,59 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
         }
     }, [precioBaseEditable, onActualizarPrecio, productoSeleccionado]);
 
-    // Cargar productos de comida
+    // Cargar productos de comida y unidades de medida
     useEffect(() => {
-        const cargarProductos = async () => {
+        const cargarDatos = async () => {
             try {
-                const response = await fetch('/api/productos-comida/');
-                const data = await response.json();
+                // ✅ NUEVO (2026-08-23): Cargar unidades de medida en paralelo
+                const [respProductos, respUnidades] = await Promise.all([
+                    fetch('/api/productos-comida/'),
+                    fetch('/api/productos-comida/unidades-medida')
+                ]);
+
+                const dataProductos = await respProductos.json();
+                const dataUnidades = await respUnidades.json();
 
                 console.log('🍦 DATOS DEL BACKEND - /api/productos-comida/', {
-                    success: data.success,
-                    cantidad: data.data?.length || 0,
-                    datos_completos: data.data,
+                    success: dataProductos.success,
+                    cantidad: dataProductos.data?.length || 0,
+                    datos_completos: dataProductos.data,
                 });
 
-                if (data.success && data.data) {
-                    setProductos(data.data);
-                    console.log('✅ Productos cargados:', data.data);
+                console.log('📏 UNIDADES DE MEDIDA CARGADAS:', {
+                    success: dataUnidades.success,
+                    unidades: dataUnidades.data,
+                });
+
+                if (dataProductos.success && dataProductos.data) {
+                    setProductos(dataProductos.data);
+                    console.log('✅ Productos cargados:', dataProductos.data);
                 } else {
                     toast.error('Error al cargar productos de comida');
-                    console.error('❌ Error en respuesta:', data);
+                    console.error('❌ Error en respuesta:', dataProductos);
+                }
+
+                if (dataUnidades.success && dataUnidades.data) {
+                    setUnidadesMedida(dataUnidades.data);
+                    console.log('✅ Unidades cargadas:', dataUnidades.data);
                 }
             } catch (error) {
-                console.error('Error cargando productos:', error);
-                toast.error('Error al cargar productos');
+                console.error('Error cargando datos:', error);
+                toast.error('Error al cargar datos');
             } finally {
                 setCargando(false);
             }
         };
 
-        cargarProductos();
+        cargarDatos();
     }, []);
 
     // Seleccionar producto
     const handleSeleccionarProducto = (producto: ProductoComida) => {
         setProductoSeleccionado(producto);
         setAdicionalesSeleccionados([]);
+        setAdicionalesConCantidad(new Map()); // ✅ NUEVO (2026-08-23): Limpiar cantidades de adicionales
+        setBusquedaAdicionales(''); // ✅ NUEVO (2026-08-23): Limpiar búsqueda de adicionales
 
         // Si el producto ya está en el carrito, mostrar su cantidad actual
         const cantidadEnCarrito = getCantidadEnCarrito(producto.id);
@@ -135,13 +174,25 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
         setPrecioBaseEditable(producto.precio_venta);
     };
 
-    // Toggle adicional
+    // ✅ ACTUALIZADO (2026-08-23): Toggle adicional con cantidad y unidad
     const toggleAdicional = (adicionalId: number) => {
-        setAdicionalesSeleccionados(prev =>
-            prev.includes(adicionalId)
-                ? prev.filter(id => id !== adicionalId)
-                : [...prev, adicionalId]
-        );
+        if (adicionalesSeleccionados.includes(adicionalId)) {
+            // Deseleccionar
+            setAdicionalesSeleccionados(prev => prev.filter(id => id !== adicionalId));
+            setAdicionalesConCantidad(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(adicionalId);
+                return newMap;
+            });
+        } else {
+            // Seleccionar con cantidad y unidad por defecto
+            setAdicionalesSeleccionados(prev => [...prev, adicionalId]);
+            setAdicionalesConCantidad(prev => new Map(prev).set(adicionalId, {
+                id: adicionalId,
+                cantidad: 50, // 50 gramos por defecto
+                unidad_medida_id: 1, // Gramos por defecto
+            }));
+        }
     };
 
     // Calcular precio total
@@ -149,15 +200,16 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
         if (!productoSeleccionado) return 0;
 
         const precioBase = precioBaseEditable;
+        // ✅ ACTUALIZADO (2026-08-23): Buscar precio en productos disponibles, no en array de adicionales
         const precioAdicionales = adicionalesSeleccionados.reduce((sum, id) => {
-            const adicional = productoSeleccionado.adicionales?.find(a => a.id === id);
-            return sum + (adicional?.precio_adicional || 0);
+            const adicional = productos.find(p => p.id === id);
+            return sum + (adicional?.precio_venta || 0);
         }, 0);
 
         return (precioBase + precioAdicionales) * cantidad;
     };
 
-    // Agregar al carrito
+    // ✅ ACTUALIZADO (2026-08-23): Agregar al carrito con cantidades y unidades de adicionales
     const handleAgregar = () => {
         if (!productoSeleccionado) {
             toast.error('Selecciona un producto');
@@ -169,15 +221,35 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
             return;
         }
 
+        // ✅ ACTUALIZADO (2026-08-23): Pasar detalles de adicionales con cantidad y unidad
+        const adicionalesDetalles = adicionalesSeleccionados
+            .map(id => {
+                const producto = productos.find(p => p.id === id);
+                const cantidadInfo = adicionalesConCantidad.get(id);
+                if (producto && cantidadInfo) {
+                    return {
+                        ...producto,
+                        // Guardar cantidad y unidad en el producto
+                        _cantidad_seleccionada: cantidadInfo.cantidad,
+                        _unidad_medida_id: cantidadInfo.unidad_medida_id,
+                    };
+                }
+                return producto;
+            })
+            .filter(Boolean) as ProductoComida[];
+
         onAgregar({
             producto: productoSeleccionado,
             adicionalesSeleccionados,
             cantidad,
+            // ✅ NUEVO: Pasar también los detalles de los adicionales
+            adicionales_detalles: adicionalesDetalles,
         });
 
         // Limpiar selección
         setProductoSeleccionado(null);
         setAdicionalesSeleccionados([]);
+        setAdicionalesConCantidad(new Map());
         setCantidad(1);
         setPrecioBaseEditable(0);
         toast.success('Producto agregado al carrito');
@@ -315,6 +387,26 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
                                                         </span>
                                                     )}
                                                 </div>
+
+                                                {/* Tipo de Producto */}
+                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                    {producto.es_producto_comida && (
+                                                        <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded font-medium">
+                                                            🍦 Comida
+                                                        </span>
+                                                    )}
+                                                    {producto.puede_tener_producto_adicional && (
+                                                        <span className="text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 px-2 py-1 rounded font-medium">
+                                                            🎁 Con Adicionales
+                                                        </span>
+                                                    )}
+                                                    {producto.es_producto_adicional && (
+                                                        <span className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 px-2 py-1 rounded font-medium">
+                                                            ➕ Adicional
+                                                        </span>
+                                                    )}
+                                                </div>
+
                                                 {/* Stock availability */}
                                                 <div className="mt-2 flex flex-wrap gap-2">
                                                     {producto.permite_venta_sin_stock ? (
@@ -376,6 +468,26 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
                                                 {productoSeleccionado.descripcion}
                                             </p>
                                         )}
+
+                                        {/* Tipo de Producto Info */}
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {productoSeleccionado.es_producto_comida && (
+                                                <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-full font-medium">
+                                                    🍦 Producto de Comida
+                                                </span>
+                                            )}
+                                            {productoSeleccionado.puede_tener_producto_adicional && (
+                                                <span className="text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 px-3 py-1.5 rounded-full font-medium">
+                                                    🎁 Acepta Adicionales
+                                                </span>
+                                            )}
+                                            {productoSeleccionado.es_producto_adicional && (
+                                                <span className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 px-3 py-1.5 rounded-full font-medium">
+                                                    ➕ Este es un Adicional
+                                                </span>
+                                            )}
+                                        </div>
+
                                         {/* Stock availability info */}
                                         <div className="mt-2 flex flex-wrap gap-2">
                                             {productoSeleccionado.permite_venta_sin_stock ? (
@@ -497,34 +609,130 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
                                     </div>
                                 </div>
 
-                                {/* Adicionales */}
-                                {productoSeleccionado.adicionales && productoSeleccionado.adicionales.length > 0 && (
-                                    <div className="space-y-3">
+                                {/* Adicionales - Mostrar todos los productos disponibles si el producto acepta adicionales */}
+                                {productoSeleccionado.puede_tener_producto_adicional && (
+                                    <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4">
                                         <h4 className="font-semibold text-gray-900 dark:text-white">
-                                            Selecciona Adicionales:
+                                            🎁 Agregar Productos Adicionales:
                                         </h4>
-                                        <div className="space-y-2">
-                                            {productoSeleccionado.adicionales.map(adicional => (
-                                                <label
-                                                    key={adicional.id}
-                                                    className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={adicionalesSeleccionados.includes(adicional.id)}
-                                                        onChange={() => toggleAdicional(adicional.id)}
-                                                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                                    />
-                                                    <div className="flex-1 ml-3">
-                                                        <span className="text-gray-900 dark:text-white">
-                                                            {adicional.nombre}
-                                                        </span>
-                                                    </div>
-                                                    <span className="text-green-600 dark:text-green-400 font-semibold">
-                                                        +{formatCurrency(adicional.precio_adicional)}
-                                                    </span>
-                                                </label>
-                                            ))}
+                                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                                            Selecciona los productos que deseas agregar a este pedido
+                                        </p>
+
+                                        {/* ✅ NUEVO (2026-08-23): Buscador de adicionales */}
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="🔍 Buscar adicionales..."
+                                                value={busquedaAdicionales}
+                                                onChange={(e) => setBusquedaAdicionales(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-sm"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {productos
+                                                .filter(p =>
+                                                    p.es_producto_adicional &&
+                                                    p.id !== productoSeleccionado.id &&
+                                                    (p.nombre.toLowerCase().includes(busquedaAdicionales.toLowerCase()) ||
+                                                     p.sku.toLowerCase().includes(busquedaAdicionales.toLowerCase()))
+                                                )
+                                                .map(adicional => {
+                                                    const isSelected = adicionalesSeleccionados.includes(adicional.id);
+                                                    const cantidadInfo = adicionalesConCantidad.get(adicional.id);
+                                                    return (
+                                                        <div
+                                                            key={adicional.id}
+                                                            className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
+                                                        >
+                                                            {/* Header con checkbox */}
+                                                            <label className="flex items-center gap-3 mb-2 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSelected}
+                                                                    onChange={() => toggleAdicional(adicional.id)}
+                                                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                                                />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <span className="text-gray-900 dark:text-white font-medium block">
+                                                                        {adicional.nombre}
+                                                                    </span>
+                                                                    {adicional.descripcion && (
+                                                                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                                            {adicional.descripcion}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+                                                                    +{formatCurrency(adicional.precio_venta)}
+                                                                </span>
+                                                            </label>
+
+                                                            {/* ✅ NUEVO (2026-08-23): Campos de cantidad y unidad si está seleccionado */}
+                                                            {isSelected && cantidadInfo && (
+                                                                <div className="flex gap-2 mt-2 pl-7">
+                                                                    {/* Cantidad */}
+                                                                    <div className="flex-1">
+                                                                        <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                                                                            Cantidad
+                                                                        </label>
+                                                                        <input
+                                                                            type="number"
+                                                                            min="1"
+                                                                            value={cantidadInfo.cantidad}
+                                                                            onChange={(e) => {
+                                                                                const newCantidad = Math.max(1, parseInt(e.target.value) || 1);
+                                                                                setAdicionalesConCantidad(prev => {
+                                                                                    const newMap = new Map(prev);
+                                                                                    newMap.set(adicional.id, {
+                                                                                        ...cantidadInfo,
+                                                                                        cantidad: newCantidad,
+                                                                                    });
+                                                                                    return newMap;
+                                                                                });
+                                                                            }}
+                                                                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                                                                        />
+                                                                    </div>
+
+                                                                    {/* Unidad de medida */}
+                                                                    <div className="flex-1">
+                                                                        <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                                                                            Unidad
+                                                                        </label>
+                                                                        <select
+                                                                            value={cantidadInfo.unidad_medida_id}
+                                                                            onChange={(e) => {
+                                                                                const newUnidadId = parseInt(e.target.value);
+                                                                                setAdicionalesConCantidad(prev => {
+                                                                                    const newMap = new Map(prev);
+                                                                                    newMap.set(adicional.id, {
+                                                                                        ...cantidadInfo,
+                                                                                        unidad_medida_id: newUnidadId,
+                                                                                    });
+                                                                                    return newMap;
+                                                                                });
+                                                                            }}
+                                                                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                                                                        >
+                                                                            {unidadesMedida.map(unidad => (
+                                                                                <option key={unidad.id} value={unidad.id}>
+                                                                                    {unidad.abreviatura}
+                                                                                </option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            {productos.filter(p => p.es_producto_adicional && p.id !== productoSeleccionado.id).length === 0 && (
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                                                    No hay productos disponibles para agregar como adicionales
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                 )}

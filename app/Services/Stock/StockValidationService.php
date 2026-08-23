@@ -80,6 +80,7 @@ class StockValidationService
             MovimientoInventario::TIPO_LIBERACION_RESERVA => $this->validarLiberacion($stock, $cantidad),
             MovimientoInventario::TIPO_SALIDA_VENTA => $this->validarVentaDirecta($stock, $cantidad),
             MovimientoInventario::TIPO_SALIDA_AJUSTE => $this->validarAjusteMasivo($stock, $cantidad),  // ✅ NUEVO (2026-08-19): Ajuste negativo masivo
+            MovimientoInventario::TIPO_SALIDA_PRODUCCION => $this->validarAjusteMasivo($stock, $cantidad),  // ✅ NUEVO (2026-08-22): Consumo de ingredientes en producción
             MovimientoInventario::TIPO_CONSUMO_RESERVA => $this->validarVentaConsumo($stock, $cantidad),
             // ✅ NUEVO: Comidas - Seguimiento sin descuento de stock
             MovimientoInventario::TIPO_SALIDA_COMIDA => null, // Comida: solo seguimiento, no valida stock

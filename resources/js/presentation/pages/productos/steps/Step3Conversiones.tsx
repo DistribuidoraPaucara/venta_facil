@@ -278,9 +278,9 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                 {/* Toggle Formulario - Encabezado clickeable */}
                 <div
                     onClick={() => setShowForm(!showForm)}
-                    className="flex cursor-pointer items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:bg-blue-950/50"
+                    className="flex cursor-pointer items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:bg-blue-950/50"
                 >
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">➕ Agregar Nueva Conversión</p>
+                    <p className="text-blue-900 dark:text-blue-100">➕ Agregar Nueva Conversión</p>
                     {showForm ? (
                         <ChevronUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     ) : (

@@ -34,6 +34,8 @@ class Producto extends Model
         'es_combo',
         'es_producto_comida', // ✨ NUEVO - Producto de comida/helado sin stock
         'permite_venta_sin_stock', // ✨ NUEVO - Permite vender sin stock (servicios, inyectables)
+        'es_producto_adicional', // ✨ NUEVO - Indica si el producto es un adicional
+        'puede_tener_producto_adicional', // ✨ NUEVO - Indica si el producto puede tener adicionales
         'categoria_id',
         'marca_id',
         'proveedor_id',
@@ -57,6 +59,8 @@ class Producto extends Model
             'es_combo' => 'boolean',
             'es_producto_comida' => 'boolean', // ✨ NUEVO
             'permite_venta_sin_stock' => 'boolean', // ✨ NUEVO
+            'es_producto_adicional' => 'boolean', // ✨ NUEVO - Indica si es un adicional
+            'puede_tener_producto_adicional' => 'boolean', // ✨ NUEVO - Indica si puede tener adicionales
             'visible_app' => 'boolean',
             'es_de_produccion' => 'boolean', // 🏭 NUEVO - Indica si es producto de receta
             'fecha_creacion' => 'datetime',
@@ -1310,5 +1314,29 @@ class Producto extends Model
     public function scopeComprados($query)
     {
         return $query->where('tipo_producto', 'comprado');
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-22): Relaciones para composición de productos
+     */
+    public function componentes()
+    {
+        return $this->hasMany(ProductoComponente::class, 'producto_id')
+            ->orderBy('orden', 'asc');
+    }
+
+    public function componentesObligatorios()
+    {
+        return $this->componentes()->where('es_opcional', false);
+    }
+
+    public function componentesOpcionales()
+    {
+        return $this->componentes()->where('es_opcional', true);
+    }
+
+    public function esComponenteDe()
+    {
+        return $this->hasMany(ProductoComponente::class, 'componente_id');
     }
 }

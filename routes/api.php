@@ -375,6 +375,15 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     Route::get('/productos/{producto}/stock', [ProductoController::class, 'obtenerStock'])->name('api.productos.stock');
     Route::post('/productos/stock/multiples', [ProductoController::class, 'obtenerStockMultiples'])->name('api.productos.stock.multiples');
 
+    // ✅ NUEVO (2026-08-22): COMPONENTES DE PRODUCTOS (Adicionales)
+    Route::prefix('productos/{producto}/componentes')->name('api.productos.componentes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ProductoComponenteController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\ProductoComponenteController::class, 'store'])->name('store');
+        Route::put('{componente}', [\App\Http\Controllers\ProductoComponenteController::class, 'update'])->name('update');
+        Route::delete('{componente}', [\App\Http\Controllers\ProductoComponenteController::class, 'destroy'])->name('destroy');
+        Route::get('/disponibles', [\App\Http\Controllers\ProductoComponenteController::class, 'productosDisponibles'])->name('disponibles');
+    });
+
     // ✅ NUEVO: PDF de stock disponible para preventistas
     Route::get('/app/stock/pdf', [StockDisponiblePdfController::class, 'generar'])
         ->middleware('auth:sanctum')
@@ -1881,14 +1890,16 @@ Route::get('/test/cajas/{aperturaCaja}/datos-cierre', function (\App\Models\Aper
 // ✨ NUEVO: Rutas para productos de comida/helados
 Route::prefix('productos-comida')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'productosComida']);
+    Route::get('/unidades-medida', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'unidadesMedida']); // ✅ NUEVO (2026-08-23): Obtener unidades de medida
     Route::get('/{producto}/adicionales', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'obtenerPorProducto']);
     Route::post('/adicionales', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'store']);
     Route::patch('/adicionales/{adicional}', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'update']);
     Route::delete('/adicionales/{adicional}', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'destroy']);
 });
 
-// ✨ NUEVO: Ruta para crear ventas de comidas/helados
+// ✨ NUEVO: Rutas para ventas de comidas/helados
 Route::post('/ventas-comidas', [\App\Http\Controllers\Api\VentasComidasController::class, 'store']);
+Route::get('/ventas-comidas/{venta}', [\App\Http\Controllers\Api\VentasComidasController::class, 'show']); // ✅ NUEVO (2026-08-23): Obtener detalles de venta con adicionales
 
 // ✅ NUEVO 2026-06-23: API endpoint para Cuentas por Cobrar (para app Flutter)
 Route::get('/cuentas-por-cobrar', [CuentaPorCobrarController::class, 'indexApi'])->name('api.cuentas-por-cobrar.index');
@@ -1973,6 +1984,17 @@ Route::prefix('producciones')->middleware('auth:sanctum')->group(function () {
 
     // Productos disponibles para producir
     Route::get('productos/disponibles', [\App\Http\Controllers\ProduccionController::class, 'productosDisponibles'])->name('api.producciones.productos-disponibles');
+
+    // Producción Masiva
+    Route::get('masiva/productos-disponibles', [\App\Http\Controllers\ProduccionMasivaController::class, 'productosDisponibles'])->name('api.producciones-masiva.productos-disponibles');
+    Route::post('masiva/calcular-capacidad', [\App\Http\Controllers\ProduccionMasivaController::class, 'calcularCapacidad'])->name('api.producciones-masiva.calcular-capacidad');
+    Route::post('masiva/guardar', [\App\Http\Controllers\ProduccionMasivaController::class, 'guardarProduccionMasiva'])->name('api.producciones-masiva.guardar');
+
+    // Registro y consulta de producciones masivas (cabecera-detalles)
+    Route::get('masiva/registro', [\App\Http\Controllers\RegistroProduccionController::class, 'getProducciones'])->name('api.producciones-masiva.registro');
+    Route::get('masiva/{id}', [\App\Http\Controllers\RegistroProduccionController::class, 'show'])->name('api.producciones-masiva.show');
+    Route::put('masiva/{id}/estado', [\App\Http\Controllers\RegistroProduccionController::class, 'cambiarEstado'])->name('api.producciones-masiva.cambiar-estado');
+    Route::delete('masiva/{id}', [\App\Http\Controllers\RegistroProduccionController::class, 'destroy'])->name('api.producciones-masiva.destroy');
 });
 
 // 📊 Descargar reporte de producción en Excel

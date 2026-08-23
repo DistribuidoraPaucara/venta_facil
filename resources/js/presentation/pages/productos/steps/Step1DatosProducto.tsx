@@ -32,6 +32,8 @@ export interface Step1Props {
         es_fraccionado?: boolean; // ✨ NUEVO
         es_producto_comida?: boolean; // ✨ NUEVO - Producto de comida/helado sin stock
         permite_venta_sin_stock?: boolean; // ✅ NUEVO (2026-05-08) - Para servicios/inyectables en farmacias
+        es_producto_adicional?: boolean; // ✨ NUEVO - Indica si es un adicional
+        puede_tener_producto_adicional?: boolean; // ✨ NUEVO - Indica si puede tener adicionales
         principio_activo?: string | null; // ✨ NUEVO - Ingrediente activo para medicamentos
         uso_de_medicacion?: string | null; // ✨ NUEVO - Indicaciones de uso para medicamentos
         visible_app?: boolean; // ✨ NUEVO - Visible en app
@@ -756,6 +758,38 @@ function Step1DatosProducto({
                     }
                     hint="Activa esta opción si este producto se elabora internamente con una receta que asocia otros productos como ingredientes"
                     colorScheme="orange"
+                />
+
+                {/* ✨ NUEVA SECCIÓN: Producto Adicional */}
+                <FeatureToggle
+                    id="es_producto_adicional"
+                    checked={!!data.es_producto_adicional}
+                    onCheckedChange={(v) => setData('es_producto_adicional', !!v)}
+                    icon="🌶️"
+                    title="Es Producto Adicional"
+                    description={
+                        data.es_producto_adicional
+                            ? '✅ Este producto es un adicional (topping, salsa, etc.)'
+                            : '❌ Este no es un producto adicional'
+                    }
+                    hint="Marca este producto si es un adicional que se puede agregar a otros productos (ej: salsa extra, topping, guarnición)"
+                    colorScheme="orange"
+                />
+
+                {/* ✨ NUEVA SECCIÓN: Puede Tener Adicionales */}
+                <FeatureToggle
+                    id="puede_tener_producto_adicional"
+                    checked={!!data.puede_tener_producto_adicional}
+                    onCheckedChange={(v) => setData('puede_tener_producto_adicional', !!v)}
+                    icon="🍔"
+                    title="Puede Tener Adicionales"
+                    description={
+                        data.puede_tener_producto_adicional
+                            ? '✅ Este producto puede recibir adicionales'
+                            : '❌ Este producto no permite adicionales'
+                    }
+                    hint="Marca este producto si permite que se le agreguen otros productos como adicionales (ej: hamburguesa, pizza, bebidas)"
+                    colorScheme="purple"
                 />
             </div>
 

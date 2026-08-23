@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
  * @route '/api/productos-comida'
  */
 export const productosComida = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ productosComida.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
  * @route '/api/productos-comida'
  */
 productosComida.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ productosComida.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
  * @route '/api/productos-comida'
  */
 productosComida.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ productosComida.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
  * @route '/api/productos-comida'
  */
 productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
     /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
  * @route '/api/productos-comida'
  */
     const productosComidaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
             /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
  * @route '/api/productos-comida'
  */
         productosComidaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
         })
             /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::productosComida
- * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:113
  * @route '/api/productos-comida'
  */
         productosComidaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -77,6 +77,84 @@ productosComida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
         })
     
     productosComida.form = productosComidaForm
+/**
+* @see \App\Http\Controllers\Api\AdicionalesProductoController::unidadesMedida
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @route '/api/productos-comida/unidades-medida'
+ */
+export const unidadesMedida = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: unidadesMedida.url(options),
+    method: 'get',
+})
+
+unidadesMedida.definition = {
+    methods: ["get","head"],
+    url: '/api/productos-comida/unidades-medida',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Api\AdicionalesProductoController::unidadesMedida
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @route '/api/productos-comida/unidades-medida'
+ */
+unidadesMedida.url = (options?: RouteQueryOptions) => {
+    return unidadesMedida.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\AdicionalesProductoController::unidadesMedida
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @route '/api/productos-comida/unidades-medida'
+ */
+unidadesMedida.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: unidadesMedida.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Api\AdicionalesProductoController::unidadesMedida
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @route '/api/productos-comida/unidades-medida'
+ */
+unidadesMedida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: unidadesMedida.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\AdicionalesProductoController::unidadesMedida
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @route '/api/productos-comida/unidades-medida'
+ */
+    const unidadesMedidaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: unidadesMedida.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\AdicionalesProductoController::unidadesMedida
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @route '/api/productos-comida/unidades-medida'
+ */
+        unidadesMedidaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: unidadesMedida.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\AdicionalesProductoController::unidadesMedida
+ * @see app/Http/Controllers/Api/AdicionalesProductoController.php:98
+ * @route '/api/productos-comida/unidades-medida'
+ */
+        unidadesMedidaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: unidadesMedida.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    unidadesMedida.form = unidadesMedidaForm
 /**
 * @see \App\Http\Controllers\Api\AdicionalesProductoController::obtenerPorProducto
  * @see app/Http/Controllers/Api/AdicionalesProductoController.php:16
@@ -412,6 +490,6 @@ destroy.delete = (args: { adicional: number | { id: number } } | [adicional: num
         })
     
     destroy.form = destroyForm
-const AdicionalesProductoController = { productosComida, obtenerPorProducto, store, update, destroy }
+const AdicionalesProductoController = { productosComida, unidadesMedida, obtenerPorProducto, store, update, destroy }
 
 export default AdicionalesProductoController

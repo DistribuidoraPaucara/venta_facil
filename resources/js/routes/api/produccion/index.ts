@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteExcel
- * @see app/Http/Controllers/ProduccionController.php:346
+ * @see app/Http/Controllers/ProduccionController.php:444
  * @route '/api/produccion/reporte/excel'
  */
 export const reporteExcel = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ reporteExcel.definition = {
 
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteExcel
- * @see app/Http/Controllers/ProduccionController.php:346
+ * @see app/Http/Controllers/ProduccionController.php:444
  * @route '/api/produccion/reporte/excel'
  */
 reporteExcel.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ reporteExcel.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteExcel
- * @see app/Http/Controllers/ProduccionController.php:346
+ * @see app/Http/Controllers/ProduccionController.php:444
  * @route '/api/produccion/reporte/excel'
  */
 reporteExcel.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ reporteExcel.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteExcel
- * @see app/Http/Controllers/ProduccionController.php:346
+ * @see app/Http/Controllers/ProduccionController.php:444
  * @route '/api/produccion/reporte/excel'
  */
 reporteExcel.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ reporteExcel.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProduccionController::reporteExcel
- * @see app/Http/Controllers/ProduccionController.php:346
+ * @see app/Http/Controllers/ProduccionController.php:444
  * @route '/api/produccion/reporte/excel'
  */
     const reporteExcelForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ reporteExcel.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProduccionController::reporteExcel
- * @see app/Http/Controllers/ProduccionController.php:346
+ * @see app/Http/Controllers/ProduccionController.php:444
  * @route '/api/produccion/reporte/excel'
  */
         reporteExcelForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ reporteExcel.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProduccionController::reporteExcel
- * @see app/Http/Controllers/ProduccionController.php:346
+ * @see app/Http/Controllers/ProduccionController.php:444
  * @route '/api/produccion/reporte/excel'
  */
         reporteExcelForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

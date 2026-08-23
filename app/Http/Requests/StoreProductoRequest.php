@@ -135,6 +135,8 @@ class StoreProductoRequest extends FormRequest
             'es_fraccionado'           => ['nullable', 'boolean'],
             'es_producto_comida'       => ['nullable', 'boolean'], // 🍦 NUEVO - Producto de comida/helado sin stock
             'permite_venta_sin_stock'  => ['nullable', 'boolean'], // ✅ NUEVO (2026-05-08) - Para servicios/inyectables
+            'es_producto_adicional'    => ['nullable', 'boolean'], // ✨ NUEVO - Indica si es un adicional
+            'puede_tener_producto_adicional' => ['nullable', 'boolean'], // ✨ NUEVO - Indica si puede tener adicionales
             'conversiones'             => ['nullable', 'array'],
             'conversiones.*.unidad_base_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id'],
             'conversiones.*.unidad_destino_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id', 'different:conversiones.*.unidad_base_id'],
@@ -231,6 +233,8 @@ class StoreProductoRequest extends FormRequest
             'es_fraccionado.boolean'                   => 'El campo fraccionado debe ser verdadero o falso.',
             'es_producto_comida.boolean'               => 'El campo producto de comida debe ser verdadero o falso.',
             'permite_venta_sin_stock.boolean'          => 'El campo venta sin stock debe ser verdadero o falso.', // ✅ NUEVO (2026-05-08)
+            'es_producto_adicional.boolean'            => 'El campo producto adicional debe ser verdadero o falso.', // ✨ NUEVO
+            'puede_tener_producto_adicional.boolean'   => 'El campo puede tener adicionales debe ser verdadero o falso.', // ✨ NUEVO
             'conversiones.array'                       => 'Las conversiones deben ser un arreglo.',
             'conversiones.*.unidad_base_id.required_with' => 'La unidad base es obligatoria en cada conversión.',
             'conversiones.*.unidad_base_id.integer'    => 'La unidad base debe ser un ID numérico.',
@@ -317,6 +321,8 @@ class StoreProductoRequest extends FormRequest
             'es_fraccionado'   => 'producto fraccionado',
             'es_producto_comida' => 'producto de comida/helado',
             'permite_venta_sin_stock' => 'permitir venta sin stock', // ✅ NUEVO (2026-05-08)
+            'es_producto_adicional' => 'producto adicional', // ✨ NUEVO
+            'puede_tener_producto_adicional' => 'puede tener adicionales', // ✨ NUEVO
             'conversiones'     => 'conversiones de unidad',
             'conversiones.*.unidad_base_id' => 'unidad base de conversión',
             'conversiones.*.unidad_destino_id' => 'unidad destino de conversión',

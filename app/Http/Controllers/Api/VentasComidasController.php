@@ -13,6 +13,7 @@ use App\Models\MovimientoCaja;
 use App\Models\TipoOperacionCaja;
 use App\Models\AperturaCaja;
 use App\Services\Venta\VentasComidasService;
+use App\Services\Venta\AdicionalVentaService; // ✨ NUEVO
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,10 +23,14 @@ use Illuminate\Support\Facades\Log;
 class VentasComidasController extends Controller
 {
     protected $ventasComidasService;
+    protected $adicionalVentaService; // ✨ NUEVO
 
-    public function __construct(VentasComidasService $ventasComidasService)
-    {
+    public function __construct(
+        VentasComidasService $ventasComidasService,
+        AdicionalVentaService $adicionalVentaService // ✨ NUEVO
+    ) {
         $this->ventasComidasService = $ventasComidasService;
+        $this->adicionalVentaService = $adicionalVentaService; // ✨ NUEVO
     }
 
     /**
@@ -73,6 +78,10 @@ class VentasComidasController extends Controller
                 'productos_comida.*.precio_base' => 'required|numeric|min:0',
                 'productos_comida.*.cantidad' => 'required|numeric|min:1',
                 'productos_comida.*.subtotal' => 'required|numeric|min:0',
+                'productos_comida.*.adicionales' => 'nullable|array', // ✨ NUEVO - Adicionales por producto
+                'productos_comida.*.adicionales.*.producto_id' => 'required_with:productos_comida.*.adicionales|exists:productos,id', // ✨ NUEVO
+                'productos_comida.*.adicionales.*.cantidad' => 'required_with:productos_comida.*.adicionales|numeric|min:1', // ✨ NUEVO
+                'productos_comida.*.adicionales.*.precio_unitario' => 'required_with:productos_comida.*.adicionales|numeric|min:0', // ✨ NUEVO
                 'total' => 'required|numeric|min:0',
                 'observaciones' => 'nullable|string',
             ]);
@@ -190,6 +199,28 @@ class VentasComidasController extends Controller
                     $detallesConIds[] = array_merge($producto, [
                         'detalle_venta_id' => $detalle->id,
                     ]);
+
+                    // ✨ NUEVO: Procesar adicionales para este detalle si existen
+                    if (!empty($producto['adicionales'])) {
+                        try {
+                            $this->adicionalVentaService->procesarAdicionalesDetalle(
+                                $detalle,
+                                $producto['adicionales'],
+                                $venta->almacen_id ?? Auth::user()?->empresa?->almacen_id ?? 1
+                            );
+
+                            Log::info('✨ [VentasComidasController::store] Adicionales procesados para detalle', [
+                                'detalle_venta_id' => $detalle->id,
+                                'cantidad_adicionales' => count($producto['adicionales']),
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('❌ [VentasComidasController::store] Error procesando adicionales', [
+                                'detalle_venta_id' => $detalle->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                            throw $e;
+                        }
+                    }
                 }
 
                 Log::info('✅ [VentasComidasController::store] Detalles de venta creados', [
@@ -341,6 +372,73 @@ class VentasComidasController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar la venta: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-23): Obtener detalles de una venta con adicionales
+     * GET /api/ventas-comidas/{id}
+     */
+    public function show(Venta $venta): JsonResponse
+    {
+        try {
+            // Cargar relaciones: detalles y sus adicionales
+            $venta->load('detalles.adicionales.producto', 'cliente', 'tipoPago');
+
+            // Formatear respuesta con detalles y adicionales
+            $detalles = $venta->detalles->map(function ($detalle) {
+                return [
+                    'id' => $detalle->id,
+                    'producto_id' => $detalle->producto_id,
+                    'producto_nombre' => $detalle->producto?->nombre,
+                    'cantidad' => (float) $detalle->cantidad,
+                    'precio_unitario' => (float) $detalle->precio_unitario,
+                    'subtotal' => (float) $detalle->subtotal,
+                    // ✅ NUEVO: Incluir adicionales
+                    'adicionales' => $detalle->adicionales->map(function ($adicional) {
+                        return [
+                            'id' => $adicional->id,
+                            'producto_id' => $adicional->producto_id,
+                            'producto_nombre' => $adicional->producto?->nombre,
+                            'cantidad' => (float) $adicional->cantidad,
+                            'precio_unitario' => (float) $adicional->precio_unitario,
+                            'subtotal' => (float) $adicional->subtotal,
+                        ];
+                    })->toArray(),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $venta->id,
+                    'numero' => $venta->numero,
+                    'fecha' => $venta->fecha?->format('Y-m-d H:i:s'),
+                    'cliente_id' => $venta->cliente_id,
+                    'cliente_nombre' => $venta->cliente?->nombre,
+                    'usuario_id' => $venta->usuario_id,
+                    'usuario_nombre' => $venta->usuario?->name,
+                    'tipo_pago_id' => $venta->tipo_pago_id,
+                    'tipo_pago_nombre' => $venta->tipoPago?->nombre,
+                    'subtotal' => (float) $venta->subtotal,
+                    'descuento' => (float) $venta->descuento,
+                    'impuesto' => (float) $venta->impuesto,
+                    'total' => (float) $venta->total,
+                    'monto_pagado' => (float) $venta->monto_pagado,
+                    'estado_documento' => $venta->estadoDocumento?->nombre,
+                    'detalles' => $detalles->toArray(),
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('❌ [VentasComidasController::show] Error al obtener detalles de venta', [
+                'venta_id' => $venta->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener detalles de la venta',
             ], 500);
         }
     }

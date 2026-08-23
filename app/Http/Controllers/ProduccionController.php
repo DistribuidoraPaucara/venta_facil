@@ -190,7 +190,18 @@ class ProduccionController extends Controller
      */
     public function destroy(Produccion $produccion)
     {
+        \Log::info("🗑️ Iniciando eliminación de producción", [
+            'produccion_id' => $produccion->id,
+            'producto' => $produccion->producto->nombre,
+            'cantidad' => $produccion->cantidad_producida,
+            'estado' => $produccion->estado,
+        ]);
+
         if ($produccion->estado !== 'en_proceso') {
+            \Log::warning("⚠️ Intento de eliminar producción que no está en_proceso", [
+                'produccion_id' => $produccion->id,
+                'estado' => $produccion->estado,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Solo se pueden eliminar producciones en proceso',
@@ -199,18 +210,105 @@ class ProduccionController extends Controller
 
         // Verificar que no tenga ventas asociadas
         if ($produccion->detallesVenta()->exists()) {
+            \Log::warning("⚠️ Intento de eliminar producción con ventas", [
+                'produccion_id' => $produccion->id,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'No se puede eliminar producción con ventas asociadas',
             ], 422);
         }
 
-        $produccion->delete();
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Producción eliminada exitosamente',
+            // ✅ NUEVO (2026-08-22): Revertir movimientos de stock antes de eliminar
+            $this->revertirMovimientosDeStock($produccion);
+
+            $produccion->delete();
+
+            DB::commit();
+
+            \Log::info("✅ Producción eliminada exitosamente", [
+                'produccion_id' => $produccion->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Producción eliminada exitosamente y movimientos revertidos',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('❌ Error al eliminar producción', [
+                'produccion_id' => $produccion->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar producción: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-22): Revertir movimientos de stock al eliminar una producción
+     * Crea movimientos inversos para deshacer los cambios de stock
+     */
+    private function revertirMovimientosDeStock(Produccion $produccion)
+    {
+        $movimientoService = app(\App\Services\Stock\MovimientoStockService::class);
+
+        // Obtener todos los movimientos de esta producción
+        $movimientos = \App\Models\MovimientoInventario::where('referencia_tipo', 'produccion')
+            ->where('referencia_id', $produccion->id)
+            ->get();
+
+        \Log::info("📊 Buscando movimientos de producción", [
+            'produccion_id' => $produccion->id,
+            'total_encontrados' => $movimientos->count(),
         ]);
+
+        foreach ($movimientos as $movimiento) {
+            // Crear movimiento inverso (opuesto)
+            $tipoInverso = $this->obtenerTipoInverso($movimiento->tipo);
+
+            if ($tipoInverso) {
+                \Log::info("🔄 Revirtiendo movimiento de stock", [
+                    'movimiento_id' => $movimiento->id,
+                    'tipo_original' => $movimiento->tipo,
+                    'tipo_inverso' => $tipoInverso,
+                    'cantidad' => abs($movimiento->cantidad),
+                    'stock_id' => $movimiento->stock_producto_id,
+                ]);
+
+                $movimientoService->registrarMovimientoYActualizar(
+                    $movimiento->stock_producto_id,
+                    abs($movimiento->cantidad),
+                    $tipoInverso,
+                    'produccion_eliminada',
+                    $produccion->id
+                );
+            } else {
+                \Log::warning("⚠️ No hay tipo inverso para", [
+                    'tipo_original' => $movimiento->tipo,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * ✅ NUEVO (2026-08-22): Obtener el tipo de movimiento inverso
+     * SALIDA_PRODUCCION → ENTRADA_AJUSTE
+     * ENTRADA_AJUSTE → SALIDA_AJUSTE
+     */
+    private function obtenerTipoInverso(string $tipo): ?string
+    {
+        return match ($tipo) {
+            \App\Models\MovimientoInventario::TIPO_SALIDA_PRODUCCION => \App\Models\MovimientoInventario::TIPO_ENTRADA_AJUSTE,
+            \App\Models\MovimientoInventario::TIPO_ENTRADA_AJUSTE => \App\Models\MovimientoInventario::TIPO_SALIDA_AJUSTE,
+            default => null,
+        };
     }
 
     /**

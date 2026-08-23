@@ -7,6 +7,7 @@ use App\Http\Controllers\EstadosLogisticaController;
 use App\Http\Controllers\EstadosDocumentoController;
 use App\Http\Controllers\TipoOperacionCajaController;
 use App\Http\Controllers\FaviconController;
+use App\Http\Controllers\RegistroProduccionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -1355,10 +1356,13 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
             return Inertia::render('produccion/recetas-manager');
         })->name('recetas-manager');
 
-        // Registro de Producción
-        Route::get('registro-produccion', function () {
-            return Inertia::render('produccion/registro-produccion');
-        })->name('registro-produccion');
+        // Registro de Producción (cabecera-detalles)
+        Route::get('registro-produccion', [RegistroProduccionController::class, 'index'])->name('registro-produccion');
+
+        // Producción Masiva
+        Route::get('produccion-masiva', function () {
+            return Inertia::render('produccion/produccion-masiva');
+        })->name('produccion-masiva');
 
         // Reportes de Producción
         Route::get('reporte-produccion', function () {

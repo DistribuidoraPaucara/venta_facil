@@ -8,6 +8,7 @@ use App\Exceptions\Venta\EstadoInvalidoException;
 use App\Models\EstadoDocumento;
 use App\Models\Venta;
 use App\Services\Stock\StockService;
+use App\Services\ProductoComponenteService;
 use App\Services\Traits\LogsOperations;
 use App\Services\Traits\ManagesTransactions;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -38,6 +39,7 @@ class VentaService
         private StockService $stockService,
         private ContabilidadService $contabilidadService,
         private VentaDistribucionService $ventaDistribucionService,
+        private ProductoComponenteService $componenteService, // ✅ NUEVO (2026-08-22)
     ) {}
 
     /**
@@ -286,7 +288,26 @@ class VentaService
                 $cantidad = $detalle['cantidad'] ?? 0;
                 $precio = $detalle['precio_unitario'] ?? 0;
                 $descuento = $detalle['descuento'] ?? 0;
-                $subtotal = ($cantidad * $precio) - $descuento;
+
+                // ✅ NUEVO (2026-08-22): Procesar componentes/adicionales
+                $componentesProcesados = [];
+                $costoAdicional = 0;
+                if (isset($detalle['componentes']) && is_array($detalle['componentes'])) {
+                    $componentesProcesados = $this->componenteService->procesarComponentes(
+                        $detalle['componentes'],
+                        $detalle['producto_id'],
+                        $cantidad
+                    );
+                    $costoAdicional = $this->componenteService->calcularCostoAdicional($componentesProcesados);
+
+                    Log::info("💰 Costo adicional calculado por componentes", [
+                        'producto_id' => $detalle['producto_id'],
+                        'cantidad_componentes' => count($componentesProcesados),
+                        'costo_adicional' => $costoAdicional,
+                    ]);
+                }
+
+                $subtotal = ($cantidad * $precio) - $descuento + $costoAdicional;
 
                 // ✅ NUEVO: Preparar combo_items_seleccionados si existen
                 $comboItemsSeleccionados = null;
@@ -330,6 +351,7 @@ class VentaService
                             'incluido' => $item['incluido'] ?? false,
                         ];
                     }, $comboItemsSeleccionados) : null, // ✅ NUEVO: Items del combo seleccionados
+                    'componentes_seleccionados' => !empty($componentesProcesados) ? $componentesProcesados : null, // ✅ NUEVO (2026-08-22): Componentes/adicionales
                 ]);
 
                 // ✅ NUEVO (2026-07-24): Guardar detalle con su ID para pasar a consumirStock
@@ -451,6 +473,21 @@ class VentaService
                 'productos_procesados' => $cantidadProductosUnicos,
                 'politica_pago' => $dto->politica_pago,
             ]);
+
+            // ✅ NUEVO (2026-08-22): Descontar stock de componentes/adicionales
+            Log::debug('🔄 [VentaService::crear] Procesando stock de componentes');
+            $detallesVentaCreados = $venta->detalles()->get();
+            foreach ($detallesVentaCreados as $detalleVenta) {
+                try {
+                    $this->componenteService->descontarStockComponentes($detalleVenta);
+                } catch (\Exception $e) {
+                    Log::error('❌ Error al descontar stock de componentes', [
+                        'detalle_venta_id' => $detalleVenta->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            }
 
             // 3.4 Crear asiento contable (COMENTADO: Se habilitará cuando CuentasContables esté configurado)
             // \Log::debug('🔄 [VentaService::crear] Creando asiento contable');
