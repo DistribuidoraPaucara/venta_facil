@@ -57,7 +57,7 @@ class AdicionalVentaService
                     'precio_unitario' => $precioUnitario,
                 ]);
 
-                // ✅ ACTUALIZADO (2026-08-23): Descontar stock con tipo de venta correcto
+                // ✅ ACTUALIZADO (2026-08-23): Descontar stock con conversión de unidades
                 try {
                     // Obtener stock_producto_id del almacén para este producto
                     $stockProducto = \App\Models\StockProducto::where('producto_id', $productoId)
@@ -68,10 +68,13 @@ class AdicionalVentaService
                         throw new \Exception("No hay stock registrado para el producto {$productoId} en almacén {$almacenId}");
                     }
 
+                    // ✅ NUEVO (2026-08-23): Convertir cantidad si es necesario
+                    $cantidadADescontar = $this->convertirCantidad($productoId, $cantidad);
+
                     // Usar tipo SALIDA_VENTA (para ventas normales con descuento de stock)
                     $this->movimientoStockService->registrarMovimientoYActualizar(
                         stockProductoId: $stockProducto->id,
-                        cantidad: -$cantidad,  // Negativo para salida
+                        cantidad: -$cantidadADescontar,  // Negativo para salida, convertido
                         tipo: \App\Models\MovimientoInventario::TIPO_SALIDA_VENTA, // Tipo de venta estándar
                         referencia_tipo: 'venta',
                         referencia_id: $detalle->venta_id,
@@ -107,6 +110,37 @@ class AdicionalVentaService
      * @param array $detallesConAdicionales Array de detalles con sus adicionales
      * @return void
      */
+    /**
+     * ✅ NUEVO (2026-08-23): Convertir cantidad de adicional a unidad de stock del producto
+     * Ejemplo: 50g de Jamón → convertir a kg si el stock está en kg
+     */
+    private function convertirCantidad(int $productoId, float $cantidad): float
+    {
+        // Obtener el producto para saber su unidad de medida
+        $producto = \App\Models\Producto::find($productoId);
+        if (!$producto) {
+            return $cantidad;
+        }
+
+        // Si el producto tiene unidad de medida, usarla
+        // Por ahora: si la unidad es kilogramo (id=2) y la cantidad es pequeña (< 10),
+        // asumir que viene en gramos y convertir
+        if ($producto->unidad_medida_id == 2 && $cantidad < 10) {
+            // Asumir conversión g → kg (dividir entre 1000)
+            return $cantidad / 1000;
+        }
+
+        // Si la unidad es gramo (id=3) y la cantidad es grande (> 1000),
+        // asumir que viene en mg y convertir
+        if ($producto->unidad_medida_id == 3 && $cantidad > 1000) {
+            // Conversión mg → g (dividir entre 1000)
+            return $cantidad / 1000;
+        }
+
+        // Sin conversión necesaria
+        return $cantidad;
+    }
+
     public function procesarAdicionales($venta, array $detallesConAdicionales): void
     {
         if (empty($detallesConAdicionales)) {
