@@ -471,6 +471,25 @@ class ModuloSidebarSeeder extends Seeder
                 ],
             ],
 
+            // ===== MÓDULO: PRODUCCIÓN =====
+            'produccion' => [
+                'modulo' => [
+                    'titulo'      => 'Producción',
+                    'ruta'        => '/produccion/registro-produccion',
+                    'icono'       => 'Factory',
+                    'descripcion' => 'Gestión de producción y recetas',
+                    'orden'       => 10,
+                    'categoria'   => 'Inventario',
+                    'permisos'    => ['produccion.manage'],
+                ],
+                'submenu' => [
+                    ['titulo' => 'Registro de Producción', 'ruta' => '/produccion/registro-produccion', 'icono' => 'ClipboardList', 'orden' => 1, 'permisos' => ['produccion.registro-produccion']],
+                    ['titulo' => 'Producción Masiva', 'ruta' => '/produccion/produccion-masiva', 'icono' => 'Zap', 'orden' => 2, 'permisos' => ['produccion.produccion-masiva']],
+                    ['titulo' => 'Gestor de Recetas', 'ruta' => '/produccion/recetas-manager', 'icono' => 'BookOpen', 'orden' => 3, 'permisos' => ['produccion.recetas-manager']],
+                    ['titulo' => 'Reporte de Producción', 'ruta' => '/produccion/reporte-produccion', 'icono' => 'BarChart2', 'orden' => 4, 'permisos' => ['produccion.reporte-produccion']],
+                ],
+            ],
+
             // ===== MÓDULO: ADMINISTRACIÓN =====
             'administracion'  => [
                 'modulo'  => [
