@@ -160,12 +160,31 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
         cargarDatos();
     }, []);
 
-    // Seleccionar producto
+    // ✅ ACTUALIZADO (2026-08-23): Seleccionar producto y cargar ingredientes predefinidos
     const handleSeleccionarProducto = (producto: ProductoComida) => {
         setProductoSeleccionado(producto);
-        setAdicionalesSeleccionados([]);
-        setAdicionalesConCantidad(new Map()); // ✅ NUEVO (2026-08-23): Limpiar cantidades de adicionales
-        setBusquedaAdicionales(''); // ✅ NUEVO (2026-08-23): Limpiar búsqueda de adicionales
+        setBusquedaAdicionales('');
+
+        // Si el producto tiene ingredientes predefinidos, cargarlos automáticamente
+        if (producto.ingredientes && producto.ingredientes.length > 0) {
+            const ingredientesMap = new Map<number, AdicionalConCantidad>();
+            const selectedIds: number[] = [];
+
+            producto.ingredientes.forEach((ing) => {
+                selectedIds.push(ing.producto_id);
+                ingredientesMap.set(ing.producto_id, {
+                    id: ing.producto_id,
+                    cantidad: ing.cantidad_requerida,
+                    unidad_medida_id: ing.unidad_medida_id,
+                });
+            });
+
+            setAdicionalesSeleccionados(selectedIds);
+            setAdicionalesConCantidad(ingredientesMap);
+        } else {
+            setAdicionalesSeleccionados([]);
+            setAdicionalesConCantidad(new Map());
+        }
 
         // Si el producto ya está en el carrito, mostrar su cantidad actual
         const cantidadEnCarrito = getCantidadEnCarrito(producto.id);
@@ -611,11 +630,21 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
                                 {/* Adicionales - Mostrar todos los productos disponibles si el producto acepta adicionales */}
                                 {productoSeleccionado.puede_tener_producto_adicional && (
                                     <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4">
-                                        <h4 className="font-semibold text-gray-900 dark:text-white">
-                                            🎁 Agregar Productos Adicionales:
-                                        </h4>
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                                                🎁 Productos Adicionales:
+                                            </h4>
+                                            {/* ✅ NUEVO (2026-08-23): Indicador si hay ingredientes predefinidos */}
+                                            {adicionalesSeleccionados.length > 0 && (
+                                                <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                                                    📋 Predefinidos de receta
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-xs text-gray-600 dark:text-gray-400">
-                                            Selecciona los productos que deseas agregar a este pedido
+                                            {adicionalesSeleccionados.length > 0
+                                                ? 'Cantidades cargadas de la receta. Puedes editar según necesites.'
+                                                : 'Selecciona los productos que deseas agregar a este pedido'}
                                         </p>
 
                                         {/* ✅ NUEVO (2026-08-23): Buscador de adicionales */}

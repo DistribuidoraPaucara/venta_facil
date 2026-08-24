@@ -35,6 +35,14 @@ export interface ComponenteProducto {
     es_opcional: boolean;
 }
 
+export interface Ingrediente {
+    producto_id: number;
+    producto_nombre: string;
+    cantidad_requerida: number;
+    unidad_medida_id: number;
+    unidad_nombre: string;
+}
+
 export interface ProductoComida {
     id: number;
     nombre: string;
@@ -47,6 +55,8 @@ export interface ProductoComida {
     puede_tener_producto_adicional?: boolean;
     es_producto_adicional?: boolean;
     adicionales?: Adicional[];
+    // ✅ NUEVO (2026-08-23): Ingredientes predefinidos como adicionales
+    ingredientes?: Ingrediente[];
 }
 
 export interface DetalleComidaVenta {

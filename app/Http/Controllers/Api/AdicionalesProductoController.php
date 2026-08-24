@@ -136,6 +136,10 @@ class AdicionalesProductoController extends Controller
                 'stock' => function($q) {
                     // Cargar stock disponible (cantidad_disponible = cantidad para venta, sin las reservadas)
                     $q->select('id', 'producto_id', 'cantidad_disponible');
+                },
+                // ✅ NUEVO (2026-08-23): Cargar ingredientes predefinidos como adicionales
+                'ingredientes' => function($q) {
+                    $q->with(['producto:id,nombre', 'unidadMedida:id,nombre,codigo']);
                 }
             ])
             ->orderBy('nombre', 'asc') // ✅ ACTUALIZADO (2026-08-23): Orden alfabético en lugar de por ID
@@ -170,6 +174,17 @@ class AdicionalesProductoController extends Controller
             // Calcular disponibilidad sumando todos los stock_productos (cantidad_disponible = sin reservadas)
             $disponibilidad = $producto->stock->sum('cantidad_disponible') ?? 0;
 
+            // ✅ NUEVO (2026-08-23): Mapear ingredientes a formato de adicionales predefinidos
+            $ingredientesMapeados = $producto->ingredientes?->map(function($ing) {
+                return [
+                    'id' => $ing->producto_id,
+                    'nombre' => $ing->producto->nombre ?? $ing->producto_nombre ?? '',
+                    'cantidad_requerida' => $ing->cantidad_requerida,
+                    'unidad_medida_id' => $ing->unidad_medida_id,
+                    'unidad_nombre' => $ing->unidadMedida->nombre ?? $ing->unidad_nombre ?? 'Unidad',
+                ];
+            })->toArray() ?? [];
+
             return [
                 'id' => $producto->id,
                 'nombre' => $producto->nombre,
@@ -184,6 +199,8 @@ class AdicionalesProductoController extends Controller
                 'puede_tener_producto_adicional' => (bool) $producto->puede_tener_producto_adicional,
                 'es_producto_adicional' => (bool) $producto->es_producto_adicional,
                 'adicionales' => $producto->adicionales,
+                // ✅ NUEVO (2026-08-23): Ingredientes como adicionales predefinidos
+                'ingredientes' => $ingredientesMapeados,
             ];
         });
 

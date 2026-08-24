@@ -43,11 +43,12 @@ export function useCarritoComidas() {
         const precioUnitario = precioBase + sumaAdicionales + (sumaComponentes / producto.cantidad);
         const precioTotal = precioUnitario * producto.cantidad;
 
-        // ✅ ACTUALIZADO (2026-08-23): Crear adicionales editables con cantidad del usuario
+        // ✅ ACTUALIZADO (2026-08-23): Crear adicionales editables con cantidad predefinida o del usuario
         const adicionalesEditables: AdicionalVentaEditable[] = adicionalesSeleccionados.map((a, idx) => {
             const precio = a.precio_venta || a.precio_adicional || 0;
-            // ✅ ACTUALIZADO (2026-08-23): Usar cantidad seleccionada por el usuario o defecto
-            const cantidadSeleccionada = (a as any)._cantidad_seleccionada || 50;
+            // ✅ ACTUALIZADO (2026-08-23): Usar cantidad predefinida (ingrediente) o cantidad seleccionada por usuario o defecto
+            // Prioridad: cantidad_requerida (del ingrediente) > _cantidad_seleccionada (del usuario) > 50 (default)
+            const cantidadSeleccionada = (a as any).cantidad_requerida || (a as any)._cantidad_seleccionada || 50;
             const unidadMedidaId = (a as any)._unidad_medida_id || 1; // 1 = gramos por defecto
             const unidadMedidaNombre = a.unidad_medida_nombre || 'g';
             return {
@@ -56,7 +57,7 @@ export function useCarritoComidas() {
                 nombre: a.nombre,
                 precio_original: precio,
                 precio_actual: precio,
-                cantidad: cantidadSeleccionada, // ✅ ACTUALIZADO: Usar cantidad del usuario
+                cantidad: cantidadSeleccionada, // ✅ ACTUALIZADO: Usar cantidad predefinida o del usuario
                 unidad_medida_id: unidadMedidaId,
                 unidad_medida_nombre: unidadMedidaNombre,
             };
