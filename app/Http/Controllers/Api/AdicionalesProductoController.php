@@ -178,10 +178,10 @@ class AdicionalesProductoController extends Controller
             $ingredientesMapeados = $producto->ingredientes?->map(function($ing) {
                 return [
                     'id' => $ing->producto_id,
-                    'nombre' => $ing->producto->nombre ?? $ing->producto_nombre ?? '',
+                    'nombre' => $ing->ingrediente?->nombre ?? '',
                     'cantidad_requerida' => $ing->cantidad_requerida,
                     'unidad_medida_id' => $ing->unidad_medida_id,
-                    'unidad_nombre' => $ing->unidadMedida->nombre ?? $ing->unidad_nombre ?? 'Unidad',
+                    'unidad_nombre' => $ing->unidadMedida?->nombre ?? 'Unidad',
                 ];
             })->toArray() ?? [];
 
