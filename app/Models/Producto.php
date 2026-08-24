@@ -191,6 +191,22 @@ class Producto extends Model
     }
 
     /**
+     * ✅ NUEVO (2026-08-23): Relación: Ingredientes de la receta del producto
+     * Acceso directo a través de Receta
+     */
+    public function ingredientes()
+    {
+        return $this->hasManyThrough(
+            RecetaIngrediente::class,
+            Receta::class,
+            'producto_id',  // FK en recetas
+            'receta_id',    // FK en receta_ingredientes
+            'id',           // PK en productos
+            'id'            // PK en recetas
+        );
+    }
+
+    /**
      * Obtener el precio de un tipo específico
      */
     public function obtenerPrecio(TipoPrecio|int|string $tipoPrecio): ?PrecioProducto
