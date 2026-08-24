@@ -206,7 +206,8 @@ class VentasComidasController extends Controller
                             $this->adicionalVentaService->procesarAdicionalesDetalle(
                                 $detalle,
                                 $producto['adicionales'],
-                                $venta->almacen_id ?? Auth::user()?->empresa?->almacen_id ?? 1
+                                $venta->almacen_id ?? Auth::user()?->empresa?->almacen_id ?? 1,
+                                $venta->numero  // ✅ NUEVO (2026-08-23): Pasar número de venta para auditoría
                             );
 
                             Log::info('✨ [VentasComidasController::store] Adicionales procesados para detalle', [

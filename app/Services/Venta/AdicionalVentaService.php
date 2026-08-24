@@ -20,10 +20,11 @@ class AdicionalVentaService
      * @param DetalleVenta $detalle
      * @param array $adicionales Array de adicionales: [['producto_id' => 5, 'cantidad' => 1, 'precio_unitario' => 50], ...]
      * @param int $almacenId ID del almacén para descontar stock
+     * @param string|null $numeroDocumento Número de venta para auditoría (ej: VEN20260823-0001)
      * @return void
      * @throws \Exception
      */
-    public function procesarAdicionalesDetalle(DetalleVenta $detalle, array $adicionales, int $almacenId): void
+    public function procesarAdicionalesDetalle(DetalleVenta $detalle, array $adicionales, int $almacenId, ?string $numeroDocumento = null): void
     {
         if (empty($adicionales)) {
             return;
@@ -81,7 +82,8 @@ class AdicionalVentaService
                     metadataAdicional: [
                         'es_adicional' => true,
                         'detalle_venta_id' => $detalle->id,
-                    ]
+                    ],
+                    numeroDocumento: $numeroDocumento  // ✅ NUEVO (2026-08-23): Pasar número de venta para auditoría
                 );
 
                 Log::info('✨ Stock descargado para producto adicional', [
