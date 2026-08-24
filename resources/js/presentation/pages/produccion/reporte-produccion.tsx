@@ -259,19 +259,19 @@ export default function ReporteProduccion() {
                                     <tr
                                         key={idx}
                                         className={`${
-                                            idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                        } border-b border-gray-200 hover:bg-blue-50 transition`}
+                                            idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                                        } border-b border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition`}
                                     >
-                                        <td className="px-4 py-3 font-medium">{prod.producto}</td>
-                                        <td className="px-4 py-3 text-right">{prod.cantidad_producida}</td>
-                                        <td className="px-4 py-3 text-right font-bold">
+                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{prod.producto}</td>
+                                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{prod.cantidad_producida}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">
                                             Bs. {prod.costo_total?.toFixed(2)}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
                                             Bs. {prod.costo_unitario?.toFixed(2)}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
                                                 {prod.estado}
                                             </span>
                                         </td>
@@ -284,24 +284,24 @@ export default function ReporteProduccion() {
             </div>
 
             {/* Tabla de Ingredientes */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="bg-gray-100 p-4 border-b border-gray-200">
-                    <h3 className="font-bold text-lg">Ingredientes Consumidos</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="bg-gray-100 dark:bg-gray-700 p-4 border-b border-gray-200 dark:border-gray-600">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">Ingredientes Consumidos</h3>
                 </div>
 
                 {!ingredientesConsolidados || ingredientesConsolidados.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
+                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                         <p className="font-medium">No hay datos de ingredientes</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                                 <tr>
-                                    <th className="px-4 py-3 text-left font-bold">Ingrediente</th>
-                                    <th className="px-4 py-3 text-right font-bold">Cantidad Total</th>
-                                    <th className="px-4 py-3 text-right font-bold">Costo Total</th>
-                                    <th className="px-4 py-3 text-right font-bold">Costo Promedio</th>
+                                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-white">Ingrediente</th>
+                                    <th className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Cantidad Total</th>
+                                    <th className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Costo Total</th>
+                                    <th className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Costo Promedio</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -309,15 +309,15 @@ export default function ReporteProduccion() {
                                     <tr
                                         key={idx}
                                         className={`${
-                                            idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                        } border-b border-gray-200 hover:bg-green-50 transition`}
+                                            idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                                        } border-b border-gray-200 dark:border-gray-600 hover:bg-green-50 dark:hover:bg-gray-700/50 transition`}
                                     >
-                                        <td className="px-4 py-3 font-medium">{ing.nombre}</td>
-                                        <td className="px-4 py-3 text-right">{ing.cantidad_total?.toFixed(3)}</td>
-                                        <td className="px-4 py-3 text-right font-bold">
+                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{ing.nombre}</td>
+                                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{ing.cantidad_total?.toFixed(3)}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">
                                             Bs. {ing.costo_total?.toFixed(2)}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
                                             Bs.{' '}
                                             {(ing.costo_total / ing.cantidad_total)?.toFixed(2) || '0.00'}
                                         </td>
@@ -330,25 +330,25 @@ export default function ReporteProduccion() {
             </div>
 
             {/* Tabla de Rentabilidad */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="bg-gray-100 p-4 border-b border-gray-200">
-                    <h3 className="font-bold text-lg">Análisis de Rentabilidad por Producto</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="bg-gray-100 dark:bg-gray-700 p-4 border-b border-gray-200 dark:border-gray-600">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">Análisis de Rentabilidad por Producto</h3>
                 </div>
 
                 {resumen && resumen.producciones.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
+                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                         <p className="font-medium">No hay datos de rentabilidad</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                                 <tr>
-                                    <th className="px-4 py-3 text-left font-bold">Producto</th>
-                                    <th className="px-4 py-3 text-right font-bold">Producidas</th>
-                                    <th className="px-4 py-3 text-right font-bold">Costo Unit.</th>
-                                    <th className="px-4 py-3 text-right font-bold">Precio Venta*</th>
-                                    <th className="px-4 py-3 text-right font-bold">Margen Unitario</th>
+                                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-white">Producto</th>
+                                    <th className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Producidas</th>
+                                    <th className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Costo Unit.</th>
+                                    <th className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Precio Venta*</th>
+                                    <th className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Margen Unitario</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -356,25 +356,25 @@ export default function ReporteProduccion() {
                                     <tr
                                         key={idx}
                                         className={`${
-                                            idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                        } border-b border-gray-200`}
+                                            idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                                        } border-b border-gray-200 dark:border-gray-600`}
                                     >
-                                        <td className="px-4 py-3 font-medium">{prod.producto}</td>
-                                        <td className="px-4 py-3 text-right">{prod.cantidad_producida}</td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{prod.producto}</td>
+                                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{prod.cantidad_producida}</td>
+                                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
                                             Bs. {prod.costo_unitario?.toFixed(2)}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-gray-600">
+                                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
                                             (Ver ventas)
                                         </td>
-                                        <td className="px-4 py-3 text-right text-gray-600">
+                                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
                                             (Vinculación pendiente)
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        <div className="px-4 py-3 bg-gray-50 text-xs text-gray-600 border-t border-gray-200">
+                        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-600">
                             *Nota: La columna "Precio Venta" y "Margen Unitario" requiere vinculación con datos de ventas en
                             la Fase 5 avanzada
                         </div>
