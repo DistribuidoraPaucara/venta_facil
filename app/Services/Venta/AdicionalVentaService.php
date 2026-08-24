@@ -122,18 +122,18 @@ class AdicionalVentaService
             return $cantidad;
         }
 
-        // Si el producto tiene unidad de medida, usarla
-        // Por ahora: si la unidad es kilogramo (id=2) y la cantidad es pequeña (< 10),
-        // asumir que viene en gramos y convertir
-        if ($producto->unidad_medida_id == 2 && $cantidad < 10) {
-            // Asumir conversión g → kg (dividir entre 1000)
+        // ✅ ACTUALIZADO (2026-08-23): Mejorada lógica de detección
+        // Si la unidad es kilogramo (id=2) y la cantidad está entre 1-999,
+        // asumir que viene en gramos y convertir: g → kg
+        if ($producto->unidad_medida_id == 2 && $cantidad >= 1 && $cantidad <= 999) {
+            // Conversión: 50g → 0.05 kg (dividir entre 1000)
             return $cantidad / 1000;
         }
 
-        // Si la unidad es gramo (id=3) y la cantidad es grande (> 1000),
-        // asumir que viene en mg y convertir
+        // Si la unidad es gramo (id=3) y la cantidad es > 1000,
+        // asumir que viene en miligramos: mg → g
         if ($producto->unidad_medida_id == 3 && $cantidad > 1000) {
-            // Conversión mg → g (dividir entre 1000)
+            // Conversión: 5000mg → 5g (dividir entre 1000)
             return $cantidad / 1000;
         }
 
