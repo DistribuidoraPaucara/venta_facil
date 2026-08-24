@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProductoComponenteController::index
  * @see app/Http/Controllers/ProductoComponenteController.php:15
@@ -61,41 +61,6 @@ index.head = (args: { producto: string | number } | [producto: string | number ]
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoComponenteController::index
- * @see app/Http/Controllers/ProductoComponenteController.php:15
- * @route '/api/productos/{producto}/componentes'
- */
-    const indexForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoComponenteController::index
- * @see app/Http/Controllers/ProductoComponenteController.php:15
- * @route '/api/productos/{producto}/componentes'
- */
-        indexForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ProductoComponenteController::index
- * @see app/Http/Controllers/ProductoComponenteController.php:15
- * @route '/api/productos/{producto}/componentes'
- */
-        indexForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\ProductoComponenteController::store
  * @see app/Http/Controllers/ProductoComponenteController.php:42
@@ -149,27 +114,6 @@ store.post = (args: { producto: string | number } | [producto: string | number ]
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoComponenteController::store
- * @see app/Http/Controllers/ProductoComponenteController.php:42
- * @route '/api/productos/{producto}/componentes'
- */
-    const storeForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(args, options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoComponenteController::store
- * @see app/Http/Controllers/ProductoComponenteController.php:42
- * @route '/api/productos/{producto}/componentes'
- */
-        storeForm.post = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(args, options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\ProductoComponenteController::update
  * @see app/Http/Controllers/ProductoComponenteController.php:88
@@ -221,37 +165,6 @@ update.put = (args: { producto: string | number, componente: string | number } |
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoComponenteController::update
- * @see app/Http/Controllers/ProductoComponenteController.php:88
- * @route '/api/productos/{producto}/componentes/{componente}'
- */
-    const updateForm = (args: { producto: string | number, componente: string | number } | [producto: string | number, componente: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoComponenteController::update
- * @see app/Http/Controllers/ProductoComponenteController.php:88
- * @route '/api/productos/{producto}/componentes/{componente}'
- */
-        updateForm.put = (args: { producto: string | number, componente: string | number } | [producto: string | number, componente: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    update.form = updateForm
 /**
 * @see \App\Http\Controllers\ProductoComponenteController::destroy
  * @see app/Http/Controllers/ProductoComponenteController.php:115
@@ -303,37 +216,6 @@ destroy.delete = (args: { producto: string | number, componente: string | number
     method: 'delete',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoComponenteController::destroy
- * @see app/Http/Controllers/ProductoComponenteController.php:115
- * @route '/api/productos/{producto}/componentes/{componente}'
- */
-    const destroyForm = (args: { producto: string | number, componente: string | number } | [producto: string | number, componente: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoComponenteController::destroy
- * @see app/Http/Controllers/ProductoComponenteController.php:115
- * @route '/api/productos/{producto}/componentes/{componente}'
- */
-        destroyForm.delete = (args: { producto: string | number, componente: string | number } | [producto: string | number, componente: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\ProductoComponenteController::disponibles
  * @see app/Http/Controllers/ProductoComponenteController.php:132
@@ -395,42 +277,6 @@ disponibles.head = (args: { producto: string | number } | [producto: string | nu
     url: disponibles.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\ProductoComponenteController::disponibles
- * @see app/Http/Controllers/ProductoComponenteController.php:132
- * @route '/api/productos/{producto}/componentes/disponibles'
- */
-    const disponiblesForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: disponibles.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoComponenteController::disponibles
- * @see app/Http/Controllers/ProductoComponenteController.php:132
- * @route '/api/productos/{producto}/componentes/disponibles'
- */
-        disponiblesForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: disponibles.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ProductoComponenteController::disponibles
- * @see app/Http/Controllers/ProductoComponenteController.php:132
- * @route '/api/productos/{producto}/componentes/disponibles'
- */
-        disponiblesForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: disponibles.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    disponibles.form = disponiblesForm
 const componentes = {
     index,
 store,

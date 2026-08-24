@@ -28,7 +28,7 @@ import EntregaController from './EntregaController'
 import EntregaPdfController from './EntregaPdfController'
 import ReporteCargaPdfController from './ReporteCargaPdfController'
 import ReporteCargoListController from './ReporteCargoListController'
-// import ProveedorController from './ProveedorController' // ❌ Archivo no existe (comentado 2026-08-23)
+import ProveedorController from './ProveedorController'
 import ImageBackupController from './ImageBackupController'
 import AuditoriaCajaController from './AuditoriaCajaController'
 import GastoController from './GastoController'
@@ -149,7 +149,7 @@ EntregaController,
 EntregaPdfController,
 ReporteCargaPdfController,
 ReporteCargoListController,
-// ProveedorController, // ❌ Archivo no existe (comentado 2026-08-23)
+ProveedorController,
 ImageBackupController,
 AuditoriaCajaController,
 GastoController,
