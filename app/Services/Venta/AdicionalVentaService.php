@@ -167,4 +167,114 @@ class AdicionalVentaService
             }
         }
     }
+
+    /**
+     * ✅ NUEVO (2026-08-23): Devolver stock de todos los adicionales de una venta
+     * Se usa al anular ventas de comidas
+     *
+     * @param \App\Models\Venta $venta
+     * @param int $almacenId
+     * @return array Resumen de devoluciones
+     * @throws \Exception
+     */
+    public function devolverAdicionalesDeVenta(\App\Models\Venta $venta, int $almacenId): array
+    {
+        Log::info('🔄 [AdicionalVentaService::devolverAdicionalesDeVenta] Iniciando devolución de adicionales', [
+            'venta_id' => $venta->id,
+            'numero_venta' => $venta->numero,
+        ]);
+
+        $totalDevuelto = 0;
+        $movimientosCreados = 0;
+        $adicionalesprocesados = [];
+
+        try {
+            // Cargar todos los detalles con sus adicionales
+            $detalles = $venta->detalles()->with('adicionales')->get();
+
+            foreach ($detalles as $detalle) {
+                foreach ($detalle->adicionales as $adicional) {
+                    try {
+                        // Obtener el stock del producto adicional
+                        $stockProducto = \App\Models\StockProducto::where('producto_id', $adicional->producto_id)
+                            ->where('almacen_id', $almacenId)
+                            ->first();
+
+                        if (!$stockProducto) {
+                            Log::warning('⚠️ Stock no encontrado para adicional', [
+                                'producto_id' => $adicional->producto_id,
+                                'almacen_id' => $almacenId,
+                            ]);
+                            continue;
+                        }
+
+                        // Convertir cantidad si es necesario
+                        $cantidadADevolver = $this->convertirCantidad($adicional->producto_id, $adicional->cantidad);
+
+                        // Registrar devolución
+                        $this->movimientoStockService->registrarMovimientoYActualizar(
+                            stockProductoId: $stockProducto->id,
+                            cantidad: $cantidadADevolver,  // Positivo para entrada
+                            tipo: \App\Models\MovimientoInventario::TIPO_ENTRADA_AJUSTE,
+                            referencia_tipo: 'venta_devolucion',
+                            referencia_id: $venta->id,
+                            metadataAdicional: [
+                                'es_adicional_devolucion' => true,
+                                'venta_detalle_adicional_id' => $adicional->id,
+                                'detalle_venta_id' => $detalle->id,
+                                'cantidad_original' => $adicional->cantidad,
+                            ],
+                            numeroDocumento: $venta->numero . '-DEV'
+                        );
+
+                        Log::info('✅ Stock devuelto para adicional', [
+                            'venta_id' => $venta->id,
+                            'adicional_id' => $adicional->id,
+                            'producto_id' => $adicional->producto_id,
+                            'cantidad_original' => $adicional->cantidad,
+                            'cantidad_devuelta' => $cantidadADevolver,
+                        ]);
+
+                        $totalDevuelto += $cantidadADevolver;
+                        $movimientosCreados++;
+                        $adicionalesprocesados[] = [
+                            'id' => $adicional->id,
+                            'producto_id' => $adicional->producto_id,
+                            'cantidad' => $adicional->cantidad,
+                        ];
+
+                    } catch (\Exception $e) {
+                        Log::error('❌ Error devolviendo stock de adicional', [
+                            'venta_id' => $venta->id,
+                            'adicional_id' => $adicional->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw $e;
+                    }
+                }
+            }
+
+            Log::info('✅ [AdicionalVentaService::devolverAdicionalesDeVenta] Devolución completada', [
+                'venta_id' => $venta->id,
+                'numero_venta' => $venta->numero,
+                'total_devuelto' => $totalDevuelto,
+                'movimientos_creados' => $movimientosCreados,
+                'adicionales_procesados' => count($adicionalesprocesados),
+            ]);
+
+            return [
+                'success' => true,
+                'total_devuelto' => $totalDevuelto,
+                'movimientos_creados' => $movimientosCreados,
+                'adicionales_procesados' => $adicionalesprocesados,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('❌ [AdicionalVentaService::devolverAdicionalesDeVenta] Error', [
+                'venta_id' => $venta->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
 }

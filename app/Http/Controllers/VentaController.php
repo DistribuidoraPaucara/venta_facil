@@ -52,6 +52,7 @@ class VentaController extends Controller
     public function __construct(
         private VentaService $ventaService,
         private \App\Services\Venta\VentaDistribucionService $ventaDistribucionService,
+        private \App\Services\Venta\AdicionalVentaService $adicionalVentaService, // ✅ NUEVO (2026-08-23)
         private \App\Services\ImpresionService $impresionService,
         private \App\Services\PrinterService $printerService,
         private \App\Services\ExcelExportService $excelExportService,
@@ -1243,6 +1244,22 @@ class VentaController extends Controller
                         // VentaDistribucionService::devolverStock() registra totales del producto (correcto)
                         $this->ventaDistribucionService->devolverStock($venta->numero);
                         $stockRevertido = true;
+
+                        // ✅ NUEVO (2026-08-23): Devolver stock de productos adicionales de ventas de comidas
+                        try {
+                            $almacenId = $venta->almacen_id ?? auth()->user()?->empresa?->almacen_id ?? 1;
+                            $this->adicionalVentaService->devolverAdicionalesDeVenta($venta, $almacenId);
+
+                            Log::info('✅ Stock de adicionales devuelto', [
+                                'venta_id' => $venta->id,
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('⚠️ Error devolviendo adicionales al anular venta', [
+                                'venta_id' => $venta->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                            // No lanzar error, es opcional
+                        }
                     } catch (\Exception $e) {
                         Log::warning('No se pudo revertir stock al anular venta', [
                             'venta_id' => $venta->id,
