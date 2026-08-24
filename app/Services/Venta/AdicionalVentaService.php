@@ -29,78 +29,77 @@ class AdicionalVentaService
             return;
         }
 
-        DB::transaction(function () use ($detalle, $adicionales, $almacenId) {
-            foreach ($adicionales as $adicionalData) {
-                // Validar datos
-                if (empty($adicionalData['producto_id']) || empty($adicionalData['cantidad'])) {
-                    continue;
-                }
-
-                $productoId = (int) $adicionalData['producto_id'];
-                $cantidad = (float) $adicionalData['cantidad'];
-                $precioUnitario = (float) ($adicionalData['precio_unitario'] ?? 0);
-
-                // Crear registro de adicional
-                $adicional = VentaDetalleAdicional::create([
-                    'detalle_venta_id' => $detalle->id,
-                    'producto_id' => $productoId,
-                    'cantidad' => $cantidad,
-                    'precio_unitario' => $precioUnitario,
-                    'subtotal' => $cantidad * $precioUnitario,
-                ]);
-
-                Log::info('✨ Adicional creado para detalle de venta', [
-                    'detalle_venta_id' => $detalle->id,
-                    'adicional_id' => $adicional->id,
-                    'producto_id' => $productoId,
-                    'cantidad' => $cantidad,
-                    'precio_unitario' => $precioUnitario,
-                ]);
-
-                // ✅ ACTUALIZADO (2026-08-23): Descontar stock con conversión de unidades
-                try {
-                    // Obtener stock_producto_id del almacén para este producto
-                    $stockProducto = \App\Models\StockProducto::where('producto_id', $productoId)
-                        ->where('almacen_id', $almacenId)
-                        ->first();
-
-                    if (!$stockProducto) {
-                        throw new \Exception("No hay stock registrado para el producto {$productoId} en almacén {$almacenId}");
-                    }
-
-                    // ✅ NUEVO (2026-08-23): Convertir cantidad si es necesario
-                    $cantidadADescontar = $this->convertirCantidad($productoId, $cantidad);
-
-                    // Usar tipo SALIDA_VENTA (para ventas normales con descuento de stock)
-                    $this->movimientoStockService->registrarMovimientoYActualizar(
-                        stockProductoId: $stockProducto->id,
-                        cantidad: -$cantidadADescontar,  // Negativo para salida, convertido
-                        tipo: \App\Models\MovimientoInventario::TIPO_SALIDA_VENTA, // Tipo de venta estándar
-                        referencia_tipo: 'venta',
-                        referencia_id: $detalle->venta_id,
-                        metadataAdicional: [
-                            'es_adicional' => true,
-                            'detalle_venta_id' => $detalle->id,
-                        ]
-                    );
-
-                    Log::info('✨ Stock descargado para producto adicional', [
-                        'producto_id' => $productoId,
-                        'cantidad' => $cantidad,
-                        'almacen_id' => $almacenId,
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('❌ Error al descontar stock de producto adicional', [
-                        'producto_id' => $productoId,
-                        'cantidad' => $cantidad,
-                        'almacen_id' => $almacenId,
-                        'error' => $e->getMessage(),
-                    ]);
-
-                    throw new \Exception("Error al procesar stock del adicional: {$e->getMessage()}");
-                }
+        // ✅ ACTUALIZADO (2026-08-23): Remover transacción anidada, usar la del controller
+        foreach ($adicionales as $adicionalData) {
+            // Validar datos
+            if (empty($adicionalData['producto_id']) || empty($adicionalData['cantidad'])) {
+                continue;
             }
-        });
+
+            $productoId = (int) $adicionalData['producto_id'];
+            $cantidad = (float) $adicionalData['cantidad'];
+            $precioUnitario = (float) ($adicionalData['precio_unitario'] ?? 0);
+
+            // Crear registro de adicional
+            $adicional = VentaDetalleAdicional::create([
+                'detalle_venta_id' => $detalle->id,
+                'producto_id' => $productoId,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $precioUnitario,
+                'subtotal' => $cantidad * $precioUnitario,
+            ]);
+
+            Log::info('✨ Adicional creado para detalle de venta', [
+                'detalle_venta_id' => $detalle->id,
+                'adicional_id' => $adicional->id,
+                'producto_id' => $productoId,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $precioUnitario,
+            ]);
+
+            // ✅ ACTUALIZADO (2026-08-23): Descontar stock con conversión de unidades
+            try {
+                // Obtener stock_producto_id del almacén para este producto
+                $stockProducto = \App\Models\StockProducto::where('producto_id', $productoId)
+                    ->where('almacen_id', $almacenId)
+                    ->first();
+
+                if (!$stockProducto) {
+                    throw new \Exception("No hay stock registrado para el producto {$productoId} en almacén {$almacenId}");
+                }
+
+                // ✅ NUEVO (2026-08-23): Convertir cantidad si es necesario
+                $cantidadADescontar = $this->convertirCantidad($productoId, $cantidad);
+
+                // Usar tipo SALIDA_VENTA (para ventas normales con descuento de stock)
+                $this->movimientoStockService->registrarMovimientoYActualizar(
+                    stockProductoId: $stockProducto->id,
+                    cantidad: -$cantidadADescontar,  // Negativo para salida, convertido
+                    tipo: \App\Models\MovimientoInventario::TIPO_SALIDA_VENTA, // Tipo de venta estándar
+                    referencia_tipo: 'venta',
+                    referencia_id: $detalle->venta_id,
+                    metadataAdicional: [
+                        'es_adicional' => true,
+                        'detalle_venta_id' => $detalle->id,
+                    ]
+                );
+
+                Log::info('✨ Stock descargado para producto adicional', [
+                    'producto_id' => $productoId,
+                    'cantidad' => $cantidad,
+                    'almacen_id' => $almacenId,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('❌ Error al descontar stock de producto adicional', [
+                    'producto_id' => $productoId,
+                    'cantidad' => $cantidad,
+                    'almacen_id' => $almacenId,
+                    'error' => $e->getMessage(),
+                ]);
+
+                throw new \Exception("Error al procesar stock del adicional: {$e->getMessage()}");
+            }
+        }
     }
 
     /**

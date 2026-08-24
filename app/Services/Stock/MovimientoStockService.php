@@ -67,6 +67,16 @@ class MovimientoStockService
                     throw new Exception("Stock no encontrado: {$stockProductoId}");
                 }
 
+                // ✅ NUEVO (2026-08-23): Debug para verificar valores exactos después de lock
+                Log::debug('🔒 Stock obtenido con lock', [
+                    'stock_id' => $stock->id,
+                    'cantidad' => (float) $stock->cantidad,
+                    'cantidad_disponible' => (float) $stock->cantidad_disponible,
+                    'cantidad_reservada' => (float) $stock->cantidad_reservada,
+                    'suma' => (float) $stock->cantidad_disponible + (float) $stock->cantidad_reservada,
+                    'invariante_valido' => $stock->validarInvariante(),
+                ]);
+
                 // 2️⃣ Validar que la operación es posible ANTES de ejecutar
                 $this->validacion->validarOperacionPosible($stock, $cantidad, $tipo);
 
