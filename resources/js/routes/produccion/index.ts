@@ -1,6 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
- * @see routes/web.php:1355
+ * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
  */
 export const recetasManager = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +14,7 @@ recetasManager.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1355
+ * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
  */
 recetasManager.url = (options?: RouteQueryOptions) => {
@@ -22,7 +22,7 @@ recetasManager.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1355
+ * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
  */
 recetasManager.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -30,7 +30,7 @@ recetasManager.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:1355
+ * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
  */
 recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -39,7 +39,7 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 })
 
     /**
- * @see routes/web.php:1355
+ * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
  */
     const recetasManagerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -48,7 +48,7 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     })
 
             /**
- * @see routes/web.php:1355
+ * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
  */
         recetasManagerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -56,7 +56,7 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
             method: 'get',
         })
             /**
- * @see routes/web.php:1355
+ * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
  */
         recetasManagerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -149,7 +149,7 @@ registroProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     
     registroProduccion.form = registroProduccionForm
 /**
- * @see routes/web.php:1363
+ * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
  */
 export const produccionMasiva = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -163,7 +163,7 @@ produccionMasiva.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1363
+ * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
  */
 produccionMasiva.url = (options?: RouteQueryOptions) => {
@@ -171,7 +171,7 @@ produccionMasiva.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1363
+ * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
  */
 produccionMasiva.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -179,7 +179,7 @@ produccionMasiva.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => 
     method: 'get',
 })
 /**
- * @see routes/web.php:1363
+ * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
  */
 produccionMasiva.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -188,7 +188,7 @@ produccionMasiva.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
 })
 
     /**
- * @see routes/web.php:1363
+ * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
  */
     const produccionMasivaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -197,7 +197,7 @@ produccionMasiva.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
     })
 
             /**
- * @see routes/web.php:1363
+ * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
  */
         produccionMasivaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -205,7 +205,7 @@ produccionMasiva.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
             method: 'get',
         })
             /**
- * @see routes/web.php:1363
+ * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
  */
         produccionMasivaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -220,7 +220,7 @@ produccionMasiva.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
     
     produccionMasiva.form = produccionMasivaForm
 /**
- * @see routes/web.php:1368
+ * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
  */
 export const reporteProduccion = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -234,7 +234,7 @@ reporteProduccion.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:1368
+ * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
  */
 reporteProduccion.url = (options?: RouteQueryOptions) => {
@@ -242,7 +242,7 @@ reporteProduccion.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:1368
+ * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
  */
 reporteProduccion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -250,7 +250,7 @@ reporteProduccion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
     method: 'get',
 })
 /**
- * @see routes/web.php:1368
+ * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
  */
 reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -259,7 +259,7 @@ reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 })
 
     /**
- * @see routes/web.php:1368
+ * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
  */
     const reporteProduccionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -268,7 +268,7 @@ reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     })
 
             /**
- * @see routes/web.php:1368
+ * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
  */
         reporteProduccionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -276,7 +276,7 @@ reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
             method: 'get',
         })
             /**
- * @see routes/web.php:1368
+ * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
  */
         reporteProduccionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
