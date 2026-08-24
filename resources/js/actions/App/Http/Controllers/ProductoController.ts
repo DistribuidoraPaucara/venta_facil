@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProductoController::indexApi
  * @see app/Http/Controllers/ProductoController.php:1469
@@ -45,6 +45,41 @@ indexApi5f94bd91c3d48d955f7b536c0a3189e1.head = (options?: RouteQueryOptions): R
     /**
 * @see \App\Http\Controllers\ProductoController::indexApi
  * @see app/Http/Controllers/ProductoController.php:1469
+ * @route '/api/app/productos'
+ */
+    const indexApi5f94bd91c3d48d955f7b536c0a3189e1Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: indexApi5f94bd91c3d48d955f7b536c0a3189e1.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::indexApi
+ * @see app/Http/Controllers/ProductoController.php:1469
+ * @route '/api/app/productos'
+ */
+        indexApi5f94bd91c3d48d955f7b536c0a3189e1Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApi5f94bd91c3d48d955f7b536c0a3189e1.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::indexApi
+ * @see app/Http/Controllers/ProductoController.php:1469
+ * @route '/api/app/productos'
+ */
+        indexApi5f94bd91c3d48d955f7b536c0a3189e1Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApi5f94bd91c3d48d955f7b536c0a3189e1.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    indexApi5f94bd91c3d48d955f7b536c0a3189e1.form = indexApi5f94bd91c3d48d955f7b536c0a3189e1Form
+    /**
+* @see \App\Http\Controllers\ProductoController::indexApi
+ * @see app/Http/Controllers/ProductoController.php:1469
  * @route '/api/productos'
  */
 const indexApica1ca34b4a118f4e84d7e3af666cfc55 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -84,6 +119,42 @@ indexApica1ca34b4a118f4e84d7e3af666cfc55.head = (options?: RouteQueryOptions): R
     url: indexApica1ca34b4a118f4e84d7e3af666cfc55.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\ProductoController::indexApi
+ * @see app/Http/Controllers/ProductoController.php:1469
+ * @route '/api/productos'
+ */
+    const indexApica1ca34b4a118f4e84d7e3af666cfc55Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: indexApica1ca34b4a118f4e84d7e3af666cfc55.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::indexApi
+ * @see app/Http/Controllers/ProductoController.php:1469
+ * @route '/api/productos'
+ */
+        indexApica1ca34b4a118f4e84d7e3af666cfc55Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApica1ca34b4a118f4e84d7e3af666cfc55.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::indexApi
+ * @see app/Http/Controllers/ProductoController.php:1469
+ * @route '/api/productos'
+ */
+        indexApica1ca34b4a118f4e84d7e3af666cfc55Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApica1ca34b4a118f4e84d7e3af666cfc55.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    indexApica1ca34b4a118f4e84d7e3af666cfc55.form = indexApica1ca34b4a118f4e84d7e3af666cfc55Form
 
 export const indexApi = {
     '/api/app/productos': indexApi5f94bd91c3d48d955f7b536c0a3189e1,
@@ -133,6 +204,41 @@ filtros.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::filtros
+ * @see app/Http/Controllers/ProductoController.php:1791
+ * @route '/api/app/productos/filtros'
+ */
+    const filtrosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: filtros.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::filtros
+ * @see app/Http/Controllers/ProductoController.php:1791
+ * @route '/api/app/productos/filtros'
+ */
+        filtrosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: filtros.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::filtros
+ * @see app/Http/Controllers/ProductoController.php:1791
+ * @route '/api/app/productos/filtros'
+ */
+        filtrosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: filtros.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    filtros.form = filtrosForm
 /**
 * @see \App\Http\Controllers\ProductoController::buscarApi
  * @see app/Http/Controllers/ProductoController.php:2261
@@ -179,6 +285,41 @@ buscarApi2f647e659f2ae29cad5423e3d6248ee7.head = (options?: RouteQueryOptions): 
     /**
 * @see \App\Http\Controllers\ProductoController::buscarApi
  * @see app/Http/Controllers/ProductoController.php:2261
+ * @route '/api/app/productos/buscar'
+ */
+    const buscarApi2f647e659f2ae29cad5423e3d6248ee7Form = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: buscarApi2f647e659f2ae29cad5423e3d6248ee7.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::buscarApi
+ * @see app/Http/Controllers/ProductoController.php:2261
+ * @route '/api/app/productos/buscar'
+ */
+        buscarApi2f647e659f2ae29cad5423e3d6248ee7Form.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buscarApi2f647e659f2ae29cad5423e3d6248ee7.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::buscarApi
+ * @see app/Http/Controllers/ProductoController.php:2261
+ * @route '/api/app/productos/buscar'
+ */
+        buscarApi2f647e659f2ae29cad5423e3d6248ee7Form.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buscarApi2f647e659f2ae29cad5423e3d6248ee7.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    buscarApi2f647e659f2ae29cad5423e3d6248ee7.form = buscarApi2f647e659f2ae29cad5423e3d6248ee7Form
+    /**
+* @see \App\Http\Controllers\ProductoController::buscarApi
+ * @see app/Http/Controllers/ProductoController.php:2261
  * @route '/api/productos/buscar'
  */
 const buscarApi124bf748977a65c9d7e76c3fc9c13e6d = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -218,6 +359,42 @@ buscarApi124bf748977a65c9d7e76c3fc9c13e6d.head = (options?: RouteQueryOptions): 
     url: buscarApi124bf748977a65c9d7e76c3fc9c13e6d.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\ProductoController::buscarApi
+ * @see app/Http/Controllers/ProductoController.php:2261
+ * @route '/api/productos/buscar'
+ */
+    const buscarApi124bf748977a65c9d7e76c3fc9c13e6dForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: buscarApi124bf748977a65c9d7e76c3fc9c13e6d.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::buscarApi
+ * @see app/Http/Controllers/ProductoController.php:2261
+ * @route '/api/productos/buscar'
+ */
+        buscarApi124bf748977a65c9d7e76c3fc9c13e6dForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buscarApi124bf748977a65c9d7e76c3fc9c13e6d.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::buscarApi
+ * @see app/Http/Controllers/ProductoController.php:2261
+ * @route '/api/productos/buscar'
+ */
+        buscarApi124bf748977a65c9d7e76c3fc9c13e6dForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buscarApi124bf748977a65c9d7e76c3fc9c13e6d.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    buscarApi124bf748977a65c9d7e76c3fc9c13e6d.form = buscarApi124bf748977a65c9d7e76c3fc9c13e6dForm
 
 export const buscarApi = {
     '/api/app/productos/buscar': buscarApi2f647e659f2ae29cad5423e3d6248ee7,
@@ -267,6 +444,41 @@ listarApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::listarApi
+ * @see app/Http/Controllers/ProductoController.php:4085
+ * @route '/api/app/productos/listar'
+ */
+    const listarApiForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: listarApi.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::listarApi
+ * @see app/Http/Controllers/ProductoController.php:4085
+ * @route '/api/app/productos/listar'
+ */
+        listarApiForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: listarApi.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::listarApi
+ * @see app/Http/Controllers/ProductoController.php:4085
+ * @route '/api/app/productos/listar'
+ */
+        listarApiForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: listarApi.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    listarApi.form = listarApiForm
 /**
 * @see \App\Http\Controllers\ProductoController::showApi
  * @see app/Http/Controllers/ProductoController.php:1884
@@ -337,6 +549,41 @@ showApibf7395ef11ddc0ca3b5c235b5d86f8b9.head = (args: { producto: number | { id:
     /**
 * @see \App\Http\Controllers\ProductoController::showApi
  * @see app/Http/Controllers/ProductoController.php:1884
+ * @route '/api/app/productos/{producto}'
+ */
+    const showApibf7395ef11ddc0ca3b5c235b5d86f8b9Form = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showApibf7395ef11ddc0ca3b5c235b5d86f8b9.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::showApi
+ * @see app/Http/Controllers/ProductoController.php:1884
+ * @route '/api/app/productos/{producto}'
+ */
+        showApibf7395ef11ddc0ca3b5c235b5d86f8b9Form.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showApibf7395ef11ddc0ca3b5c235b5d86f8b9.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::showApi
+ * @see app/Http/Controllers/ProductoController.php:1884
+ * @route '/api/app/productos/{producto}'
+ */
+        showApibf7395ef11ddc0ca3b5c235b5d86f8b9Form.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showApibf7395ef11ddc0ca3b5c235b5d86f8b9.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showApibf7395ef11ddc0ca3b5c235b5d86f8b9.form = showApibf7395ef11ddc0ca3b5c235b5d86f8b9Form
+    /**
+* @see \App\Http\Controllers\ProductoController::showApi
+ * @see app/Http/Controllers/ProductoController.php:1884
  * @route '/api/productos/{producto}'
  */
 const showApib4e9327e675be9b4660423209f3885e4 = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -400,6 +647,42 @@ showApib4e9327e675be9b4660423209f3885e4.head = (args: { producto: number | { id:
     url: showApib4e9327e675be9b4660423209f3885e4.url(args, options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\ProductoController::showApi
+ * @see app/Http/Controllers/ProductoController.php:1884
+ * @route '/api/productos/{producto}'
+ */
+    const showApib4e9327e675be9b4660423209f3885e4Form = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showApib4e9327e675be9b4660423209f3885e4.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::showApi
+ * @see app/Http/Controllers/ProductoController.php:1884
+ * @route '/api/productos/{producto}'
+ */
+        showApib4e9327e675be9b4660423209f3885e4Form.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showApib4e9327e675be9b4660423209f3885e4.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::showApi
+ * @see app/Http/Controllers/ProductoController.php:1884
+ * @route '/api/productos/{producto}'
+ */
+        showApib4e9327e675be9b4660423209f3885e4Form.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showApib4e9327e675be9b4660423209f3885e4.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showApib4e9327e675be9b4660423209f3885e4.form = showApib4e9327e675be9b4660423209f3885e4Form
 
 export const showApi = {
     '/api/app/productos/{producto}': showApibf7395ef11ddc0ca3b5c235b5d86f8b9,
@@ -473,6 +756,41 @@ obtenerStock.head = (args: { producto: number | { id: number } } | [producto: nu
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::obtenerStock
+ * @see app/Http/Controllers/ProductoController.php:4030
+ * @route '/api/productos/{producto}/stock'
+ */
+    const obtenerStockForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: obtenerStock.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerStock
+ * @see app/Http/Controllers/ProductoController.php:4030
+ * @route '/api/productos/{producto}/stock'
+ */
+        obtenerStockForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerStock.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerStock
+ * @see app/Http/Controllers/ProductoController.php:4030
+ * @route '/api/productos/{producto}/stock'
+ */
+        obtenerStockForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerStock.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    obtenerStock.form = obtenerStockForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
  * @see app/Http/Controllers/ProductoController.php:4055
@@ -507,6 +825,27 @@ obtenerStockMultiples.post = (options?: RouteQueryOptions): RouteDefinition<'pos
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
+ * @see app/Http/Controllers/ProductoController.php:4055
+ * @route '/api/productos/stock/multiples'
+ */
+    const obtenerStockMultiplesForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: obtenerStockMultiples.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
+ * @see app/Http/Controllers/ProductoController.php:4055
+ * @route '/api/productos/stock/multiples'
+ */
+        obtenerStockMultiplesForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: obtenerStockMultiples.url(options),
+            method: 'post',
+        })
+    
+    obtenerStockMultiples.form = obtenerStockMultiplesForm
 /**
 * @see \App\Http\Controllers\ProductoController::storeApi
  * @see app/Http/Controllers/ProductoController.php:2044
@@ -541,6 +880,27 @@ storeApi.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::storeApi
+ * @see app/Http/Controllers/ProductoController.php:2044
+ * @route '/api/productos'
+ */
+    const storeApiForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: storeApi.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::storeApi
+ * @see app/Http/Controllers/ProductoController.php:2044
+ * @route '/api/productos'
+ */
+        storeApiForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: storeApi.url(options),
+            method: 'post',
+        })
+    
+    storeApi.form = storeApiForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
  * @see app/Http/Controllers/ProductoController.php:4177
@@ -584,6 +944,41 @@ obtenerTodosSinRestriccion.head = (options?: RouteQueryOptions): RouteDefinition
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
+ * @see app/Http/Controllers/ProductoController.php:4177
+ * @route '/api/productos/sin-restriccion'
+ */
+    const obtenerTodosSinRestriccionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: obtenerTodosSinRestriccion.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
+ * @see app/Http/Controllers/ProductoController.php:4177
+ * @route '/api/productos/sin-restriccion'
+ */
+        obtenerTodosSinRestriccionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerTodosSinRestriccion.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
+ * @see app/Http/Controllers/ProductoController.php:4177
+ * @route '/api/productos/sin-restriccion'
+ */
+        obtenerTodosSinRestriccionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerTodosSinRestriccion.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    obtenerTodosSinRestriccion.form = obtenerTodosSinRestriccionForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
  * @see app/Http/Controllers/ProductoController.php:4357
@@ -627,6 +1022,41 @@ obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteD
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4357
+ * @route '/api/productos/para-actualizar-stock'
+ */
+    const obtenerProductosParaActualizarStockForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: obtenerProductosParaActualizarStock.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4357
+ * @route '/api/productos/para-actualizar-stock'
+ */
+        obtenerProductosParaActualizarStockForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerProductosParaActualizarStock.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
+ * @see app/Http/Controllers/ProductoController.php:4357
+ * @route '/api/productos/para-actualizar-stock'
+ */
+        obtenerProductosParaActualizarStockForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: obtenerProductosParaActualizarStock.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    obtenerProductosParaActualizarStock.form = obtenerProductosParaActualizarStockForm
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
  * @see app/Http/Controllers/ProductoController.php:4419
@@ -670,6 +1100,41 @@ conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::conversionesComunes
+ * @see app/Http/Controllers/ProductoController.php:4419
+ * @route '/api/productos/conversiones/comunes'
+ */
+    const conversionesComunesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: conversionesComunes.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::conversionesComunes
+ * @see app/Http/Controllers/ProductoController.php:4419
+ * @route '/api/productos/conversiones/comunes'
+ */
+        conversionesComunesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: conversionesComunes.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::conversionesComunes
+ * @see app/Http/Controllers/ProductoController.php:4419
+ * @route '/api/productos/conversiones/comunes'
+ */
+        conversionesComunesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: conversionesComunes.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    conversionesComunes.form = conversionesComunesForm
 /**
 * @see \App\Http\Controllers\ProductoController::updateApi
  * @see app/Http/Controllers/ProductoController.php:2121
@@ -728,6 +1193,37 @@ updateApi.put = (args: { producto: number | { id: number } } | [producto: number
     method: 'put',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::updateApi
+ * @see app/Http/Controllers/ProductoController.php:2121
+ * @route '/api/productos/{producto}'
+ */
+    const updateApiForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updateApi.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::updateApi
+ * @see app/Http/Controllers/ProductoController.php:2121
+ * @route '/api/productos/{producto}'
+ */
+        updateApiForm.put = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updateApi.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    updateApi.form = updateApiForm
 /**
 * @see \App\Http\Controllers\ProductoController::destroyApi
  * @see app/Http/Controllers/ProductoController.php:2187
@@ -786,6 +1282,37 @@ destroyApi.delete = (args: { producto: number | { id: number } } | [producto: nu
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::destroyApi
+ * @see app/Http/Controllers/ProductoController.php:2187
+ * @route '/api/productos/{producto}'
+ */
+    const destroyApiForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroyApi.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::destroyApi
+ * @see app/Http/Controllers/ProductoController.php:2187
+ * @route '/api/productos/{producto}'
+ */
+        destroyApiForm.delete = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroyApi.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroyApi.form = destroyApiForm
 /**
 * @see \App\Http\Controllers\ProductoController::historialPrecios
  * @see app/Http/Controllers/ProductoController.php:59
@@ -856,6 +1383,41 @@ historialPrecios0c937dd5e26e036352e6a5c6b0e5435f.head = (args: { producto: numbe
     /**
 * @see \App\Http\Controllers\ProductoController::historialPrecios
  * @see app/Http/Controllers/ProductoController.php:59
+ * @route '/api/productos/{producto}/historial-precios'
+ */
+    const historialPrecios0c937dd5e26e036352e6a5c6b0e5435fForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: historialPrecios0c937dd5e26e036352e6a5c6b0e5435f.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::historialPrecios
+ * @see app/Http/Controllers/ProductoController.php:59
+ * @route '/api/productos/{producto}/historial-precios'
+ */
+        historialPrecios0c937dd5e26e036352e6a5c6b0e5435fForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: historialPrecios0c937dd5e26e036352e6a5c6b0e5435f.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::historialPrecios
+ * @see app/Http/Controllers/ProductoController.php:59
+ * @route '/api/productos/{producto}/historial-precios'
+ */
+        historialPrecios0c937dd5e26e036352e6a5c6b0e5435fForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: historialPrecios0c937dd5e26e036352e6a5c6b0e5435f.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    historialPrecios0c937dd5e26e036352e6a5c6b0e5435f.form = historialPrecios0c937dd5e26e036352e6a5c6b0e5435fForm
+    /**
+* @see \App\Http\Controllers\ProductoController::historialPrecios
+ * @see app/Http/Controllers/ProductoController.php:59
  * @route '/productos/{producto}/historial-precios'
  */
 const historialPrecios91e45b35dc8bead9d21dd496abe33a36 = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -920,6 +1482,42 @@ historialPrecios91e45b35dc8bead9d21dd496abe33a36.head = (args: { producto: numbe
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::historialPrecios
+ * @see app/Http/Controllers/ProductoController.php:59
+ * @route '/productos/{producto}/historial-precios'
+ */
+    const historialPrecios91e45b35dc8bead9d21dd496abe33a36Form = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: historialPrecios91e45b35dc8bead9d21dd496abe33a36.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::historialPrecios
+ * @see app/Http/Controllers/ProductoController.php:59
+ * @route '/productos/{producto}/historial-precios'
+ */
+        historialPrecios91e45b35dc8bead9d21dd496abe33a36Form.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: historialPrecios91e45b35dc8bead9d21dd496abe33a36.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::historialPrecios
+ * @see app/Http/Controllers/ProductoController.php:59
+ * @route '/productos/{producto}/historial-precios'
+ */
+        historialPrecios91e45b35dc8bead9d21dd496abe33a36Form.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: historialPrecios91e45b35dc8bead9d21dd496abe33a36.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    historialPrecios91e45b35dc8bead9d21dd496abe33a36.form = historialPrecios91e45b35dc8bead9d21dd496abe33a36Form
+
 export const historialPrecios = {
     '/api/productos/{producto}/historial-precios': historialPrecios0c937dd5e26e036352e6a5c6b0e5435f,
     '/productos/{producto}/historial-precios': historialPrecios91e45b35dc8bead9d21dd496abe33a36,
@@ -959,6 +1557,27 @@ importarProductosMasivos.post = (options?: RouteQueryOptions): RouteDefinition<'
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::importarProductosMasivos
+ * @see app/Http/Controllers/ProductoController.php:2793
+ * @route '/api/productos/importar-masivo'
+ */
+    const importarProductosMasivosForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: importarProductosMasivos.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::importarProductosMasivos
+ * @see app/Http/Controllers/ProductoController.php:2793
+ * @route '/api/productos/importar-masivo'
+ */
+        importarProductosMasivosForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: importarProductosMasivos.url(options),
+            method: 'post',
+        })
+    
+    importarProductosMasivos.form = importarProductosMasivosForm
 /**
 * @see \App\Http\Controllers\ProductoController::validarProductosCSV
  * @see app/Http/Controllers/ProductoController.php:3269
@@ -993,6 +1612,27 @@ validarProductosCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::validarProductosCSV
+ * @see app/Http/Controllers/ProductoController.php:3269
+ * @route '/api/productos/validar-csv'
+ */
+    const validarProductosCSVForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: validarProductosCSV.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::validarProductosCSV
+ * @see app/Http/Controllers/ProductoController.php:3269
+ * @route '/api/productos/validar-csv'
+ */
+        validarProductosCSVForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: validarProductosCSV.url(options),
+            method: 'post',
+        })
+    
+    validarProductosCSV.form = validarProductosCSVForm
 /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
  * @see app/Http/Controllers/ProductoController.php:3390
@@ -1036,6 +1676,41 @@ listarCargasMasivas.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::listarCargasMasivas
+ * @see app/Http/Controllers/ProductoController.php:3390
+ * @route '/api/productos/cargas-masivas'
+ */
+    const listarCargasMasivasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: listarCargasMasivas.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::listarCargasMasivas
+ * @see app/Http/Controllers/ProductoController.php:3390
+ * @route '/api/productos/cargas-masivas'
+ */
+        listarCargasMasivasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: listarCargasMasivas.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::listarCargasMasivas
+ * @see app/Http/Controllers/ProductoController.php:3390
+ * @route '/api/productos/cargas-masivas'
+ */
+        listarCargasMasivasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: listarCargasMasivas.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    listarCargasMasivas.form = listarCargasMasivasForm
 /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
  * @see app/Http/Controllers/ProductoController.php:3416
@@ -1103,6 +1778,41 @@ verCargaMasiva.head = (args: { cargo: number | { id: number } } | [cargo: number
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::verCargaMasiva
+ * @see app/Http/Controllers/ProductoController.php:3416
+ * @route '/api/productos/cargas-masivas/{cargo}'
+ */
+    const verCargaMasivaForm = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: verCargaMasiva.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::verCargaMasiva
+ * @see app/Http/Controllers/ProductoController.php:3416
+ * @route '/api/productos/cargas-masivas/{cargo}'
+ */
+        verCargaMasivaForm.get = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: verCargaMasiva.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::verCargaMasiva
+ * @see app/Http/Controllers/ProductoController.php:3416
+ * @route '/api/productos/cargas-masivas/{cargo}'
+ */
+        verCargaMasivaForm.head = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: verCargaMasiva.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    verCargaMasiva.form = verCargaMasivaForm
 /**
 * @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
  * @see app/Http/Controllers/ProductoController.php:3431
@@ -1161,6 +1871,27 @@ revertirCargaMasiva.post = (args: { cargo: number | { id: number } } | [cargo: n
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
+ * @see app/Http/Controllers/ProductoController.php:3431
+ * @route '/api/productos/cargas-masivas/{cargo}/revertir'
+ */
+    const revertirCargaMasivaForm = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: revertirCargaMasiva.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
+ * @see app/Http/Controllers/ProductoController.php:3431
+ * @route '/api/productos/cargas-masivas/{cargo}/revertir'
+ */
+        revertirCargaMasivaForm.post = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: revertirCargaMasiva.url(args, options),
+            method: 'post',
+        })
+    
+    revertirCargaMasiva.form = revertirCargaMasivaForm
 /**
 * @see \App\Http\Controllers\ProductoController::createModerno
  * @see app/Http/Controllers/ProductoController.php:327
@@ -1204,6 +1935,41 @@ createModerno.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::createModerno
+ * @see app/Http/Controllers/ProductoController.php:327
+ * @route '/productos/crear/moderno'
+ */
+    const createModernoForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: createModerno.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::createModerno
+ * @see app/Http/Controllers/ProductoController.php:327
+ * @route '/productos/crear/moderno'
+ */
+        createModernoForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: createModerno.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::createModerno
+ * @see app/Http/Controllers/ProductoController.php:327
+ * @route '/productos/crear/moderno'
+ */
+        createModernoForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: createModerno.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    createModerno.form = createModernoForm
 /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
  * @see app/Http/Controllers/ProductoController.php:3890
@@ -1247,6 +2013,41 @@ getPaginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::getPaginados
+ * @see app/Http/Controllers/ProductoController.php:3890
+ * @route '/productos/paginados/listar'
+ */
+    const getPaginadosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: getPaginados.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::getPaginados
+ * @see app/Http/Controllers/ProductoController.php:3890
+ * @route '/productos/paginados/listar'
+ */
+        getPaginadosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: getPaginados.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::getPaginados
+ * @see app/Http/Controllers/ProductoController.php:3890
+ * @route '/productos/paginados/listar'
+ */
+        getPaginadosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: getPaginados.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    getPaginados.form = getPaginadosForm
 /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
  * @see app/Http/Controllers/ProductoController.php:4008
@@ -1290,6 +2091,41 @@ getFiltrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::getFiltrosData
+ * @see app/Http/Controllers/ProductoController.php:4008
+ * @route '/productos/filtros/datos'
+ */
+    const getFiltrosDataForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: getFiltrosData.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::getFiltrosData
+ * @see app/Http/Controllers/ProductoController.php:4008
+ * @route '/productos/filtros/datos'
+ */
+        getFiltrosDataForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: getFiltrosData.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::getFiltrosData
+ * @see app/Http/Controllers/ProductoController.php:4008
+ * @route '/productos/filtros/datos'
+ */
+        getFiltrosDataForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: getFiltrosData.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    getFiltrosData.form = getFiltrosDataForm
 /**
 * @see \App\Http\Controllers\ProductoController::index
  * @see app/Http/Controllers/ProductoController.php:86
@@ -1333,6 +2169,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::index
+ * @see app/Http/Controllers/ProductoController.php:86
+ * @route '/productos'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::index
+ * @see app/Http/Controllers/ProductoController.php:86
+ * @route '/productos'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::index
+ * @see app/Http/Controllers/ProductoController.php:86
+ * @route '/productos'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\ProductoController::create
  * @see app/Http/Controllers/ProductoController.php:269
@@ -1376,6 +2247,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::create
+ * @see app/Http/Controllers/ProductoController.php:269
+ * @route '/productos/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::create
+ * @see app/Http/Controllers/ProductoController.php:269
+ * @route '/productos/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::create
+ * @see app/Http/Controllers/ProductoController.php:269
+ * @route '/productos/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\ProductoController::store
  * @see app/Http/Controllers/ProductoController.php:339
@@ -1410,6 +2316,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::store
+ * @see app/Http/Controllers/ProductoController.php:339
+ * @route '/productos'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::store
+ * @see app/Http/Controllers/ProductoController.php:339
+ * @route '/productos'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\ProductoController::edit
  * @see app/Http/Controllers/ProductoController.php:684
@@ -1477,6 +2404,41 @@ edit.head = (args: { producto: number | { id: number } } | [producto: number | {
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::edit
+ * @see app/Http/Controllers/ProductoController.php:684
+ * @route '/productos/{producto}/edit'
+ */
+    const editForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::edit
+ * @see app/Http/Controllers/ProductoController.php:684
+ * @route '/productos/{producto}/edit'
+ */
+        editForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::edit
+ * @see app/Http/Controllers/ProductoController.php:684
+ * @route '/productos/{producto}/edit'
+ */
+        editForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 /**
 * @see \App\Http\Controllers\ProductoController::update
  * @see app/Http/Controllers/ProductoController.php:945
@@ -1544,6 +2506,51 @@ update.patch = (args: { producto: number | { id: number } } | [producto: number 
     method: 'patch',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::update
+ * @see app/Http/Controllers/ProductoController.php:945
+ * @route '/productos/{producto}'
+ */
+    const updateForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::update
+ * @see app/Http/Controllers/ProductoController.php:945
+ * @route '/productos/{producto}'
+ */
+        updateForm.put = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::update
+ * @see app/Http/Controllers/ProductoController.php:945
+ * @route '/productos/{producto}'
+ */
+        updateForm.patch = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\ProductoController::destroy
  * @see app/Http/Controllers/ProductoController.php:1403
@@ -1602,6 +2609,37 @@ destroy.delete = (args: { producto: number | { id: number } } | [producto: numbe
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\ProductoController::destroy
+ * @see app/Http/Controllers/ProductoController.php:1403
+ * @route '/productos/{producto}'
+ */
+    const destroyForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::destroy
+ * @see app/Http/Controllers/ProductoController.php:1403
+ * @route '/productos/{producto}'
+ */
+        destroyForm.delete = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
  * @see app/Http/Controllers/ProductoController.php:4240
@@ -1644,6 +2682,42 @@ buscarProductosComidas.head = (options?: RouteQueryOptions): RouteDefinition<'he
     url: buscarProductosComidas.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\ProductoController::buscarProductosComidas
+ * @see app/Http/Controllers/ProductoController.php:4240
+ * @route '/api/productos-comidas/buscar'
+ */
+    const buscarProductosComidasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: buscarProductosComidas.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProductoController::buscarProductosComidas
+ * @see app/Http/Controllers/ProductoController.php:4240
+ * @route '/api/productos-comidas/buscar'
+ */
+        buscarProductosComidasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buscarProductosComidas.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProductoController::buscarProductosComidas
+ * @see app/Http/Controllers/ProductoController.php:4240
+ * @route '/api/productos-comidas/buscar'
+ */
+        buscarProductosComidasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: buscarProductosComidas.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    buscarProductosComidas.form = buscarProductosComidasForm
 const ProductoController = { indexApi, filtros, buscarApi, listarApi, showApi, obtenerStock, obtenerStockMultiples, storeApi, obtenerTodosSinRestriccion, obtenerProductosParaActualizarStock, conversionesComunes, updateApi, destroyApi, historialPrecios, importarProductosMasivos, validarProductosCSV, listarCargasMasivas, verCargaMasiva, revertirCargaMasiva, createModerno, getPaginados, getFiltrosData, index, create, store, edit, update, destroy, buscarProductosComidas }
 
 export default ProductoController

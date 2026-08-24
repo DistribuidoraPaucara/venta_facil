@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\EgresosController::index
  * @see app/Http/Controllers/EgresosController.php:21
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EgresosController::index
+ * @see app/Http/Controllers/EgresosController.php:21
+ * @route '/egresos'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EgresosController::index
+ * @see app/Http/Controllers/EgresosController.php:21
+ * @route '/egresos'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EgresosController::index
+ * @see app/Http/Controllers/EgresosController.php:21
+ * @route '/egresos'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\EgresosController::create
  * @see app/Http/Controllers/EgresosController.php:58
@@ -85,6 +120,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EgresosController::create
+ * @see app/Http/Controllers/EgresosController.php:58
+ * @route '/egresos/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EgresosController::create
+ * @see app/Http/Controllers/EgresosController.php:58
+ * @route '/egresos/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EgresosController::create
+ * @see app/Http/Controllers/EgresosController.php:58
+ * @route '/egresos/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\EgresosController::imprimir
  * @see app/Http/Controllers/EgresosController.php:94
@@ -152,6 +222,41 @@ imprimir.head = (args: { egreso: number | { id: number } } | [egreso: number | {
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EgresosController::imprimir
+ * @see app/Http/Controllers/EgresosController.php:94
+ * @route '/egresos/{egreso}/imprimir'
+ */
+    const imprimirForm = (args: { egreso: number | { id: number } } | [egreso: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: imprimir.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EgresosController::imprimir
+ * @see app/Http/Controllers/EgresosController.php:94
+ * @route '/egresos/{egreso}/imprimir'
+ */
+        imprimirForm.get = (args: { egreso: number | { id: number } } | [egreso: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: imprimir.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EgresosController::imprimir
+ * @see app/Http/Controllers/EgresosController.php:94
+ * @route '/egresos/{egreso}/imprimir'
+ */
+        imprimirForm.head = (args: { egreso: number | { id: number } } | [egreso: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: imprimir.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    imprimir.form = imprimirForm
 /**
 * @see \App\Http\Controllers\EgresosController::show
  * @see app/Http/Controllers/EgresosController.php:72
@@ -218,6 +323,42 @@ show.head = (args: { egreso: number | { id: number } } | [egreso: number | { id:
     url: show.url(args, options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\EgresosController::show
+ * @see app/Http/Controllers/EgresosController.php:72
+ * @route '/egresos/{egreso}'
+ */
+    const showForm = (args: { egreso: number | { id: number } } | [egreso: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EgresosController::show
+ * @see app/Http/Controllers/EgresosController.php:72
+ * @route '/egresos/{egreso}'
+ */
+        showForm.get = (args: { egreso: number | { id: number } } | [egreso: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EgresosController::show
+ * @see app/Http/Controllers/EgresosController.php:72
+ * @route '/egresos/{egreso}'
+ */
+        showForm.head = (args: { egreso: number | { id: number } } | [egreso: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 const egresos = {
     index,
 create,

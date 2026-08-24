@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
  * @see routes/web.php:1356
  * @route '/produccion/recetas-manager'
@@ -38,6 +38,38 @@ recetasManager.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     method: 'head',
 })
 
+    /**
+ * @see routes/web.php:1356
+ * @route '/produccion/recetas-manager'
+ */
+    const recetasManagerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: recetasManager.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:1356
+ * @route '/produccion/recetas-manager'
+ */
+        recetasManagerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: recetasManager.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:1356
+ * @route '/produccion/recetas-manager'
+ */
+        recetasManagerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: recetasManager.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    recetasManager.form = recetasManagerForm
 /**
 * @see \App\Http\Controllers\RegistroProduccionController::registroProduccion
  * @see app/Http/Controllers/RegistroProduccionController.php:14
@@ -81,6 +113,41 @@ registroProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\RegistroProduccionController::registroProduccion
+ * @see app/Http/Controllers/RegistroProduccionController.php:14
+ * @route '/produccion/registro-produccion'
+ */
+    const registroProduccionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: registroProduccion.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\RegistroProduccionController::registroProduccion
+ * @see app/Http/Controllers/RegistroProduccionController.php:14
+ * @route '/produccion/registro-produccion'
+ */
+        registroProduccionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: registroProduccion.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\RegistroProduccionController::registroProduccion
+ * @see app/Http/Controllers/RegistroProduccionController.php:14
+ * @route '/produccion/registro-produccion'
+ */
+        registroProduccionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: registroProduccion.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    registroProduccion.form = registroProduccionForm
 /**
  * @see routes/web.php:1364
  * @route '/produccion/produccion-masiva'
@@ -120,6 +187,38 @@ produccionMasiva.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
     method: 'head',
 })
 
+    /**
+ * @see routes/web.php:1364
+ * @route '/produccion/produccion-masiva'
+ */
+    const produccionMasivaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: produccionMasiva.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:1364
+ * @route '/produccion/produccion-masiva'
+ */
+        produccionMasivaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: produccionMasiva.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:1364
+ * @route '/produccion/produccion-masiva'
+ */
+        produccionMasivaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: produccionMasiva.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    produccionMasiva.form = produccionMasivaForm
 /**
  * @see routes/web.php:1369
  * @route '/produccion/reporte-produccion'
@@ -158,6 +257,39 @@ reporteProduccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     url: reporteProduccion.url(options),
     method: 'head',
 })
+
+    /**
+ * @see routes/web.php:1369
+ * @route '/produccion/reporte-produccion'
+ */
+    const reporteProduccionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: reporteProduccion.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:1369
+ * @route '/produccion/reporte-produccion'
+ */
+        reporteProduccionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteProduccion.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:1369
+ * @route '/produccion/reporte-produccion'
+ */
+        reporteProduccionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteProduccion.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    reporteProduccion.form = reporteProduccionForm
 const produccion = {
     recetasManager,
 registroProduccion,

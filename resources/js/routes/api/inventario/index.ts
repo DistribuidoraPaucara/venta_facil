@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
  * @see app/Http/Controllers/ActualizarStockMasivoController.php:596
@@ -32,6 +32,28 @@ actualizarStockTabla.post = (options?: RouteQueryOptions): RouteDefinition<'post
     url: actualizarStockTabla.url(options),
     method: 'post',
 })
+
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:596
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+    const actualizarStockTablaForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: actualizarStockTabla.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:596
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+        actualizarStockTablaForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: actualizarStockTabla.url(options),
+            method: 'post',
+        })
+    
+    actualizarStockTabla.form = actualizarStockTablaForm
 const inventario = {
     actualizarStockTabla,
 }

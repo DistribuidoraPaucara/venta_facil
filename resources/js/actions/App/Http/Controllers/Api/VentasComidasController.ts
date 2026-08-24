@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\VentasComidasController::store
  * @see app/Http/Controllers/Api/VentasComidasController.php:66
@@ -33,6 +33,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\VentasComidasController::store
+ * @see app/Http/Controllers/Api/VentasComidasController.php:66
+ * @route '/api/ventas-comidas'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\VentasComidasController::store
+ * @see app/Http/Controllers/Api/VentasComidasController.php:66
+ * @route '/api/ventas-comidas'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
  * @see app/Http/Controllers/Api/VentasComidasController.php:384
@@ -99,6 +120,42 @@ show.head = (args: { venta: number | { id: number } } | [venta: number | { id: n
     url: show.url(args, options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\Api\VentasComidasController::show
+ * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @route '/api/ventas-comidas/{venta}'
+ */
+    const showForm = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\VentasComidasController::show
+ * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @route '/api/ventas-comidas/{venta}'
+ */
+        showForm.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\VentasComidasController::show
+ * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @route '/api/ventas-comidas/{venta}'
+ */
+        showForm.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 const VentasComidasController = { store, show }
 
 export default VentasComidasController
