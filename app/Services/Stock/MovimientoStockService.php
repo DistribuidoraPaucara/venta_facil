@@ -457,8 +457,8 @@ class MovimientoStockService
     private function aplicarReservaProforma(
         float $cantidad,
         float &$nuevoTotal,
-        int &$nuevaReservada,
-        int &$nuevaDisponible
+        float &$nuevaReservada,
+        float &$nuevaDisponible
     ): void {
         $cantidadAReservar = abs($cantidad);
         $nuevaReservada += $cantidadAReservar;
