@@ -434,11 +434,16 @@ class VentaDistribucionService
                     ->get();
 
                 // ✅ NUEVO (2026-08-23): También buscar movimientos de adicionales aunque haya venta_por_lotes
-                $movimientosAdicionales = MovimientoInventario::where('numero_documento', $numeroVenta)
+                // Buscar todos los SALIDA_VENTA de esta venta y filtrar los que tienen es_adicional en metadata
+                $todosMovimientos = MovimientoInventario::where('numero_documento', $numeroVenta)
                     ->where('tipo', MovimientoInventario::TIPO_SALIDA_VENTA)
-                    ->whereJsonContains('metadata->es_adicional', true)
                     ->lockForUpdate()
                     ->get();
+
+                $movimientosAdicionales = $todosMovimientos->filter(function($mov) {
+                    $metadata = $mov->metadata ? json_decode($mov->metadata, true) : [];
+                    return isset($metadata['es_adicional']) && $metadata['es_adicional'] === true;
+                });
 
                 if ($movimientosAdicionales->isNotEmpty()) {
                     Log::info('✅ [VentaDistribucionService::devolverStock] Movimientos de adicionales encontrados', [
