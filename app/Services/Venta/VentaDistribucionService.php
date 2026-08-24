@@ -433,8 +433,23 @@ class VentaDistribucionService
                     ->lockForUpdate()
                     ->get();
 
+                // ✅ NUEVO (2026-08-23): También buscar movimientos de adicionales aunque haya venta_por_lotes
+                $movimientosAdicionales = MovimientoInventario::where('numero_documento', $numeroVenta)
+                    ->where('tipo', MovimientoInventario::TIPO_SALIDA_VENTA)
+                    ->whereJsonContains('metadata->es_adicional', true)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($movimientosAdicionales->isNotEmpty()) {
+                    Log::info('✅ [VentaDistribucionService::devolverStock] Movimientos de adicionales encontrados', [
+                        'venta_id' => $ventaId,
+                        'numero_venta' => $numeroVenta,
+                        'cantidad_adicionales' => $movimientosAdicionales->count(),
+                    ]);
+                }
+
                 // Si no hay registros en venta_por_lotes, intentar fallback a movimientos (compatibilidad)
-                if ($ventaPorLotes->isEmpty()) {
+                if ($ventaPorLotes->isEmpty() && $movimientosAdicionales->isEmpty()) {
                     Log::info('⚠️ [VentaDistribucionService::devolverStock] No hay registros en venta_por_lotes, usando fallback a movimientos', [
                         'venta_id' => $ventaId,
                         'numero_venta' => $numeroVenta,
@@ -572,6 +587,45 @@ class VentaDistribucionService
                             }
                         }
                         $movimientosCreados++;
+                    }
+                }
+
+                // ✅ NUEVO (2026-08-23): Procesar movimientos de adicionales
+                foreach ($movimientosAdicionales as $movimiento) {
+                    $stock = $movimiento->stockProducto;
+                    $cantidadADevolver = abs($movimiento->cantidad);
+
+                    try {
+                        $movimientoStockService->registrarMovimientoYActualizar(
+                            stockProductoId: $stock->id,
+                            cantidad: (float)$cantidadADevolver,
+                            tipo: MovimientoInventario::TIPO_ENTRADA_AJUSTE,
+                            referencia_tipo: 'venta_devolucion',
+                            referencia_id: $ventaId,
+                            metadataAdicional: [
+                                'numero_venta' => $numeroVenta . '-DEV',
+                                'es_adicional_devolucion' => true,
+                                'movimiento_original_id' => $movimiento->id,
+                            ],
+                            numeroDocumento: $numeroVenta . '-DEV'
+                        );
+
+                        Log::info('✅ [VentaDistribucionService] Stock devuelto para adicional', [
+                            'venta_id' => $ventaId,
+                            'stock_id' => $stock->id,
+                            'producto_id' => $stock->producto_id,
+                            'cantidad_devuelta' => $cantidadADevolver,
+                        ]);
+
+                        $totalDevuelto += $cantidadADevolver;
+                        $movimientosCreados++;
+                    } catch (\Exception $e) {
+                        Log::error('❌ Error devolviendo stock de adicional', [
+                            'stock_id' => $stock->id,
+                            'venta_id' => $ventaId,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw $e;
                     }
                 }
 
