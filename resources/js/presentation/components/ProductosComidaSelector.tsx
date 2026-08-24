@@ -126,11 +126,23 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
                 const dataProductos = await respProductos.json();
                 const dataUnidades = await respUnidades.json();
 
+                // ✅ NUEVO (2026-08-23): Mostrar ingredientes cargados
+                const productosConIngredientes = dataProductos.data?.filter((p: any) => p.ingredientes && p.ingredientes.length > 0) || [];
+
                 console.log('🍦 DATOS DEL BACKEND - /api/productos-comida/', {
                     success: dataProductos.success,
                     cantidad: dataProductos.data?.length || 0,
                     datos_completos: dataProductos.data,
                 });
+
+                // ✅ NUEVO (2026-08-23): Log de ingredientes predefinidos
+                if (productosConIngredientes.length > 0) {
+                    console.log('📋 PRODUCTOS CON INGREDIENTES PREDEFINIDOS:', productosConIngredientes.map((p: any) => ({
+                        nombre: p.nombre,
+                        sku: p.sku,
+                        ingredientes: p.ingredientes.map((i: any) => `${i.nombre}: ${i.cantidad_requerida} ${i.unidad_nombre}`)
+                    })));
+                }
 
                 console.log('📏 UNIDADES DE MEDIDA CARGADAS:', {
                     success: dataUnidades.success,
@@ -169,6 +181,15 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
         if (producto.ingredientes && producto.ingredientes.length > 0) {
             const ingredientesMap = new Map<number, AdicionalConCantidad>();
             const selectedIds: number[] = [];
+
+            // ✅ NUEVO (2026-08-23): Log de ingredientes cargados
+            console.log(`📦 Producto seleccionado: ${producto.nombre}`, {
+                ingredientes: producto.ingredientes.map(i => ({
+                    nombre: i.nombre,
+                    cantidad: i.cantidad_requerida,
+                    unidad: i.unidad_nombre
+                }))
+            });
 
             producto.ingredientes.forEach((ing) => {
                 selectedIds.push(ing.producto_id);
