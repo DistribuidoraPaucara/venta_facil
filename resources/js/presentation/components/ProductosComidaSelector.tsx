@@ -192,9 +192,9 @@ export function ProductosComidaSelector({ onAgregar, onActualizar, onActualizarP
             });
 
             producto.ingredientes.forEach((ing) => {
-                selectedIds.push(ing.producto_id);
-                ingredientesMap.set(ing.producto_id, {
-                    id: ing.producto_id,
+                selectedIds.push(ing.id); // ✅ CORREGIDO: Usar 'id' en lugar de 'producto_id'
+                ingredientesMap.set(ing.id, {
+                    id: ing.id,
                     cantidad: ing.cantidad_requerida,
                     unidad_medida_id: ing.unidad_medida_id,
                 });
