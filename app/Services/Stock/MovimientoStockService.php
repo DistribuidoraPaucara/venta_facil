@@ -160,6 +160,17 @@ class MovimientoStockService
                     default => throw new Exception("Tipo de movimiento desconocido: {$tipo}"),
                 };
 
+                // ✅ DEBUG (2026-08-23): Ver valores calculados DESPUÉS del match
+                Log::debug('📍 [DEBUG] Valores después de aplicarLógica', [
+                    'tipo' => $tipo,
+                    'cantidad_movimiento' => $cantidad,
+                    'nuevoTotal' => $nuevoTotal,
+                    'nuevaReservada' => $nuevaReservada,
+                    'nuevaDisponible' => $nuevaDisponible,
+                    'suma_calc' => $nuevaReservada + $nuevaDisponible,
+                    'invariante_deberia_ser_valido' => abs(($nuevaReservada + $nuevaDisponible) - $nuevoTotal) <= 0.01,
+                ]);
+
                 // 5️⃣ VALIDAR ANTES y DESPUÉS para asegurar integridad en ambos estados
                 // ✅ NUEVO (2026-06-09): Validar estado anterior también
                 $this->validacion->validarStock((object) [
