@@ -538,9 +538,10 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         // ✅ NUEVO: Anular cuenta por cobrar
         Route::post('cuentas-por-cobrar/{cuentaPorCobrar}/anular', [\App\Http\Controllers\CuentaPorCobrarController::class, 'anularCuenta'])->name('cuentas-por-cobrar.anular');
 
+        // ✅ ACTUALIZADO (2026-08-23): Cambiar middleware a permiso 'ventas.anular'
         // Acciones personalizadas (POST) - heredan el middleware del grupo
         Route::post('{venta}/anular', [\App\Http\Controllers\VentaController::class, 'anular'])
-            ->middleware('permission:ventas.delete|ventas.manage')
+            ->middleware('permission:ventas.anular|ventas.delete|ventas.manage')
             ->name('anular');
 
         Route::post('{venta}/aprobar', [\App\Http\Controllers\VentaController::class, 'aprobar'])
