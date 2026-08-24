@@ -226,6 +226,30 @@ export default function VentasComidas({ clientes, tiposPago, auth }: VentasComid
     };
 
     const handleGuardarVenta = async () => {
+        // ✅ NUEVO (2026-08-23): Validar que la caja esté abierta
+        try {
+            const respuestaCaja = await fetch('/api/caja/abierta', {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            const dataCaja = await respuestaCaja.json();
+
+            if (!dataCaja.success || !dataCaja.data?.id) {
+                toast.error('❌ Debes abrir una caja antes de realizar ventas');
+                console.warn('⚠️ No hay caja abierta para realizar venta');
+                return;
+            }
+
+            console.log('✅ Caja abierta verificada:', dataCaja.data);
+        } catch (error) {
+            console.error('Error verificando caja:', error);
+            toast.error('Error al verificar la caja');
+            return;
+        }
+
         // Validaciones
         if (carrito.items.length === 0) {
             toast.error('Agrega al menos un producto');
