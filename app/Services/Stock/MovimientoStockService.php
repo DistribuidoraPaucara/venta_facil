@@ -484,8 +484,8 @@ class MovimientoStockService
     private function aplicarLiberacionReserva(
         float $cantidad,
         float &$nuevoTotal,
-        int &$nuevaReservada,
-        int &$nuevaDisponible
+        float &$nuevaReservada,
+        float &$nuevaDisponible
     ): void {
         $cantidadALiberar = abs($cantidad);
         $nuevaReservada -= $cantidadALiberar;
@@ -500,8 +500,8 @@ class MovimientoStockService
     private function aplicarVentaDirecta(
         float $cantidad,
         float &$nuevoTotal,
-        int &$nuevaReservada,
-        int &$nuevaDisponible
+        float &$nuevaReservada,
+        float &$nuevaDisponible
     ): void {
         $cantidadAVender = abs($cantidad);
         $nuevoTotal -= $cantidadAVender;
@@ -516,8 +516,8 @@ class MovimientoStockService
     private function aplicarVentaConsumo(
         float $cantidad,
         float &$nuevoTotal,
-        int &$nuevaReservada,
-        int &$nuevaDisponible
+        float &$nuevaReservada,
+        float &$nuevaDisponible
     ): void {
         $cantidadAConsumir = abs($cantidad);
         $nuevoTotal -= $cantidadAConsumir;
@@ -612,8 +612,8 @@ class MovimientoStockService
     private function aplicarSeguimientoComida(
         float $cantidad,
         float &$nuevoTotal,
-        int &$nuevaReservada,
-        int &$nuevaDisponible
+        float &$nuevaReservada,
+        float &$nuevaDisponible
     ): void {
         // ✅ NO hacer nada: mantener valores anteriores
         // La cantidad se registra en metadatos para auditoría
