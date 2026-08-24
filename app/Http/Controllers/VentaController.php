@@ -1155,12 +1155,12 @@ class VentaController extends Controller
                 'usuario_nombre' => auth()->user()?->name,
             ]);
 
-            // Verificar permiso
-            if (! auth()->user()->hasRole(['admin', 'Admin'])) {
+            // ✅ ACTUALIZADO (2026-08-23): Usar permiso 'ventas.anular' en lugar de rol
+            if (! auth()->user()->can('ventas.anular')) {
                 Log::warning('🔴 [ANULAR VENTA] PERMISO DENEGADO', [
                     'venta_id'   => $id,
                     'usuario_id' => auth()->id(),
-                    'roles'      => auth()->user()?->getRoleNames(),
+                    'usuario_nombre' => auth()->user()?->name,
                 ]);
                 return $this->respondForbidden('No tienes permiso para anular ventas');
             }
