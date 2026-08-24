@@ -1887,6 +1887,35 @@ Route::get('/test/cajas/{aperturaCaja}/datos-cierre', function (\App\Models\Aper
     }
 });
 
+// ✅ NUEVO (2026-08-23): Endpoint para verificar caja abierta
+Route::get('/caja/abierta', function () {
+    $usuarioAutenticado = auth()->user();
+    if (!$usuarioAutenticado) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No autenticado',
+            'data' => null
+        ], 401);
+    }
+
+    $cajaAbierta = \App\Models\AperturaCaja::where('user_id', $usuarioAutenticado->id)
+        ->whereDoesntHave('cierre')
+        ->with(['caja'])
+        ->latest('fecha')
+        ->first();
+
+    return response()->json([
+        'success' => true,
+        'data' => $cajaAbierta ? [
+            'id' => $cajaAbierta->id,
+            'caja_id' => $cajaAbierta->caja_id,
+            'caja_nombre' => $cajaAbierta->caja?->nombre,
+            'fecha_apertura' => $cajaAbierta->fecha,
+            'monto_inicial' => $cajaAbierta->monto_inicial,
+        ] : null
+    ]);
+});
+
 // ✨ NUEVO: Rutas para productos de comida/helados
 Route::prefix('productos-comida')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'productosComida']);
