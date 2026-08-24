@@ -139,7 +139,7 @@ class AdicionalesProductoController extends Controller
                 },
                 // ✅ NUEVO (2026-08-23): Cargar ingredientes predefinidos como adicionales
                 'ingredientes' => function($q) {
-                    $q->with(['producto:id,nombre', 'unidadMedida:id,nombre,codigo']);
+                    $q->with(['ingrediente:id,nombre', 'unidadMedida:id,nombre,codigo']);
                 }
             ])
             ->orderBy('nombre', 'asc') // ✅ ACTUALIZADO (2026-08-23): Orden alfabético en lugar de por ID
