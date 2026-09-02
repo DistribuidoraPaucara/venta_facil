@@ -372,12 +372,26 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     // 📋 CATÁLOGOS PARA DROPDOWNS (Categorías, Unidades, Marcas, Proveedores, Almacenes, Sectores)
     // ==========================================
     Route::get('/app/categorias', [\App\Http\Controllers\Api\CatalogosApiController::class, 'categorias']);
-    Route::get('/app/marcas', [\App\Http\Controllers\Api\CatalogosApiController::class, 'marcas']);
     Route::get('/app/proveedores', [\App\Http\Controllers\Api\CatalogosApiController::class, 'proveedores']);
-    Route::get('/app/unidades-medida', [\App\Http\Controllers\Api\CatalogosApiController::class, 'unidadesMedida']);
     Route::get('/app/almacenes', [\App\Http\Controllers\Api\CatalogosApiController::class, 'almacenes']);
     Route::get('/app/sectores', [\App\Http\Controllers\Api\CatalogosApiController::class, 'sectores']);
     Route::get('/app/almacenes/{almacen_id}/sectores', [\App\Http\Controllers\Api\CatalogosApiController::class, 'sectoresPorAlmacen']);
+
+    // ==========================================
+    // 📏 CRUD UNIDADES DE MEDIDA (para la app móvil)
+    // ==========================================
+    Route::get('/app/unidades-medida', [\App\Http\Controllers\UnidadMedidaController::class, 'indexApi']);
+    Route::post('/app/unidades-medida', [\App\Http\Controllers\UnidadMedidaController::class, 'storeApi']);
+    Route::put('/app/unidades-medida/{id}', [\App\Http\Controllers\UnidadMedidaController::class, 'updateApi']);
+    Route::delete('/app/unidades-medida/{id}', [\App\Http\Controllers\UnidadMedidaController::class, 'destroyApi']);
+
+    // ==========================================
+    // 🏷️ CRUD MARCAS (para la app móvil)
+    // ==========================================
+    Route::get('/app/marcas', [\App\Http\Controllers\MarcaController::class, 'indexApi']);
+    Route::post('/app/marcas', [\App\Http\Controllers\MarcaController::class, 'storeApi']);
+    Route::put('/app/marcas/{id}', [\App\Http\Controllers\MarcaController::class, 'updateApi']);
+    Route::delete('/app/marcas/{id}', [\App\Http\Controllers\MarcaController::class, 'destroyApi']);
 
     // ==========================================
     // 📝 CRUD CATEGORÍAS (para la app móvil)

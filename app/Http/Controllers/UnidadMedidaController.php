@@ -4,14 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Traits\SimpleCrudController;
 use App\Models\UnidadMedida;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Inertia\Response;
+use Illuminate\Http\Response;
+use Inertia\Response as InertiaResponse;
 
 /**
  * UnidadMedidaController - CRUD de Unidades de Medida
  *
- * ✅ CONSOLIDADO: Usa SimpleCrudController trait
- * Reducción: ~77 líneas → 60 líneas (-22%)
+ * ✅ CONSOLIDADO: Usa SimpleCrudController trait para web
+ * ✅ API Methods: indexApi, storeApi, updateApi, destroyApi
  * Nota: Sobrescribe index() para búsqueda en múltiples campos
  */
 class UnidadMedidaController extends Controller
@@ -48,9 +50,9 @@ class UnidadMedidaController extends Controller
     }
 
     /**
-     * Override: búsqueda en nombre Y código
+     * Override: búsqueda en nombre Y código (Web)
      */
-    public function index(Request $request): Response
+    public function index(Request $request): InertiaResponse
     {
         $modelClass = $this->getModel();
         $q = $request->string('q');
@@ -71,5 +73,132 @@ class UnidadMedidaController extends Controller
             $this->getResourceName() => $items,
             'filters' => ['q' => $q],
         ]);
+    }
+
+    // ======================== API METHODS ========================
+
+    /**
+     * GET /api/app/unidades-medida
+     * Listar unidades con paginación y búsqueda
+     */
+    public function indexApi(Request $request): JsonResponse
+    {
+        try {
+            $q = $request->string('q');
+            $page = $request->integer('page', 1);
+            $perPage = $request->integer('per_page', 20);
+
+            $query = UnidadMedida::query();
+
+            if ($q) {
+                $searchLower = strtolower($q);
+                $query->where(function ($sub) use ($searchLower) {
+                    $sub->whereRaw('LOWER(nombre) like ?', ["%$searchLower%"])
+                        ->orWhereRaw('LOWER(codigo) like ?', ["%$searchLower%"]);
+                });
+            }
+
+            $paginated = $query
+                ->orderBy('id', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data' => $paginated,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * POST /api/app/unidades-medida
+     * Crear nueva unidad
+     */
+    public function storeApi(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'nombre' => ['required', 'string', 'max:255'],
+                'codigo' => ['required', 'string', 'max:10', 'unique:unidades_medida,codigo'],
+                'activo' => ['boolean'],
+            ]);
+
+            $unidad = UnidadMedida::create($validated);
+
+            return response()->json([
+                'data' => $unidad,
+                'message' => 'Unidad de medida creada correctamente',
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validación fallida',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * PUT /api/app/unidades-medida/{id}
+     * Actualizar unidad
+     */
+    public function updateApi(Request $request, int $id): JsonResponse
+    {
+        try {
+            $unidad = UnidadMedida::findOrFail($id);
+
+            $validated = $request->validate([
+                'nombre' => ['required', 'string', 'max:255'],
+                'codigo' => ['required', 'string', 'max:10', 'unique:unidades_medida,codigo,' . $id],
+                'activo' => ['boolean'],
+            ]);
+
+            $unidad->update($validated);
+
+            return response()->json([
+                'data' => $unidad,
+                'message' => 'Unidad de medida actualizada correctamente',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validación fallida',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Unidad de medida no encontrada',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/app/unidades-medida/{id}
+     * Eliminar unidad
+     */
+    public function destroyApi(int $id): JsonResponse
+    {
+        try {
+            $unidad = UnidadMedida::findOrFail($id);
+            $unidad->delete();
+
+            return response()->json([
+                'message' => 'Unidad de medida eliminada correctamente',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Unidad de medida no encontrada',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
