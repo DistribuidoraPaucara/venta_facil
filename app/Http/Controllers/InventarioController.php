@@ -3667,6 +3667,9 @@ class InventarioController extends Controller
                     'cantidad_disponible' => $cantidad,
                 ]);
 
+                // Recargar con relaciones
+                $stock->load(['almacen', 'sector']);
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Stock actualizado correctamente',
@@ -3677,8 +3680,10 @@ class InventarioController extends Controller
                         'nombre' => $producto->nombre,
                         'sku' => $producto->sku,
                         'codigo_barras' => $producto->codigo_barras,
-                        'cantidad_actual' => $stock->cantidad,
-                        'cantidad_disponible' => $stock->cantidad_disponible,
+                        'cantidad_actual' => (string) $stock->cantidad,
+                        'cantidad_disponible' => (string) $stock->cantidad_disponible,
+                        'almacen' => $stock->almacen,
+                        'sector' => $stock->sector,
                     ],
                 ]);
             }
@@ -3693,6 +3698,9 @@ class InventarioController extends Controller
                 'fecha_vencimiento' => null,
             ]);
 
+            // Cargar relaciones
+            $nuevoStock->load(['almacen', 'sector']);
+
             \Log::info('✅ [InventarioController] Stock creado', [
                 'id' => $nuevoStock->id,
                 'cantidad' => $cantidad,
@@ -3700,7 +3708,7 @@ class InventarioController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Stock creado correctamente',
+                'message' => 'Stock actualizado correctamente',
                 'data' => [
                     'id' => $nuevoStock->id,
                     'stock_producto_id' => $nuevoStock->id,
@@ -3708,8 +3716,10 @@ class InventarioController extends Controller
                     'nombre' => $producto->nombre,
                     'sku' => $producto->sku,
                     'codigo_barras' => $producto->codigo_barras,
-                    'cantidad_actual' => $nuevoStock->cantidad,
-                    'cantidad_disponible' => $nuevoStock->cantidad_disponible,
+                    'cantidad_actual' => (string) $nuevoStock->cantidad,
+                    'cantidad_disponible' => (string) $nuevoStock->cantidad_disponible,
+                    'almacen' => $nuevoStock->almacen,
+                    'sector' => $nuevoStock->sector,
                 ],
             ]);
 

@@ -1,7 +1,308 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
+* @see \App\Http\Controllers\UnidadMedidaController::indexApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:84
+ * @route '/api/app/unidades-medida'
+ */
+export const indexApi = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: indexApi.url(options),
+    method: 'get',
+})
+
+indexApi.definition = {
+    methods: ["get","head"],
+    url: '/api/app/unidades-medida',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::indexApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:84
+ * @route '/api/app/unidades-medida'
+ */
+indexApi.url = (options?: RouteQueryOptions) => {
+    return indexApi.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::indexApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:84
+ * @route '/api/app/unidades-medida'
+ */
+indexApi.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: indexApi.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::indexApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:84
+ * @route '/api/app/unidades-medida'
+ */
+indexApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: indexApi.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\UnidadMedidaController::indexApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:84
+ * @route '/api/app/unidades-medida'
+ */
+    const indexApiForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: indexApi.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\UnidadMedidaController::indexApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:84
+ * @route '/api/app/unidades-medida'
+ */
+        indexApiForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApi.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\UnidadMedidaController::indexApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:84
+ * @route '/api/app/unidades-medida'
+ */
+        indexApiForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApi.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    indexApi.form = indexApiForm
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::storeApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:117
+ * @route '/api/app/unidades-medida'
+ */
+export const storeApi = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: storeApi.url(options),
+    method: 'post',
+})
+
+storeApi.definition = {
+    methods: ["post"],
+    url: '/api/app/unidades-medida',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::storeApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:117
+ * @route '/api/app/unidades-medida'
+ */
+storeApi.url = (options?: RouteQueryOptions) => {
+    return storeApi.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::storeApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:117
+ * @route '/api/app/unidades-medida'
+ */
+storeApi.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: storeApi.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\UnidadMedidaController::storeApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:117
+ * @route '/api/app/unidades-medida'
+ */
+    const storeApiForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: storeApi.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\UnidadMedidaController::storeApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:117
+ * @route '/api/app/unidades-medida'
+ */
+        storeApiForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: storeApi.url(options),
+            method: 'post',
+        })
+    
+    storeApi.form = storeApiForm
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::updateApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:148
+ * @route '/api/app/unidades-medida/{id}'
+ */
+export const updateApi = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateApi.url(args, options),
+    method: 'put',
+})
+
+updateApi.definition = {
+    methods: ["put"],
+    url: '/api/app/unidades-medida/{id}',
+} satisfies RouteDefinition<["put"]>
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::updateApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:148
+ * @route '/api/app/unidades-medida/{id}'
+ */
+updateApi.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return updateApi.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::updateApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:148
+ * @route '/api/app/unidades-medida/{id}'
+ */
+updateApi.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateApi.url(args, options),
+    method: 'put',
+})
+
+    /**
+* @see \App\Http\Controllers\UnidadMedidaController::updateApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:148
+ * @route '/api/app/unidades-medida/{id}'
+ */
+    const updateApiForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updateApi.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\UnidadMedidaController::updateApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:148
+ * @route '/api/app/unidades-medida/{id}'
+ */
+        updateApiForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updateApi.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    updateApi.form = updateApiForm
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::destroyApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:185
+ * @route '/api/app/unidades-medida/{id}'
+ */
+export const destroyApi = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroyApi.url(args, options),
+    method: 'delete',
+})
+
+destroyApi.definition = {
+    methods: ["delete"],
+    url: '/api/app/unidades-medida/{id}',
+} satisfies RouteDefinition<["delete"]>
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::destroyApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:185
+ * @route '/api/app/unidades-medida/{id}'
+ */
+destroyApi.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return destroyApi.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\UnidadMedidaController::destroyApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:185
+ * @route '/api/app/unidades-medida/{id}'
+ */
+destroyApi.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroyApi.url(args, options),
+    method: 'delete',
+})
+
+    /**
+* @see \App\Http\Controllers\UnidadMedidaController::destroyApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:185
+ * @route '/api/app/unidades-medida/{id}'
+ */
+    const destroyApiForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroyApi.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\UnidadMedidaController::destroyApi
+ * @see app/Http/Controllers/UnidadMedidaController.php:185
+ * @route '/api/app/unidades-medida/{id}'
+ */
+        destroyApiForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroyApi.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroyApi.form = destroyApiForm
+/**
 * @see \App\Http\Controllers\UnidadMedidaController::index
- * @see app/Http/Controllers/UnidadMedidaController.php:53
+ * @see app/Http/Controllers/UnidadMedidaController.php:55
  * @route '/unidades'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +317,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::index
- * @see app/Http/Controllers/UnidadMedidaController.php:53
+ * @see app/Http/Controllers/UnidadMedidaController.php:55
  * @route '/unidades'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +326,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::index
- * @see app/Http/Controllers/UnidadMedidaController.php:53
+ * @see app/Http/Controllers/UnidadMedidaController.php:55
  * @route '/unidades'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +335,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::index
- * @see app/Http/Controllers/UnidadMedidaController.php:53
+ * @see app/Http/Controllers/UnidadMedidaController.php:55
  * @route '/unidades'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +345,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\UnidadMedidaController::index
- * @see app/Http/Controllers/UnidadMedidaController.php:53
+ * @see app/Http/Controllers/UnidadMedidaController.php:55
  * @route '/unidades'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +355,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::index
- * @see app/Http/Controllers/UnidadMedidaController.php:53
+ * @see app/Http/Controllers/UnidadMedidaController.php:55
  * @route '/unidades'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +364,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::index
- * @see app/Http/Controllers/UnidadMedidaController.php:53
+ * @see app/Http/Controllers/UnidadMedidaController.php:55
  * @route '/unidades'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -595,6 +896,6 @@ destroy.delete = (args: { unidad: string | number } | [unidad: string | number ]
         })
     
     destroy.form = destroyForm
-const UnidadMedidaController = { index, create, store, show, edit, update, destroy }
+const UnidadMedidaController = { indexApi, storeApi, updateApi, destroyApi, index, create, store, show, edit, update, destroy }
 
 export default UnidadMedidaController

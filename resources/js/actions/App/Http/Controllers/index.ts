@@ -7,6 +7,8 @@ import PermissionController from './PermissionController'
 import NotificacionRecurrenteController from './NotificacionRecurrenteController'
 import TipoOperacionCajaController from './TipoOperacionCajaController'
 import ProductoController from './ProductoController'
+import UnidadMedidaController from './UnidadMedidaController'
+import MarcaController from './MarcaController'
 import ComboController from './ComboController'
 import ProductoComponenteController from './ProductoComponenteController'
 import VentaController from './VentaController'
@@ -58,7 +60,6 @@ import CategoriaController from './CategoriaController'
 import ConfiguracionSitioController from './ConfiguracionSitioController'
 import EstadosLogisticaController from './EstadosLogisticaController'
 import EstadosDocumentoController from './EstadosDocumentoController'
-import MarcaController from './MarcaController'
 import AlmacenController from './AlmacenController'
 import AlmacenPrestableController from './AlmacenPrestableController'
 import SectorController from './SectorController'
@@ -68,7 +69,6 @@ import CodigoBarraController from './CodigoBarraController'
 import ReporteCodigosBarraController from './ReporteCodigosBarraController'
 import ReporteController from './ReporteController'
 import ReporteDiarioVentasController from './ReporteDiarioVentasController'
-import UnidadMedidaController from './UnidadMedidaController'
 import TipoPrecioController from './TipoPrecioController'
 import PrecioRangoController from './PrecioRangoController'
 import MonedaController from './MonedaController'
@@ -128,6 +128,8 @@ PermissionController,
 NotificacionRecurrenteController,
 TipoOperacionCajaController,
 ProductoController,
+UnidadMedidaController,
+MarcaController,
 ComboController,
 ProductoComponenteController,
 VentaController,
@@ -179,7 +181,6 @@ CategoriaController,
 ConfiguracionSitioController,
 EstadosLogisticaController,
 EstadosDocumentoController,
-MarcaController,
 AlmacenController,
 AlmacenPrestableController,
 SectorController,
@@ -189,7 +190,6 @@ CodigoBarraController,
 ReporteCodigosBarraController,
 ReporteController,
 ReporteDiarioVentasController,
-UnidadMedidaController,
 TipoPrecioController,
 PrecioRangoController,
 MonedaController,

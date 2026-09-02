@@ -78,84 +78,6 @@ categorias.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     categorias.form = categoriasForm
 /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::marcas
- * @see app/Http/Controllers/Api/CatalogosApiController.php:25
- * @route '/api/app/marcas'
- */
-export const marcas = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: marcas.url(options),
-    method: 'get',
-})
-
-marcas.definition = {
-    methods: ["get","head"],
-    url: '/api/app/marcas',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\Api\CatalogosApiController::marcas
- * @see app/Http/Controllers/Api/CatalogosApiController.php:25
- * @route '/api/app/marcas'
- */
-marcas.url = (options?: RouteQueryOptions) => {
-    return marcas.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\Api\CatalogosApiController::marcas
- * @see app/Http/Controllers/Api/CatalogosApiController.php:25
- * @route '/api/app/marcas'
- */
-marcas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: marcas.url(options),
-    method: 'get',
-})
-/**
-* @see \App\Http\Controllers\Api\CatalogosApiController::marcas
- * @see app/Http/Controllers/Api/CatalogosApiController.php:25
- * @route '/api/app/marcas'
- */
-marcas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: marcas.url(options),
-    method: 'head',
-})
-
-    /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::marcas
- * @see app/Http/Controllers/Api/CatalogosApiController.php:25
- * @route '/api/app/marcas'
- */
-    const marcasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: marcas.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::marcas
- * @see app/Http/Controllers/Api/CatalogosApiController.php:25
- * @route '/api/app/marcas'
- */
-        marcasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: marcas.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::marcas
- * @see app/Http/Controllers/Api/CatalogosApiController.php:25
- * @route '/api/app/marcas'
- */
-        marcasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: marcas.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    marcas.form = marcasForm
-/**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
  * @see app/Http/Controllers/Api/CatalogosApiController.php:35
  * @route '/api/app/proveedores'
@@ -233,84 +155,6 @@ proveedores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     proveedores.form = proveedoresForm
-/**
-* @see \App\Http\Controllers\Api\CatalogosApiController::unidadesMedida
- * @see app/Http/Controllers/Api/CatalogosApiController.php:45
- * @route '/api/app/unidades-medida'
- */
-export const unidadesMedida = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: unidadesMedida.url(options),
-    method: 'get',
-})
-
-unidadesMedida.definition = {
-    methods: ["get","head"],
-    url: '/api/app/unidades-medida',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\Api\CatalogosApiController::unidadesMedida
- * @see app/Http/Controllers/Api/CatalogosApiController.php:45
- * @route '/api/app/unidades-medida'
- */
-unidadesMedida.url = (options?: RouteQueryOptions) => {
-    return unidadesMedida.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\Api\CatalogosApiController::unidadesMedida
- * @see app/Http/Controllers/Api/CatalogosApiController.php:45
- * @route '/api/app/unidades-medida'
- */
-unidadesMedida.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: unidadesMedida.url(options),
-    method: 'get',
-})
-/**
-* @see \App\Http\Controllers\Api\CatalogosApiController::unidadesMedida
- * @see app/Http/Controllers/Api/CatalogosApiController.php:45
- * @route '/api/app/unidades-medida'
- */
-unidadesMedida.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: unidadesMedida.url(options),
-    method: 'head',
-})
-
-    /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::unidadesMedida
- * @see app/Http/Controllers/Api/CatalogosApiController.php:45
- * @route '/api/app/unidades-medida'
- */
-    const unidadesMedidaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: unidadesMedida.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::unidadesMedida
- * @see app/Http/Controllers/Api/CatalogosApiController.php:45
- * @route '/api/app/unidades-medida'
- */
-        unidadesMedidaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: unidadesMedida.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::unidadesMedida
- * @see app/Http/Controllers/Api/CatalogosApiController.php:45
- * @route '/api/app/unidades-medida'
- */
-        unidadesMedidaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: unidadesMedida.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    unidadesMedida.form = unidadesMedidaForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
  * @see app/Http/Controllers/Api/CatalogosApiController.php:55
@@ -564,6 +408,6 @@ sectoresPorAlmacen.head = (args: { almacen_id: string | number } | [almacen_id: 
         })
     
     sectoresPorAlmacen.form = sectoresPorAlmacenForm
-const CatalogosApiController = { categorias, marcas, proveedores, unidadesMedida, almacenes, sectores, sectoresPorAlmacen }
+const CatalogosApiController = { categorias, proveedores, almacenes, sectores, sectoresPorAlmacen }
 
 export default CatalogosApiController

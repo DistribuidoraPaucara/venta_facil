@@ -1,5 +1,306 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
+* @see \App\Http\Controllers\MarcaController::indexApi
+ * @see app/Http/Controllers/MarcaController.php:57
+ * @route '/api/app/marcas'
+ */
+export const indexApi = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: indexApi.url(options),
+    method: 'get',
+})
+
+indexApi.definition = {
+    methods: ["get","head"],
+    url: '/api/app/marcas',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\MarcaController::indexApi
+ * @see app/Http/Controllers/MarcaController.php:57
+ * @route '/api/app/marcas'
+ */
+indexApi.url = (options?: RouteQueryOptions) => {
+    return indexApi.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\MarcaController::indexApi
+ * @see app/Http/Controllers/MarcaController.php:57
+ * @route '/api/app/marcas'
+ */
+indexApi.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: indexApi.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\MarcaController::indexApi
+ * @see app/Http/Controllers/MarcaController.php:57
+ * @route '/api/app/marcas'
+ */
+indexApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: indexApi.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\MarcaController::indexApi
+ * @see app/Http/Controllers/MarcaController.php:57
+ * @route '/api/app/marcas'
+ */
+    const indexApiForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: indexApi.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\MarcaController::indexApi
+ * @see app/Http/Controllers/MarcaController.php:57
+ * @route '/api/app/marcas'
+ */
+        indexApiForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApi.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\MarcaController::indexApi
+ * @see app/Http/Controllers/MarcaController.php:57
+ * @route '/api/app/marcas'
+ */
+        indexApiForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: indexApi.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    indexApi.form = indexApiForm
+/**
+* @see \App\Http\Controllers\MarcaController::storeApi
+ * @see app/Http/Controllers/MarcaController.php:87
+ * @route '/api/app/marcas'
+ */
+export const storeApi = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: storeApi.url(options),
+    method: 'post',
+})
+
+storeApi.definition = {
+    methods: ["post"],
+    url: '/api/app/marcas',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\MarcaController::storeApi
+ * @see app/Http/Controllers/MarcaController.php:87
+ * @route '/api/app/marcas'
+ */
+storeApi.url = (options?: RouteQueryOptions) => {
+    return storeApi.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\MarcaController::storeApi
+ * @see app/Http/Controllers/MarcaController.php:87
+ * @route '/api/app/marcas'
+ */
+storeApi.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: storeApi.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\MarcaController::storeApi
+ * @see app/Http/Controllers/MarcaController.php:87
+ * @route '/api/app/marcas'
+ */
+    const storeApiForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: storeApi.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\MarcaController::storeApi
+ * @see app/Http/Controllers/MarcaController.php:87
+ * @route '/api/app/marcas'
+ */
+        storeApiForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: storeApi.url(options),
+            method: 'post',
+        })
+    
+    storeApi.form = storeApiForm
+/**
+* @see \App\Http\Controllers\MarcaController::updateApi
+ * @see app/Http/Controllers/MarcaController.php:118
+ * @route '/api/app/marcas/{id}'
+ */
+export const updateApi = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateApi.url(args, options),
+    method: 'put',
+})
+
+updateApi.definition = {
+    methods: ["put"],
+    url: '/api/app/marcas/{id}',
+} satisfies RouteDefinition<["put"]>
+
+/**
+* @see \App\Http\Controllers\MarcaController::updateApi
+ * @see app/Http/Controllers/MarcaController.php:118
+ * @route '/api/app/marcas/{id}'
+ */
+updateApi.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return updateApi.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\MarcaController::updateApi
+ * @see app/Http/Controllers/MarcaController.php:118
+ * @route '/api/app/marcas/{id}'
+ */
+updateApi.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: updateApi.url(args, options),
+    method: 'put',
+})
+
+    /**
+* @see \App\Http\Controllers\MarcaController::updateApi
+ * @see app/Http/Controllers/MarcaController.php:118
+ * @route '/api/app/marcas/{id}'
+ */
+    const updateApiForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updateApi.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\MarcaController::updateApi
+ * @see app/Http/Controllers/MarcaController.php:118
+ * @route '/api/app/marcas/{id}'
+ */
+        updateApiForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updateApi.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    updateApi.form = updateApiForm
+/**
+* @see \App\Http\Controllers\MarcaController::destroyApi
+ * @see app/Http/Controllers/MarcaController.php:155
+ * @route '/api/app/marcas/{id}'
+ */
+export const destroyApi = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroyApi.url(args, options),
+    method: 'delete',
+})
+
+destroyApi.definition = {
+    methods: ["delete"],
+    url: '/api/app/marcas/{id}',
+} satisfies RouteDefinition<["delete"]>
+
+/**
+* @see \App\Http\Controllers\MarcaController::destroyApi
+ * @see app/Http/Controllers/MarcaController.php:155
+ * @route '/api/app/marcas/{id}'
+ */
+destroyApi.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return destroyApi.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\MarcaController::destroyApi
+ * @see app/Http/Controllers/MarcaController.php:155
+ * @route '/api/app/marcas/{id}'
+ */
+destroyApi.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroyApi.url(args, options),
+    method: 'delete',
+})
+
+    /**
+* @see \App\Http\Controllers\MarcaController::destroyApi
+ * @see app/Http/Controllers/MarcaController.php:155
+ * @route '/api/app/marcas/{id}'
+ */
+    const destroyApiForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroyApi.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\MarcaController::destroyApi
+ * @see app/Http/Controllers/MarcaController.php:155
+ * @route '/api/app/marcas/{id}'
+ */
+        destroyApiForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroyApi.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroyApi.form = destroyApiForm
+/**
 * @see \App\Http\Controllers\MarcaController::index
  * @see app/Http/Controllers/MarcaController.php:130
  * @route '/marcas'
@@ -595,6 +896,6 @@ destroy.delete = (args: { marca: string | number } | [marca: string | number ] |
         })
     
     destroy.form = destroyForm
-const MarcaController = { index, create, store, show, edit, update, destroy }
+const MarcaController = { indexApi, storeApi, updateApi, destroyApi, index, create, store, show, edit, update, destroy }
 
 export default MarcaController
