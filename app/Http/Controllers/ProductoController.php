@@ -2183,6 +2183,18 @@ class ProductoController extends Controller
             // Detalle de lotes del almacén seleccionado (para gestionar inventario)
             'stock_por_lotes'     => $stockPorLotes,
 
+            // ✅ Relación stock completa (para el modelo Producto de Flutter)
+            'stock' => $producto->stock->map(fn($s) => [
+                'id'                  => $s->id,
+                'producto_id'         => $s->producto_id,
+                'almacen_id'          => $s->almacen_id,
+                'sector_id'           => $s->sector_id,
+                'cantidad'            => (int) $s->cantidad,
+                'cantidad_disponible' => (int) $s->cantidad_disponible,
+                'almacen'             => $s->almacen ? ['id' => $s->almacen->id, 'nombre' => $s->almacen->nombre] : null,
+                'sector'              => $s->sector ? ['id' => $s->sector->id, 'nombre' => $s->sector->nombre] : null,
+            ])->toArray(),
+
             // ✅ NUEVO: Campos de COMBO
             'es_combo'            => (bool) $producto->es_combo,
             'combo_items'         => $producto->comboItems ? $producto->comboItems->map(fn($item) => $item->toArray())->toArray() : [],
