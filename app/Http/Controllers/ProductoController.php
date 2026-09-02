@@ -1806,8 +1806,11 @@ class ProductoController extends Controller
                 'categoria:id,nombre',
                 'marca:id,nombre',
                 'proveedor:id,nombre,razon_social',
-                'unidadMedida:id,nombre,codigo',
+                'unidad:id,nombre,codigo',
                 'imagenes:id,producto_id,url,es_principal,orden',
+                'stock' => function ($q) {
+                    $q->with(['almacen', 'sector']);
+                }
             ])
             ->first();
 
@@ -2351,11 +2354,22 @@ class ProductoController extends Controller
                 }
             }
 
+            // ✅ Cargar relaciones necesarias incluyendo stock
+            $producto = $producto->fresh([
+                'categoria',
+                'marca',
+                'proveedor',
+                'unidad',
+                'stock' => function ($q) {
+                    $q->with(['almacen', 'sector']);
+                }
+            ]);
+
             return response()->json([
                 'success' => true,
                 'status'  => 200,
                 'message' => 'Producto actualizado exitosamente',
-                'data'    => $producto->fresh(['categoria', 'marca', 'proveedor', 'unidad']),
+                'data'    => $producto,
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
