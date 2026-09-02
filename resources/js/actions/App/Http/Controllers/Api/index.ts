@@ -10,6 +10,8 @@ import ChoferPreferenciaController from './ChoferPreferenciaController'
 import TipoMermaController from './TipoMermaController'
 import EstadoMermaController from './EstadoMermaController'
 import SectorController from './SectorController'
+import CatalogosApiController from './CatalogosApiController'
+import CategoriaApiController from './CategoriaApiController'
 import StockDisponiblePdfController from './StockDisponiblePdfController'
 import ApiProformaController from './ApiProformaController'
 import ReservaProformaController from './ReservaProformaController'
@@ -54,6 +56,8 @@ ChoferPreferenciaController,
 TipoMermaController,
 EstadoMermaController,
 SectorController,
+CatalogosApiController,
+CategoriaApiController,
 StockDisponiblePdfController,
 ApiProformaController,
 ReservaProformaController,

@@ -9,17 +9,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('productos', function (Blueprint $table) {
-            $table->enum('tipo_producto', ['comprado', 'elaborado_cafeteria', 'materia_prima'])
-                ->default('comprado')
-                ->after('nombre');
+            if (!Schema::hasColumn('productos', 'tipo_producto')) {
+                $table->enum('tipo_producto', ['comprado', 'elaborado_cafeteria', 'materia_prima'])
+                    ->default('comprado')
+                    ->after('nombre');
+            }
 
-            $table->boolean('requiere_receta')
-                ->default(false)
-                ->after('tipo_producto');
+            if (!Schema::hasColumn('productos', 'requiere_receta')) {
+                $table->boolean('requiere_receta')
+                    ->default(false)
+                    ->after('tipo_producto');
+            }
 
-            $table->string('unidad_medida')
-                ->default('unidad')
-                ->after('requiere_receta');
+            if (!Schema::hasColumn('productos', 'unidad_medida')) {
+                $table->string('unidad_medida')
+                    ->default('unidad')
+                    ->after('requiere_receta');
+            }
         });
     }
 

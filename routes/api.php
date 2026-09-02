@@ -156,7 +156,7 @@ Route::post('/roles/validate-combination', [RoleController::class, 'validateRole
 // ==========================================
 // 📋 RUTAS API PARA MÓDULOS DEL SIDEBAR
 // ==========================================
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth:sanctum,web'])->group(function () {
     // Obtener módulos del sidebar (filtrados por permisos del usuario)
     Route::get('/modulos-sidebar', [App\Http\Controllers\ModuloSidebarController::class, 'apiIndex'])->name('api.modulos-sidebar');
 
@@ -183,7 +183,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ✅ NUEVA: Ruta API para obtener la redirección del dashboard según el rol
-Route::middleware(['auth'])->get('/dashboard-redirect', [App\Http\Controllers\Auth\DashboardRedirectController::class, 'getRedirectApi'])->name('api.dashboard-redirect');
+Route::middleware(['auth:sanctum,web'])->get('/dashboard-redirect', [App\Http\Controllers\Auth\DashboardRedirectController::class, 'getRedirectApi'])->name('api.dashboard-redirect');
 
 // ==========================================
 // 📱 RUTAS PARA APP EXTERNA (Flutter)
@@ -356,11 +356,39 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     Route::get('/almacenes/{almacenId}/sectores', [SectorController::class, 'obtenerSectoresPorAlmacen'])->name('api.sectores.obtener-por-almacen');
 
     // Productos para la app
+    Route::post('/app/productos', [ProductoController::class, 'storeApi']);       // Crear
     Route::get('/app/productos', [ProductoController::class, 'indexApi']);
-    Route::get('/app/productos/filtros', [ProductoController::class, 'filtros']);  // ✅ NUEVO: Obtener categorías y marcas
+    Route::get('/app/productos-all', [ProductoController::class, 'indexApiAll']);
+    Route::get('/app/productos/buscar-codigo-barras', [ProductoController::class, 'buscarPorCodigoBarras']);
+    Route::get('/app/productos/filtros', [ProductoController::class, 'filtros']);
     Route::get('/app/productos/buscar', [ProductoController::class, 'buscarApi']);
-    Route::get('/app/productos/listar', [ProductoController::class, 'listarApi']); // ✅ NIVEL 2: Listar todos para Fuse.js - DEBE IR ANTES DE {producto}
+    Route::get('/app/productos/listar', [ProductoController::class, 'listarApi']);
     Route::get('/app/productos/{producto}', [ProductoController::class, 'showApi']);
+    Route::put('/app/productos/{producto}', [ProductoController::class, 'updateApi']);  // Actualizar
+    Route::delete('/app/productos/{producto}', [ProductoController::class, 'destroyApi']); // Eliminar
+    Route::post('/app/productos/{producto}/imagenes', [ProductoController::class, 'uploadImagenApi']); // ✅ Subir imagen
+
+    // ==========================================
+    // 📋 CATÁLOGOS PARA DROPDOWNS (Categorías, Unidades, Marcas, Proveedores, Almacenes, Sectores)
+    // ==========================================
+    Route::get('/app/categorias', [\App\Http\Controllers\Api\CatalogosApiController::class, 'categorias']);
+    Route::get('/app/marcas', [\App\Http\Controllers\Api\CatalogosApiController::class, 'marcas']);
+    Route::get('/app/proveedores', [\App\Http\Controllers\Api\CatalogosApiController::class, 'proveedores']);
+    Route::get('/app/unidades-medida', [\App\Http\Controllers\Api\CatalogosApiController::class, 'unidadesMedida']);
+    Route::get('/app/almacenes', [\App\Http\Controllers\Api\CatalogosApiController::class, 'almacenes']);
+    Route::get('/app/sectores', [\App\Http\Controllers\Api\CatalogosApiController::class, 'sectores']);
+    Route::get('/app/almacenes/{almacen_id}/sectores', [\App\Http\Controllers\Api\CatalogosApiController::class, 'sectoresPorAlmacen']);
+
+    // ==========================================
+    // 📝 CRUD CATEGORÍAS (para la app móvil)
+    // ==========================================
+    Route::prefix('app/categorias-crud')->name('api.categorias.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\CategoriaApiController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Api\CategoriaApiController::class, 'store'])->name('store');
+        Route::get('{categoria}', [\App\Http\Controllers\Api\CategoriaApiController::class, 'show'])->name('show');
+        Route::put('{categoria}', [\App\Http\Controllers\Api\CategoriaApiController::class, 'update'])->name('update');
+        Route::delete('{categoria}', [\App\Http\Controllers\Api\CategoriaApiController::class, 'destroy'])->name('destroy');
+    });
 
     // ==========================================
     // 📦 COMBOS - CAPACIDAD DE MANUFACTURA

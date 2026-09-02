@@ -1783,6 +1783,154 @@ class ProductoController extends Controller
     }
 
     /**
+     * API: Buscar producto por código de barra
+     * Retorna el producto si lo encuentra por código de barra
+     */
+    public function buscarPorCodigoBarras(Request $request): JsonResponse
+    {
+        try {
+            $codigo = $request->string('codigo');
+
+            if (!$codigo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Código de barra requerido',
+                ], 400);
+            }
+
+            // ✅ Buscar por código de barra
+            $producto = Producto::whereHas('codigosBarra', function ($query) use ($codigo) {
+                $query->where('codigo', $codigo)->where('activo', true);
+            })
+            ->with([
+                'categoria:id,nombre',
+                'marca:id,nombre',
+                'proveedor:id,nombre,razon_social',
+                'unidadMedida:id,nombre,codigo',
+                'imagenes:id,producto_id,url,es_principal,orden',
+            ])
+            ->first();
+
+            if (!$producto) {
+                print('❌ Producto no encontrado con código: ' . $codigo);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Producto no encontrado',
+                ], 404);
+            }
+
+            print('✅ Producto encontrado: ' . $producto->nombre);
+
+            return response()->json([
+                'success' => true,
+                'status' => 200,
+                'message' => 'Producto encontrado',
+                'data' => $producto,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ [buscarPorCodigoBarras] Error', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar producto',
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Obtener TODOS los productos sin filtros (para gestor de inventario)
+     *
+     * ✅ Sin filtro de empresa
+     * ✅ Sin filtro de almacén
+     * ✅ Devuelve TODOS los productos
+     *
+     * Úsalo cuando necesites ver todos los productos del sistema
+     */
+    public function indexApiAll(Request $request): JsonResponse
+    {
+        try {
+            $perPage = $request->integer('per_page', 20);
+            $q = $request->string('q');
+            $categoriaId = $request->integer('categoria_id');
+            $marcaId = $request->integer('marca_id');
+            $proveedorId = $request->integer('proveedor_id');
+            $activo = $request->boolean('activo', true);
+
+            $searchTerm = (string) $q;
+
+            $query = Producto::with([
+                'categoria:id,nombre',
+                'marca:id,nombre',
+                'proveedor:id,nombre,razon_social',
+                'imagenes:id,producto_id,url,es_principal,orden',
+                'precios' => function ($precioQuery) {
+                    $precioQuery->where('activo', true)
+                        ->select('id', 'producto_id', 'tipo_precio_id', 'nombre', 'precio', 'es_precio_base', 'margen_ganancia', 'porcentaje_ganancia')
+                        ->with('tipoPrecio:id,nombre,codigo');
+                },
+                'codigosBarra:id,producto_id,codigo,tipo,es_principal,activo',
+                'stock' => function ($stockQuery) {
+                    $stockQuery->select('id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad', 'cantidad_disponible')
+                        ->with([
+                            'almacen:id,nombre',
+                            'sector:id,nombre,almacen_id'
+                        ]);
+                },
+            ]);
+
+            // ✅ BÚSQUEDA: Aplicar ILIKE
+            if ($searchTerm) {
+                $query = $query->where(function ($subQuery) use ($searchTerm) {
+                    $subQuery->whereRaw('nombre ILIKE ?', ["%{$searchTerm}%"])
+                        ->orWhereRaw('sku ILIKE ?', ["%{$searchTerm}%"])
+                        ->orWhereRaw('descripcion ILIKE ?', ["%{$searchTerm}%"]);
+                });
+            }
+
+            // ✅ FILTROS OPCIONALES
+            if ($categoriaId) {
+                $query->where('categoria_id', $categoriaId);
+            }
+
+            if ($marcaId) {
+                $query->where('marca_id', $marcaId);
+            }
+
+            if ($proveedorId) {
+                $query->where('proveedor_id', $proveedorId);
+            }
+
+            if ($activo) {
+                $query->where('activo', true);
+            }
+
+            // ✅ ORDENAR POR ID DESC (productos más nuevos primero)
+            $query->orderBy('id', 'desc');
+
+            // ✅ PAGINAR
+            $productos = $query->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'status' => 200,
+                'message' => 'Operación exitosa',
+                'data' => $productos,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ [indexApiAll] Error', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener productos',
+            ], 500);
+        }
+    }
+
+    /**
      * API: Obtener filtros disponibles (categorías y marcas)
      *
      * Retorna todas las categorías y marcas con productos activos
@@ -2047,28 +2195,53 @@ class ProductoController extends Controller
             'nombre'           => ['required', 'string', 'max:255'],
             'codigo'           => ['nullable', 'string', 'max:100', 'unique:productos,codigo'],
             'descripcion'      => ['nullable', 'string'],
-            'categoria_id'     => ['required', 'exists:categorias,id'],
+            'categoria_id'     => ['nullable', 'exists:categorias,id'],
             'marca_id'         => ['nullable', 'exists:marcas,id'],
             'proveedor_id'     => ['nullable', 'exists:proveedores,id'],
-            'unidad_medida_id' => ['required', 'exists:unidad_medidas,id'],
-            'precio_compra'    => ['required', 'numeric', 'min:0'],
-            'precio_venta'     => ['required', 'numeric', 'min:0'],
-            'stock_minimo'     => ['required', 'integer', 'min:0'],
-            'stock_maximo'     => ['required', 'integer', 'min:0'],
+            'unidad_medida_id' => ['nullable', 'exists:unidades_medida,id'],
+            'precio_compra'    => ['nullable', 'numeric', 'min:0'],
+            'precio_venta'     => ['nullable', 'numeric', 'min:0'],
+            'stock_minimo'     => ['nullable', 'integer', 'min:0'],
+            'stock_maximo'     => ['nullable', 'integer', 'min:0'],
             'activo'           => ['boolean'],
+            'codigos_barra'    => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
-            $producto = DB::transaction(function () use ($data) {
+            $producto = DB::transaction(function () use ($data, $request) {
+                // ✅ Asignar empresa_id del usuario autenticado
+                $data['empresa_id'] = auth()->user()->empresa_id ?? auth()->user()->id;
+
+                // ✅ Si no hay unidad_medida_id, asignar la unidad con código "UN"
+                if (empty($data['unidad_medida_id'])) {
+                    $unidadUN = UnidadMedida::where('codigo', 'UN')->where('activo', true)->first();
+                    if ($unidadUN) {
+                        $data['unidad_medida_id'] = $unidadUN->id;
+                    }
+                }
+
                 $producto = Producto::create($data);
 
-                // Crear precio base
-                PrecioProducto::create([
-                    'producto_id'    => $producto->id,
-                    'tipo_precio_id' => TipoPrecio::porCodigo('VENTA')?->id ?? 2,
-                    'valor'          => $data['precio_venta'],
-                    'activo'         => true,
-                ]);
+                // Crear precio base (siempre, incluso si es 0)
+                if (isset($data['precio_venta']) && $data['precio_venta'] !== null) {
+                    PrecioProducto::create([
+                        'producto_id'    => $producto->id,
+                        'tipo_precio_id' => TipoPrecio::porCodigo('VENTA')?->id ?? 2,
+                        'precio'         => $data['precio_venta'] ?? 0,
+                        'activo'         => true,
+                    ]);
+                }
+
+                // ✅ Crear código de barras si se proporciona
+                if (!empty($data['codigos_barra'])) {
+                    CodigoBarra::create([
+                        'producto_id'  => $producto->id,
+                        'codigo'       => $data['codigos_barra'],
+                        'tipo'         => 'BARCODE',
+                        'es_principal' => true,
+                        'activo'       => true,
+                    ]);
+                }
 
                 return $producto;
             });
@@ -2125,19 +2298,58 @@ class ProductoController extends Controller
             'sku'              => ['nullable', 'string', 'max:20', 'unique:productos,sku,' . $producto->id],
             'codigo'           => ['nullable', 'string', 'max:100', 'unique:productos,codigo,' . $producto->id],
             'descripcion'      => ['nullable', 'string'],
-            'categoria_id'     => ['sometimes', 'required', 'exists:categorias,id'],
+            'categoria_id'     => ['nullable', 'exists:categorias,id'],
             'marca_id'         => ['nullable', 'exists:marcas,id'],
             'proveedor_id'     => ['nullable', 'exists:proveedores,id'],
-            'unidad_medida_id' => ['sometimes', 'required', 'exists:unidad_medidas,id'],
-            'precio_compra'    => ['sometimes', 'required', 'numeric', 'min:0'],
-            'precio_venta'     => ['sometimes', 'required', 'numeric', 'min:0'],
-            'stock_minimo'     => ['sometimes', 'required', 'integer', 'min:0'],
-            'stock_maximo'     => ['sometimes', 'required', 'integer', 'min:0'],
+            'unidad_medida_id' => ['nullable', 'exists:unidades_medida,id'],
+            'precio_compra'    => ['nullable', 'numeric', 'min:0'],
+            'precio_venta'     => ['nullable', 'numeric', 'min:0'],
+            'stock_minimo'     => ['nullable', 'integer', 'min:0'],
+            'stock_maximo'     => ['nullable', 'integer', 'min:0'],
             'activo'           => ['boolean'],
+            'codigos_barra'    => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
             $producto->update($data);
+
+            // ✅ Actualizar precio_venta en precios_producto si se proporciona
+            if (isset($data['precio_venta'])) {
+                $precioVenta = $data['precio_venta'] ?? 0;
+                $tipoPrecioVenta = TipoPrecio::porCodigo('VENTA');
+
+                if ($tipoPrecioVenta) {
+                    PrecioProducto::where('producto_id', $producto->id)
+                        ->where('tipo_precio_id', $tipoPrecioVenta->id)
+                        ->update(['precio' => $precioVenta]);
+                }
+            }
+
+            // ✅ Actualizar código de barras si se proporciona
+            if (!empty($data['codigos_barra'])) {
+                // Buscar si ya existe un código de barras principal
+                $codigoBarra = CodigoBarra::where('producto_id', $producto->id)
+                    ->where('tipo', 'BARCODE')
+                    ->where('es_principal', true)
+                    ->first();
+
+                if ($codigoBarra) {
+                    // Actualizar existente
+                    $codigoBarra->update([
+                        'codigo' => $data['codigos_barra'],
+                        'activo' => true,
+                    ]);
+                } else {
+                    // Crear nuevo si no existe
+                    CodigoBarra::create([
+                        'producto_id'  => $producto->id,
+                        'codigo'       => $data['codigos_barra'],
+                        'tipo'         => 'BARCODE',
+                        'es_principal' => true,
+                        'activo'       => true,
+                    ]);
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -2422,6 +2634,7 @@ class ProductoController extends Controller
                         });
                 }
             })
+            ->orderBy('id', 'desc')
             ->limit($limite)
             ->get();
 
@@ -2438,6 +2651,11 @@ class ProductoController extends Controller
             ->load([
                 'codigosBarra' => function ($q) {
                     $q->where('activo', true)->select('id', 'producto_id', 'codigo', 'tipo', 'es_principal');
+                },
+                'imagenes' => function ($q) {
+                    $q->select('id', 'producto_id', 'url', 'es_principal', 'orden')
+                        ->orderBy('es_principal', 'desc')
+                        ->orderBy('orden', 'asc');
                 },
                 'categoria:id,nombre',
                 'marca:id,nombre',
@@ -2683,6 +2901,20 @@ class ProductoController extends Controller
                     'codigo_barras'                  => $producto->codigo_barras,
                     'codigos_barras'                 => $codigosTexto,
                     'codigos_barra'                  => $segundoCodigoBarra,
+                    'codigosBarra'                   => $producto->codigosBarra->map(fn($cb) => [
+                        'id' => $cb->id,
+                        'codigo' => $cb->codigo,
+                        'tipo' => $cb->tipo,
+                        'es_principal' => $cb->es_principal,
+                        'activo' => $cb->activo,
+                    ])->all(),
+                    'imagenes'                       => $producto->imagenes->map(fn($img) => [
+                        'id' => $img->id,
+                        'producto_id' => $img->producto_id,
+                        'url' => $img->url,
+                        'es_principal' => $img->es_principal,
+                        'orden' => $img->orden,
+                    ])->all(),
                     'precio_base'                    => (float) $precioBase,
                     'precio_venta'                   => (float) $precioBase,
                     'precio_costo'                   => (float) $precioCosto,
@@ -2709,7 +2941,16 @@ class ProductoController extends Controller
                     'cantidad_disponible'            => (int) $cantidadDisponible, // Stock NO reservado
                     'cantidad_reservada'             => (int) $cantidadReservada,  // Stock reservado
                     'stock_disponible'               => (int) $cantidadDisponible, // Alias para compatibilidad
-                    'stock'                          => (int) $cantidadDisponible, // Alias para compatibilidad
+                    'stock'                          => $stocksAlmacen->map(fn($s) => [
+                        'id' => $s->id,
+                        'producto_id' => $s->producto_id,
+                        'almacen_id' => $s->almacen_id,
+                        'sector_id' => $s->sector_id,
+                        'cantidad' => $s->cantidad,
+                        'cantidad_disponible' => $s->cantidad_disponible,
+                        'almacen' => $s->almacen ? ['id' => $s->almacen->id, 'nombre' => $s->almacen->nombre] : null,
+                        'sector' => $s->sector ? ['id' => $s->sector->id, 'nombre' => $s->sector->nombre, 'almacen_id' => $s->sector->almacen_id] : null,
+                    ])->all(),
                     'stock_reservado'                => (int) $cantidadReservada,  // Alias para compatibilidad
                     'stock_total'                    => (int) $cantidadTotal,      // Alias para compatibilidad
                     'capacidad'                      => $capacidad,
@@ -4519,6 +4760,49 @@ class ProductoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener conversiones',
+            ], 500);
+        }
+    }
+
+    // ✅ NUEVO: Endpoint para subir imágenes de productos
+    public function uploadImagenApi(Request $request, Producto $producto): JsonResponse
+    {
+        $request->validate([
+            'imagen' => ['required', 'image', 'max:5120'], // 5MB max
+            'es_principal' => ['boolean'],
+            'orden' => ['nullable', 'integer'],
+        ]);
+
+        try {
+            // Guardar imagen en storage
+            $path = $request->file('imagen')->store('productos', 'public');
+            $url = asset('storage/' . $path);
+
+            // Crear registro en imagenes_producto
+            $imagen = ImagenProducto::create([
+                'producto_id' => $producto->id,
+                'url' => $url,
+                'es_principal' => $request->boolean('es_principal', false),
+                'orden' => $request->integer('orden', 0),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'status' => 201,
+                'message' => 'Imagen subida exitosamente',
+                'data' => $imagen,
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('❌ [uploadImagenApi] Error al subir imagen', [
+                'producto_id' => $producto->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'status' => 500,
+                'message' => 'Error al subir imagen',
             ], 500);
         }
     }

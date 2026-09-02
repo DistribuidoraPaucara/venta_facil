@@ -3628,6 +3628,8 @@ class InventarioController extends Controller
         try {
             $productoId = (int) $request->input('producto_id');
             $almacenId = (int) $request->input('almacen_id');
+            $sectorId = (int) $request->input('sector_id', null);
+            $cantidad = (int) $request->input('cantidad', 0);
 
             if (!$productoId || !$almacenId) {
                 return response()->json([
@@ -3636,39 +3638,64 @@ class InventarioController extends Controller
                 ], 400);
             }
 
+            \Log::info('🔄 [InventarioController] Creando stock', [
+                'producto_id' => $productoId,
+                'almacen_id' => $almacenId,
+                'sector_id' => $sectorId,
+                'cantidad' => $cantidad,
+            ]);
+
             // Validar que existan producto y almacén
             $producto = Producto::findOrFail($productoId);
             $almacen = Almacen::findOrFail($almacenId);
 
             // Verificar si ya existe stock para este producto en este almacén
-            $stockExistente = StockProducto::where('producto_id', $productoId)
+            $stock = StockProducto::where('producto_id', $productoId)
                 ->where('almacen_id', $almacenId)
                 ->first();
 
-            if ($stockExistente) {
+            if ($stock) {
+                // ✅ Actualizar stock existente
+                \Log::info('🔄 [InventarioController] Actualizando stock existente', [
+                    'id' => $stock->id,
+                    'cantidad_anterior' => $stock->cantidad,
+                    'cantidad_nueva' => $cantidad,
+                ]);
+
+                $stock->update([
+                    'cantidad' => $cantidad,
+                    'cantidad_disponible' => $cantidad,
+                ]);
+
                 return response()->json([
                     'success' => true,
-                    'message' => 'Stock ya existe',
+                    'message' => 'Stock actualizado correctamente',
                     'data' => [
-                        'id' => $stockExistente->id,
-                        'stock_producto_id' => $stockExistente->id,
-                        'producto_id' => $stockExistente->producto_id,
+                        'id' => $stock->id,
+                        'stock_producto_id' => $stock->id,
+                        'producto_id' => $stock->producto_id,
                         'nombre' => $producto->nombre,
                         'sku' => $producto->sku,
-                        'cantidad_actual' => $stockExistente->cantidad,
-                        'cantidad_disponible' => $stockExistente->cantidad_disponible,
+                        'codigo_barras' => $producto->codigo_barras,
+                        'cantidad_actual' => $stock->cantidad,
+                        'cantidad_disponible' => $stock->cantidad_disponible,
                     ],
                 ]);
             }
 
-            // ✅ Crear nuevo stock_producto con cantidad 0
+            // ✅ Crear nuevo stock_producto con la cantidad enviada
             $nuevoStock = StockProducto::create([
                 'producto_id' => $productoId,
                 'almacen_id' => $almacenId,
-                'cantidad' => 0,
-                'cantidad_disponible' => 0,
+                'cantidad' => $cantidad,
+                'cantidad_disponible' => $cantidad,
                 'lote' => null,
                 'fecha_vencimiento' => null,
+            ]);
+
+            \Log::info('✅ [InventarioController] Stock creado', [
+                'id' => $nuevoStock->id,
+                'cantidad' => $cantidad,
             ]);
 
             return response()->json([

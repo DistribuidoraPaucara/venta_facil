@@ -22,6 +22,14 @@ class StoreProductoRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        // ✨ NUEVO: Convertir precios vacíos a 0
+        if ($this->has('precio_compra') && (empty($this->input('precio_compra')) || $this->input('precio_compra') === null)) {
+            $this->merge(['precio_compra' => 0]);
+        }
+        if ($this->has('precio_venta') && (empty($this->input('precio_venta')) || $this->input('precio_venta') === null)) {
+            $this->merge(['precio_venta' => 0]);
+        }
+
         // ✨ NUEVO: Convertir limite_venta vacío a null para permitir guardarlo sin límite
         if ($this->has('limite_venta')) {
             $limitVenta = $this->input('limite_venta');
