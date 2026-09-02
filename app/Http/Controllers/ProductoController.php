@@ -2058,7 +2058,9 @@ class ProductoController extends Controller
             'marca:id,nombre',
             'proveedor:id,nombre,razon_social',
             'unidad:id,nombre',
-            'stock.almacen:id,nombre',
+            'stock' => function ($q) {
+                $q->with(['almacen:id,nombre', 'sector:id,nombre']);
+            },
             'precios'      => function ($q) {
                 // Cargar SOLO precios activos con relación a tipo de precio
                 $q->where('activo', true)
