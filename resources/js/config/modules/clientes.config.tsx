@@ -343,9 +343,12 @@ export const clientesConfig: ModuleConfig<Cliente, ClienteFormData> = {
                 return !!data.user_id && data.cambiar_credenciales !== true;
             },
             required: (data) => {
-                // Requerido si está creando usuario nuevo (sin ID o sin usuario_id)
-                const isCreatingNew = (!data.id) || (!data.user_id && data.crear_usuario === true);
-                return isCreatingNew;
+                // ✨ Requerido SOLO si está creando usuario (checkbox marcado)
+                // En creación: solo si marca crear_usuario
+                // En edición: solo si marca cambiar_credenciales
+                if (data.crear_usuario === true) return true;
+                if (data.cambiar_credenciales === true) return true;
+                return false; // Opcional si no crea usuario
             },
             /* description: (data) => {
                 if (data.id && data.user_id && data.crear_usuario !== true) {
