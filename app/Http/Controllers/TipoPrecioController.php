@@ -39,9 +39,15 @@ class TipoPrecioController extends Controller
 
     public function create(): Response
     {
+        // ✨ NUEVO: Calcular el próximo orden para mostrar como hint
+        $proximoOrden = TipoPrecio::porEmpresa()
+            ->max('orden') ?? 0;
+        $proximoOrden += 1;
+
         return Inertia::render('tipos-precio/form', [
             'tipo_precio'         => null,
             'colores_disponibles' => $this->getColoresDisponibles(),
+            'proximo_orden'       => $proximoOrden, // Para mostrar al usuario (informativo)
         ]);
     }
 
@@ -54,7 +60,7 @@ class TipoPrecioController extends Controller
             'color'          => ['required', 'string', 'max:20'],
             'es_ganancia'    => ['required', 'boolean'],
             'es_precio_base' => ['nullable', 'boolean'],
-            'orden'          => ['required', 'integer', 'min:0'],
+            'orden'          => ['nullable', 'integer', 'min:0'], // ✨ Ahora es opcional
             'activo'         => ['nullable', 'boolean'],
             'configuracion'  => ['nullable', 'array'],
         ]);
@@ -71,6 +77,13 @@ class TipoPrecioController extends Controller
         $configuracion['icono']   = $configuracion['icono'] ?? ($data['es_ganancia'] ? '💰' : '📦');
         $configuracion['tooltip'] = $configuracion['tooltip'] ?? $data['descripcion'];
 
+        // ✨ NUEVO: Calcular orden automáticamente si no se proporciona
+        if (!isset($data['orden']) || $data['orden'] === null) {
+            $maxOrden = TipoPrecio::porEmpresa()
+                ->max('orden') ?? 0;
+            $data['orden'] = $maxOrden + 1;
+        }
+
         // ✨ NUEVO: Agregar empresa_id automáticamente
         TipoPrecio::create([
             'codigo'              => strtoupper($data['codigo']),
@@ -84,7 +97,7 @@ class TipoPrecioController extends Controller
             'activo'              => $data['activo'] ?? true,
             'es_sistema'          => false,
             'configuracion'       => $configuracion,
-            'empresa_id'          => auth()->user()?->empresa_id, // ✨ NUEVO
+            'empresa_id'          => auth()->user()?->empresa_id,
         ]);
 
         return redirect()->route('tipos-precio.index')
