@@ -261,9 +261,12 @@ class ProveedorController extends Controller
     {
         // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
         $proveedore = Proveedor::porEmpresa()->findOrFail($id);
-    {
+
+        // ✨ NUEVO: Validar nombre único POR EMPRESA
+        $empresaId = auth()->user()?->empresa_id;
+
         $data = $request->validate([
-            'nombre'              => ['required', 'string', 'max:255', 'unique:proveedores,nombre,' . $proveedore->id],
+            'nombre'              => ['required', 'string', 'max:255', "unique:proveedores,nombre,{$proveedore->id},id,empresa_id,{$empresaId}"],
             'razon_social'        => ['nullable', 'string', 'max:255'],
             'nit'                 => ['nullable', 'string', 'max:255'],
             'telefono'            => ['nullable', 'string', 'max:100'],
@@ -308,7 +311,7 @@ class ProveedorController extends Controller
     {
         // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
         $proveedore = Proveedor::porEmpresa()->findOrFail($id);
-    {
+
         return $this->handleCrudOperation(
             $request,
             function () use ($proveedore) {
