@@ -979,8 +979,12 @@ class ProductoController extends Controller
                     'activo'                  => $data['activo'] ?? $producto->activo,
                 ]);
 
-                // Codigos sólo si vienen
-                if ($request->has('codigos')) {
+                // 🔥 Gestión de códigos de barra - Permitir eliminación completa
+                // Detectar si el usuario intencionalmente quiere eliminar los códigos (array vacío)
+                $codigosVacioIntencional = $request->has('codigos_vacío_intencional');
+                $hayCodigosEnRequest = $request->has('codigos');
+
+                if ($hayCodigosEnRequest || $codigosVacioIntencional) {
                     $codigosValidos = [];
                     if (! empty($data['codigos']) && is_array($data['codigos'])) {
                         $codigosValidos = array_values(array_filter(array_map(fn($c) => is_string($c) ? trim($c) : '', $data['codigos']), fn($c) => $c !== ''));
@@ -1016,9 +1020,17 @@ class ProductoController extends Controller
                         $principal = $codigosValidos[0];
                         $producto->update(['codigo_barras' => $principal, 'codigo_qr' => $principal]);
                     } else {
-                        // Si no hay códigos válidos, eliminar TODOS los códigos (hard delete)
-                        $producto->codigosBarra()->forceDelete();
-                        $producto->update(['codigo_barras' => null, 'codigo_qr' => null]);
+                        // 🔥 Si no hay códigos válidos Y el usuario lo hizo intencionalmente:
+                        // ELIMINAR COMPLETAMENTE todos los códigos de barra existentes
+                        if ($codigosVacioIntencional || (empty($data['codigos']) && $hayCodigosEnRequest)) {
+                            Log::info('🔥 Eliminando TODOS los códigos de barra del producto', [
+                                'producto_id' => $producto->id,
+                                'producto_sku' => $producto->sku,
+                                'motivo' => 'Usuario eliminó todos los códigos',
+                            ]);
+                            $producto->codigosBarra()->forceDelete(); // Hard delete - eliminar completamente
+                            $producto->update(['codigo_barras' => null, 'codigo_qr' => null]);
+                        }
                     }
                 }
 

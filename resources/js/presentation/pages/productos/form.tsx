@@ -386,9 +386,11 @@ export default function ProductoForm({
             formData.append(`codigos[${i}]`, c.codigo.trim());
         });
 
-        // Si no hay códigos válidos, no enviar el campo (el backend creará uno automáticamente)
+        // 🔥 IMPORTANTE: SIEMPRE enviar el campo codigos (aunque esté vacío)
+        // para que el backend sepa si el usuario quiere eliminarlos
+        // Si está vacío, el backend eliminará todos los códigos existentes
         if (codigosValidos.length === 0) {
-            // No enviamos nada, el backend se encargará
+            formData.append('codigos_vacío_intencional', '1'); // Marcador para el backend
         }
 
         // 🏭 NUEVO: Ingredientes de receta
@@ -622,14 +624,8 @@ export default function ProductoForm({
     };
 
     const removeCodigo = async (i: number) => {
-        const items = data.codigos || [];
-        if (items.length <= 1) {
-            // No permitir eliminar el último código (validación silenciosa)
-            return;
-        }
-
-        const confirmed = await NotificationService.confirm('¿Estás seguro de eliminar este código?', {
-            confirmText: 'Eliminar',
+        const confirmed = await NotificationService.confirm('¿Estás seguro de que deseas eliminar este código de barra completamente?', {
+            confirmText: 'Sí, eliminar',
             cancelText: 'Cancelar',
         });
 
