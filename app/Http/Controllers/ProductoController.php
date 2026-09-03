@@ -2237,19 +2237,21 @@ class ProductoController extends Controller
     public function storeApi(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'nombre'           => ['required', 'string', 'max:255'],
-            'codigo'           => ['nullable', 'string', 'max:100', 'unique:productos,codigo'],
-            'descripcion'      => ['nullable', 'string'],
-            'categoria_id'     => ['nullable', 'exists:categorias,id'],
-            'marca_id'         => ['nullable', 'exists:marcas,id'],
-            'proveedor_id'     => ['nullable', 'exists:proveedores,id'],
-            'unidad_medida_id' => ['nullable', 'exists:unidades_medida,id'],
-            'precio_compra'    => ['nullable', 'numeric', 'min:0'],
-            'precio_venta'     => ['nullable', 'numeric', 'min:0'],
-            'stock_minimo'     => ['nullable', 'integer', 'min:0'],
-            'stock_maximo'     => ['nullable', 'integer', 'min:0'],
-            'activo'           => ['boolean'],
-            'codigos_barra'    => ['nullable', 'string', 'max:255'],
+            'nombre'                      => ['required', 'string', 'max:255'],
+            'codigo'                      => ['nullable', 'string', 'max:100', 'unique:productos,codigo'],
+            'descripcion'                 => ['nullable', 'string'],
+            'categoria_id'                => ['nullable', 'exists:categorias,id'],
+            'marca_id'                    => ['nullable', 'exists:marcas,id'],
+            'proveedor_id'                => ['nullable', 'exists:proveedores,id'],
+            'unidad_medida_id'            => ['nullable', 'exists:unidades_medida,id'],
+            'precio_compra'               => ['nullable', 'numeric', 'min:0'],
+            'precio_venta'                => ['nullable', 'numeric', 'min:0'],
+            'stock_minimo'                => ['nullable', 'integer', 'min:0'],
+            'stock_maximo'                => ['nullable', 'integer', 'min:0'],
+            'activo'                      => ['boolean'],
+            'codigos_barra'               => ['nullable', 'string', 'max:255'],  // Legacy
+            'codigos'                     => ['nullable', 'array'],              // 🔥 NUEVO: Array de códigos (Flutter)
+            'codigos.*'                   => ['string', 'max:255'],
         ]);
 
         try {
@@ -2265,7 +2267,11 @@ class ProductoController extends Controller
                     }
                 }
 
-                $producto = Producto::create($data);
+                // 🔥 Remover campos que no van a la tabla productos
+                $dataProducto = $data;
+                unset($dataProducto['codigos'], $dataProducto['codigos_barra']);
+
+                $producto = Producto::create($dataProducto);
 
                 // Crear precio base (siempre, incluso si es 0)
                 if (isset($data['precio_venta']) && $data['precio_venta'] !== null) {
@@ -2277,14 +2283,43 @@ class ProductoController extends Controller
                     ]);
                 }
 
-                // ✅ Crear código de barras si se proporciona
-                if (!empty($data['codigos_barra'])) {
+                // 🔥 NUEVO: Procesar códigos como array (compatible con Flutter)
+                $codigosValidos = [];
+                if (!empty($data['codigos']) && is_array($data['codigos'])) {
+                    $codigosValidos = array_values(array_filter(
+                        array_map(fn($c) => is_string($c) ? trim($c) : '', $data['codigos']),
+                        fn($c) => $c !== ''
+                    ));
+                }
+
+                // Si hay códigos en array, crearlos
+                if (!empty($codigosValidos)) {
+                    foreach ($codigosValidos as $index => $codigo) {
+                        CodigoBarra::create([
+                            'producto_id'  => $producto->id,
+                            'codigo'       => $codigo,
+                            'tipo'         => 'EAN',
+                            'es_principal' => $index === 0,
+                            'activo'       => true,
+                        ]);
+                    }
+                    // Actualizar campo legacy
+                    $producto->update([
+                        'codigo_barras' => $codigosValidos[0],
+                        'codigo_qr'     => $codigosValidos[0],
+                    ]);
+                } else if (!empty($data['codigos_barra'])) {
+                    // Legacy: si viene codigos_barra como string
                     CodigoBarra::create([
                         'producto_id'  => $producto->id,
                         'codigo'       => $data['codigos_barra'],
                         'tipo'         => 'BARCODE',
                         'es_principal' => true,
                         'activo'       => true,
+                    ]);
+                    $producto->update([
+                        'codigo_barras' => $data['codigos_barra'],
+                        'codigo_qr'     => $data['codigos_barra'],
                     ]);
                 }
 
@@ -2295,7 +2330,7 @@ class ProductoController extends Controller
                 'success' => true,
                 'status'  => 201,
                 'message' => 'Producto creado exitosamente',
-                'data'    => $producto->load(['categoria', 'marca', 'proveedor', 'unidad']),
+                'data'    => $producto->load(['categoria', 'marca', 'proveedor', 'unidad', 'codigosBarra']),
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
