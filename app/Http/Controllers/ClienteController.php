@@ -102,7 +102,8 @@ class ClienteController extends Controller
         }
 
         // Construir query
-        $query = ClienteModel::query()
+        // ✨ NUEVO: Filtrar por empresa del usuario
+        $query = ClienteModel::porEmpresa()
             ->leftJoin('localidades', 'clientes.localidad_id', '=', 'localidades.id')
             ->when($q, function ($query) use ($q, $options) {
                 // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
@@ -326,9 +327,12 @@ class ClienteController extends Controller
         }
     }
 
-    public function edit(ClienteModel $cliente)
+    public function edit($id)
     {
         try {
+            // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+            $cliente = ClienteModel::porEmpresa()->findOrFail($id);
+
             // ✅ Autorizar: Solo roles que pueden editar este cliente
             $this->authorize('update', $cliente);
 
@@ -365,8 +369,11 @@ class ClienteController extends Controller
         }
     }
 
-    public function update(UpdateClienteRequest $request, ClienteModel $cliente)
+    public function update(UpdateClienteRequest $request, $id)
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $cliente = ClienteModel::porEmpresa()->findOrFail($id);
+
         // ✅ Autorizar: Solo roles que pueden editar este cliente
         $this->authorize('update', $cliente);
 
@@ -685,8 +692,11 @@ class ClienteController extends Controller
         }
     }
 
-    public function destroy(ClienteModel $cliente)
+    public function destroy($id)
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $cliente = ClienteModel::porEmpresa()->findOrFail($id);
+
         try {
             // ✅ Autorizar: Solo admins y managers pueden eliminar clientes
             $this->authorize('delete', $cliente);
@@ -737,7 +747,10 @@ class ClienteController extends Controller
      * Endpoint: GET /api/clientes/{id}
      * Retorna: Cliente completo con direcciones, categorías, ventanas de entrega, etc.
      */
-    public function showApi(ClienteModel $cliente): JsonResponse
+    public function showApi($id): JsonResponse
+    {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $cliente = ClienteModel::porEmpresa()->findOrFail($id);
     {
         // ✅ Autorizar: Solo roles que pueden ver este cliente
         $this->authorize('view', $cliente);
@@ -939,8 +952,9 @@ class ClienteController extends Controller
             'activo'              => $data['activo'] ?? true,
             'fecha_registro'      => now(),
             'usuario_creacion_id' => $usuarioCreacionId,
-            'preventista_id'      => $preventistaId, // ✅ NUEVO
-            'estado'              => 'prospecto',    // ✅ NUEVO
+            'preventista_id'      => $preventistaId,
+            'estado'              => 'prospecto',
+            'empresa_id'          => auth()->user()?->empresa_id, // ✨ NUEVO - Multi-tenancy
         ]);
 
         // Crear direcciones si se proporcionaron y se deben manejar

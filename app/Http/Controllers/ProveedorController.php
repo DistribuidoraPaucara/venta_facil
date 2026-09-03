@@ -36,7 +36,8 @@ class ProveedorController extends Controller
         $rawOrderDir = strtolower((string) $request->string('order_dir'));
         $orderDir    = in_array($rawOrderDir, ['asc', 'desc'], true) ? $rawOrderDir : 'desc';
 
-        $items = Proveedor::query()
+        // ✨ NUEVO: Filtrar por empresa del usuario
+        $items = Proveedor::porEmpresa()
             ->when($q, function ($query) use ($q) {
                 // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
                 $searchLower = strtolower($q);
@@ -79,7 +80,9 @@ class ProveedorController extends Controller
 
         // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
         $searchLower = strtolower($q);
-        $proveedores = Proveedor::select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo'])
+        // ✨ NUEVO: Filtrar por empresa del usuario
+        $proveedores = Proveedor::porEmpresa()
+            ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo'])
             ->where('activo', true)
             ->where(function ($query) use ($searchLower) {
                 $query->whereRaw('LOWER(nombre) like ?', ["%$searchLower%"])
@@ -105,7 +108,9 @@ class ProveedorController extends Controller
     public function indexApi(Request $request): JsonResponse
     {
         try {
-            $query = Proveedor::select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo'])
+            // ✨ NUEVO: Filtrar por empresa del usuario
+            $query = Proveedor::porEmpresa()
+                ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo'])
                 ->where('activo', true)
                 ->orderBy('nombre', 'asc');
 
@@ -154,9 +159,11 @@ class ProveedorController extends Controller
     public function store(Request $request): RedirectResponse | JsonResponse | Response
     {
         $isModalRequest = $this->isModalRequest($request);
+        // ✨ NUEVO: Validar nombre único POR EMPRESA
+        $empresaId = auth()->user()?->empresa_id;
 
         $validationRules = [
-            'nombre'              => ['required', 'string', 'max:255', 'unique:proveedores,nombre'],
+            'nombre'              => ['required', 'string', 'max:255', "unique:proveedores,nombre,NULL,id,empresa_id,{$empresaId}"],
             'razon_social'        => ['nullable', 'string', 'max:255'],
             'nit'                 => ['nullable', 'string', 'max:255'],
             'telefono'            => ['nullable', 'string', 'max:100'],
@@ -198,6 +205,8 @@ class ProveedorController extends Controller
         return $this->handleCrudOperation(
             $request,
             function () use ($data) {
+                // ✨ NUEVO: Agregar empresa_id automáticamente
+                $data['empresa_id'] = auth()->user()?->empresa_id;
                 $proveedor = Proveedor::create($data);
 
                 return ['proveedor' => $proveedor];
@@ -212,11 +221,16 @@ class ProveedorController extends Controller
      */
     public function storeApi(Request $request): JsonResponse
     {
+        // ✨ NUEVO: Validar nombre único POR EMPRESA
+        $empresaId = auth()->user()?->empresa_id;
+
         $data = $request->validate([
-            'nombre' => ['required', 'string', 'max:255', 'unique:proveedores,nombre'],
+            'nombre' => ['required', 'string', 'max:255', "unique:proveedores,nombre,NULL,id,empresa_id,{$empresaId}"],
         ]);
 
         $data['activo'] = true; // Por defecto activo
+        // ✨ NUEVO: Agregar empresa_id automáticamente
+        $data['empresa_id'] = $empresaId;
 
         try {
             $proveedor = Proveedor::create($data);
@@ -234,14 +248,19 @@ class ProveedorController extends Controller
         }
     }
 
-    public function edit(Proveedor $proveedore): InertiaResponse
+    public function edit($id): InertiaResponse
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $proveedore = Proveedor::porEmpresa()->findOrFail($id);
         return Inertia::render('proveedores/form', [
             'proveedor' => $proveedore,
         ]);
     }
 
-    public function update(Request $request, Proveedor $proveedore): RedirectResponse | JsonResponse | Response
+    public function update(Request $request, $id): RedirectResponse | JsonResponse | Response
+    {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $proveedore = Proveedor::porEmpresa()->findOrFail($id);
     {
         $data = $request->validate([
             'nombre'              => ['required', 'string', 'max:255', 'unique:proveedores,nombre,' . $proveedore->id],
@@ -285,7 +304,10 @@ class ProveedorController extends Controller
         );
     }
 
-    public function destroy(Request $request, Proveedor $proveedore): RedirectResponse | JsonResponse | Response
+    public function destroy(Request $request, $id): RedirectResponse | JsonResponse | Response
+    {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $proveedore = Proveedor::porEmpresa()->findOrFail($id);
     {
         return $this->handleCrudOperation(
             $request,
