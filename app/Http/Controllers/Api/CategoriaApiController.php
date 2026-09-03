@@ -60,15 +60,23 @@ class CategoriaApiController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            // ✨ NUEVO: Validar nombre único POR EMPRESA (no globalmente)
+            $empresaId = auth()->user()?->empresa_id;
+
             $validated = $request->validate([
-                'nombre' => ['required', 'string', 'max:255', 'unique:categorias,nombre'],
+                'nombre' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    "unique:categorias,nombre,NULL,id,empresa_id,{$empresaId}"
+                ],
                 'descripcion' => ['nullable', 'string', 'max:1000'],
                 'activo' => ['nullable', 'boolean'],
             ]);
 
             $validated['activo'] = $validated['activo'] ?? true;
             // ✨ NUEVO: Agregar empresa_id automáticamente
-            $validated['empresa_id'] = auth()->user()?->empresa_id;
+            $validated['empresa_id'] = $empresaId;
 
             $categoria = Categoria::create($validated);
 
@@ -133,9 +141,16 @@ class CategoriaApiController extends Controller
         try {
             // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
             $categoria = Categoria::porEmpresa()->findOrFail($id);
+            $empresaId = auth()->user()?->empresa_id;
 
             $validated = $request->validate([
-                'nombre' => ['sometimes', 'required', 'string', 'max:255', 'unique:categorias,nombre,' . $categoria->id],
+                'nombre' => [
+                    'sometimes',
+                    'required',
+                    'string',
+                    'max:255',
+                    "unique:categorias,nombre,{$categoria->id},id,empresa_id,{$empresaId}"
+                ],
                 'descripcion' => ['nullable', 'string', 'max:1000'],
                 'activo' => ['nullable', 'boolean'],
             ]);

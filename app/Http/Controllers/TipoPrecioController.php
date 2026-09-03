@@ -53,14 +53,22 @@ class TipoPrecioController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // ✨ NUEVO: Validar código único POR EMPRESA (no globalmente)
+        $empresaId = auth()->user()?->empresa_id;
+
         $data = $request->validate([
-            'codigo'         => ['required', 'string', 'max:20', 'unique:tipos_precio,codigo'],
+            'codigo'         => [
+                'required',
+                'string',
+                'max:20',
+                "unique:tipos_precio,codigo,NULL,id,empresa_id,{$empresaId}"
+            ],
             'nombre'         => ['required', 'string', 'max:100'],
             'descripcion'    => ['nullable', 'string', 'max:255'],
             'color'          => ['required', 'string', 'max:20'],
             'es_ganancia'    => ['required', 'boolean'],
             'es_precio_base' => ['nullable', 'boolean'],
-            'orden'          => ['nullable', 'integer', 'min:0'], // ✨ Ahora es opcional
+            'orden'          => ['nullable', 'integer', 'min:0'],
             'activo'         => ['nullable', 'boolean'],
             'configuracion'  => ['nullable', 'array'],
         ]);
@@ -143,9 +151,15 @@ class TipoPrecioController extends Controller
     {
         // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
         $tipoPrecio = TipoPrecio::porEmpresa()->findOrFail($id);
+        $empresaId = auth()->user()?->empresa_id;
 
         $data = $request->validate([
-            'codigo'              => ['required', 'string', 'max:20', 'unique:tipos_precio,codigo,' . $tipoPrecio->id],
+            'codigo'              => [
+                'required',
+                'string',
+                'max:20',
+                "unique:tipos_precio,codigo,{$tipoPrecio->id},id,empresa_id,{$empresaId}"
+            ],
             'nombre'              => ['required', 'string', 'max:100'],
             'descripcion'         => ['nullable', 'string', 'max:255'],
             'color'               => ['required', 'string', 'max:20'],

@@ -88,14 +88,22 @@ class MarcaController extends Controller
     public function storeApi(Request $request): JsonResponse
     {
         try {
+            // ✨ NUEVO: Validar nombre único POR EMPRESA (no globalmente)
+            $empresaId = auth()->user()?->empresa_id;
+
             $validated = $request->validate([
-                'nombre' => ['required', 'string', 'max:255'],
+                'nombre' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    "unique:marcas,nombre,NULL,id,empresa_id,{$empresaId}"
+                ],
                 'descripcion' => ['nullable', 'string'],
                 'activo' => ['boolean'],
             ]);
 
             // ✨ NUEVO: Agregar empresa_id automáticamente
-            $validated['empresa_id'] = auth()->user()?->empresa_id;
+            $validated['empresa_id'] = $empresaId;
 
             $marca = Marca::create($validated);
 
@@ -124,9 +132,15 @@ class MarcaController extends Controller
         try {
             // ✨ NUEVO: Filtrar por empresa del usuario
             $marca = Marca::porEmpresa()->findOrFail($id);
+            $empresaId = auth()->user()?->empresa_id;
 
             $validated = $request->validate([
-                'nombre' => ['required', 'string', 'max:255'],
+                'nombre' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    "unique:marcas,nombre,{$marca->id},id,empresa_id,{$empresaId}"
+                ],
                 'descripcion' => ['nullable', 'string'],
                 'activo' => ['boolean'],
             ]);
