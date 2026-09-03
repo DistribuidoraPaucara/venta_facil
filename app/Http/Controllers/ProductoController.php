@@ -356,13 +356,16 @@ class ProductoController extends Controller
                     }
                 }
 
+                // 🔥 HELPER: Convertir strings vacíos a null para campos nullable
+                $sanitize = fn($value) => (is_string($value) && $value === '') ? null : $value;
+
                 // Crear el producto
                 $producto = Producto::create([
                     'nombre'                  => $data['nombre'],
-                    'sku'                     => $data['sku'] ?? null, // ✨ NUEVO: Respeta el SKU del usuario, o null para generarlo automáticamente
-                    'descripcion'             => $data['descripcion'] ?? null,
+                    'sku'                     => $sanitize($data['sku'] ?? null),
+                    'descripcion'             => $sanitize($data['descripcion'] ?? null),
                     'peso'                    => $data['peso'] ?? 0,
-                    'unidad_medida_id'        => $data['unidad_medida_id'] ?? null,
+                    'unidad_medida_id'        => $sanitize($data['unidad_medida_id'] ?? null),
                     'codigo_barras'           => null,
                     'codigo_qr'               => null,
                     'stock_minimo'            => $data['stock_minimo'] ?? 0,
@@ -373,13 +376,13 @@ class ProductoController extends Controller
                     'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? false, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables
                     'es_producto_adicional'   => $data['es_producto_adicional'] ?? false,     // ✨ NUEVO - Indica si es un adicional
                     'puede_tener_producto_adicional' => $data['puede_tener_producto_adicional'] ?? false, // ✨ NUEVO - Indica si puede tener adicionales
-                    'categoria_id'            => $data['categoria_id'] ?? null,
-                    'marca_id'                => $data['marca_id'] ?? null,
-                    'proveedor_id'            => $data['proveedor_id'] ?? null,
+                    'categoria_id'            => $sanitize($data['categoria_id'] ?? null),  // 🔥 FIX: Permitir null
+                    'marca_id'                => $sanitize($data['marca_id'] ?? null),     // 🔥 FIX: Permitir null
+                    'proveedor_id'            => $sanitize($data['proveedor_id'] ?? null), // 🔥 FIX: Permitir null
                     'empresa_id'              => auth()->user()?->empresa_id,        // ✨ NUEVO: Asignar empresa del usuario autenticado
-                    'limite_venta'            => $data['limite_venta'] ?? null,      // ✨ NUEVO
-                    'principio_activo'        => $data['principio_activo'] ?? null,  // ✨ NUEVO - Campo para farmacias
-                    'uso_de_medicacion'       => $data['uso_de_medicacion'] ?? null, // ✨ NUEVO - Campo para farmacias
+                    'limite_venta'            => $sanitize($data['limite_venta'] ?? null),      // ✨ NUEVO
+                    'principio_activo'        => $sanitize($data['principio_activo'] ?? null),  // ✨ NUEVO - Campo para farmacias
+                    'uso_de_medicacion'       => $sanitize($data['uso_de_medicacion'] ?? null), // ✨ NUEVO - Campo para farmacias
                     'visible_app'             => $data['visible_app'] ?? true,        // ✨ NUEVO - Visible en app
                     'es_de_produccion'        => $data['es_de_produccion'] ?? false,   // 🏭 NUEVO - Indicador de producción
                 ]);
@@ -2270,9 +2273,18 @@ class ProductoController extends Controller
                     }
                 }
 
+                // 🔥 HELPER: Convertir strings vacíos a null para campos nullable
+                $sanitize = fn($value) => (is_string($value) && $value === '') ? null : $value;
+
                 // 🔥 Remover campos que no van a la tabla productos
                 $dataProducto = $data;
                 unset($dataProducto['codigos'], $dataProducto['codigos_barra']);
+
+                // 🔥 FIX: Aplicar sanitize a campos nullable para permitir eliminación
+                $dataProducto['descripcion'] = $sanitize($dataProducto['descripcion'] ?? null);
+                $dataProducto['categoria_id'] = $sanitize($dataProducto['categoria_id'] ?? null);
+                $dataProducto['marca_id'] = $sanitize($dataProducto['marca_id'] ?? null);
+                $dataProducto['proveedor_id'] = $sanitize($dataProducto['proveedor_id'] ?? null);
 
                 $producto = Producto::create($dataProducto);
 
