@@ -78,6 +78,27 @@ class Producto extends Model
         $this->attributes['sku'] = $value ? strtoupper(trim($value)) : null;
     }
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('empresa', function ($query) {
+            try {
+                if ($empresaId = app('tenant_id')) {
+                    $query->where('empresa_id', $empresaId);
+                    return;
+                }
+            } catch (\Exception $e) {
+                // tenant_id no existe
+            }
+
+            if (function_exists('auth') && auth()->check()) {
+                $empresaId = auth()->user()?->empresa_id;
+                if ($empresaId) {
+                    $query->where('empresa_id', $empresaId);
+                }
+            }
+        });
+    }
+
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
