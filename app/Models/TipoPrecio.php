@@ -23,6 +23,7 @@ class TipoPrecio extends Model
         'activo',
         'es_sistema',
         'configuracion',
+        'empresa_id',
     ];
 
     protected function casts(): array
@@ -41,6 +42,11 @@ class TipoPrecio extends Model
     /**
      * Relaciones
      */
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
     public function precios()
     {
         return $this->hasMany(PrecioProducto::class, 'tipo_precio_id');
@@ -54,6 +60,15 @@ class TipoPrecio extends Model
     /**
      * Scopes
      */
+
+    public function scopePorEmpresa($query, $empresaId = null)
+    {
+        $empresaId = $empresaId ?? auth()->user()?->empresa_id;
+        if ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        }
+        return $query;
+    }
 
     public function scopeOrdenados($query)
     {

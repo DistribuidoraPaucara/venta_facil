@@ -14,7 +14,7 @@ class Categoria extends Model
     protected $table = 'categorias';
 
     protected $fillable = [
-        'nombre', 'descripcion', 'activo', 'fecha_creacion',
+        'nombre', 'descripcion', 'activo', 'fecha_creacion', 'empresa_id',
     ];
 
     protected function casts(): array
@@ -25,8 +25,27 @@ class Categoria extends Model
         ];
     }
 
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
     public function productos()
     {
         return $this->hasMany(Producto::class, 'categoria_id');
+    }
+
+    public function scopePorEmpresa($query, $empresaId = null)
+    {
+        $empresaId = $empresaId ?? auth()->user()?->empresa_id;
+        if ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        }
+        return $query;
+    }
+
+    public function scopeActivas($query)
+    {
+        return $query->where('activo', true);
     }
 }

@@ -57,6 +57,26 @@ class Empresa extends Model
         return $this->hasMany(PlantillaImpresion::class);
     }
 
+    public function marcas()
+    {
+        return $this->hasMany(Marca::class);
+    }
+
+    public function categorias()
+    {
+        return $this->hasMany(Categoria::class);
+    }
+
+    public function tiposPrecio()
+    {
+        return $this->hasMany(TipoPrecio::class);
+    }
+
+    public function productos()
+    {
+        return $this->hasMany(Producto::class);
+    }
+
     /**
      * Almacén de la empresa (para búsquedas de stock y ventas)
      */
