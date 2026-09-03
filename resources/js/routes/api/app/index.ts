@@ -1,6 +1,8 @@
+import ventas from './ventas'
 import stock from './stock'
 const app = {
-    stock,
+    ventas,
+stock,
 }
 
 export default app

@@ -253,6 +253,30 @@ class Empleado extends Model
      */
     protected static function booted(): void
     {
+        // ✅ MULTI-TENANCY: Filtrar automáticamente por empresa_id del usuario autenticado
+        static::addGlobalScope('empresa', function ($query) {
+            // ⚠️ IMPORTANTE: Usar tenant_id del contenedor en lugar de auth()->user()
+            // para evitar recursión infinita
+            try {
+                if ($empresaId = app('tenant_id')) {
+                    // Especificar tabla para evitar ambigüedad con users.empresa_id
+                    $query->where('empleados.empresa_id', $empresaId);
+                    return;
+                }
+            } catch (\Exception $e) {
+                // tenant_id no existe - continuamos
+            }
+
+            // ⚠️ FALLBACK: Si no hay tenant_id (rutas WEB)
+            // Solo filtrar si se puede obtener empresa_id de forma segura
+            if (function_exists('auth') && auth()->check()) {
+                $empresaId = auth()->user()?->empresa_id;
+                if ($empresaId) {
+                    $query->where('empleados.empresa_id', $empresaId);
+                }
+            }
+        });
+
         static::created(function (Empleado $empleado) {
             if ($empleado->tienRolClienteIncorrecto()) {
                 \Log::warning('Empleado creado con rol Cliente incorrecto', [

@@ -14,6 +14,11 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
+        title: 'Empresa',
+        href: '/settings/empresa',
+        icon: null,
+    },
+    {
         title: 'Contraseña',
         href: '/settings/password',
         icon: null,

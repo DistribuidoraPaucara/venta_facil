@@ -204,6 +204,7 @@ class VentaService
                 'numero'                     => '0',  // ✅ TEMP: Se asignará al ID después de crear
                 'cliente_id'                 => $dto->cliente_id,
                 'usuario_id'                 => $dto->usuario_id ?? Auth::id(),
+                'empresa_id'                 => Auth::user()?->empresa_id,  // ✅ MULTI-TENANCY: Empresa del usuario autenticado
                 'preventista_id'             => $dto->preventista_id, // ✅ NUEVO (2026-03-01): Preventista responsable
                 'fecha'                      => $dto->fecha,
                 'subtotal'                   => $dto->subtotal,
@@ -220,7 +221,7 @@ class VentaService
                 // Campos de logística
                 'requiere_envio'             => $dto->requiere_envio,
                 'canal_origen'               => $dto->canal_origen ?? 'WEB',
-                'estado_logistico_id'        => $estadoLogisticoId,  // ✅ MODIFICADO (2026-02-10): Usa variable calculada (SIN_ENTREGA por defecto) 
+                'estado_logistico_id'        => $estadoLogisticoId,  // ✅ MODIFICADO (2026-02-10): Usa variable calculada (SIN_ENTREGA por defecto)
                 // Campos de política de pago
                 'tipo_pago_id'               => $dto->tipo_pago_id,  // ✅ NUEVO: Tipo de pago seleccionado
                 'politica_pago'              => $dto->politica_pago ?? 'CONTRA_ENTREGA',

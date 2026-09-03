@@ -5,10 +5,10 @@ import modulosSidebar from './modulos-sidebar'
 import notificaciones from './notificaciones'
 import tipoOperacionCaja from './tipo-operacion-caja'
 import sectores from './sectores'
+import app from './app'
 import categorias from './categorias'
 import combos from './combos'
 import productos from './productos'
-import app from './app'
 import ventas from './ventas'
 import compras from './compras'
 import precios from './precios'
@@ -202,7 +202,7 @@ dashboardRedirect.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     
     dashboardRedirect.form = dashboardRedirectForm
 /**
- * @see routes/api.php:465
+ * @see routes/api.php:477
  * @route '/api/preventistas'
  */
 export const preventistas = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -216,7 +216,7 @@ preventistas.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/api.php:465
+ * @see routes/api.php:477
  * @route '/api/preventistas'
  */
 preventistas.url = (options?: RouteQueryOptions) => {
@@ -224,7 +224,7 @@ preventistas.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/api.php:465
+ * @see routes/api.php:477
  * @route '/api/preventistas'
  */
 preventistas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -232,7 +232,7 @@ preventistas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/api.php:465
+ * @see routes/api.php:477
  * @route '/api/preventistas'
  */
 preventistas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -241,7 +241,7 @@ preventistas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/api.php:465
+ * @see routes/api.php:477
  * @route '/api/preventistas'
  */
     const preventistasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -250,7 +250,7 @@ preventistas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/api.php:465
+ * @see routes/api.php:477
  * @route '/api/preventistas'
  */
         preventistasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -258,7 +258,7 @@ preventistas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/api.php:465
+ * @see routes/api.php:477
  * @route '/api/preventistas'
  */
         preventistasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -273,7 +273,7 @@ preventistas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     preventistas.form = preventistasForm
 /**
- * @see routes/api.php:1586
+ * @see routes/api.php:1598
  * @route '/api/logs'
  */
 export const logs = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -287,7 +287,7 @@ logs.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/api.php:1586
+ * @see routes/api.php:1598
  * @route '/api/logs'
  */
 logs.url = (options?: RouteQueryOptions) => {
@@ -295,7 +295,7 @@ logs.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/api.php:1586
+ * @see routes/api.php:1598
  * @route '/api/logs'
  */
 logs.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -303,7 +303,7 @@ logs.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/api.php:1586
+ * @see routes/api.php:1598
  * @route '/api/logs'
  */
 logs.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -312,7 +312,7 @@ logs.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/api.php:1586
+ * @see routes/api.php:1598
  * @route '/api/logs'
  */
     const logsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -321,7 +321,7 @@ logs.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/api.php:1586
+ * @see routes/api.php:1598
  * @route '/api/logs'
  */
         logsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -329,7 +329,7 @@ logs.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/api.php:1586
+ * @see routes/api.php:1598
  * @route '/api/logs'
  */
         logsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -351,10 +351,10 @@ dashboardRedirect,
 notificaciones,
 tipoOperacionCaja,
 sectores,
+app,
 categorias,
 combos,
 productos,
-app,
 preventistas,
 ventas,
 compras,

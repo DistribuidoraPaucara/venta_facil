@@ -67,6 +67,31 @@ class User extends Authenticatable
     }
 
     /**
+     * ✅ MULTI-TENANCY: Aplicar filtros globales
+     */
+    protected static function booted(): void
+    {
+        // ✅ MULTI-TENANCY: Filtrar automáticamente por empresa_id del usuario autenticado
+        static::addGlobalScope('empresa', function ($query) {
+            // ⚠️ IMPORTANTE: Evitar recursión infinita
+            // Si estamos consultando usuarios, usar tenant_id del contenedor en lugar de auth()->user()
+            try {
+                if ($empresaId = app('tenant_id')) {
+                    // Usar tenant_id directo (establecido por SetTenant middleware)
+                    $query->where('empresa_id', $empresaId);
+                    return;
+                }
+            } catch (\Exception $e) {
+                // tenant_id no existe - continuamos con lógica alternativa
+            }
+
+            // ⚠️ FALLBACK: Solo si tenant_id NO existe (rutas WEB)
+            // Usar HasOne/BelongsTo para evitar recursión
+            $query->whereNotNull('empresa_id');  // Al menos debe tener empresa asignada
+        });
+    }
+
+    /**
      * Relación con empresa
      */
     public function empresa(): BelongsTo

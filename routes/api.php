@@ -394,6 +394,18 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     Route::delete('/app/marcas/{id}', [\App\Http\Controllers\MarcaController::class, 'destroyApi']);
 
     // ==========================================
+    // 💳 VENTAS (Multi-tenancy) - Para App Móvil
+    // ==========================================
+    // ✅ MULTI-TENANCY: Todas las ventas están filtradas por empresa_id del usuario autenticado
+    Route::prefix('app/ventas')->group(function () {
+        Route::get('/', [VentaController::class, 'index'])->name('api.app.ventas.index');           // Listar ventas del tenant
+        Route::post('/', [VentaController::class, 'store'])->name('api.app.ventas.store');         // Crear venta (asigna empresa_id automáticamente)
+        Route::get('{id}', [VentaController::class, 'show'])->name('api.app.ventas.show');         // Ver detalle de venta
+        Route::put('{id}', [VentaController::class, 'update'])->name('api.app.ventas.update');     // Actualizar venta
+        Route::delete('{id}', [VentaController::class, 'destroy'])->name('api.app.ventas.destroy'); // Eliminar venta
+    });
+
+    // ==========================================
     // 📝 CRUD CATEGORÍAS (para la app móvil)
     // ==========================================
     Route::prefix('app/categorias-crud')->name('api.categorias.')->group(function () {

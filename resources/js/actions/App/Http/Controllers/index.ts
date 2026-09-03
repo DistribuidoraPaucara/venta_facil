@@ -9,9 +9,9 @@ import TipoOperacionCajaController from './TipoOperacionCajaController'
 import ProductoController from './ProductoController'
 import UnidadMedidaController from './UnidadMedidaController'
 import MarcaController from './MarcaController'
+import VentaController from './VentaController'
 import ComboController from './ComboController'
 import ProductoComponenteController from './ProductoComponenteController'
-import VentaController from './VentaController'
 import CompraController from './CompraController'
 import PrecioController from './PrecioController'
 import ReporteVentasController from './ReporteVentasController'
@@ -118,6 +118,7 @@ import ImpresionStockController from './ImpresionStockController'
 import ImpresionVentasController from './ImpresionVentasController'
 import EgresosController from './EgresosController'
 import Settings from './Settings'
+import SettingsEmpresaController from './SettingsEmpresaController'
 const Controllers = {
     Api,
 ProformaController,
@@ -130,9 +131,9 @@ TipoOperacionCajaController,
 ProductoController,
 UnidadMedidaController,
 MarcaController,
+VentaController,
 ComboController,
 ProductoComponenteController,
-VentaController,
 CompraController,
 PrecioController,
 ReporteVentasController,
@@ -239,6 +240,7 @@ ImpresionStockController,
 ImpresionVentasController,
 EgresosController,
 Settings,
+SettingsEmpresaController,
 }
 
 export default Controllers

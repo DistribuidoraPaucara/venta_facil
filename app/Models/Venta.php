@@ -30,6 +30,7 @@ class Venta extends Model
         'observaciones_logistica',  // ✅ NUEVO: Observaciones sobre entrega (completa, incidentes, etc.)
         'cliente_id',
         'usuario_id',
+        'empresa_id',  // ✅ NUEVO: Multi-tenancy - Empresa a la que pertenece la venta
         'preventista_id',  // ✅ NUEVO: User con rol de preventista
         'estado_documento_id',
         'moneda_id',
@@ -131,6 +132,28 @@ class Venta extends Model
 
     protected static function booted()
     {
+        // ✅ MULTI-TENANCY: Filtrar automáticamente por empresa_id del usuario autenticado
+        static::addGlobalScope('empresa', function ($query) {
+            // ⚠️ IMPORTANTE: Intentar usar tenant_id del contenedor primero
+            try {
+                if ($empresaId = app('tenant_id')) {
+                    $query->where('empresa_id', $empresaId);
+                    return;
+                }
+            } catch (\Exception $e) {
+                // tenant_id no existe - continuamos
+            }
+
+            // ⚠️ FALLBACK: Si no hay tenant_id (rutas WEB)
+            // Filtrar por empresa del usuario autenticado si existe
+            if (function_exists('auth') && auth()->check()) {
+                $empresaId = auth()->user()?->empresa_id;
+                if ($empresaId) {
+                    $query->where('empresa_id', $empresaId);
+                }
+            }
+        });
+
         // Después de crear una venta, generar movimientos automáticamente
         static::created(function ($venta) {
             // ⚠️ CAMBIO CRÍTICO: Solo procesar stock si:
@@ -164,6 +187,11 @@ class Venta extends Model
     }
 
     // Relaciones
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);
