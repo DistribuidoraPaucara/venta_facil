@@ -134,6 +134,11 @@ trait SimpleCrudController
 
         // Construir query con búsqueda opcional
         $items = $modelClass::query()
+            // ✨ NUEVO: Filtrar por empresa del usuario si el modelo soporta tenancy
+            ->when(
+                $this->shouldFilterByEmpresa($modelClass),
+                fn($query) => $query->porEmpresa()
+            )
             ->when($q, function ($query) use ($q, $modelClass) {
                 // Usar searchByName scope si el modelo lo tiene
                 if (method_exists($modelClass, 'searchByName')) {
@@ -184,8 +189,13 @@ trait SimpleCrudController
             $data['activo'] = $data['activo'] ?? true;
         }
 
-        // Crear recurso
+        // ✨ NUEVO: Agregar empresa_id automáticamente si el modelo lo soporta
         $modelClass = $this->getModel();
+        if ($this->shouldFilterByEmpresa($modelClass)) {
+            $data['empresa_id'] = auth()->user()?->empresa_id;
+        }
+
+        // Crear recurso
         $modelClass::create($data);
 
         // Redirigir con mensaje de éxito
@@ -351,5 +361,26 @@ trait SimpleCrudController
         return redirect()
             ->route($this->getRouteName() . '.index')
             ->with('success', "{$this->getSingularResourceNameText()} {$action} exitosamente");
+    }
+
+    /**
+     * ✨ NUEVO: Determinar si el modelo debe filtrar por empresa_id
+     *
+     * Modelos multi-tenant: Marca, Categoria, TipoPrecio
+     * Modelos globales: UnidadMedida
+     *
+     * @param string $modelClass
+     * @return bool
+     */
+    protected function shouldFilterByEmpresa(string $modelClass): bool
+    {
+        $tenantModels = [
+            \App\Models\Marca::class,
+            \App\Models\Categoria::class,
+            \App\Models\TipoPrecio::class,
+            \App\Models\Producto::class,
+        ];
+
+        return in_array($modelClass, $tenantModels);
     }
 }

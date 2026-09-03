@@ -52,7 +52,7 @@ class MarcaController extends Controller
 
     /**
      * GET /api/app/marcas
-     * Listar marcas con paginación y búsqueda
+     * Listar marcas con paginación y búsqueda (filtrada por empresa del usuario)
      */
     public function indexApi(Request $request): JsonResponse
     {
@@ -61,7 +61,8 @@ class MarcaController extends Controller
             $page = $request->integer('page', 1);
             $perPage = $request->integer('per_page', 20);
 
-            $query = Marca::query();
+            // ✨ NUEVO: Filtrar por empresa del usuario autenticado
+            $query = Marca::porEmpresa();
 
             if ($q) {
                 $searchLower = strtolower($q);
@@ -82,7 +83,7 @@ class MarcaController extends Controller
 
     /**
      * POST /api/app/marcas
-     * Crear nueva marca
+     * Crear nueva marca (se asigna automáticamente a la empresa del usuario)
      */
     public function storeApi(Request $request): JsonResponse
     {
@@ -92,6 +93,9 @@ class MarcaController extends Controller
                 'descripcion' => ['nullable', 'string'],
                 'activo' => ['boolean'],
             ]);
+
+            // ✨ NUEVO: Agregar empresa_id automáticamente
+            $validated['empresa_id'] = auth()->user()?->empresa_id;
 
             $marca = Marca::create($validated);
 
@@ -113,12 +117,13 @@ class MarcaController extends Controller
 
     /**
      * PUT /api/app/marcas/{id}
-     * Actualizar marca
+     * Actualizar marca (validando que pertenezca a la empresa del usuario)
      */
     public function updateApi(Request $request, int $id): JsonResponse
     {
         try {
-            $marca = Marca::findOrFail($id);
+            // ✨ NUEVO: Filtrar por empresa del usuario
+            $marca = Marca::porEmpresa()->findOrFail($id);
 
             $validated = $request->validate([
                 'nombre' => ['required', 'string', 'max:255'],
@@ -150,12 +155,13 @@ class MarcaController extends Controller
 
     /**
      * DELETE /api/app/marcas/{id}
-     * Eliminar marca
+     * Eliminar marca (validando que pertenezca a la empresa del usuario)
      */
     public function destroyApi(int $id): JsonResponse
     {
         try {
-            $marca = Marca::findOrFail($id);
+            // ✨ NUEVO: Filtrar por empresa del usuario
+            $marca = Marca::porEmpresa()->findOrFail($id);
             $marca->delete();
 
             return response()->json([

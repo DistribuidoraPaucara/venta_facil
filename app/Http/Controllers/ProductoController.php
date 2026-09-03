@@ -242,8 +242,9 @@ class ProductoController extends Controller
             })
             ->withQueryString();
 
-        $categorias  = Categoria::query()->orderBy('nombre')->get(['id', 'nombre']);
-        $marcas      = Marca::query()->orderBy('nombre')->get(['id', 'nombre']);
+        // ✨ NUEVO: Filtrar categorías y marcas por empresa del usuario
+        $categorias  = Categoria::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']);
+        $marcas      = Marca::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']);
         $proveedores = \App\Models\Proveedor::query()->orderBy('nombre')->get(['id', 'nombre', 'razon_social']);
 
         return Inertia::render('productos/index', [
@@ -262,7 +263,8 @@ class ProductoController extends Controller
             'marcas'       => $marcas,
             'proveedores'  => $proveedores,
             'unidades'     => UnidadMedida::orderBy('nombre')->get(['id', 'codigo', 'nombre']),
-            'tipos_precio' => TipoPrecio::getOptions(),
+            'tipos_precio' => TipoPrecio::porEmpresa()->getOptions(), // ✨ NUEVO: Filtrar por empresa
+
         ]);
     }
 

@@ -14,7 +14,8 @@ class TipoPrecioController extends Controller
         $q      = (string) $request->string('q');
         $activo = $request->boolean('activo');
 
-        $tipos = TipoPrecio::query()
+        // ✨ NUEVO: Filtrar por empresa del usuario
+        $tipos = TipoPrecio::porEmpresa()
             ->when($q, function ($query) use ($q) {
                 $searchLower = strtolower($q);
                 $query->whereRaw('LOWER(nombre) like ?', ["%$searchLower%"])
@@ -58,9 +59,11 @@ class TipoPrecioController extends Controller
             'configuracion'  => ['nullable', 'array'],
         ]);
 
-        // Solo puede haber un precio base activo
+        // ✨ NUEVO: Solo puede haber un precio base activo POR EMPRESA
         if ($data['es_precio_base'] ?? false) {
-            TipoPrecio::where('es_precio_base', true)->update(['es_precio_base' => false]);
+            TipoPrecio::porEmpresa()
+                ->where('es_precio_base', true)
+                ->update(['es_precio_base' => false]);
         }
 
         // Configuración por defecto
@@ -68,6 +71,7 @@ class TipoPrecioController extends Controller
         $configuracion['icono']   = $configuracion['icono'] ?? ($data['es_ganancia'] ? '💰' : '📦');
         $configuracion['tooltip'] = $configuracion['tooltip'] ?? $data['descripcion'];
 
+        // ✨ NUEVO: Agregar empresa_id automáticamente
         TipoPrecio::create([
             'codigo'              => strtoupper($data['codigo']),
             'nombre'              => $data['nombre'],
@@ -78,16 +82,19 @@ class TipoPrecioController extends Controller
             'porcentaje_ganancia' => isset($configuracion['porcentaje_ganancia']) ? (float) $configuracion['porcentaje_ganancia'] : null,
             'orden'               => $data['orden'],
             'activo'              => $data['activo'] ?? true,
-            'es_sistema'          => false, // Los creados por usuarios no son del sistema
+            'es_sistema'          => false,
             'configuracion'       => $configuracion,
+            'empresa_id'          => auth()->user()?->empresa_id, // ✨ NUEVO
         ]);
 
         return redirect()->route('tipos-precio.index')
             ->with('success', 'Tipo de precio creado correctamente');
     }
 
-    public function show(TipoPrecio $tipoPrecio): Response
+    public function show($id): Response
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $tipoPrecio = TipoPrecio::porEmpresa()->findOrFail($id);
         $tipoPrecio->loadCount(['precios', 'configuracionesGanancias']);
 
         $preciosRecientes = $tipoPrecio->precios()
@@ -107,8 +114,11 @@ class TipoPrecioController extends Controller
         ]);
     }
 
-    public function edit(TipoPrecio $tipoPrecio): Response
+    public function edit($id): Response
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $tipoPrecio = TipoPrecio::porEmpresa()->findOrFail($id);
+
         return Inertia::render('tipos-precio/form', [
             'tipo_precio'         => $tipoPrecio,
             'colores_disponibles' => $this->getColoresDisponibles(),
@@ -116,8 +126,11 @@ class TipoPrecioController extends Controller
         ]);
     }
 
-    public function update(Request $request, TipoPrecio $tipoPrecio): RedirectResponse
+    public function update(Request $request, $id): RedirectResponse
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $tipoPrecio = TipoPrecio::porEmpresa()->findOrFail($id);
+
         $data = $request->validate([
             'codigo'              => ['required', 'string', 'max:20', 'unique:tipos_precio,codigo,' . $tipoPrecio->id],
             'nombre'              => ['required', 'string', 'max:100'],
@@ -136,9 +149,11 @@ class TipoPrecioController extends Controller
             unset($data['codigo'], $data['es_ganancia'], $data['es_precio_base']);
         }
 
-        // Solo puede haber un precio base activo
+        // ✨ NUEVO: Solo puede haber un precio base activo POR EMPRESA
         if (($data['es_precio_base'] ?? false) && ! $tipoPrecio->es_precio_base) {
-            TipoPrecio::where('es_precio_base', true)->update(['es_precio_base' => false]);
+            TipoPrecio::porEmpresa()
+                ->where('es_precio_base', true)
+                ->update(['es_precio_base' => false]);
         }
 
         // Actualizar configuración manteniendo valores existentes
@@ -161,8 +176,11 @@ class TipoPrecioController extends Controller
             ->with('success', 'Tipo de precio actualizado correctamente');
     }
 
-    public function destroy(TipoPrecio $tipoPrecio): RedirectResponse
+    public function destroy($id): RedirectResponse
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $tipoPrecio = TipoPrecio::porEmpresa()->findOrFail($id);
+
         if (! $tipoPrecio->puedeEliminarse()) {
             return redirect()->route('tipos-precio.index')
                 ->with('error', 'No se puede eliminar este tipo de precio. Tiene precios asociados o es un tipo del sistema.');
@@ -177,8 +195,10 @@ class TipoPrecioController extends Controller
     /**
      * Activar/Desactivar un tipo de precio
      */
-    public function toggleActivo(TipoPrecio $tipoPrecio): RedirectResponse
+    public function toggleActivo($id): RedirectResponse
     {
+        // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+        $tipoPrecio = TipoPrecio::porEmpresa()->findOrFail($id);
         $tipoPrecio->update(['activo' => ! $tipoPrecio->activo]);
 
         $estado = $tipoPrecio->activo ? 'activado' : 'desactivado';
