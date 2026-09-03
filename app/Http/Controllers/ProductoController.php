@@ -981,12 +981,24 @@ class ProductoController extends Controller
 
                 // Codigos sólo si vienen
                 if ($request->has('codigos')) {
-                    $producto->codigosBarra()->update(['activo' => false]);
                     $codigosValidos = [];
                     if (! empty($data['codigos']) && is_array($data['codigos'])) {
                         $codigosValidos = array_values(array_filter(array_map(fn($c) => is_string($c) ? trim($c) : '', $data['codigos']), fn($c) => $c !== ''));
                     }
+
                     if (! empty($codigosValidos)) {
+                        // Obtener códigos existentes para comparar
+                        $codigosExistentes = $producto->codigosBarra()->get();
+                        $codigosNuevos = array_map('strtolower', $codigosValidos);
+
+                        // Eliminar códigos que ya no están en los datos enviados (hard delete)
+                        foreach ($codigosExistentes as $codigoExistente) {
+                            if (!in_array(strtolower($codigoExistente->codigo), $codigosNuevos)) {
+                                $codigoExistente->forceDelete(); // Hard delete
+                            }
+                        }
+
+                        // Crear o actualizar códigos válidos
                         foreach ($codigosValidos as $index => $codigo) {
                             $existente = $producto->codigosBarra()->whereRaw('LOWER(codigo) = ?', [strtolower($codigo)])->first();
                             if ($existente) {
@@ -1003,6 +1015,10 @@ class ProductoController extends Controller
                         }
                         $principal = $codigosValidos[0];
                         $producto->update(['codigo_barras' => $principal, 'codigo_qr' => $principal]);
+                    } else {
+                        // Si no hay códigos válidos, eliminar TODOS los códigos (hard delete)
+                        $producto->codigosBarra()->forceDelete();
+                        $producto->update(['codigo_barras' => null, 'codigo_qr' => null]);
                     }
                 }
 
