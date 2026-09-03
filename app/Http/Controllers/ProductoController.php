@@ -956,24 +956,27 @@ class ProductoController extends Controller
 
         try {
             DB::transaction(function () use ($data, $request, $producto) {
+                // 🔥 HELPER: Convertir strings vacíos a null para campos nullable
+                $sanitize = fn($value) => (is_string($value) && $value === '') ? null : $value;
+
                 $producto->update([
                     'nombre'                  => $data['nombre'],
-                    'sku'                     => $data['sku'] ?? $producto->sku,
-                    'descripcion'             => $data['descripcion'] ?? $producto->descripcion,
+                    'sku'                     => $sanitize($data['sku'] ?? $producto->sku),
+                    'descripcion'             => $sanitize($data['descripcion'] ?? $producto->descripcion),
                     'peso'                    => $data['peso'] ?? $producto->peso,
-                    'unidad_medida_id'        => $data['unidad_medida_id'] ?? $producto->unidad_medida_id,
-                    'categoria_id'            => $data['categoria_id'] ?? $producto->categoria_id,
-                    'marca_id'                => $data['marca_id'] ?? $producto->marca_id,
-                    'proveedor_id'            => $data['proveedor_id'] ?? $producto->proveedor_id,
+                    'unidad_medida_id'        => $sanitize($data['unidad_medida_id'] ?? $producto->unidad_medida_id),
+                    'categoria_id'            => $sanitize($data['categoria_id'] ?? $producto->categoria_id),  // 🔥 FIX: Permitir null
+                    'marca_id'                => $sanitize($data['marca_id'] ?? $producto->marca_id),         // 🔥 FIX: Permitir null
+                    'proveedor_id'            => $sanitize($data['proveedor_id'] ?? $producto->proveedor_id), // 🔥 FIX: Permitir null
                     'stock_minimo'            => $data['stock_minimo'] ?? $producto->stock_minimo,
                     'stock_maximo'            => $data['stock_maximo'] ?? $producto->stock_maximo,
-                    'limite_venta'            => $data['limite_venta'] ?? $producto->limite_venta,                       // ✨ NUEVO
+                    'limite_venta'            => $sanitize($data['limite_venta'] ?? $producto->limite_venta),                       // ✨ NUEVO
                     'es_producto_comida'      => $data['es_producto_comida'] ?? $producto->es_producto_comida,           // 🍦 NUEVO - Producto de comida/helado sin stock
                     'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? $producto->permite_venta_sin_stock, // ✅ NUEVO - Permitir venta sin stock
                     'es_producto_adicional'   => $data['es_producto_adicional'] ?? $producto->es_producto_adicional,     // ✨ NUEVO - Indica si es un adicional
                     'puede_tener_producto_adicional' => $data['puede_tener_producto_adicional'] ?? $producto->puede_tener_producto_adicional, // ✨ NUEVO - Indica si puede tener adicionales
-                    'principio_activo'        => $data['principio_activo'] ?? $producto->principio_activo,               // ✨ NUEVO - Campo para farmacias
-                    'uso_de_medicacion'       => $data['uso_de_medicacion'] ?? $producto->uso_de_medicacion,             // ✨ NUEVO - Campo para farmacias
+                    'principio_activo'        => $sanitize($data['principio_activo'] ?? $producto->principio_activo),               // ✨ NUEVO - Campo para farmacias
+                    'uso_de_medicacion'       => $sanitize($data['uso_de_medicacion'] ?? $producto->uso_de_medicacion),             // ✨ NUEVO - Campo para farmacias
                     'visible_app'             => $data['visible_app'] ?? $producto->visible_app,                  // ✨ NUEVO - Visible en app
                     'es_de_produccion'        => $data['es_de_produccion'] ?? $producto->es_de_produccion,          // 🏭 NUEVO - Indicador de producción
                     'activo'                  => $data['activo'] ?? $producto->activo,
