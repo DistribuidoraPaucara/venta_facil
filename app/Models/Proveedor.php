@@ -17,6 +17,7 @@ class Proveedor extends Model
     protected $fillable = [
         'nombre', 'razon_social', 'nit', 'telefono', 'email', 'direccion', 'contacto', 'activo', 'fecha_registro',
         'foto_perfil', 'ci_anverso', 'ci_reverso', 'codigo_proveedor', 'latitud', 'longitud',
+        'empresa_id', // ✨ NUEVO - Multi-tenancy
     ];
 
     protected function casts(): array
@@ -73,7 +74,14 @@ class Proveedor extends Model
         return 'PRV' . $numero;
     }
 
-    // Relaciones
+    /**
+     * Relaciones
+     */
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
     public function compras()
     {
         return $this->hasMany(Compra::class);
@@ -82,5 +90,17 @@ class Proveedor extends Model
     public function productos()
     {
         return $this->hasMany(Producto::class, 'proveedor_id');
+    }
+
+    /**
+     * ✨ NUEVO: Scope para filtrar por empresa del usuario
+     */
+    public function scopePorEmpresa($query, $empresaId = null)
+    {
+        $empresaId = $empresaId ?? auth()->user()?->empresa_id;
+        if ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        }
+        return $query;
     }
 }

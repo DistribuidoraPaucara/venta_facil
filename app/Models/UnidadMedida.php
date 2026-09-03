@@ -13,20 +13,35 @@ class UnidadMedida extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['codigo', 'nombre', 'activo'];
+    protected $fillable = ['codigo', 'nombre', 'activo', 'empresa_id'];
 
     protected $casts = [
         'activo' => 'boolean',
     ];
 
     /**
-     * ✅ Datos maestros GLOBALES - Sin empresa_id
-     * Las unidades de medida son estándares internacionales (kg, L, m, etc)
-     * Compartidas por todas las empresas del sistema
+     * ✅ Ahora CON empresa_id - Depende del rubro
+     * Comida: gramos, kg, litros
+     * Telas: metros, centímetros
+     * Medicinas: ml, pastillas
      */
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
     public function scopeActivas($query)
     {
         return $query->where('activo', true);
+    }
+
+    public function scopePorEmpresa($query, $empresaId = null)
+    {
+        $empresaId = $empresaId ?? auth()->user()?->empresa_id;
+        if ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        }
+        return $query;
     }
 
     public function productos()

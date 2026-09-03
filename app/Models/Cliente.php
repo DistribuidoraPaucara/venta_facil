@@ -23,7 +23,7 @@ class Cliente extends Model
         'activo',
         'fecha_registro',
         'limite_credito',
-        'puede_tener_credito',      // ← NUEVO
+        'puede_tener_credito',
         'foto_perfil',
         'ci_anverso',
         'ci_reverso',
@@ -31,10 +31,11 @@ class Cliente extends Model
         'codigo_cliente',
         'user_id',
         'usuario_creacion_id',
-        'preventista_id',           // ← NUEVO
-        'usuario_actualizacion_id', // ← NUEVO
-        'fecha_creacion',           // ← NUEVO
-        'fecha_actualizacion',      // ← NUEVO
+        'preventista_id',
+        'usuario_actualizacion_id',
+        'fecha_creacion',
+        'fecha_actualizacion',
+        'empresa_id', // ✨ NUEVO - Multi-tenancy
     ];
 
     protected $appends = [
@@ -55,6 +56,11 @@ class Cliente extends Model
         ];
     }
 
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
     public function localidad()
     {
         return $this->belongsTo(Localidad::class);
@@ -63,6 +69,18 @@ class Cliente extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * ✨ NUEVO: Scope para filtrar por empresa del usuario
+     */
+    public function scopePorEmpresa($query, $empresaId = null)
+    {
+        $empresaId = $empresaId ?? auth()->user()?->empresa_id;
+        if ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        }
+        return $query;
     }
 
     public function direcciones()

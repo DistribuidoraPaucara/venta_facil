@@ -77,6 +77,21 @@ class Empresa extends Model
         return $this->hasMany(Producto::class);
     }
 
+    public function unidadesMedida()
+    {
+        return $this->hasMany(UnidadMedida::class);
+    }
+
+    public function clientes()
+    {
+        return $this->hasMany(Cliente::class);
+    }
+
+    public function proveedores()
+    {
+        return $this->hasMany(Proveedor::class);
+    }
+
     /**
      * Almacén de la empresa (para búsquedas de stock y ventas)
      */
