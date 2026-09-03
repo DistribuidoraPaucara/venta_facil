@@ -2339,24 +2339,31 @@ class ProductoController extends Controller
     public function updateApi(Request $request, Producto $producto): JsonResponse
     {
         $data = $request->validate([
-            'nombre'           => ['sometimes', 'required', 'string', 'max:255'],
-            'sku'              => ['nullable', 'string', 'max:20', 'unique:productos,sku,' . $producto->id],
-            'codigo'           => ['nullable', 'string', 'max:100', 'unique:productos,codigo,' . $producto->id],
-            'descripcion'      => ['nullable', 'string'],
-            'categoria_id'     => ['nullable', 'exists:categorias,id'],
-            'marca_id'         => ['nullable', 'exists:marcas,id'],
-            'proveedor_id'     => ['nullable', 'exists:proveedores,id'],
-            'unidad_medida_id' => ['nullable', 'exists:unidades_medida,id'],
-            'precio_compra'    => ['nullable', 'numeric', 'min:0'],
-            'precio_venta'     => ['nullable', 'numeric', 'min:0'],
-            'stock_minimo'     => ['nullable', 'integer', 'min:0'],
-            'stock_maximo'     => ['nullable', 'integer', 'min:0'],
-            'activo'           => ['boolean'],
-            'codigos_barra'    => ['nullable', 'string', 'max:255'],
+            'nombre'                      => ['sometimes', 'required', 'string', 'max:255'],
+            'sku'                         => ['nullable', 'string', 'max:20', 'unique:productos,sku,' . $producto->id],
+            'codigo'                      => ['nullable', 'string', 'max:100', 'unique:productos,codigo,' . $producto->id],
+            'descripcion'                 => ['nullable', 'string'],
+            'categoria_id'                => ['nullable', 'exists:categorias,id'],
+            'marca_id'                    => ['nullable', 'exists:marcas,id'],
+            'proveedor_id'                => ['nullable', 'exists:proveedores,id'],
+            'unidad_medida_id'            => ['nullable', 'exists:unidades_medida,id'],
+            'precio_compra'               => ['nullable', 'numeric', 'min:0'],
+            'precio_venta'                => ['nullable', 'numeric', 'min:0'],
+            'stock_minimo'                => ['nullable', 'integer', 'min:0'],
+            'stock_maximo'                => ['nullable', 'integer', 'min:0'],
+            'activo'                      => ['boolean'],
+            'codigos_barra'               => ['nullable', 'string', 'max:255'],  // Para compatibilidad legacy
+            'codigos'                     => ['nullable', 'array'],              // 🔥 NUEVO: Array de códigos
+            'codigos.*'                   => ['string', 'max:255'],
+            'codigos_vacío_intencional'   => ['nullable', 'boolean'],            // 🔥 NUEVO: Marcador para eliminar
         ]);
 
         try {
-            $producto->update($data);
+            // Remover campos que no van a productos table
+            $dataProducto = $data;
+            unset($dataProducto['codigos'], $dataProducto['codigos_barra'], $dataProducto['codigos_vacío_intencional']);
+
+            $producto->update($dataProducto);
 
             // ✅ Actualizar precio_venta en precios_producto si se proporciona
             if (isset($data['precio_venta'])) {
@@ -2370,22 +2377,76 @@ class ProductoController extends Controller
                 }
             }
 
-            // ✅ Actualizar código de barras si se proporciona
-            if (!empty($data['codigos_barra'])) {
-                // Buscar si ya existe un código de barras principal
-                $codigoBarra = CodigoBarra::where('producto_id', $producto->id)
-                    ->where('tipo', 'BARCODE')
-                    ->where('es_principal', true)
-                    ->first();
+            // 🔥 NUEVO: Gestión mejorada de códigos de barra (compatible con web y móvil)
+            $codigosVacioIntencional = $request->has('codigos_vacío_intencional') && $request->get('codigos_vacío_intencional');
+            $hayCodigosEnRequest = $request->has('codigos');
 
-                if ($codigoBarra) {
-                    // Actualizar existente
-                    $codigoBarra->update([
-                        'codigo' => $data['codigos_barra'],
-                        'activo' => true,
-                    ]);
+            if ($hayCodigosEnRequest || $codigosVacioIntencional) {
+                $codigosValidos = [];
+                if (!empty($data['codigos']) && is_array($data['codigos'])) {
+                    $codigosValidos = array_values(array_filter(array_map(fn($c) => is_string($c) ? trim($c) : '', $data['codigos']), fn($c) => $c !== ''));
+                }
+
+                if (!empty($codigosValidos)) {
+                    // Obtener códigos existentes para comparar
+                    $codigosExistentes = $producto->codigosBarra()->get();
+                    $codigosNuevos = array_map('strtolower', $codigosValidos);
+
+                    // Eliminar códigos que ya no están en los datos enviados (hard delete)
+                    foreach ($codigosExistentes as $codigoExistente) {
+                        if (!in_array(strtolower($codigoExistente->codigo), $codigosNuevos)) {
+                            $codigoExistente->forceDelete();
+                        }
+                    }
+
+                    // Crear o actualizar códigos válidos
+                    foreach ($codigosValidos as $index => $codigo) {
+                        $existente = $producto->codigosBarra()->whereRaw('LOWER(codigo) = ?', [strtolower($codigo)])->first();
+                        if ($existente) {
+                            $existente->update(['es_principal' => $index === 0, 'activo' => true]);
+                        } else {
+                            CodigoBarra::create([
+                                'producto_id'  => $producto->id,
+                                'codigo'       => $codigo,
+                                'tipo'         => 'EAN',
+                                'es_principal' => $index === 0,
+                                'activo'       => true,
+                            ]);
+                        }
+                    }
+                    $principal = $codigosValidos[0];
+                    $producto->update(['codigo_barras' => $principal, 'codigo_qr' => $principal]);
                 } else {
-                    // Crear nuevo si no existe
+                    // 🔥 Si no hay códigos válidos Y el usuario lo hizo intencionalmente: ELIMINAR TODOS
+                    if ($codigosVacioIntencional || (empty($data['codigos']) && $hayCodigosEnRequest)) {
+                        Log::info('🔥 [updateApi] Eliminando TODOS los códigos de barra', [
+                            'producto_id' => $producto->id,
+                            'producto_sku' => $producto->sku,
+                        ]);
+                        $producto->codigosBarra()->forceDelete();
+                        $producto->update(['codigo_barras' => null, 'codigo_qr' => null]);
+                    } else if (!empty($data['codigos_barra'])) {
+                        // Legacy: Si viene codigos_barra como string (para compatibilidad)
+                        $codigoBarra = $producto->codigosBarra()->where('es_principal', true)->first();
+                        if ($codigoBarra) {
+                            $codigoBarra->update(['codigo' => $data['codigos_barra'], 'activo' => true]);
+                        } else {
+                            CodigoBarra::create([
+                                'producto_id'  => $producto->id,
+                                'codigo'       => $data['codigos_barra'],
+                                'tipo'         => 'BARCODE',
+                                'es_principal' => true,
+                                'activo'       => true,
+                            ]);
+                        }
+                    }
+                }
+            } else if (!empty($data['codigos_barra'])) {
+                // Legacy: Si viene codigos_barra como string (para compatibilidad)
+                $codigoBarra = $producto->codigosBarra()->where('es_principal', true)->first();
+                if ($codigoBarra) {
+                    $codigoBarra->update(['codigo' => $data['codigos_barra'], 'activo' => true]);
+                } else {
                     CodigoBarra::create([
                         'producto_id'  => $producto->id,
                         'codigo'       => $data['codigos_barra'],
@@ -2402,6 +2463,7 @@ class ProductoController extends Controller
                 'marca',
                 'proveedor',
                 'unidad',
+                'codigosBarra',
                 'stock' => function ($q) {
                     $q->with(['almacen', 'sector']);
                 }
