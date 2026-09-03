@@ -45,6 +45,7 @@ export interface Step2Props {
     calcularGanancia: (precioVenta: number, precioCosto: number) => { ganancia: number; porcentaje: number };
     addCodigo: () => void;
     removeCodigo: (i: number) => void | Promise<void>;
+    limpiarCodigo?: (i: number) => void; // ✨ NUEVO: Limpiar código sin eliminarlo
     setCodigo: (i: number, value: string) => void;
     historial_precios?: HistorialPrecio[];
     unidades?: { id: number | string; nombre: string; codigo: string }[]; // ✨ NUEVO
@@ -60,6 +61,7 @@ function Step2PreciosCodigos(props: Step2Props) {
         toggleTipoPrecio,
         addCodigo,
         removeCodigo,
+        limpiarCodigo,
         setCodigo,
         isEditing,
     } = props;
@@ -1122,12 +1124,25 @@ function Step2PreciosCodigos(props: Step2Props) {
                                             )}
                                             {/* {c.tipo && <span className="rounded bg-secondary px-2 py-1 text-xs text-foreground">{c.tipo}</span>} */}
                                         </div>
+                                        {c.codigo && (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => limpiarCodigo?.(i)}
+                                                className="text-amber-600 hover:bg-amber-50 hover:text-amber-700 mr-2"
+                                                title="Limpiar el código de barra"
+                                            >
+                                                ✕
+                                            </Button>
+                                        )}
                                         <Button
                                             type="button"
                                             size="sm"
                                             variant="outline"
                                             onClick={() => removeCodigo(i)}
                                             className="text-red-600 hover:bg-red-50 hover:text-red-700 mr-2"
+                                            title="Eliminar esta entrada de código"
                                         >
                                             🗑️
                                         </Button>

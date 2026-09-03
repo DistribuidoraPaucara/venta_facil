@@ -639,6 +639,12 @@ export default function ProductoForm({
         }
     };
 
+    const limpiarCodigo = (i: number) => {
+        const next = [...(data.codigos || [])];
+        next[i] = { ...(next[i] || {}), codigo: '' };
+        setData('codigos', next);
+    };
+
     // ✨ NUEVO: Funciones para manejar almacenes y sectores
     const addAlmacen = (prefill?: any) => {
         const nuevosAlmacenes = [...(data.almacenes || [])];
@@ -930,6 +936,7 @@ export default function ProductoForm({
                                         calcularGanancia={() => ({ ganancia: 0, porcentaje: 0 })}
                                         addCodigo={addCodigo}
                                         removeCodigo={removeCodigo}
+                                        limpiarCodigo={limpiarCodigo}
                                         setCodigo={setCodigo}
                                         historial_precios={historial_precios}
                                         unidades={unidades} // ✨ NUEVO
