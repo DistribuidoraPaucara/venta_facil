@@ -157,7 +157,8 @@ class DashboardService
             ->join('productos', 'stock_productos.producto_id', '=', 'productos.id')
             ->where('productos.activo', true)
             ->select('stock_productos.*')
-            ->get();
+            ->get()
+            ->filter(fn($stock) => $stock->producto && $stock->almacen);
 
         $stockCritico = $stockBajo->where('cantidad', '<=', function ($item) {
             return $item->producto->stock_minimo * 0.5;
@@ -168,10 +169,10 @@ class DashboardService
             'stock_critico' => $stockCritico->count(),
             'productos_afectados' => $stockBajo->take(5)->map(function ($stock) {
                 return [
-                    'producto' => $stock->producto->nombre,
-                    'almacen' => $stock->almacen->nombre,
+                    'producto' => $stock->producto?->nombre ?? 'N/A',
+                    'almacen' => $stock->almacen?->nombre ?? 'N/A',
                     'cantidad_actual' => $stock->cantidad,
-                    'stock_minimo' => $stock->producto->stock_minimo,
+                    'stock_minimo' => $stock->producto?->stock_minimo ?? 0,
                 ];
             }),
         ];
