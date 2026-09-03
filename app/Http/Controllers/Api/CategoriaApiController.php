@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 class CategoriaApiController extends Controller
 {
     /**
-     * API: Listar todas las categorías (activas e inactivas)
+     * API: Listar todas las categorías (filtradas por empresa del usuario)
      * GET /api/app/categorias-crud
      */
     public function index(Request $request): JsonResponse
@@ -21,7 +21,8 @@ class CategoriaApiController extends Controller
             $perPage = $request->integer('per_page', 20);
             $searchTerm = $request->string('q', '');
 
-            $query = Categoria::query();
+            // ✨ NUEVO: Filtrar por empresa del usuario
+            $query = Categoria::porEmpresa();
 
             // Búsqueda
             if ($searchTerm) {
@@ -53,7 +54,7 @@ class CategoriaApiController extends Controller
     }
 
     /**
-     * API: Crear nueva categoría
+     * API: Crear nueva categoría (se asigna automáticamente a la empresa del usuario)
      * POST /api/app/categorias-crud
      */
     public function store(Request $request): JsonResponse
@@ -66,6 +67,8 @@ class CategoriaApiController extends Controller
             ]);
 
             $validated['activo'] = $validated['activo'] ?? true;
+            // ✨ NUEVO: Agregar empresa_id automáticamente
+            $validated['empresa_id'] = auth()->user()?->empresa_id;
 
             $categoria = Categoria::create($validated);
 
@@ -94,12 +97,15 @@ class CategoriaApiController extends Controller
     }
 
     /**
-     * API: Obtener una categoría por ID
+     * API: Obtener una categoría por ID (validando que pertenezca a la empresa del usuario)
      * GET /api/app/categorias-crud/{id}
      */
-    public function show(Categoria $categoria): JsonResponse
+    public function show($id): JsonResponse
     {
         try {
+            // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+            $categoria = Categoria::porEmpresa()->findOrFail($id);
+
             return response()->json([
                 'success' => true,
                 'status' => 200,
@@ -119,12 +125,15 @@ class CategoriaApiController extends Controller
     }
 
     /**
-     * API: Actualizar categoría
+     * API: Actualizar categoría (validando que pertenezca a la empresa del usuario)
      * PUT /api/app/categorias-crud/{id}
      */
-    public function update(Request $request, Categoria $categoria): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         try {
+            // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+            $categoria = Categoria::porEmpresa()->findOrFail($id);
+
             $validated = $request->validate([
                 'nombre' => ['sometimes', 'required', 'string', 'max:255', 'unique:categorias,nombre,' . $categoria->id],
                 'descripcion' => ['nullable', 'string', 'max:1000'],
@@ -146,7 +155,6 @@ class CategoriaApiController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('❌ [CategoriaApiController] Error al actualizar', [
-                'categoria_id' => $categoria->id,
                 'error' => $e->getMessage(),
             ]);
 
@@ -159,12 +167,15 @@ class CategoriaApiController extends Controller
     }
 
     /**
-     * API: Eliminar categoría
+     * API: Eliminar categoría (validando que pertenezca a la empresa del usuario)
      * DELETE /api/app/categorias-crud/{id}
      */
-    public function destroy(Categoria $categoria): JsonResponse
+    public function destroy($id): JsonResponse
     {
         try {
+            // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
+            $categoria = Categoria::porEmpresa()->findOrFail($id);
+
             // Verificar si la categoría tiene productos asociados
             if ($categoria->productos()->exists()) {
                 return response()->json([
@@ -190,7 +201,6 @@ class CategoriaApiController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('❌ [CategoriaApiController] Error al eliminar', [
-                'categoria_id' => $categoria->id,
                 'error' => $e->getMessage(),
             ]);
 
