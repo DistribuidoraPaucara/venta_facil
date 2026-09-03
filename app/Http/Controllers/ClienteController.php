@@ -751,7 +751,7 @@ class ClienteController extends Controller
     {
         // ✨ NUEVO: Validar que pertenezca a la empresa del usuario
         $cliente = ClienteModel::porEmpresa()->findOrFail($id);
-    {
+
         // ✅ Autorizar: Solo roles que pueden ver este cliente
         $this->authorize('view', $cliente);
 
