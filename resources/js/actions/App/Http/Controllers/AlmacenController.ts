@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\AlmacenController::create
- * @see app/Http/Controllers/AlmacenController.php:162
+ * @see app/Http/Controllers/AlmacenController.php:167
  * @route '/almacenes/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenController::create
- * @see app/Http/Controllers/AlmacenController.php:162
+ * @see app/Http/Controllers/AlmacenController.php:167
  * @route '/almacenes/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AlmacenController::create
- * @see app/Http/Controllers/AlmacenController.php:162
+ * @see app/Http/Controllers/AlmacenController.php:167
  * @route '/almacenes/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\AlmacenController::create
- * @see app/Http/Controllers/AlmacenController.php:162
+ * @see app/Http/Controllers/AlmacenController.php:167
  * @route '/almacenes/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\AlmacenController::create
- * @see app/Http/Controllers/AlmacenController.php:162
+ * @see app/Http/Controllers/AlmacenController.php:167
  * @route '/almacenes/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\AlmacenController::create
- * @see app/Http/Controllers/AlmacenController.php:162
+ * @see app/Http/Controllers/AlmacenController.php:167
  * @route '/almacenes/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\AlmacenController::create
- * @see app/Http/Controllers/AlmacenController.php:162
+ * @see app/Http/Controllers/AlmacenController.php:167
  * @route '/almacenes/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\AlmacenController::store
- * @see app/Http/Controllers/AlmacenController.php:177
+ * @see app/Http/Controllers/AlmacenController.php:182
  * @route '/almacenes'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenController::store
- * @see app/Http/Controllers/AlmacenController.php:177
+ * @see app/Http/Controllers/AlmacenController.php:182
  * @route '/almacenes'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AlmacenController::store
- * @see app/Http/Controllers/AlmacenController.php:177
+ * @see app/Http/Controllers/AlmacenController.php:182
  * @route '/almacenes'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\AlmacenController::store
- * @see app/Http/Controllers/AlmacenController.php:177
+ * @see app/Http/Controllers/AlmacenController.php:182
  * @route '/almacenes'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\AlmacenController::store
- * @see app/Http/Controllers/AlmacenController.php:177
+ * @see app/Http/Controllers/AlmacenController.php:182
  * @route '/almacenes'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -309,7 +309,7 @@ show.head = (args: { almacene: string | number } | [almacene: string | number ] 
     show.form = showForm
 /**
 * @see \App\Http\Controllers\AlmacenController::edit
- * @see app/Http/Controllers/AlmacenController.php:203
+ * @see app/Http/Controllers/AlmacenController.php:213
  * @route '/almacenes/{almacene}/edit'
  */
 export const edit = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -324,7 +324,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenController::edit
- * @see app/Http/Controllers/AlmacenController.php:203
+ * @see app/Http/Controllers/AlmacenController.php:213
  * @route '/almacenes/{almacene}/edit'
  */
 edit.url = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -352,7 +352,7 @@ edit.url = (args: { almacene: string | number } | [almacene: string | number ] |
 
 /**
 * @see \App\Http\Controllers\AlmacenController::edit
- * @see app/Http/Controllers/AlmacenController.php:203
+ * @see app/Http/Controllers/AlmacenController.php:213
  * @route '/almacenes/{almacene}/edit'
  */
 edit.get = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -361,7 +361,7 @@ edit.get = (args: { almacene: string | number } | [almacene: string | number ] |
 })
 /**
 * @see \App\Http\Controllers\AlmacenController::edit
- * @see app/Http/Controllers/AlmacenController.php:203
+ * @see app/Http/Controllers/AlmacenController.php:213
  * @route '/almacenes/{almacene}/edit'
  */
 edit.head = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -371,7 +371,7 @@ edit.head = (args: { almacene: string | number } | [almacene: string | number ] 
 
     /**
 * @see \App\Http\Controllers\AlmacenController::edit
- * @see app/Http/Controllers/AlmacenController.php:203
+ * @see app/Http/Controllers/AlmacenController.php:213
  * @route '/almacenes/{almacene}/edit'
  */
     const editForm = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -381,7 +381,7 @@ edit.head = (args: { almacene: string | number } | [almacene: string | number ] 
 
             /**
 * @see \App\Http\Controllers\AlmacenController::edit
- * @see app/Http/Controllers/AlmacenController.php:203
+ * @see app/Http/Controllers/AlmacenController.php:213
  * @route '/almacenes/{almacene}/edit'
  */
         editForm.get = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -390,7 +390,7 @@ edit.head = (args: { almacene: string | number } | [almacene: string | number ] 
         })
             /**
 * @see \App\Http\Controllers\AlmacenController::edit
- * @see app/Http/Controllers/AlmacenController.php:203
+ * @see app/Http/Controllers/AlmacenController.php:213
  * @route '/almacenes/{almacene}/edit'
  */
         editForm.head = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -406,7 +406,7 @@ edit.head = (args: { almacene: string | number } | [almacene: string | number ] 
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\AlmacenController::update
- * @see app/Http/Controllers/AlmacenController.php:222
+ * @see app/Http/Controllers/AlmacenController.php:232
  * @route '/almacenes/{almacene}'
  */
 export const update = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -421,7 +421,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenController::update
- * @see app/Http/Controllers/AlmacenController.php:222
+ * @see app/Http/Controllers/AlmacenController.php:232
  * @route '/almacenes/{almacene}'
  */
 update.url = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -449,7 +449,7 @@ update.url = (args: { almacene: string | number } | [almacene: string | number ]
 
 /**
 * @see \App\Http\Controllers\AlmacenController::update
- * @see app/Http/Controllers/AlmacenController.php:222
+ * @see app/Http/Controllers/AlmacenController.php:232
  * @route '/almacenes/{almacene}'
  */
 update.put = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -458,7 +458,7 @@ update.put = (args: { almacene: string | number } | [almacene: string | number ]
 })
 /**
 * @see \App\Http\Controllers\AlmacenController::update
- * @see app/Http/Controllers/AlmacenController.php:222
+ * @see app/Http/Controllers/AlmacenController.php:232
  * @route '/almacenes/{almacene}'
  */
 update.patch = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -468,7 +468,7 @@ update.patch = (args: { almacene: string | number } | [almacene: string | number
 
     /**
 * @see \App\Http\Controllers\AlmacenController::update
- * @see app/Http/Controllers/AlmacenController.php:222
+ * @see app/Http/Controllers/AlmacenController.php:232
  * @route '/almacenes/{almacene}'
  */
     const updateForm = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -483,7 +483,7 @@ update.patch = (args: { almacene: string | number } | [almacene: string | number
 
             /**
 * @see \App\Http\Controllers\AlmacenController::update
- * @see app/Http/Controllers/AlmacenController.php:222
+ * @see app/Http/Controllers/AlmacenController.php:232
  * @route '/almacenes/{almacene}'
  */
         updateForm.put = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +497,7 @@ update.patch = (args: { almacene: string | number } | [almacene: string | number
         })
             /**
 * @see \App\Http\Controllers\AlmacenController::update
- * @see app/Http/Controllers/AlmacenController.php:222
+ * @see app/Http/Controllers/AlmacenController.php:232
  * @route '/almacenes/{almacene}'
  */
         updateForm.patch = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { almacene: string | number } | [almacene: string | number
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\AlmacenController::destroy
- * @see app/Http/Controllers/AlmacenController.php:244
+ * @see app/Http/Controllers/AlmacenController.php:254
  * @route '/almacenes/{almacene}'
  */
 export const destroy = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenController::destroy
- * @see app/Http/Controllers/AlmacenController.php:244
+ * @see app/Http/Controllers/AlmacenController.php:254
  * @route '/almacenes/{almacene}'
  */
 destroy.url = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { almacene: string | number } | [almacene: string | number 
 
 /**
 * @see \App\Http\Controllers\AlmacenController::destroy
- * @see app/Http/Controllers/AlmacenController.php:244
+ * @see app/Http/Controllers/AlmacenController.php:254
  * @route '/almacenes/{almacene}'
  */
 destroy.delete = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { almacene: string | number } | [almacene: string | numb
 
     /**
 * @see \App\Http\Controllers\AlmacenController::destroy
- * @see app/Http/Controllers/AlmacenController.php:244
+ * @see app/Http/Controllers/AlmacenController.php:254
  * @route '/almacenes/{almacene}'
  */
     const destroyForm = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { almacene: string | number } | [almacene: string | numb
 
             /**
 * @see \App\Http\Controllers\AlmacenController::destroy
- * @see app/Http/Controllers/AlmacenController.php:244
+ * @see app/Http/Controllers/AlmacenController.php:254
  * @route '/almacenes/{almacene}'
  */
         destroyForm.delete = (args: { almacene: string | number } | [almacene: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::store
- * @see app/Http/Controllers/EstadosDocumentoController.php:177
+ * @see app/Http/Controllers/EstadosDocumentoController.php:182
  * @route '/estados-documento'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::store
- * @see app/Http/Controllers/EstadosDocumentoController.php:177
+ * @see app/Http/Controllers/EstadosDocumentoController.php:182
  * @route '/estados-documento'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::store
- * @see app/Http/Controllers/EstadosDocumentoController.php:177
+ * @see app/Http/Controllers/EstadosDocumentoController.php:182
  * @route '/estados-documento'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\EstadosDocumentoController::store
- * @see app/Http/Controllers/EstadosDocumentoController.php:177
+ * @see app/Http/Controllers/EstadosDocumentoController.php:182
  * @route '/estados-documento'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\EstadosDocumentoController::store
- * @see app/Http/Controllers/EstadosDocumentoController.php:177
+ * @see app/Http/Controllers/EstadosDocumentoController.php:182
  * @route '/estados-documento'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -406,7 +406,7 @@ edit.head = (args: { estados_documento: string | number } | [estados_documento: 
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::update
- * @see app/Http/Controllers/EstadosDocumentoController.php:222
+ * @see app/Http/Controllers/EstadosDocumentoController.php:232
  * @route '/estados-documento/{estados_documento}'
  */
 export const update = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -421,7 +421,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::update
- * @see app/Http/Controllers/EstadosDocumentoController.php:222
+ * @see app/Http/Controllers/EstadosDocumentoController.php:232
  * @route '/estados-documento/{estados_documento}'
  */
 update.url = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -449,7 +449,7 @@ update.url = (args: { estados_documento: string | number } | [estados_documento:
 
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::update
- * @see app/Http/Controllers/EstadosDocumentoController.php:222
+ * @see app/Http/Controllers/EstadosDocumentoController.php:232
  * @route '/estados-documento/{estados_documento}'
  */
 update.put = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -458,7 +458,7 @@ update.put = (args: { estados_documento: string | number } | [estados_documento:
 })
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::update
- * @see app/Http/Controllers/EstadosDocumentoController.php:222
+ * @see app/Http/Controllers/EstadosDocumentoController.php:232
  * @route '/estados-documento/{estados_documento}'
  */
 update.patch = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -468,7 +468,7 @@ update.patch = (args: { estados_documento: string | number } | [estados_document
 
     /**
 * @see \App\Http\Controllers\EstadosDocumentoController::update
- * @see app/Http/Controllers/EstadosDocumentoController.php:222
+ * @see app/Http/Controllers/EstadosDocumentoController.php:232
  * @route '/estados-documento/{estados_documento}'
  */
     const updateForm = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -483,7 +483,7 @@ update.patch = (args: { estados_documento: string | number } | [estados_document
 
             /**
 * @see \App\Http\Controllers\EstadosDocumentoController::update
- * @see app/Http/Controllers/EstadosDocumentoController.php:222
+ * @see app/Http/Controllers/EstadosDocumentoController.php:232
  * @route '/estados-documento/{estados_documento}'
  */
         updateForm.put = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +497,7 @@ update.patch = (args: { estados_documento: string | number } | [estados_document
         })
             /**
 * @see \App\Http\Controllers\EstadosDocumentoController::update
- * @see app/Http/Controllers/EstadosDocumentoController.php:222
+ * @see app/Http/Controllers/EstadosDocumentoController.php:232
  * @route '/estados-documento/{estados_documento}'
  */
         updateForm.patch = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { estados_documento: string | number } | [estados_document
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::destroy
- * @see app/Http/Controllers/EstadosDocumentoController.php:244
+ * @see app/Http/Controllers/EstadosDocumentoController.php:254
  * @route '/estados-documento/{estados_documento}'
  */
 export const destroy = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::destroy
- * @see app/Http/Controllers/EstadosDocumentoController.php:244
+ * @see app/Http/Controllers/EstadosDocumentoController.php:254
  * @route '/estados-documento/{estados_documento}'
  */
 destroy.url = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { estados_documento: string | number } | [estados_documento
 
 /**
 * @see \App\Http\Controllers\EstadosDocumentoController::destroy
- * @see app/Http/Controllers/EstadosDocumentoController.php:244
+ * @see app/Http/Controllers/EstadosDocumentoController.php:254
  * @route '/estados-documento/{estados_documento}'
  */
 destroy.delete = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { estados_documento: string | number } | [estados_docume
 
     /**
 * @see \App\Http\Controllers\EstadosDocumentoController::destroy
- * @see app/Http/Controllers/EstadosDocumentoController.php:244
+ * @see app/Http/Controllers/EstadosDocumentoController.php:254
  * @route '/estados-documento/{estados_documento}'
  */
     const destroyForm = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { estados_documento: string | number } | [estados_docume
 
             /**
 * @see \App\Http\Controllers\EstadosDocumentoController::destroy
- * @see app/Http/Controllers/EstadosDocumentoController.php:244
+ * @see app/Http/Controllers/EstadosDocumentoController.php:254
  * @route '/estados-documento/{estados_documento}'
  */
         destroyForm.delete = (args: { estados_documento: string | number } | [estados_documento: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

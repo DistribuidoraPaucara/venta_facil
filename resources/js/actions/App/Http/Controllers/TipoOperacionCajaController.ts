@@ -163,7 +163,7 @@ export const index = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/api/tipo-operacion-caja'
  */
 const store6b30bac62c927cd99dd8ad115709748d = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -178,7 +178,7 @@ store6b30bac62c927cd99dd8ad115709748d.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/api/tipo-operacion-caja'
  */
 store6b30bac62c927cd99dd8ad115709748d.url = (options?: RouteQueryOptions) => {
@@ -187,7 +187,7 @@ store6b30bac62c927cd99dd8ad115709748d.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/api/tipo-operacion-caja'
  */
 store6b30bac62c927cd99dd8ad115709748d.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -197,7 +197,7 @@ store6b30bac62c927cd99dd8ad115709748d.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/api/tipo-operacion-caja'
  */
     const store6b30bac62c927cd99dd8ad115709748dForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -207,7 +207,7 @@ store6b30bac62c927cd99dd8ad115709748d.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/api/tipo-operacion-caja'
  */
         store6b30bac62c927cd99dd8ad115709748dForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -218,7 +218,7 @@ store6b30bac62c927cd99dd8ad115709748d.post = (options?: RouteQueryOptions): Rout
     store6b30bac62c927cd99dd8ad115709748d.form = store6b30bac62c927cd99dd8ad115709748dForm
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/tipo-operacion-caja'
  */
 const storeb18f28aa9328dee4a5a2bae5218874dd = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -233,7 +233,7 @@ storeb18f28aa9328dee4a5a2bae5218874dd.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/tipo-operacion-caja'
  */
 storeb18f28aa9328dee4a5a2bae5218874dd.url = (options?: RouteQueryOptions) => {
@@ -242,7 +242,7 @@ storeb18f28aa9328dee4a5a2bae5218874dd.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/tipo-operacion-caja'
  */
 storeb18f28aa9328dee4a5a2bae5218874dd.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -252,7 +252,7 @@ storeb18f28aa9328dee4a5a2bae5218874dd.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/tipo-operacion-caja'
  */
     const storeb18f28aa9328dee4a5a2bae5218874ddForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -262,7 +262,7 @@ storeb18f28aa9328dee4a5a2bae5218874dd.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::store
- * @see app/Http/Controllers/TipoOperacionCajaController.php:177
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:182
  * @route '/tipo-operacion-caja'
  */
         storeb18f28aa9328dee4a5a2bae5218874ddForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -479,7 +479,7 @@ export const show = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 const update7010b75504de8b3e5fb5d3fb86639f0f = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -494,7 +494,7 @@ update7010b75504de8b3e5fb5d3fb86639f0f.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 update7010b75504de8b3e5fb5d3fb86639f0f.url = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -522,7 +522,7 @@ update7010b75504de8b3e5fb5d3fb86639f0f.url = (args: { tipo_operacion_caja: strin
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 update7010b75504de8b3e5fb5d3fb86639f0f.put = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -531,7 +531,7 @@ update7010b75504de8b3e5fb5d3fb86639f0f.put = (args: { tipo_operacion_caja: strin
 })
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 update7010b75504de8b3e5fb5d3fb86639f0f.patch = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -541,7 +541,7 @@ update7010b75504de8b3e5fb5d3fb86639f0f.patch = (args: { tipo_operacion_caja: str
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
     const update7010b75504de8b3e5fb5d3fb86639f0fForm = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -556,7 +556,7 @@ update7010b75504de8b3e5fb5d3fb86639f0f.patch = (args: { tipo_operacion_caja: str
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
         update7010b75504de8b3e5fb5d3fb86639f0fForm.put = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -570,7 +570,7 @@ update7010b75504de8b3e5fb5d3fb86639f0f.patch = (args: { tipo_operacion_caja: str
         })
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
         update7010b75504de8b3e5fb5d3fb86639f0fForm.patch = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -586,7 +586,7 @@ update7010b75504de8b3e5fb5d3fb86639f0f.patch = (args: { tipo_operacion_caja: str
     update7010b75504de8b3e5fb5d3fb86639f0f.form = update7010b75504de8b3e5fb5d3fb86639f0fForm
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 const update8055b499e70eb7ce96e1bb4736306dd9 = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -601,7 +601,7 @@ update8055b499e70eb7ce96e1bb4736306dd9.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 update8055b499e70eb7ce96e1bb4736306dd9.url = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -629,7 +629,7 @@ update8055b499e70eb7ce96e1bb4736306dd9.url = (args: { tipo_operacion_caja: strin
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 update8055b499e70eb7ce96e1bb4736306dd9.put = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -638,7 +638,7 @@ update8055b499e70eb7ce96e1bb4736306dd9.put = (args: { tipo_operacion_caja: strin
 })
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 update8055b499e70eb7ce96e1bb4736306dd9.patch = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -648,7 +648,7 @@ update8055b499e70eb7ce96e1bb4736306dd9.patch = (args: { tipo_operacion_caja: str
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
     const update8055b499e70eb7ce96e1bb4736306dd9Form = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -663,7 +663,7 @@ update8055b499e70eb7ce96e1bb4736306dd9.patch = (args: { tipo_operacion_caja: str
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
         update8055b499e70eb7ce96e1bb4736306dd9Form.put = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -677,7 +677,7 @@ update8055b499e70eb7ce96e1bb4736306dd9.patch = (args: { tipo_operacion_caja: str
         })
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::update
- * @see app/Http/Controllers/TipoOperacionCajaController.php:222
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:232
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
         update8055b499e70eb7ce96e1bb4736306dd9Form.patch = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -699,7 +699,7 @@ export const update = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 const destroy7010b75504de8b3e5fb5d3fb86639f0f = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -714,7 +714,7 @@ destroy7010b75504de8b3e5fb5d3fb86639f0f.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 destroy7010b75504de8b3e5fb5d3fb86639f0f.url = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -742,7 +742,7 @@ destroy7010b75504de8b3e5fb5d3fb86639f0f.url = (args: { tipo_operacion_caja: stri
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 destroy7010b75504de8b3e5fb5d3fb86639f0f.delete = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -752,7 +752,7 @@ destroy7010b75504de8b3e5fb5d3fb86639f0f.delete = (args: { tipo_operacion_caja: s
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
     const destroy7010b75504de8b3e5fb5d3fb86639f0fForm = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -767,7 +767,7 @@ destroy7010b75504de8b3e5fb5d3fb86639f0f.delete = (args: { tipo_operacion_caja: s
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/api/tipo-operacion-caja/{tipo_operacion_caja}'
  */
         destroy7010b75504de8b3e5fb5d3fb86639f0fForm.delete = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -783,7 +783,7 @@ destroy7010b75504de8b3e5fb5d3fb86639f0f.delete = (args: { tipo_operacion_caja: s
     destroy7010b75504de8b3e5fb5d3fb86639f0f.form = destroy7010b75504de8b3e5fb5d3fb86639f0fForm
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 const destroy8055b499e70eb7ce96e1bb4736306dd9 = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -798,7 +798,7 @@ destroy8055b499e70eb7ce96e1bb4736306dd9.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 destroy8055b499e70eb7ce96e1bb4736306dd9.url = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -826,7 +826,7 @@ destroy8055b499e70eb7ce96e1bb4736306dd9.url = (args: { tipo_operacion_caja: stri
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
 destroy8055b499e70eb7ce96e1bb4736306dd9.delete = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -836,7 +836,7 @@ destroy8055b499e70eb7ce96e1bb4736306dd9.delete = (args: { tipo_operacion_caja: s
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
     const destroy8055b499e70eb7ce96e1bb4736306dd9Form = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -851,7 +851,7 @@ destroy8055b499e70eb7ce96e1bb4736306dd9.delete = (args: { tipo_operacion_caja: s
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::destroy
- * @see app/Http/Controllers/TipoOperacionCajaController.php:244
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:254
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}'
  */
         destroy8055b499e70eb7ce96e1bb4736306dd9Form.delete = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -873,7 +873,7 @@ export const destroy = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::create
- * @see app/Http/Controllers/TipoOperacionCajaController.php:162
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:167
  * @route '/tipo-operacion-caja/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -888,7 +888,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::create
- * @see app/Http/Controllers/TipoOperacionCajaController.php:162
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:167
  * @route '/tipo-operacion-caja/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -897,7 +897,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::create
- * @see app/Http/Controllers/TipoOperacionCajaController.php:162
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:167
  * @route '/tipo-operacion-caja/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -906,7 +906,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::create
- * @see app/Http/Controllers/TipoOperacionCajaController.php:162
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:167
  * @route '/tipo-operacion-caja/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -916,7 +916,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::create
- * @see app/Http/Controllers/TipoOperacionCajaController.php:162
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:167
  * @route '/tipo-operacion-caja/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -926,7 +926,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::create
- * @see app/Http/Controllers/TipoOperacionCajaController.php:162
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:167
  * @route '/tipo-operacion-caja/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -935,7 +935,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::create
- * @see app/Http/Controllers/TipoOperacionCajaController.php:162
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:167
  * @route '/tipo-operacion-caja/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -951,7 +951,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::edit
- * @see app/Http/Controllers/TipoOperacionCajaController.php:203
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:213
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}/edit'
  */
 export const edit = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -966,7 +966,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::edit
- * @see app/Http/Controllers/TipoOperacionCajaController.php:203
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:213
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}/edit'
  */
 edit.url = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -994,7 +994,7 @@ edit.url = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caj
 
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::edit
- * @see app/Http/Controllers/TipoOperacionCajaController.php:203
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:213
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}/edit'
  */
 edit.get = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1003,7 +1003,7 @@ edit.get = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caj
 })
 /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::edit
- * @see app/Http/Controllers/TipoOperacionCajaController.php:203
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:213
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}/edit'
  */
 edit.head = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1013,7 +1013,7 @@ edit.head = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_ca
 
     /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::edit
- * @see app/Http/Controllers/TipoOperacionCajaController.php:203
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:213
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}/edit'
  */
     const editForm = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1023,7 +1023,7 @@ edit.head = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_ca
 
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::edit
- * @see app/Http/Controllers/TipoOperacionCajaController.php:203
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:213
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}/edit'
  */
         editForm.get = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1032,7 +1032,7 @@ edit.head = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_ca
         })
             /**
 * @see \App\Http\Controllers\TipoOperacionCajaController::edit
- * @see app/Http/Controllers/TipoOperacionCajaController.php:203
+ * @see app/Http/Controllers/TipoOperacionCajaController.php:213
  * @route '/tipo-operacion-caja/{tipo_operacion_caja}/edit'
  */
         editForm.head = (args: { tipo_operacion_caja: string | number } | [tipo_operacion_caja: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

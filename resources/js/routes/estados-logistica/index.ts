@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::store
- * @see app/Http/Controllers/EstadosLogisticaController.php:177
+ * @see app/Http/Controllers/EstadosLogisticaController.php:182
  * @route '/estados-logistica'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::store
- * @see app/Http/Controllers/EstadosLogisticaController.php:177
+ * @see app/Http/Controllers/EstadosLogisticaController.php:182
  * @route '/estados-logistica'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::store
- * @see app/Http/Controllers/EstadosLogisticaController.php:177
+ * @see app/Http/Controllers/EstadosLogisticaController.php:182
  * @route '/estados-logistica'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\EstadosLogisticaController::store
- * @see app/Http/Controllers/EstadosLogisticaController.php:177
+ * @see app/Http/Controllers/EstadosLogisticaController.php:182
  * @route '/estados-logistica'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\EstadosLogisticaController::store
- * @see app/Http/Controllers/EstadosLogisticaController.php:177
+ * @see app/Http/Controllers/EstadosLogisticaController.php:182
  * @route '/estados-logistica'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -406,7 +406,7 @@ edit.head = (args: { estados_logistica: string | number } | [estados_logistica: 
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::update
- * @see app/Http/Controllers/EstadosLogisticaController.php:222
+ * @see app/Http/Controllers/EstadosLogisticaController.php:232
  * @route '/estados-logistica/{estados_logistica}'
  */
 export const update = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -421,7 +421,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::update
- * @see app/Http/Controllers/EstadosLogisticaController.php:222
+ * @see app/Http/Controllers/EstadosLogisticaController.php:232
  * @route '/estados-logistica/{estados_logistica}'
  */
 update.url = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -449,7 +449,7 @@ update.url = (args: { estados_logistica: string | number } | [estados_logistica:
 
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::update
- * @see app/Http/Controllers/EstadosLogisticaController.php:222
+ * @see app/Http/Controllers/EstadosLogisticaController.php:232
  * @route '/estados-logistica/{estados_logistica}'
  */
 update.put = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -458,7 +458,7 @@ update.put = (args: { estados_logistica: string | number } | [estados_logistica:
 })
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::update
- * @see app/Http/Controllers/EstadosLogisticaController.php:222
+ * @see app/Http/Controllers/EstadosLogisticaController.php:232
  * @route '/estados-logistica/{estados_logistica}'
  */
 update.patch = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -468,7 +468,7 @@ update.patch = (args: { estados_logistica: string | number } | [estados_logistic
 
     /**
 * @see \App\Http\Controllers\EstadosLogisticaController::update
- * @see app/Http/Controllers/EstadosLogisticaController.php:222
+ * @see app/Http/Controllers/EstadosLogisticaController.php:232
  * @route '/estados-logistica/{estados_logistica}'
  */
     const updateForm = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -483,7 +483,7 @@ update.patch = (args: { estados_logistica: string | number } | [estados_logistic
 
             /**
 * @see \App\Http\Controllers\EstadosLogisticaController::update
- * @see app/Http/Controllers/EstadosLogisticaController.php:222
+ * @see app/Http/Controllers/EstadosLogisticaController.php:232
  * @route '/estados-logistica/{estados_logistica}'
  */
         updateForm.put = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +497,7 @@ update.patch = (args: { estados_logistica: string | number } | [estados_logistic
         })
             /**
 * @see \App\Http\Controllers\EstadosLogisticaController::update
- * @see app/Http/Controllers/EstadosLogisticaController.php:222
+ * @see app/Http/Controllers/EstadosLogisticaController.php:232
  * @route '/estados-logistica/{estados_logistica}'
  */
         updateForm.patch = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { estados_logistica: string | number } | [estados_logistic
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::destroy
- * @see app/Http/Controllers/EstadosLogisticaController.php:244
+ * @see app/Http/Controllers/EstadosLogisticaController.php:254
  * @route '/estados-logistica/{estados_logistica}'
  */
 export const destroy = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::destroy
- * @see app/Http/Controllers/EstadosLogisticaController.php:244
+ * @see app/Http/Controllers/EstadosLogisticaController.php:254
  * @route '/estados-logistica/{estados_logistica}'
  */
 destroy.url = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { estados_logistica: string | number } | [estados_logistica
 
 /**
 * @see \App\Http\Controllers\EstadosLogisticaController::destroy
- * @see app/Http/Controllers/EstadosLogisticaController.php:244
+ * @see app/Http/Controllers/EstadosLogisticaController.php:254
  * @route '/estados-logistica/{estados_logistica}'
  */
 destroy.delete = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { estados_logistica: string | number } | [estados_logist
 
     /**
 * @see \App\Http\Controllers\EstadosLogisticaController::destroy
- * @see app/Http/Controllers/EstadosLogisticaController.php:244
+ * @see app/Http/Controllers/EstadosLogisticaController.php:254
  * @route '/estados-logistica/{estados_logistica}'
  */
     const destroyForm = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { estados_logistica: string | number } | [estados_logist
 
             /**
 * @see \App\Http\Controllers\EstadosLogisticaController::destroy
- * @see app/Http/Controllers/EstadosLogisticaController.php:244
+ * @see app/Http/Controllers/EstadosLogisticaController.php:254
  * @route '/estados-logistica/{estados_logistica}'
  */
         destroyForm.delete = (args: { estados_logistica: string | number } | [estados_logistica: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

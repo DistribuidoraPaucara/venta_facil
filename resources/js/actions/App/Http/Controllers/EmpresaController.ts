@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\EmpresaController::create
- * @see app/Http/Controllers/EmpresaController.php:162
+ * @see app/Http/Controllers/EmpresaController.php:167
  * @route '/empresas/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\EmpresaController::create
- * @see app/Http/Controllers/EmpresaController.php:162
+ * @see app/Http/Controllers/EmpresaController.php:167
  * @route '/empresas/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\EmpresaController::create
- * @see app/Http/Controllers/EmpresaController.php:162
+ * @see app/Http/Controllers/EmpresaController.php:167
  * @route '/empresas/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\EmpresaController::create
- * @see app/Http/Controllers/EmpresaController.php:162
+ * @see app/Http/Controllers/EmpresaController.php:167
  * @route '/empresas/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\EmpresaController::create
- * @see app/Http/Controllers/EmpresaController.php:162
+ * @see app/Http/Controllers/EmpresaController.php:167
  * @route '/empresas/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\EmpresaController::create
- * @see app/Http/Controllers/EmpresaController.php:162
+ * @see app/Http/Controllers/EmpresaController.php:167
  * @route '/empresas/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\EmpresaController::create
- * @see app/Http/Controllers/EmpresaController.php:162
+ * @see app/Http/Controllers/EmpresaController.php:167
  * @route '/empresas/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { empresa: string | number } | [empresa: string | number ]
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\EmpresaController::destroy
- * @see app/Http/Controllers/EmpresaController.php:244
+ * @see app/Http/Controllers/EmpresaController.php:254
  * @route '/empresas/{empresa}'
  */
 export const destroy = (args: { empresa: string | number } | [empresa: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\EmpresaController::destroy
- * @see app/Http/Controllers/EmpresaController.php:244
+ * @see app/Http/Controllers/EmpresaController.php:254
  * @route '/empresas/{empresa}'
  */
 destroy.url = (args: { empresa: string | number } | [empresa: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { empresa: string | number } | [empresa: string | number ] 
 
 /**
 * @see \App\Http\Controllers\EmpresaController::destroy
- * @see app/Http/Controllers/EmpresaController.php:244
+ * @see app/Http/Controllers/EmpresaController.php:254
  * @route '/empresas/{empresa}'
  */
 destroy.delete = (args: { empresa: string | number } | [empresa: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { empresa: string | number } | [empresa: string | number
 
     /**
 * @see \App\Http\Controllers\EmpresaController::destroy
- * @see app/Http/Controllers/EmpresaController.php:244
+ * @see app/Http/Controllers/EmpresaController.php:254
  * @route '/empresas/{empresa}'
  */
     const destroyForm = (args: { empresa: string | number } | [empresa: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { empresa: string | number } | [empresa: string | number
 
             /**
 * @see \App\Http\Controllers\EmpresaController::destroy
- * @see app/Http/Controllers/EmpresaController.php:244
+ * @see app/Http/Controllers/EmpresaController.php:254
  * @route '/empresas/{empresa}'
  */
         destroyForm.delete = (args: { empresa: string | number } | [empresa: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

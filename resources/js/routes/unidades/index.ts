@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::create
- * @see app/Http/Controllers/UnidadMedidaController.php:162
+ * @see app/Http/Controllers/UnidadMedidaController.php:167
  * @route '/unidades/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::create
- * @see app/Http/Controllers/UnidadMedidaController.php:162
+ * @see app/Http/Controllers/UnidadMedidaController.php:167
  * @route '/unidades/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::create
- * @see app/Http/Controllers/UnidadMedidaController.php:162
+ * @see app/Http/Controllers/UnidadMedidaController.php:167
  * @route '/unidades/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::create
- * @see app/Http/Controllers/UnidadMedidaController.php:162
+ * @see app/Http/Controllers/UnidadMedidaController.php:167
  * @route '/unidades/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\UnidadMedidaController::create
- * @see app/Http/Controllers/UnidadMedidaController.php:162
+ * @see app/Http/Controllers/UnidadMedidaController.php:167
  * @route '/unidades/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::create
- * @see app/Http/Controllers/UnidadMedidaController.php:162
+ * @see app/Http/Controllers/UnidadMedidaController.php:167
  * @route '/unidades/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::create
- * @see app/Http/Controllers/UnidadMedidaController.php:162
+ * @see app/Http/Controllers/UnidadMedidaController.php:167
  * @route '/unidades/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::store
- * @see app/Http/Controllers/UnidadMedidaController.php:177
+ * @see app/Http/Controllers/UnidadMedidaController.php:182
  * @route '/unidades'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::store
- * @see app/Http/Controllers/UnidadMedidaController.php:177
+ * @see app/Http/Controllers/UnidadMedidaController.php:182
  * @route '/unidades'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::store
- * @see app/Http/Controllers/UnidadMedidaController.php:177
+ * @see app/Http/Controllers/UnidadMedidaController.php:182
  * @route '/unidades'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\UnidadMedidaController::store
- * @see app/Http/Controllers/UnidadMedidaController.php:177
+ * @see app/Http/Controllers/UnidadMedidaController.php:182
  * @route '/unidades'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::store
- * @see app/Http/Controllers/UnidadMedidaController.php:177
+ * @see app/Http/Controllers/UnidadMedidaController.php:182
  * @route '/unidades'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -309,7 +309,7 @@ show.head = (args: { unidad: string | number } | [unidad: string | number ] | st
     show.form = showForm
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::edit
- * @see app/Http/Controllers/UnidadMedidaController.php:203
+ * @see app/Http/Controllers/UnidadMedidaController.php:213
  * @route '/unidades/{unidad}/edit'
  */
 export const edit = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -324,7 +324,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::edit
- * @see app/Http/Controllers/UnidadMedidaController.php:203
+ * @see app/Http/Controllers/UnidadMedidaController.php:213
  * @route '/unidades/{unidad}/edit'
  */
 edit.url = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -352,7 +352,7 @@ edit.url = (args: { unidad: string | number } | [unidad: string | number ] | str
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::edit
- * @see app/Http/Controllers/UnidadMedidaController.php:203
+ * @see app/Http/Controllers/UnidadMedidaController.php:213
  * @route '/unidades/{unidad}/edit'
  */
 edit.get = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -361,7 +361,7 @@ edit.get = (args: { unidad: string | number } | [unidad: string | number ] | str
 })
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::edit
- * @see app/Http/Controllers/UnidadMedidaController.php:203
+ * @see app/Http/Controllers/UnidadMedidaController.php:213
  * @route '/unidades/{unidad}/edit'
  */
 edit.head = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -371,7 +371,7 @@ edit.head = (args: { unidad: string | number } | [unidad: string | number ] | st
 
     /**
 * @see \App\Http\Controllers\UnidadMedidaController::edit
- * @see app/Http/Controllers/UnidadMedidaController.php:203
+ * @see app/Http/Controllers/UnidadMedidaController.php:213
  * @route '/unidades/{unidad}/edit'
  */
     const editForm = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -381,7 +381,7 @@ edit.head = (args: { unidad: string | number } | [unidad: string | number ] | st
 
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::edit
- * @see app/Http/Controllers/UnidadMedidaController.php:203
+ * @see app/Http/Controllers/UnidadMedidaController.php:213
  * @route '/unidades/{unidad}/edit'
  */
         editForm.get = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -390,7 +390,7 @@ edit.head = (args: { unidad: string | number } | [unidad: string | number ] | st
         })
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::edit
- * @see app/Http/Controllers/UnidadMedidaController.php:203
+ * @see app/Http/Controllers/UnidadMedidaController.php:213
  * @route '/unidades/{unidad}/edit'
  */
         editForm.head = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -406,7 +406,7 @@ edit.head = (args: { unidad: string | number } | [unidad: string | number ] | st
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::update
- * @see app/Http/Controllers/UnidadMedidaController.php:222
+ * @see app/Http/Controllers/UnidadMedidaController.php:232
  * @route '/unidades/{unidad}'
  */
 export const update = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -421,7 +421,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::update
- * @see app/Http/Controllers/UnidadMedidaController.php:222
+ * @see app/Http/Controllers/UnidadMedidaController.php:232
  * @route '/unidades/{unidad}'
  */
 update.url = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -449,7 +449,7 @@ update.url = (args: { unidad: string | number } | [unidad: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::update
- * @see app/Http/Controllers/UnidadMedidaController.php:222
+ * @see app/Http/Controllers/UnidadMedidaController.php:232
  * @route '/unidades/{unidad}'
  */
 update.put = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -458,7 +458,7 @@ update.put = (args: { unidad: string | number } | [unidad: string | number ] | s
 })
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::update
- * @see app/Http/Controllers/UnidadMedidaController.php:222
+ * @see app/Http/Controllers/UnidadMedidaController.php:232
  * @route '/unidades/{unidad}'
  */
 update.patch = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -468,7 +468,7 @@ update.patch = (args: { unidad: string | number } | [unidad: string | number ] |
 
     /**
 * @see \App\Http\Controllers\UnidadMedidaController::update
- * @see app/Http/Controllers/UnidadMedidaController.php:222
+ * @see app/Http/Controllers/UnidadMedidaController.php:232
  * @route '/unidades/{unidad}'
  */
     const updateForm = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -483,7 +483,7 @@ update.patch = (args: { unidad: string | number } | [unidad: string | number ] |
 
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::update
- * @see app/Http/Controllers/UnidadMedidaController.php:222
+ * @see app/Http/Controllers/UnidadMedidaController.php:232
  * @route '/unidades/{unidad}'
  */
         updateForm.put = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +497,7 @@ update.patch = (args: { unidad: string | number } | [unidad: string | number ] |
         })
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::update
- * @see app/Http/Controllers/UnidadMedidaController.php:222
+ * @see app/Http/Controllers/UnidadMedidaController.php:232
  * @route '/unidades/{unidad}'
  */
         updateForm.patch = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { unidad: string | number } | [unidad: string | number ] |
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::destroy
- * @see app/Http/Controllers/UnidadMedidaController.php:244
+ * @see app/Http/Controllers/UnidadMedidaController.php:254
  * @route '/unidades/{unidad}'
  */
 export const destroy = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::destroy
- * @see app/Http/Controllers/UnidadMedidaController.php:244
+ * @see app/Http/Controllers/UnidadMedidaController.php:254
  * @route '/unidades/{unidad}'
  */
 destroy.url = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { unidad: string | number } | [unidad: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\UnidadMedidaController::destroy
- * @see app/Http/Controllers/UnidadMedidaController.php:244
+ * @see app/Http/Controllers/UnidadMedidaController.php:254
  * @route '/unidades/{unidad}'
  */
 destroy.delete = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { unidad: string | number } | [unidad: string | number ]
 
     /**
 * @see \App\Http\Controllers\UnidadMedidaController::destroy
- * @see app/Http/Controllers/UnidadMedidaController.php:244
+ * @see app/Http/Controllers/UnidadMedidaController.php:254
  * @route '/unidades/{unidad}'
  */
     const destroyForm = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { unidad: string | number } | [unidad: string | number ]
 
             /**
 * @see \App\Http\Controllers\UnidadMedidaController::destroy
- * @see app/Http/Controllers/UnidadMedidaController.php:244
+ * @see app/Http/Controllers/UnidadMedidaController.php:254
  * @route '/unidades/{unidad}'
  */
         destroyForm.delete = (args: { unidad: string | number } | [unidad: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

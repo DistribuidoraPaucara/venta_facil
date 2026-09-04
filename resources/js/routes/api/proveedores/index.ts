@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProveedorController::indexJson
- * @see app/Http/Controllers/ProveedorController.php:105
+ * @see app/Http/Controllers/ProveedorController.php:108
  * @route '/api/proveedores/index-json'
  */
 export const indexJson = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ indexJson.definition = {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::indexJson
- * @see app/Http/Controllers/ProveedorController.php:105
+ * @see app/Http/Controllers/ProveedorController.php:108
  * @route '/api/proveedores/index-json'
  */
 indexJson.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ indexJson.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::indexJson
- * @see app/Http/Controllers/ProveedorController.php:105
+ * @see app/Http/Controllers/ProveedorController.php:108
  * @route '/api/proveedores/index-json'
  */
 indexJson.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ indexJson.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProveedorController::indexJson
- * @see app/Http/Controllers/ProveedorController.php:105
+ * @see app/Http/Controllers/ProveedorController.php:108
  * @route '/api/proveedores/index-json'
  */
 indexJson.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ indexJson.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProveedorController::indexJson
- * @see app/Http/Controllers/ProveedorController.php:105
+ * @see app/Http/Controllers/ProveedorController.php:108
  * @route '/api/proveedores/index-json'
  */
     const indexJsonForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ indexJson.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProveedorController::indexJson
- * @see app/Http/Controllers/ProveedorController.php:105
+ * @see app/Http/Controllers/ProveedorController.php:108
  * @route '/api/proveedores/index-json'
  */
         indexJsonForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ indexJson.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProveedorController::indexJson
- * @see app/Http/Controllers/ProveedorController.php:105
+ * @see app/Http/Controllers/ProveedorController.php:108
  * @route '/api/proveedores/index-json'
  */
         indexJsonForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ indexJson.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     indexJson.form = indexJsonForm
 /**
 * @see \App\Http\Controllers\ProveedorController::buscar
- * @see app/Http/Controllers/ProveedorController.php:68
+ * @see app/Http/Controllers/ProveedorController.php:69
  * @route '/api/proveedores/buscar'
  */
 export const buscar = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ buscar.definition = {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::buscar
- * @see app/Http/Controllers/ProveedorController.php:68
+ * @see app/Http/Controllers/ProveedorController.php:69
  * @route '/api/proveedores/buscar'
  */
 buscar.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ buscar.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::buscar
- * @see app/Http/Controllers/ProveedorController.php:68
+ * @see app/Http/Controllers/ProveedorController.php:69
  * @route '/api/proveedores/buscar'
  */
 buscar.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ buscar.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProveedorController::buscar
- * @see app/Http/Controllers/ProveedorController.php:68
+ * @see app/Http/Controllers/ProveedorController.php:69
  * @route '/api/proveedores/buscar'
  */
 buscar.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ buscar.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProveedorController::buscar
- * @see app/Http/Controllers/ProveedorController.php:68
+ * @see app/Http/Controllers/ProveedorController.php:69
  * @route '/api/proveedores/buscar'
  */
     const buscarForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ buscar.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProveedorController::buscar
- * @see app/Http/Controllers/ProveedorController.php:68
+ * @see app/Http/Controllers/ProveedorController.php:69
  * @route '/api/proveedores/buscar'
  */
         buscarForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ buscar.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProveedorController::buscar
- * @see app/Http/Controllers/ProveedorController.php:68
+ * @see app/Http/Controllers/ProveedorController.php:69
  * @route '/api/proveedores/buscar'
  */
         buscarForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

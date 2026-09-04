@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::create
- * @see app/Http/Controllers/TipoDocumentoController.php:162
+ * @see app/Http/Controllers/TipoDocumentoController.php:167
  * @route '/tipos-documento/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::create
- * @see app/Http/Controllers/TipoDocumentoController.php:162
+ * @see app/Http/Controllers/TipoDocumentoController.php:167
  * @route '/tipos-documento/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::create
- * @see app/Http/Controllers/TipoDocumentoController.php:162
+ * @see app/Http/Controllers/TipoDocumentoController.php:167
  * @route '/tipos-documento/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::create
- * @see app/Http/Controllers/TipoDocumentoController.php:162
+ * @see app/Http/Controllers/TipoDocumentoController.php:167
  * @route '/tipos-documento/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\TipoDocumentoController::create
- * @see app/Http/Controllers/TipoDocumentoController.php:162
+ * @see app/Http/Controllers/TipoDocumentoController.php:167
  * @route '/tipos-documento/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\TipoDocumentoController::create
- * @see app/Http/Controllers/TipoDocumentoController.php:162
+ * @see app/Http/Controllers/TipoDocumentoController.php:167
  * @route '/tipos-documento/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\TipoDocumentoController::create
- * @see app/Http/Controllers/TipoDocumentoController.php:162
+ * @see app/Http/Controllers/TipoDocumentoController.php:167
  * @route '/tipos-documento/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::store
- * @see app/Http/Controllers/TipoDocumentoController.php:177
+ * @see app/Http/Controllers/TipoDocumentoController.php:182
  * @route '/tipos-documento'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::store
- * @see app/Http/Controllers/TipoDocumentoController.php:177
+ * @see app/Http/Controllers/TipoDocumentoController.php:182
  * @route '/tipos-documento'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::store
- * @see app/Http/Controllers/TipoDocumentoController.php:177
+ * @see app/Http/Controllers/TipoDocumentoController.php:182
  * @route '/tipos-documento'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\TipoDocumentoController::store
- * @see app/Http/Controllers/TipoDocumentoController.php:177
+ * @see app/Http/Controllers/TipoDocumentoController.php:182
  * @route '/tipos-documento'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\TipoDocumentoController::store
- * @see app/Http/Controllers/TipoDocumentoController.php:177
+ * @see app/Http/Controllers/TipoDocumentoController.php:182
  * @route '/tipos-documento'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { tipoDocumento: string | number } | [tipoDocumento: strin
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::destroy
- * @see app/Http/Controllers/TipoDocumentoController.php:244
+ * @see app/Http/Controllers/TipoDocumentoController.php:254
  * @route '/tipos-documento/{tipoDocumento}'
  */
 export const destroy = (args: { tipoDocumento: string | number } | [tipoDocumento: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::destroy
- * @see app/Http/Controllers/TipoDocumentoController.php:244
+ * @see app/Http/Controllers/TipoDocumentoController.php:254
  * @route '/tipos-documento/{tipoDocumento}'
  */
 destroy.url = (args: { tipoDocumento: string | number } | [tipoDocumento: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { tipoDocumento: string | number } | [tipoDocumento: string
 
 /**
 * @see \App\Http\Controllers\TipoDocumentoController::destroy
- * @see app/Http/Controllers/TipoDocumentoController.php:244
+ * @see app/Http/Controllers/TipoDocumentoController.php:254
  * @route '/tipos-documento/{tipoDocumento}'
  */
 destroy.delete = (args: { tipoDocumento: string | number } | [tipoDocumento: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { tipoDocumento: string | number } | [tipoDocumento: str
 
     /**
 * @see \App\Http\Controllers\TipoDocumentoController::destroy
- * @see app/Http/Controllers/TipoDocumentoController.php:244
+ * @see app/Http/Controllers/TipoDocumentoController.php:254
  * @route '/tipos-documento/{tipoDocumento}'
  */
     const destroyForm = (args: { tipoDocumento: string | number } | [tipoDocumento: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { tipoDocumento: string | number } | [tipoDocumento: str
 
             /**
 * @see \App\Http\Controllers\TipoDocumentoController::destroy
- * @see app/Http/Controllers/TipoDocumentoController.php:244
+ * @see app/Http/Controllers/TipoDocumentoController.php:254
  * @route '/tipos-documento/{tipoDocumento}'
  */
         destroyForm.delete = (args: { tipoDocumento: string | number } | [tipoDocumento: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

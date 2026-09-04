@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\ProveedorController::create
- * @see app/Http/Controllers/ProveedorController.php:147
+ * @see app/Http/Controllers/ProveedorController.php:152
  * @route '/proveedores/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::create
- * @see app/Http/Controllers/ProveedorController.php:147
+ * @see app/Http/Controllers/ProveedorController.php:152
  * @route '/proveedores/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::create
- * @see app/Http/Controllers/ProveedorController.php:147
+ * @see app/Http/Controllers/ProveedorController.php:152
  * @route '/proveedores/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProveedorController::create
- * @see app/Http/Controllers/ProveedorController.php:147
+ * @see app/Http/Controllers/ProveedorController.php:152
  * @route '/proveedores/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProveedorController::create
- * @see app/Http/Controllers/ProveedorController.php:147
+ * @see app/Http/Controllers/ProveedorController.php:152
  * @route '/proveedores/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProveedorController::create
- * @see app/Http/Controllers/ProveedorController.php:147
+ * @see app/Http/Controllers/ProveedorController.php:152
  * @route '/proveedores/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProveedorController::create
- * @see app/Http/Controllers/ProveedorController.php:147
+ * @see app/Http/Controllers/ProveedorController.php:152
  * @route '/proveedores/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\ProveedorController::store
- * @see app/Http/Controllers/ProveedorController.php:154
+ * @see app/Http/Controllers/ProveedorController.php:159
  * @route '/proveedores'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::store
- * @see app/Http/Controllers/ProveedorController.php:154
+ * @see app/Http/Controllers/ProveedorController.php:159
  * @route '/proveedores'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::store
- * @see app/Http/Controllers/ProveedorController.php:154
+ * @see app/Http/Controllers/ProveedorController.php:159
  * @route '/proveedores'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\ProveedorController::store
- * @see app/Http/Controllers/ProveedorController.php:154
+ * @see app/Http/Controllers/ProveedorController.php:159
  * @route '/proveedores'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\ProveedorController::store
- * @see app/Http/Controllers/ProveedorController.php:154
+ * @see app/Http/Controllers/ProveedorController.php:159
  * @route '/proveedores'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -309,10 +309,10 @@ show.head = (args: { proveedore: string | number } | [proveedore: string | numbe
     show.form = showForm
 /**
 * @see \App\Http\Controllers\ProveedorController::edit
- * @see app/Http/Controllers/ProveedorController.php:237
+ * @see app/Http/Controllers/ProveedorController.php:251
  * @route '/proveedores/{proveedore}/edit'
  */
-export const edit = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+export const edit = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: edit.url(args, options),
     method: 'get',
 })
@@ -324,17 +324,14 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::edit
- * @see app/Http/Controllers/ProveedorController.php:237
+ * @see app/Http/Controllers/ProveedorController.php:251
  * @route '/proveedores/{proveedore}/edit'
  */
-edit.url = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+edit.url = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { proveedore: args }
     }
 
-            if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
-            args = { proveedore: args.id }
-        }
     
     if (Array.isArray(args)) {
         args = {
@@ -345,9 +342,7 @@ edit.url = (args: { proveedore: number | { id: number } } | [proveedore: number 
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        proveedore: typeof args.proveedore === 'object'
-                ? args.proveedore.id
-                : args.proveedore,
+                        proveedore: args.proveedore,
                 }
 
     return edit.definition.url
@@ -357,48 +352,48 @@ edit.url = (args: { proveedore: number | { id: number } } | [proveedore: number 
 
 /**
 * @see \App\Http\Controllers\ProveedorController::edit
- * @see app/Http/Controllers/ProveedorController.php:237
+ * @see app/Http/Controllers/ProveedorController.php:251
  * @route '/proveedores/{proveedore}/edit'
  */
-edit.get = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+edit.get = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: edit.url(args, options),
     method: 'get',
 })
 /**
 * @see \App\Http\Controllers\ProveedorController::edit
- * @see app/Http/Controllers/ProveedorController.php:237
+ * @see app/Http/Controllers/ProveedorController.php:251
  * @route '/proveedores/{proveedore}/edit'
  */
-edit.head = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+edit.head = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: edit.url(args, options),
     method: 'head',
 })
 
     /**
 * @see \App\Http\Controllers\ProveedorController::edit
- * @see app/Http/Controllers/ProveedorController.php:237
+ * @see app/Http/Controllers/ProveedorController.php:251
  * @route '/proveedores/{proveedore}/edit'
  */
-    const editForm = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const editForm = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: edit.url(args, options),
         method: 'get',
     })
 
             /**
 * @see \App\Http\Controllers\ProveedorController::edit
- * @see app/Http/Controllers/ProveedorController.php:237
+ * @see app/Http/Controllers/ProveedorController.php:251
  * @route '/proveedores/{proveedore}/edit'
  */
-        editForm.get = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        editForm.get = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: edit.url(args, options),
             method: 'get',
         })
             /**
 * @see \App\Http\Controllers\ProveedorController::edit
- * @see app/Http/Controllers/ProveedorController.php:237
+ * @see app/Http/Controllers/ProveedorController.php:251
  * @route '/proveedores/{proveedore}/edit'
  */
-        editForm.head = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        editForm.head = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: edit.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
@@ -411,10 +406,10 @@ edit.head = (args: { proveedore: number | { id: number } } | [proveedore: number
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\ProveedorController::update
- * @see app/Http/Controllers/ProveedorController.php:244
+ * @see app/Http/Controllers/ProveedorController.php:260
  * @route '/proveedores/{proveedore}'
  */
-export const update = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const update = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
@@ -426,17 +421,14 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::update
- * @see app/Http/Controllers/ProveedorController.php:244
+ * @see app/Http/Controllers/ProveedorController.php:260
  * @route '/proveedores/{proveedore}'
  */
-update.url = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+update.url = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { proveedore: args }
     }
 
-            if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
-            args = { proveedore: args.id }
-        }
     
     if (Array.isArray(args)) {
         args = {
@@ -447,9 +439,7 @@ update.url = (args: { proveedore: number | { id: number } } | [proveedore: numbe
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        proveedore: typeof args.proveedore === 'object'
-                ? args.proveedore.id
-                : args.proveedore,
+                        proveedore: args.proveedore,
                 }
 
     return update.definition.url
@@ -459,29 +449,29 @@ update.url = (args: { proveedore: number | { id: number } } | [proveedore: numbe
 
 /**
 * @see \App\Http\Controllers\ProveedorController::update
- * @see app/Http/Controllers/ProveedorController.php:244
+ * @see app/Http/Controllers/ProveedorController.php:260
  * @route '/proveedores/{proveedore}'
  */
-update.put = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+update.put = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
 /**
 * @see \App\Http\Controllers\ProveedorController::update
- * @see app/Http/Controllers/ProveedorController.php:244
+ * @see app/Http/Controllers/ProveedorController.php:260
  * @route '/proveedores/{proveedore}'
  */
-update.patch = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
+update.patch = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
     url: update.url(args, options),
     method: 'patch',
 })
 
     /**
 * @see \App\Http\Controllers\ProveedorController::update
- * @see app/Http/Controllers/ProveedorController.php:244
+ * @see app/Http/Controllers/ProveedorController.php:260
  * @route '/proveedores/{proveedore}'
  */
-    const updateForm = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const updateForm = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: update.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -493,10 +483,10 @@ update.patch = (args: { proveedore: number | { id: number } } | [proveedore: num
 
             /**
 * @see \App\Http\Controllers\ProveedorController::update
- * @see app/Http/Controllers/ProveedorController.php:244
+ * @see app/Http/Controllers/ProveedorController.php:260
  * @route '/proveedores/{proveedore}'
  */
-        updateForm.put = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        updateForm.put = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: update.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -507,10 +497,10 @@ update.patch = (args: { proveedore: number | { id: number } } | [proveedore: num
         })
             /**
 * @see \App\Http\Controllers\ProveedorController::update
- * @see app/Http/Controllers/ProveedorController.php:244
+ * @see app/Http/Controllers/ProveedorController.php:260
  * @route '/proveedores/{proveedore}'
  */
-        updateForm.patch = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        updateForm.patch = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: update.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PATCH',
@@ -523,10 +513,10 @@ update.patch = (args: { proveedore: number | { id: number } } | [proveedore: num
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\ProveedorController::destroy
- * @see app/Http/Controllers/ProveedorController.php:288
+ * @see app/Http/Controllers/ProveedorController.php:310
  * @route '/proveedores/{proveedore}'
  */
-export const destroy = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+export const destroy = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -538,17 +528,14 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\ProveedorController::destroy
- * @see app/Http/Controllers/ProveedorController.php:288
+ * @see app/Http/Controllers/ProveedorController.php:310
  * @route '/proveedores/{proveedore}'
  */
-destroy.url = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+destroy.url = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { proveedore: args }
     }
 
-            if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
-            args = { proveedore: args.id }
-        }
     
     if (Array.isArray(args)) {
         args = {
@@ -559,9 +546,7 @@ destroy.url = (args: { proveedore: number | { id: number } } | [proveedore: numb
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        proveedore: typeof args.proveedore === 'object'
-                ? args.proveedore.id
-                : args.proveedore,
+                        proveedore: args.proveedore,
                 }
 
     return destroy.definition.url
@@ -571,20 +556,20 @@ destroy.url = (args: { proveedore: number | { id: number } } | [proveedore: numb
 
 /**
 * @see \App\Http\Controllers\ProveedorController::destroy
- * @see app/Http/Controllers/ProveedorController.php:288
+ * @see app/Http/Controllers/ProveedorController.php:310
  * @route '/proveedores/{proveedore}'
  */
-destroy.delete = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+destroy.delete = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
 
     /**
 * @see \App\Http\Controllers\ProveedorController::destroy
- * @see app/Http/Controllers/ProveedorController.php:288
+ * @see app/Http/Controllers/ProveedorController.php:310
  * @route '/proveedores/{proveedore}'
  */
-    const destroyForm = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const destroyForm = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: destroy.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'DELETE',
@@ -596,10 +581,10 @@ destroy.delete = (args: { proveedore: number | { id: number } } | [proveedore: n
 
             /**
 * @see \App\Http\Controllers\ProveedorController::destroy
- * @see app/Http/Controllers/ProveedorController.php:288
+ * @see app/Http/Controllers/ProveedorController.php:310
  * @route '/proveedores/{proveedore}'
  */
-        destroyForm.delete = (args: { proveedore: number | { id: number } } | [proveedore: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        destroyForm.delete = (args: { proveedore: string | number } | [proveedore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: destroy.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'DELETE',

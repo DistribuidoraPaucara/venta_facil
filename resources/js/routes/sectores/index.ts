@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\SectorController::index
- * @see app/Http/Controllers/SectorController.php:50
+ * @see app/Http/Controllers/SectorController.php:72
  * @route '/sectores'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\SectorController::index
- * @see app/Http/Controllers/SectorController.php:50
+ * @see app/Http/Controllers/SectorController.php:72
  * @route '/sectores'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\SectorController::index
- * @see app/Http/Controllers/SectorController.php:50
+ * @see app/Http/Controllers/SectorController.php:72
  * @route '/sectores'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\SectorController::index
- * @see app/Http/Controllers/SectorController.php:50
+ * @see app/Http/Controllers/SectorController.php:72
  * @route '/sectores'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\SectorController::index
- * @see app/Http/Controllers/SectorController.php:50
+ * @see app/Http/Controllers/SectorController.php:72
  * @route '/sectores'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\SectorController::index
- * @see app/Http/Controllers/SectorController.php:50
+ * @see app/Http/Controllers/SectorController.php:72
  * @route '/sectores'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\SectorController::index
- * @see app/Http/Controllers/SectorController.php:50
+ * @see app/Http/Controllers/SectorController.php:72
  * @route '/sectores'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\SectorController::create
- * @see app/Http/Controllers/SectorController.php:87
+ * @see app/Http/Controllers/SectorController.php:109
  * @route '/sectores/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\SectorController::create
- * @see app/Http/Controllers/SectorController.php:87
+ * @see app/Http/Controllers/SectorController.php:109
  * @route '/sectores/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\SectorController::create
- * @see app/Http/Controllers/SectorController.php:87
+ * @see app/Http/Controllers/SectorController.php:109
  * @route '/sectores/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\SectorController::create
- * @see app/Http/Controllers/SectorController.php:87
+ * @see app/Http/Controllers/SectorController.php:109
  * @route '/sectores/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\SectorController::create
- * @see app/Http/Controllers/SectorController.php:87
+ * @see app/Http/Controllers/SectorController.php:109
  * @route '/sectores/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\SectorController::create
- * @see app/Http/Controllers/SectorController.php:87
+ * @see app/Http/Controllers/SectorController.php:109
  * @route '/sectores/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\SectorController::create
- * @see app/Http/Controllers/SectorController.php:87
+ * @see app/Http/Controllers/SectorController.php:109
  * @route '/sectores/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\SectorController::store
- * @see app/Http/Controllers/SectorController.php:177
+ * @see app/Http/Controllers/SectorController.php:50
  * @route '/sectores'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\SectorController::store
- * @see app/Http/Controllers/SectorController.php:177
+ * @see app/Http/Controllers/SectorController.php:50
  * @route '/sectores'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\SectorController::store
- * @see app/Http/Controllers/SectorController.php:177
+ * @see app/Http/Controllers/SectorController.php:50
  * @route '/sectores'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\SectorController::store
- * @see app/Http/Controllers/SectorController.php:177
+ * @see app/Http/Controllers/SectorController.php:50
  * @route '/sectores'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\SectorController::store
- * @see app/Http/Controllers/SectorController.php:177
+ * @see app/Http/Controllers/SectorController.php:50
  * @route '/sectores'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -309,7 +309,7 @@ show.head = (args: { sectore: string | number } | [sectore: string | number ] | 
     show.form = showForm
 /**
 * @see \App\Http\Controllers\SectorController::edit
- * @see app/Http/Controllers/SectorController.php:108
+ * @see app/Http/Controllers/SectorController.php:131
  * @route '/sectores/{sectore}/edit'
  */
 export const edit = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -324,7 +324,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\SectorController::edit
- * @see app/Http/Controllers/SectorController.php:108
+ * @see app/Http/Controllers/SectorController.php:131
  * @route '/sectores/{sectore}/edit'
  */
 edit.url = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -352,7 +352,7 @@ edit.url = (args: { sectore: string | number } | [sectore: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\SectorController::edit
- * @see app/Http/Controllers/SectorController.php:108
+ * @see app/Http/Controllers/SectorController.php:131
  * @route '/sectores/{sectore}/edit'
  */
 edit.get = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -361,7 +361,7 @@ edit.get = (args: { sectore: string | number } | [sectore: string | number ] | s
 })
 /**
 * @see \App\Http\Controllers\SectorController::edit
- * @see app/Http/Controllers/SectorController.php:108
+ * @see app/Http/Controllers/SectorController.php:131
  * @route '/sectores/{sectore}/edit'
  */
 edit.head = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -371,7 +371,7 @@ edit.head = (args: { sectore: string | number } | [sectore: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\SectorController::edit
- * @see app/Http/Controllers/SectorController.php:108
+ * @see app/Http/Controllers/SectorController.php:131
  * @route '/sectores/{sectore}/edit'
  */
     const editForm = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -381,7 +381,7 @@ edit.head = (args: { sectore: string | number } | [sectore: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\SectorController::edit
- * @see app/Http/Controllers/SectorController.php:108
+ * @see app/Http/Controllers/SectorController.php:131
  * @route '/sectores/{sectore}/edit'
  */
         editForm.get = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -390,7 +390,7 @@ edit.head = (args: { sectore: string | number } | [sectore: string | number ] | 
         })
             /**
 * @see \App\Http\Controllers\SectorController::edit
- * @see app/Http/Controllers/SectorController.php:108
+ * @see app/Http/Controllers/SectorController.php:131
  * @route '/sectores/{sectore}/edit'
  */
         editForm.head = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -406,7 +406,7 @@ edit.head = (args: { sectore: string | number } | [sectore: string | number ] | 
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\SectorController::update
- * @see app/Http/Controllers/SectorController.php:222
+ * @see app/Http/Controllers/SectorController.php:232
  * @route '/sectores/{sectore}'
  */
 export const update = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -421,7 +421,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\SectorController::update
- * @see app/Http/Controllers/SectorController.php:222
+ * @see app/Http/Controllers/SectorController.php:232
  * @route '/sectores/{sectore}'
  */
 update.url = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -449,7 +449,7 @@ update.url = (args: { sectore: string | number } | [sectore: string | number ] |
 
 /**
 * @see \App\Http\Controllers\SectorController::update
- * @see app/Http/Controllers/SectorController.php:222
+ * @see app/Http/Controllers/SectorController.php:232
  * @route '/sectores/{sectore}'
  */
 update.put = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -458,7 +458,7 @@ update.put = (args: { sectore: string | number } | [sectore: string | number ] |
 })
 /**
 * @see \App\Http\Controllers\SectorController::update
- * @see app/Http/Controllers/SectorController.php:222
+ * @see app/Http/Controllers/SectorController.php:232
  * @route '/sectores/{sectore}'
  */
 update.patch = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -468,7 +468,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
 
     /**
 * @see \App\Http\Controllers\SectorController::update
- * @see app/Http/Controllers/SectorController.php:222
+ * @see app/Http/Controllers/SectorController.php:232
  * @route '/sectores/{sectore}'
  */
     const updateForm = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -483,7 +483,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
 
             /**
 * @see \App\Http\Controllers\SectorController::update
- * @see app/Http/Controllers/SectorController.php:222
+ * @see app/Http/Controllers/SectorController.php:232
  * @route '/sectores/{sectore}'
  */
         updateForm.put = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +497,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
         })
             /**
 * @see \App\Http\Controllers\SectorController::update
- * @see app/Http/Controllers/SectorController.php:222
+ * @see app/Http/Controllers/SectorController.php:232
  * @route '/sectores/{sectore}'
  */
         updateForm.patch = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\SectorController::destroy
- * @see app/Http/Controllers/SectorController.php:244
+ * @see app/Http/Controllers/SectorController.php:254
  * @route '/sectores/{sectore}'
  */
 export const destroy = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\SectorController::destroy
- * @see app/Http/Controllers/SectorController.php:244
+ * @see app/Http/Controllers/SectorController.php:254
  * @route '/sectores/{sectore}'
  */
 destroy.url = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { sectore: string | number } | [sectore: string | number ] 
 
 /**
 * @see \App\Http\Controllers\SectorController::destroy
- * @see app/Http/Controllers/SectorController.php:244
+ * @see app/Http/Controllers/SectorController.php:254
  * @route '/sectores/{sectore}'
  */
 destroy.delete = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { sectore: string | number } | [sectore: string | number
 
     /**
 * @see \App\Http\Controllers\SectorController::destroy
- * @see app/Http/Controllers/SectorController.php:244
+ * @see app/Http/Controllers/SectorController.php:254
  * @route '/sectores/{sectore}'
  */
     const destroyForm = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { sectore: string | number } | [sectore: string | number
 
             /**
 * @see \App\Http\Controllers\SectorController::destroy
- * @see app/Http/Controllers/SectorController.php:244
+ * @see app/Http/Controllers/SectorController.php:254
  * @route '/sectores/{sectore}'
  */
         destroyForm.delete = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

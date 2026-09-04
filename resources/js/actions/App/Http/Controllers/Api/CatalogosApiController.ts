@@ -79,7 +79,7 @@ categorias.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     categorias.form = categoriasForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:35
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:37
  * @route '/api/app/proveedores'
  */
 export const proveedores = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ proveedores.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:35
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:37
  * @route '/api/app/proveedores'
  */
 proveedores.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ proveedores.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:35
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:37
  * @route '/api/app/proveedores'
  */
 proveedores.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ proveedores.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:35
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:37
  * @route '/api/app/proveedores'
  */
 proveedores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ proveedores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:35
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:37
  * @route '/api/app/proveedores'
  */
     const proveedoresForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ proveedores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:35
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:37
  * @route '/api/app/proveedores'
  */
         proveedoresForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ proveedores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:35
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:37
  * @route '/api/app/proveedores'
  */
         proveedoresForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ proveedores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     proveedores.form = proveedoresForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:55
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:59
  * @route '/api/app/almacenes'
  */
 export const almacenes = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -172,7 +172,7 @@ almacenes.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:55
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:59
  * @route '/api/app/almacenes'
  */
 almacenes.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ almacenes.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:55
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:59
  * @route '/api/app/almacenes'
  */
 almacenes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -190,7 +190,7 @@ almacenes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:55
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:59
  * @route '/api/app/almacenes'
  */
 almacenes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -200,7 +200,7 @@ almacenes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:55
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:59
  * @route '/api/app/almacenes'
  */
     const almacenesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -210,7 +210,7 @@ almacenes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:55
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:59
  * @route '/api/app/almacenes'
  */
         almacenesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -219,7 +219,7 @@ almacenes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:55
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:59
  * @route '/api/app/almacenes'
  */
         almacenesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -235,7 +235,7 @@ almacenes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     almacenes.form = almacenesForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:65
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:70
  * @route '/api/app/sectores'
  */
 export const sectores = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -250,7 +250,7 @@ sectores.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:65
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:70
  * @route '/api/app/sectores'
  */
 sectores.url = (options?: RouteQueryOptions) => {
@@ -259,7 +259,7 @@ sectores.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:65
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:70
  * @route '/api/app/sectores'
  */
 sectores.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -268,7 +268,7 @@ sectores.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:65
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:70
  * @route '/api/app/sectores'
  */
 sectores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -278,7 +278,7 @@ sectores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:65
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:70
  * @route '/api/app/sectores'
  */
     const sectoresForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -288,7 +288,7 @@ sectores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:65
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:70
  * @route '/api/app/sectores'
  */
         sectoresForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -297,7 +297,7 @@ sectores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:65
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:70
  * @route '/api/app/sectores'
  */
         sectoresForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -313,7 +313,7 @@ sectores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     sectores.form = sectoresForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:74
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:80
  * @route '/api/app/almacenes/{almacen_id}/sectores'
  */
 export const sectoresPorAlmacen = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -328,7 +328,7 @@ sectoresPorAlmacen.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:74
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:80
  * @route '/api/app/almacenes/{almacen_id}/sectores'
  */
 sectoresPorAlmacen.url = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -356,7 +356,7 @@ sectoresPorAlmacen.url = (args: { almacen_id: string | number } | [almacen_id: s
 
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:74
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:80
  * @route '/api/app/almacenes/{almacen_id}/sectores'
  */
 sectoresPorAlmacen.get = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -365,7 +365,7 @@ sectoresPorAlmacen.get = (args: { almacen_id: string | number } | [almacen_id: s
 })
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:74
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:80
  * @route '/api/app/almacenes/{almacen_id}/sectores'
  */
 sectoresPorAlmacen.head = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -375,7 +375,7 @@ sectoresPorAlmacen.head = (args: { almacen_id: string | number } | [almacen_id: 
 
     /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:74
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:80
  * @route '/api/app/almacenes/{almacen_id}/sectores'
  */
     const sectoresPorAlmacenForm = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -385,7 +385,7 @@ sectoresPorAlmacen.head = (args: { almacen_id: string | number } | [almacen_id: 
 
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:74
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:80
  * @route '/api/app/almacenes/{almacen_id}/sectores'
  */
         sectoresPorAlmacenForm.get = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -394,7 +394,7 @@ sectoresPorAlmacen.head = (args: { almacen_id: string | number } | [almacen_id: 
         })
             /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:74
+ * @see app/Http/Controllers/Api/CatalogosApiController.php:80
  * @route '/api/app/almacenes/{almacen_id}/sectores'
  */
         sectoresPorAlmacenForm.head = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

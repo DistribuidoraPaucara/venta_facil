@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\SectorController::store
- * @see app/Http/Controllers/Api/SectorController.php:112
+ * @see app/Http/Controllers/Api/SectorController.php:113
  * @route '/api/sectores'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::store
- * @see app/Http/Controllers/Api/SectorController.php:112
+ * @see app/Http/Controllers/Api/SectorController.php:113
  * @route '/api/sectores'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::store
- * @see app/Http/Controllers/Api/SectorController.php:112
+ * @see app/Http/Controllers/Api/SectorController.php:113
  * @route '/api/sectores'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Api\SectorController::store
- * @see app/Http/Controllers/Api/SectorController.php:112
+ * @see app/Http/Controllers/Api/SectorController.php:113
  * @route '/api/sectores'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Api\SectorController::store
- * @see app/Http/Controllers/Api/SectorController.php:112
+ * @see app/Http/Controllers/Api/SectorController.php:113
  * @route '/api/sectores'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -134,7 +134,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Api\SectorController::show
- * @see app/Http/Controllers/Api/SectorController.php:76
+ * @see app/Http/Controllers/Api/SectorController.php:77
  * @route '/api/sectores/{sectore}'
  */
 export const show = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +149,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::show
- * @see app/Http/Controllers/Api/SectorController.php:76
+ * @see app/Http/Controllers/Api/SectorController.php:77
  * @route '/api/sectores/{sectore}'
  */
 show.url = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -177,7 +177,7 @@ show.url = (args: { sectore: string | number } | [sectore: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::show
- * @see app/Http/Controllers/Api/SectorController.php:76
+ * @see app/Http/Controllers/Api/SectorController.php:77
  * @route '/api/sectores/{sectore}'
  */
 show.get = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -186,7 +186,7 @@ show.get = (args: { sectore: string | number } | [sectore: string | number ] | s
 })
 /**
 * @see \App\Http\Controllers\Api\SectorController::show
- * @see app/Http/Controllers/Api/SectorController.php:76
+ * @see app/Http/Controllers/Api/SectorController.php:77
  * @route '/api/sectores/{sectore}'
  */
 show.head = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -196,7 +196,7 @@ show.head = (args: { sectore: string | number } | [sectore: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\Api\SectorController::show
- * @see app/Http/Controllers/Api/SectorController.php:76
+ * @see app/Http/Controllers/Api/SectorController.php:77
  * @route '/api/sectores/{sectore}'
  */
     const showForm = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -206,7 +206,7 @@ show.head = (args: { sectore: string | number } | [sectore: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\Api\SectorController::show
- * @see app/Http/Controllers/Api/SectorController.php:76
+ * @see app/Http/Controllers/Api/SectorController.php:77
  * @route '/api/sectores/{sectore}'
  */
         showForm.get = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -215,7 +215,7 @@ show.head = (args: { sectore: string | number } | [sectore: string | number ] | 
         })
             /**
 * @see \App\Http\Controllers\Api\SectorController::show
- * @see app/Http/Controllers/Api/SectorController.php:76
+ * @see app/Http/Controllers/Api/SectorController.php:77
  * @route '/api/sectores/{sectore}'
  */
         showForm.head = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -231,7 +231,7 @@ show.head = (args: { sectore: string | number } | [sectore: string | number ] | 
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\SectorController::update
- * @see app/Http/Controllers/Api/SectorController.php:193
+ * @see app/Http/Controllers/Api/SectorController.php:198
  * @route '/api/sectores/{sectore}'
  */
 export const update = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -246,7 +246,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::update
- * @see app/Http/Controllers/Api/SectorController.php:193
+ * @see app/Http/Controllers/Api/SectorController.php:198
  * @route '/api/sectores/{sectore}'
  */
 update.url = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -274,7 +274,7 @@ update.url = (args: { sectore: string | number } | [sectore: string | number ] |
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::update
- * @see app/Http/Controllers/Api/SectorController.php:193
+ * @see app/Http/Controllers/Api/SectorController.php:198
  * @route '/api/sectores/{sectore}'
  */
 update.put = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -283,7 +283,7 @@ update.put = (args: { sectore: string | number } | [sectore: string | number ] |
 })
 /**
 * @see \App\Http\Controllers\Api\SectorController::update
- * @see app/Http/Controllers/Api/SectorController.php:193
+ * @see app/Http/Controllers/Api/SectorController.php:198
  * @route '/api/sectores/{sectore}'
  */
 update.patch = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -293,7 +293,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
 
     /**
 * @see \App\Http\Controllers\Api\SectorController::update
- * @see app/Http/Controllers/Api/SectorController.php:193
+ * @see app/Http/Controllers/Api/SectorController.php:198
  * @route '/api/sectores/{sectore}'
  */
     const updateForm = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -308,7 +308,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
 
             /**
 * @see \App\Http\Controllers\Api\SectorController::update
- * @see app/Http/Controllers/Api/SectorController.php:193
+ * @see app/Http/Controllers/Api/SectorController.php:198
  * @route '/api/sectores/{sectore}'
  */
         updateForm.put = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -322,7 +322,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
         })
             /**
 * @see \App\Http\Controllers\Api\SectorController::update
- * @see app/Http/Controllers/Api/SectorController.php:193
+ * @see app/Http/Controllers/Api/SectorController.php:198
  * @route '/api/sectores/{sectore}'
  */
         updateForm.patch = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -338,7 +338,7 @@ update.patch = (args: { sectore: string | number } | [sectore: string | number ]
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\Api\SectorController::destroy
- * @see app/Http/Controllers/Api/SectorController.php:278
+ * @see app/Http/Controllers/Api/SectorController.php:283
  * @route '/api/sectores/{sectore}'
  */
 export const destroy = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -353,7 +353,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::destroy
- * @see app/Http/Controllers/Api/SectorController.php:278
+ * @see app/Http/Controllers/Api/SectorController.php:283
  * @route '/api/sectores/{sectore}'
  */
 destroy.url = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -381,7 +381,7 @@ destroy.url = (args: { sectore: string | number } | [sectore: string | number ] 
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::destroy
- * @see app/Http/Controllers/Api/SectorController.php:278
+ * @see app/Http/Controllers/Api/SectorController.php:283
  * @route '/api/sectores/{sectore}'
  */
 destroy.delete = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -391,7 +391,7 @@ destroy.delete = (args: { sectore: string | number } | [sectore: string | number
 
     /**
 * @see \App\Http\Controllers\Api\SectorController::destroy
- * @see app/Http/Controllers/Api/SectorController.php:278
+ * @see app/Http/Controllers/Api/SectorController.php:283
  * @route '/api/sectores/{sectore}'
  */
     const destroyForm = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -406,7 +406,7 @@ destroy.delete = (args: { sectore: string | number } | [sectore: string | number
 
             /**
 * @see \App\Http\Controllers\Api\SectorController::destroy
- * @see app/Http/Controllers/Api/SectorController.php:278
+ * @see app/Http/Controllers/Api/SectorController.php:283
  * @route '/api/sectores/{sectore}'
  */
         destroyForm.delete = (args: { sectore: string | number } | [sectore: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -422,7 +422,7 @@ destroy.delete = (args: { sectore: string | number } | [sectore: string | number
     destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerGenerico
- * @see app/Http/Controllers/Api/SectorController.php:339
+ * @see app/Http/Controllers/Api/SectorController.php:344
  * @route '/api/almacenes/{almacenId}/sector-generico'
  */
 export const obtenerGenerico = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -437,7 +437,7 @@ obtenerGenerico.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerGenerico
- * @see app/Http/Controllers/Api/SectorController.php:339
+ * @see app/Http/Controllers/Api/SectorController.php:344
  * @route '/api/almacenes/{almacenId}/sector-generico'
  */
 obtenerGenerico.url = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -465,7 +465,7 @@ obtenerGenerico.url = (args: { almacenId: string | number } | [almacenId: string
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerGenerico
- * @see app/Http/Controllers/Api/SectorController.php:339
+ * @see app/Http/Controllers/Api/SectorController.php:344
  * @route '/api/almacenes/{almacenId}/sector-generico'
  */
 obtenerGenerico.get = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -474,7 +474,7 @@ obtenerGenerico.get = (args: { almacenId: string | number } | [almacenId: string
 })
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerGenerico
- * @see app/Http/Controllers/Api/SectorController.php:339
+ * @see app/Http/Controllers/Api/SectorController.php:344
  * @route '/api/almacenes/{almacenId}/sector-generico'
  */
 obtenerGenerico.head = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -484,7 +484,7 @@ obtenerGenerico.head = (args: { almacenId: string | number } | [almacenId: strin
 
     /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerGenerico
- * @see app/Http/Controllers/Api/SectorController.php:339
+ * @see app/Http/Controllers/Api/SectorController.php:344
  * @route '/api/almacenes/{almacenId}/sector-generico'
  */
     const obtenerGenericoForm = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -494,7 +494,7 @@ obtenerGenerico.head = (args: { almacenId: string | number } | [almacenId: strin
 
             /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerGenerico
- * @see app/Http/Controllers/Api/SectorController.php:339
+ * @see app/Http/Controllers/Api/SectorController.php:344
  * @route '/api/almacenes/{almacenId}/sector-generico'
  */
         obtenerGenericoForm.get = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -503,7 +503,7 @@ obtenerGenerico.head = (args: { almacenId: string | number } | [almacenId: strin
         })
             /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerGenerico
- * @see app/Http/Controllers/Api/SectorController.php:339
+ * @see app/Http/Controllers/Api/SectorController.php:344
  * @route '/api/almacenes/{almacenId}/sector-generico'
  */
         obtenerGenericoForm.head = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -519,7 +519,7 @@ obtenerGenerico.head = (args: { almacenId: string | number } | [almacenId: strin
     obtenerGenerico.form = obtenerGenericoForm
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerPorAlmacen
- * @see app/Http/Controllers/Api/SectorController.php:384
+ * @see app/Http/Controllers/Api/SectorController.php:389
  * @route '/api/almacenes/{almacenId}/sectores'
  */
 export const obtenerPorAlmacen = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -534,7 +534,7 @@ obtenerPorAlmacen.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerPorAlmacen
- * @see app/Http/Controllers/Api/SectorController.php:384
+ * @see app/Http/Controllers/Api/SectorController.php:389
  * @route '/api/almacenes/{almacenId}/sectores'
  */
 obtenerPorAlmacen.url = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -562,7 +562,7 @@ obtenerPorAlmacen.url = (args: { almacenId: string | number } | [almacenId: stri
 
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerPorAlmacen
- * @see app/Http/Controllers/Api/SectorController.php:384
+ * @see app/Http/Controllers/Api/SectorController.php:389
  * @route '/api/almacenes/{almacenId}/sectores'
  */
 obtenerPorAlmacen.get = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -571,7 +571,7 @@ obtenerPorAlmacen.get = (args: { almacenId: string | number } | [almacenId: stri
 })
 /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerPorAlmacen
- * @see app/Http/Controllers/Api/SectorController.php:384
+ * @see app/Http/Controllers/Api/SectorController.php:389
  * @route '/api/almacenes/{almacenId}/sectores'
  */
 obtenerPorAlmacen.head = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -581,7 +581,7 @@ obtenerPorAlmacen.head = (args: { almacenId: string | number } | [almacenId: str
 
     /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerPorAlmacen
- * @see app/Http/Controllers/Api/SectorController.php:384
+ * @see app/Http/Controllers/Api/SectorController.php:389
  * @route '/api/almacenes/{almacenId}/sectores'
  */
     const obtenerPorAlmacenForm = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -591,7 +591,7 @@ obtenerPorAlmacen.head = (args: { almacenId: string | number } | [almacenId: str
 
             /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerPorAlmacen
- * @see app/Http/Controllers/Api/SectorController.php:384
+ * @see app/Http/Controllers/Api/SectorController.php:389
  * @route '/api/almacenes/{almacenId}/sectores'
  */
         obtenerPorAlmacenForm.get = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -600,7 +600,7 @@ obtenerPorAlmacen.head = (args: { almacenId: string | number } | [almacenId: str
         })
             /**
 * @see \App\Http\Controllers\Api\SectorController::obtenerPorAlmacen
- * @see app/Http/Controllers/Api/SectorController.php:384
+ * @see app/Http/Controllers/Api/SectorController.php:389
  * @route '/api/almacenes/{almacenId}/sectores'
  */
         obtenerPorAlmacenForm.head = (args: { almacenId: string | number } | [almacenId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

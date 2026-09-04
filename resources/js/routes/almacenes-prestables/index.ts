@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::create
- * @see app/Http/Controllers/AlmacenPrestableController.php:162
+ * @see app/Http/Controllers/AlmacenPrestableController.php:167
  * @route '/almacenes-prestables/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::create
- * @see app/Http/Controllers/AlmacenPrestableController.php:162
+ * @see app/Http/Controllers/AlmacenPrestableController.php:167
  * @route '/almacenes-prestables/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::create
- * @see app/Http/Controllers/AlmacenPrestableController.php:162
+ * @see app/Http/Controllers/AlmacenPrestableController.php:167
  * @route '/almacenes-prestables/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::create
- * @see app/Http/Controllers/AlmacenPrestableController.php:162
+ * @see app/Http/Controllers/AlmacenPrestableController.php:167
  * @route '/almacenes-prestables/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\AlmacenPrestableController::create
- * @see app/Http/Controllers/AlmacenPrestableController.php:162
+ * @see app/Http/Controllers/AlmacenPrestableController.php:167
  * @route '/almacenes-prestables/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::create
- * @see app/Http/Controllers/AlmacenPrestableController.php:162
+ * @see app/Http/Controllers/AlmacenPrestableController.php:167
  * @route '/almacenes-prestables/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::create
- * @see app/Http/Controllers/AlmacenPrestableController.php:162
+ * @see app/Http/Controllers/AlmacenPrestableController.php:167
  * @route '/almacenes-prestables/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::store
- * @see app/Http/Controllers/AlmacenPrestableController.php:177
+ * @see app/Http/Controllers/AlmacenPrestableController.php:182
  * @route '/almacenes-prestables'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::store
- * @see app/Http/Controllers/AlmacenPrestableController.php:177
+ * @see app/Http/Controllers/AlmacenPrestableController.php:182
  * @route '/almacenes-prestables'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::store
- * @see app/Http/Controllers/AlmacenPrestableController.php:177
+ * @see app/Http/Controllers/AlmacenPrestableController.php:182
  * @route '/almacenes-prestables'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\AlmacenPrestableController::store
- * @see app/Http/Controllers/AlmacenPrestableController.php:177
+ * @see app/Http/Controllers/AlmacenPrestableController.php:182
  * @route '/almacenes-prestables'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::store
- * @see app/Http/Controllers/AlmacenPrestableController.php:177
+ * @see app/Http/Controllers/AlmacenPrestableController.php:182
  * @route '/almacenes-prestables'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -309,7 +309,7 @@ show.head = (args: { almacenes_prestable: string | number } | [almacenes_prestab
     show.form = showForm
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::edit
- * @see app/Http/Controllers/AlmacenPrestableController.php:203
+ * @see app/Http/Controllers/AlmacenPrestableController.php:213
  * @route '/almacenes-prestables/{almacenes_prestable}/edit'
  */
 export const edit = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -324,7 +324,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::edit
- * @see app/Http/Controllers/AlmacenPrestableController.php:203
+ * @see app/Http/Controllers/AlmacenPrestableController.php:213
  * @route '/almacenes-prestables/{almacenes_prestable}/edit'
  */
 edit.url = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -352,7 +352,7 @@ edit.url = (args: { almacenes_prestable: string | number } | [almacenes_prestabl
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::edit
- * @see app/Http/Controllers/AlmacenPrestableController.php:203
+ * @see app/Http/Controllers/AlmacenPrestableController.php:213
  * @route '/almacenes-prestables/{almacenes_prestable}/edit'
  */
 edit.get = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -361,7 +361,7 @@ edit.get = (args: { almacenes_prestable: string | number } | [almacenes_prestabl
 })
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::edit
- * @see app/Http/Controllers/AlmacenPrestableController.php:203
+ * @see app/Http/Controllers/AlmacenPrestableController.php:213
  * @route '/almacenes-prestables/{almacenes_prestable}/edit'
  */
 edit.head = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -371,7 +371,7 @@ edit.head = (args: { almacenes_prestable: string | number } | [almacenes_prestab
 
     /**
 * @see \App\Http\Controllers\AlmacenPrestableController::edit
- * @see app/Http/Controllers/AlmacenPrestableController.php:203
+ * @see app/Http/Controllers/AlmacenPrestableController.php:213
  * @route '/almacenes-prestables/{almacenes_prestable}/edit'
  */
     const editForm = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -381,7 +381,7 @@ edit.head = (args: { almacenes_prestable: string | number } | [almacenes_prestab
 
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::edit
- * @see app/Http/Controllers/AlmacenPrestableController.php:203
+ * @see app/Http/Controllers/AlmacenPrestableController.php:213
  * @route '/almacenes-prestables/{almacenes_prestable}/edit'
  */
         editForm.get = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -390,7 +390,7 @@ edit.head = (args: { almacenes_prestable: string | number } | [almacenes_prestab
         })
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::edit
- * @see app/Http/Controllers/AlmacenPrestableController.php:203
+ * @see app/Http/Controllers/AlmacenPrestableController.php:213
  * @route '/almacenes-prestables/{almacenes_prestable}/edit'
  */
         editForm.head = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -406,7 +406,7 @@ edit.head = (args: { almacenes_prestable: string | number } | [almacenes_prestab
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::update
- * @see app/Http/Controllers/AlmacenPrestableController.php:222
+ * @see app/Http/Controllers/AlmacenPrestableController.php:232
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
 export const update = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -421,7 +421,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::update
- * @see app/Http/Controllers/AlmacenPrestableController.php:222
+ * @see app/Http/Controllers/AlmacenPrestableController.php:232
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
 update.url = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -449,7 +449,7 @@ update.url = (args: { almacenes_prestable: string | number } | [almacenes_presta
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::update
- * @see app/Http/Controllers/AlmacenPrestableController.php:222
+ * @see app/Http/Controllers/AlmacenPrestableController.php:232
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
 update.put = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -458,7 +458,7 @@ update.put = (args: { almacenes_prestable: string | number } | [almacenes_presta
 })
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::update
- * @see app/Http/Controllers/AlmacenPrestableController.php:222
+ * @see app/Http/Controllers/AlmacenPrestableController.php:232
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
 update.patch = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -468,7 +468,7 @@ update.patch = (args: { almacenes_prestable: string | number } | [almacenes_pres
 
     /**
 * @see \App\Http\Controllers\AlmacenPrestableController::update
- * @see app/Http/Controllers/AlmacenPrestableController.php:222
+ * @see app/Http/Controllers/AlmacenPrestableController.php:232
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
     const updateForm = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -483,7 +483,7 @@ update.patch = (args: { almacenes_prestable: string | number } | [almacenes_pres
 
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::update
- * @see app/Http/Controllers/AlmacenPrestableController.php:222
+ * @see app/Http/Controllers/AlmacenPrestableController.php:232
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
         updateForm.put = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +497,7 @@ update.patch = (args: { almacenes_prestable: string | number } | [almacenes_pres
         })
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::update
- * @see app/Http/Controllers/AlmacenPrestableController.php:222
+ * @see app/Http/Controllers/AlmacenPrestableController.php:232
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
         updateForm.patch = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ update.patch = (args: { almacenes_prestable: string | number } | [almacenes_pres
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::destroy
- * @see app/Http/Controllers/AlmacenPrestableController.php:244
+ * @see app/Http/Controllers/AlmacenPrestableController.php:254
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
 export const destroy = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -528,7 +528,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::destroy
- * @see app/Http/Controllers/AlmacenPrestableController.php:244
+ * @see app/Http/Controllers/AlmacenPrestableController.php:254
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
 destroy.url = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -556,7 +556,7 @@ destroy.url = (args: { almacenes_prestable: string | number } | [almacenes_prest
 
 /**
 * @see \App\Http\Controllers\AlmacenPrestableController::destroy
- * @see app/Http/Controllers/AlmacenPrestableController.php:244
+ * @see app/Http/Controllers/AlmacenPrestableController.php:254
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
 destroy.delete = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -566,7 +566,7 @@ destroy.delete = (args: { almacenes_prestable: string | number } | [almacenes_pr
 
     /**
 * @see \App\Http\Controllers\AlmacenPrestableController::destroy
- * @see app/Http/Controllers/AlmacenPrestableController.php:244
+ * @see app/Http/Controllers/AlmacenPrestableController.php:254
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
     const destroyForm = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ destroy.delete = (args: { almacenes_prestable: string | number } | [almacenes_pr
 
             /**
 * @see \App\Http\Controllers\AlmacenPrestableController::destroy
- * @see app/Http/Controllers/AlmacenPrestableController.php:244
+ * @see app/Http/Controllers/AlmacenPrestableController.php:254
  * @route '/almacenes-prestables/{almacenes_prestable}'
  */
         destroyForm.delete = (args: { almacenes_prestable: string | number } | [almacenes_prestable: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
