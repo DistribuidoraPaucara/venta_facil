@@ -237,8 +237,8 @@ class CompraController extends Controller
 
             'monedas'     => Moneda::where('activo', true)->orderBy('codigo')->get(['id', 'codigo', 'nombre', 'simbolo']),
             'estados'     => EstadoDocumento::orderBy('nombre')->get(['id', 'nombre']),
-            // ✅ CRÍTICO: Cargar solo el almacén de la empresa del usuario
-            'almacenes'   => \App\Models\Almacen::where('id', auth()->user()?->empresa?->almacen_id ?? 1)
+            // ✅ CRÍTICO: Cargar todos los almacenes de la empresa del usuario (no solo el configurado)
+            'almacenes'   => \App\Models\Almacen::where('empresa_id', auth()->user()?->empresa_id ?? auth()->user()?->empresa?->id ?? 1)
                 ->where('activo', true)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'activo']),
@@ -508,8 +508,8 @@ class CompraController extends Controller
                 }),
             'monedas'     => Moneda::where('activo', true)->orderBy('codigo')->get(['id', 'codigo', 'nombre', 'simbolo']),
             'estados'     => EstadoDocumento::orderBy('nombre')->get(['id', 'nombre']),
-            // ✅ CRÍTICO: Cargar solo el almacén de la empresa del usuario
-            'almacenes'   => \App\Models\Almacen::where('id', auth()->user()?->empresa?->almacen_id ?? 1)
+            // ✅ CRÍTICO: Cargar todos los almacenes de la empresa del usuario
+            'almacenes'   => \App\Models\Almacen::where('empresa_id', auth()->user()?->empresa_id ?? auth()->user()?->empresa?->id ?? 1)
                 ->where('activo', true)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'activo']),
