@@ -36,7 +36,8 @@ class EmpleadoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Empleado::with(['user.roles']);
+        $query = Empleado::porEmpresa()  // ✅ Filtrar por empresa del usuario
+            ->with(['user.roles']);
 
         // Filtros de búsqueda (soporte tanto 'q' como 'search' para compatibilidad)
         $searchTerm = $request->q ?? $request->search;
@@ -104,7 +105,8 @@ class EmpleadoController extends Controller
      */
     public function create()
     {
-        $supervisores = Empleado::with('user')
+        $supervisores = Empleado::porEmpresa()  // ✅ Filtrar por empresa
+            ->with('user')
             ->activos()
             ->get()
             ->map(function ($empleado) {
@@ -341,7 +343,8 @@ class EmpleadoController extends Controller
         // Cargar roles y permisos del usuario asociado
         $empleado->load(['user.roles.permissions', 'user.permissions']);
 
-        $supervisores = Empleado::with('user')
+        $supervisores = Empleado::porEmpresa()  // ✅ Filtrar por empresa
+            ->with('user')
             ->activos()
             ->where('id', '!=', $empleado->id)
             ->get()
@@ -916,7 +919,8 @@ class EmpleadoController extends Controller
     public function getSupervisores()
     {
         try {
-            $supervisores = Empleado::whereHas('user')
+            $supervisores = Empleado::porEmpresa()  // ✅ Filtrar por empresa
+                ->whereHas('user')
                 ->with('user')
                 ->where('estado', 'activo')
                 ->where('puede_acceder_sistema', true)
@@ -1111,7 +1115,7 @@ class EmpleadoController extends Controller
 
             // Por defecto para empleado con acceso al sistema
             if (!$rolSugerido && $empleadoId) {
-                $empleado = Empleado::find($empleadoId);
+                $empleado = Empleado::porEmpresa()->find($empleadoId);  // ✅ Validar empresa
                 if ($empleado) {
                     // Puedes agregar más lógica aquí basada en propiedades del empleado
                     $rolSugerido = 'Empleado';

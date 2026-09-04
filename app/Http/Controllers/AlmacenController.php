@@ -55,7 +55,7 @@ class AlmacenController extends Controller
         $q = $request->string('q');
 
         // Construir query con búsqueda opcional y cargar relaciones
-        $items = $modelClass::query()
+        $items = $modelClass::porEmpresa()  // ✅ Filtrar por empresa del usuario
             ->withCount('sectores') // ✅ Cargar conteo de sectores
             ->when($q, function ($query) use ($q, $modelClass) {
                 // Usar searchByName scope si el modelo lo tiene

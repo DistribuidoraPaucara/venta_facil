@@ -175,6 +175,18 @@ class Empleado extends Model
     }
 
     /**
+     * Scope: Filtrar por empresa del usuario autenticado
+     */
+    public function scopePorEmpresa($query)
+    {
+        $empresaId = auth()->user()?->empresa_id ?? app('tenant_id');
+        if ($empresaId) {
+            return $query->where('empresa_id', $empresaId);
+        }
+        return $query;
+    }
+
+    /**
      * Actualizar último acceso al sistema
      */
     public function actualizarUltimoAcceso(): void
