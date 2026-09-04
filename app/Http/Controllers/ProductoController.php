@@ -263,7 +263,19 @@ class ProductoController extends Controller
             'marcas'       => $marcas,
             'proveedores'  => $proveedores,
             'unidades'     => UnidadMedida::orderBy('nombre')->get(['id', 'codigo', 'nombre']),
-            'tipos_precio' => TipoPrecio::porEmpresa()->getOptions(), // ✨ NUEVO: Filtrar por empresa
+            'tipos_precio' => TipoPrecio::porEmpresa()->activos()->ordenados()->get()->map(function ($tipo) {
+                return [
+                    'value'               => $tipo->id,
+                    'code'                => $tipo->codigo,
+                    'label'               => $tipo->nombre,
+                    'description'         => $tipo->descripcion,
+                    'color'               => $tipo->color,
+                    'es_ganancia'         => $tipo->es_ganancia,
+                    'es_precio_base'      => $tipo->es_precio_base,
+                    'icono'               => $tipo->getIcono(),
+                    'tooltip'             => $tipo->getTooltip(),
+                ];
+            })->toArray(),
 
         ]);
     }
