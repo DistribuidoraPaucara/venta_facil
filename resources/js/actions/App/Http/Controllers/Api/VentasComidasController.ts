@@ -56,7 +56,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
- * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @see app/Http/Controllers/Api/VentasComidasController.php:393
  * @route '/api/ventas-comidas/{venta}'
  */
 export const show = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -71,7 +71,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
- * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @see app/Http/Controllers/Api/VentasComidasController.php:393
  * @route '/api/ventas-comidas/{venta}'
  */
 show.url = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -104,7 +104,7 @@ show.url = (args: { venta: number | { id: number } } | [venta: number | { id: nu
 
 /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
- * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @see app/Http/Controllers/Api/VentasComidasController.php:393
  * @route '/api/ventas-comidas/{venta}'
  */
 show.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -113,7 +113,7 @@ show.get = (args: { venta: number | { id: number } } | [venta: number | { id: nu
 })
 /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
- * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @see app/Http/Controllers/Api/VentasComidasController.php:393
  * @route '/api/ventas-comidas/{venta}'
  */
 show.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -123,7 +123,7 @@ show.head = (args: { venta: number | { id: number } } | [venta: number | { id: n
 
     /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
- * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @see app/Http/Controllers/Api/VentasComidasController.php:393
  * @route '/api/ventas-comidas/{venta}'
  */
     const showForm = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -133,7 +133,7 @@ show.head = (args: { venta: number | { id: number } } | [venta: number | { id: n
 
             /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
- * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @see app/Http/Controllers/Api/VentasComidasController.php:393
  * @route '/api/ventas-comidas/{venta}'
  */
         showForm.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -142,7 +142,7 @@ show.head = (args: { venta: number | { id: number } } | [venta: number | { id: n
         })
             /**
 * @see \App\Http\Controllers\Api\VentasComidasController::show
- * @see app/Http/Controllers/Api/VentasComidasController.php:384
+ * @see app/Http/Controllers/Api/VentasComidasController.php:393
  * @route '/api/ventas-comidas/{venta}'
  */
         showForm.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -2731,13 +2731,13 @@ class ProductoController extends Controller
                         'almacen_id_solicitado' => $almacenId,
                     ]);
 
-                    // Usar almacén principal de la empresa como fallback
-                    $almacenId = $empresa->almacen_id_principal ?? config('inventario.almacen_principal_id', 1);
+                    // Usar almacén de la empresa como fallback
+                    $almacenId = $empresa->almacen_id ?? config('inventario.almacen_principal_id', 1);
                 }
             }
         } else {
-            // Usar almacén principal de la empresa
-            $almacenId = $empresa?->almacen_id_principal ?? config('inventario.almacen_principal_id', 1);
+            // Usar almacén de la empresa
+            $almacenId = $empresa?->almacen_id ?? config('inventario.almacen_principal_id', 1);
         }
 
         if (! $q || strlen($q) < 2) {

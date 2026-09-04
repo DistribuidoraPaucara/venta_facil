@@ -401,9 +401,9 @@ class ComboController extends Controller
 
     private function serializarCombo(Producto $combo, ?int $almacenId = null): array
     {
-        // ✅ CORREGIDO: Si no se proporciona almacen_id, usar el almacén principal
+        // ✅ CORREGIDO: Si no se proporciona almacen_id, usar el almacén de la empresa
         if (!$almacenId) {
-            $almacenId = auth()->user()?->empresa?->almacen_id_principal ?? config('inventario.almacen_principal_id', 1);
+            $almacenId = auth()->user()?->empresa?->almacen_id ?? config('inventario.almacen_principal_id', 1);
         }
 
         return [

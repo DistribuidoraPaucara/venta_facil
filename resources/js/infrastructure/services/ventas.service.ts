@@ -255,6 +255,13 @@ export class VentasService implements BaseService<Venta, VentaFormData> {
     async validateData(data: VentaFormData): Promise<string[]> {
         const errors: string[] = [];
 
+        // ✅ DEBUG: Verificar qué almacen_id se recibe
+        console.log('🔍 [validateData] data recibida:', {
+            almacen_id: (data as any).almacen_id,
+            cliente_id: data.cliente_id,
+            detalles_count: data.detalles?.length,
+        });
+
         // NOTA: El número se genera automáticamente en el backend, no es necesario validarlo aquí
 
         if (!data.fecha) {
@@ -297,6 +304,7 @@ export class VentasService implements BaseService<Venta, VentaFormData> {
 
                 // ✅ CRÍTICO: Pasar almacen_id correcto (no 1 por defecto)
                 const almacenIdValidar = (data as any).almacen_id || 4;
+                console.log('📦 [validateData] Validando stock con almacen_id:', almacenIdValidar);
                 const stockValidation = await this.verificarStockDisponible(productosParaValidar, almacenIdValidar);
                 if (!stockValidation.valido) {
                     errors.push(...stockValidation.errores);
@@ -424,6 +432,13 @@ export class VentasService implements BaseService<Venta, VentaFormData> {
         }>;
     }> {
         try {
+            // ✅ DEBUG: Verificar qué se envía al backend
+            console.log('🚀 [verificarStockDisponible] Enviando al backend:', {
+                almacen_id: almacenId,
+                productos_count: productos.length,
+                productos_ids: productos.map(p => p.producto_id),
+            });
+
             const response = await fetch('/api/ventas/verificar-stock', {
                 method: 'POST',
                 headers: {
