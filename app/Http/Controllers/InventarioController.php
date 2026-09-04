@@ -825,8 +825,8 @@ class InventarioController extends Controller
                     ],
                 ],
                 'almacen'           => [
-                    'id'     => $stockProducto->almacen->id,
-                    'nombre' => $stockProducto->almacen->nombre,
+                    'id'     => $stockProducto->almacen?->id ?? null,
+                    'nombre' => $stockProducto->almacen?->nombre ?? '[Almacén Eliminado]',
                 ],
                 'stock_producto_id' => $stockProducto->id,  // ✅ NUEVO (2026-02-12): ID del stock
                 'lote'              => $stockProducto->lote ?? '-',  // ✅ NUEVO (2026-02-12): Número de lote
