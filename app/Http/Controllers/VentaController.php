@@ -515,24 +515,31 @@ class VentaController extends Controller
             'icono'  => $tipo->getIcon(),
         ])->toArray();
 
-        // ✅ NUEVO: Obtener almacén de la empresa principal (consulta FRESCA, sin cache)
-        // Forzar consulta directa a BD para obtener valor actual de es_farmacia
-        $empresaPrincipal = \App\Models\Empresa::where('es_principal', true)
-            ->where('activo', true)
-            ->first();                                                       // Sin Cache::remember para obtener valor actual
-        $almacenIdEmpresa = (int) ($empresaPrincipal?->almacen_id ?? 1); // ✅ Cast a int explícito
+        // ✅ CRÍTICO: Obtener almacén de la EMPRESA DEL USUARIO AUTENTICADO (no la empresa principal)
+        $usuario = auth()->user();
+        $empresaUsuario = $usuario?->empresa;
+
+        // Fallback a empresa principal si el usuario no tiene empresa asignada
+        if (!$empresaUsuario) {
+            $empresaUsuario = \App\Models\Empresa::where('es_principal', true)
+                ->where('activo', true)
+                ->first();
+        }
+
+        $almacenIdEmpresa = (int) ($empresaUsuario?->almacen_id ?? 1); // ✅ Almacén de la empresa del usuario
 
         Log::info('📦 VentaController::create - Obteniendo productos con stock', [
             'almacen_id_empresa' => $almacenIdEmpresa,
-            'empresa_principal'  => $empresaPrincipal?->nombre,
+            'empresa_usuario'    => $empresaUsuario?->nombre,
+            'usuario_empresa_id' => $usuario?->empresa_id,
         ]);
 
         // ✅ DEBUG: Log de es_farmacia y logistica_envios para verificar que consulta fresco
         Log::info('🏥 VentaController::create - Consultando VALORES FRESCOS de BD', [
-            'es_farmacia'      => (bool) $empresaPrincipal?->es_farmacia,
-            'logistica_envios' => (bool) $empresaPrincipal?->logistica_envios,
-            'empresa_id'       => $empresaPrincipal?->id,
-            'empresa_nombre'   => $empresaPrincipal?->nombre,
+            'es_farmacia'      => (bool) $empresaUsuario?->es_farmacia,
+            'logistica_envios' => (bool) $empresaUsuario?->logistica_envios,
+            'empresa_id'       => $empresaUsuario?->id,
+            'empresa_nombre'   => $empresaUsuario?->nombre,
         ]);
 
                                   // ✅ MODIFICADO: NO cargar productos en la página
@@ -558,8 +565,8 @@ class VentaController extends Controller
             'tipos_precio'         => $tiposPrecio,                                                                    // ✅ NUEVO: Tipos de precio para asignar por defecto
             'estados_documento'    => EstadoDocumento::where('activo', true)->select('id', 'codigo', 'nombre', 'color', 'icono')->get(), // ✅ NUEVO: Estados de documento
             'almacen_id_empresa'   => $almacenIdEmpresa,                                                               // ✅ NUEVO: Almacén de la empresa
-            'es_farmacia'          => (bool) $empresaPrincipal?->es_farmacia,                                          // ✅ NUEVO: Indicador para mostrar/ocultar campos de medicamentos
-            'logistica_envios'     => (bool) $empresaPrincipal?->logistica_envios,                                     // ✅ NUEVO: Indicador para mostrar/ocultar logística de envíos
+            'es_farmacia'          => (bool) $empresaUsuario?->es_farmacia,                                            // ✅ NUEVO: Indicador para mostrar/ocultar campos de medicamentos
+            'logistica_envios'     => (bool) $empresaUsuario?->logistica_envios,                                       // ✅ NUEVO: Indicador para mostrar/ocultar logística de envíos
                                                                                                                        // ✅ NUEVO (2026-03-03): Direcciones de clientes con observaciones para mostrar en formulario
             'direcciones_clientes' => \App\Models\DireccionCliente::where('activa', true)
                 ->with('cliente:id,nombre')
@@ -1814,9 +1821,11 @@ class VentaController extends Controller
 
                 // ✅ COMBOS: Validar capacidad en lugar de stock directo
                 if ($productoData->es_combo) {
+                    // ✅ CRÍTICO: SIEMPRE usar almacén correcto
+                    $almacenIdValidar = $almacenId ?? auth()->user()?->empresa->almacen_id ?? 1;
                     $capacidad = ComboStockService::calcularCapacidadCombos(
                         $productoData->id,
-                        $almacenId
+                        $almacenIdValidar
                     );
 
                     $tieneStock = $capacidad >= $cantidadSolicitada;
@@ -1836,8 +1845,10 @@ class VentaController extends Controller
                     ];
                 } else {
                     // ✅ PRODUCTOS SIMPLES: Validar stock directo
+                    // ✅ CRÍTICO: SIEMPRE filtrar por almacen_id (no usar when, que NO aplica si es null)
+                    $almacenIdValidar = $almacenId ?? auth()->user()?->empresa->almacen_id ?? 1;
                     $stockDisponible = $productoData->stock()
-                        ->when($almacenId, fn($q) => $q->where('almacen_id', $almacenId))
+                        ->where('almacen_id', $almacenIdValidar)
                         ->sum('cantidad_disponible') ?? 0;
 
                     $tieneStock = $stockDisponible >= $cantidadSolicitada;

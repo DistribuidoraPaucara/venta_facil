@@ -295,7 +295,9 @@ export class VentasService implements BaseService<Venta, VentaFormData> {
                     cantidad: detalle.cantidad,
                 }));
 
-                const stockValidation = await this.verificarStockDisponible(productosParaValidar);
+                // ✅ CRÍTICO: Pasar almacen_id correcto (no 1 por defecto)
+                const almacenIdValidar = (data as any).almacen_id || 4;
+                const stockValidation = await this.verificarStockDisponible(productosParaValidar, almacenIdValidar);
                 if (!stockValidation.valido) {
                     errors.push(...stockValidation.errores);
                 }

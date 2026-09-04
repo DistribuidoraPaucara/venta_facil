@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { usePage } from '@inertiajs/react';
 import { NotificationService } from '@/infrastructure/services/notification.service';
 import type { Producto } from '@/domain/entities/ventas';
 import Fuse from 'fuse.js';
@@ -31,6 +32,10 @@ export function useProductSearch({
     const [isLoading, setIsLoading] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [isFocused, setIsFocused] = useState(false);
+
+    // ✅ NUEVO: Obtener empresa_id del usuario autenticado usando Hooks en el cuerpo de la función
+    const { auth } = usePage().props as any;
+    const empresaId = auth?.user?.empresa_id;
 
     // ✅ NIVEL 2: Estados para Fuse.js
     const [todosProductos, setTodosProductos] = useState<Producto[]>([]);
@@ -396,6 +401,7 @@ export function useProductSearch({
                     // ✅ NIVEL 1: Fallback a búsqueda por API
                     console.log('🔍 [useProductSearch] Búsqueda por API para:', term);
                     console.log('🔐 [useProductSearch] permitirProductosSinStock:', permitirProductosSinStock); // ✅ NUEVO: Debug
+
                     const params = new URLSearchParams({
                         q: term,
                         limite: '10',
@@ -405,6 +411,12 @@ export function useProductSearch({
                     if (almacen_id) params.append('almacen_id', almacen_id.toString());
                     if (cliente_id) params.append('cliente_id', cliente_id.toString());
                     if (permitirProductosSinStock) params.append('permitir_sin_stock', 'true'); // ✅ NUEVO (2026-05-26)
+                    if (empresaId) {
+                        params.append('empresa_id', empresaId.toString());
+                        console.log('🏢 [useProductSearch] Empresa ID enviada:', empresaId);
+                    } else {
+                        console.warn('⚠️ [useProductSearch] No se encontró empresa_id del usuario autenticado');
+                    }
 
                     const url = `/api/app/productos/buscar?${params.toString()}`;
                     console.log('📡 [useProductSearch] URL:', url);
@@ -485,7 +497,7 @@ export function useProductSearch({
                 setIsLoading(false);
             }
         }, 300); // ⏱️ 300ms debounce
-    }, [productSearch, tipo, almacen_id, cliente_id, useFuseSearch, productosInicioCargados]);
+    }, [productSearch, tipo, almacen_id, cliente_id, useFuseSearch, productosInicioCargados, empresaId]);
 
     // ✅ Limpiar timeout al desmontar o cuando cambian dependencias
     useEffect(() => {
@@ -538,6 +550,7 @@ export function useProductSearch({
             // ✅ Fallback a API si Fuse.js no encontró nada
             if (!producto) {
                 console.log('🔍 [Scanner] Búsqueda por API para código:', result);
+
                 const params = new URLSearchParams({
                     q: result,
                     tipo_busqueda: 'exacta',
@@ -548,6 +561,12 @@ export function useProductSearch({
                 if (almacen_id) params.append('almacen_id', almacen_id.toString());
                 if (cliente_id) params.append('cliente_id', cliente_id.toString());
                 if (permitirProductosSinStock) params.append('permitir_sin_stock', 'true'); // ✅ NUEVO (2026-05-26)
+                if (empresaId) {
+                    params.append('empresa_id', empresaId.toString());
+                    console.log('🏢 [Scanner] Empresa ID enviada:', empresaId);
+                } else {
+                    console.warn('⚠️ [Scanner] No se encontró empresa_id del usuario autenticado');
+                }
 
                 const url = `/api/productos/buscar?${params.toString()}`;
                 console.log('📡 [Scanner] URL:', url);
@@ -617,7 +636,7 @@ export function useProductSearch({
         } finally {
             setIsLoading(false);
         }
-    }, [tipo, almacen_id, cliente_id, useFuseSearch, productosInicioCargados]);
+    }, [tipo, almacen_id, cliente_id, useFuseSearch, productosInicioCargados, empresaId]);
 
     return {
         productSearch,

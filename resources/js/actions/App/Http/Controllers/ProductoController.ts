@@ -675,7 +675,7 @@ export const buscarApi = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::listarApi
- * @see app/Http/Controllers/ProductoController.php:4555
+ * @see app/Http/Controllers/ProductoController.php:4593
  * @route '/api/app/productos/listar'
  */
 export const listarApi = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -690,7 +690,7 @@ listarApi.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::listarApi
- * @see app/Http/Controllers/ProductoController.php:4555
+ * @see app/Http/Controllers/ProductoController.php:4593
  * @route '/api/app/productos/listar'
  */
 listarApi.url = (options?: RouteQueryOptions) => {
@@ -699,7 +699,7 @@ listarApi.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::listarApi
- * @see app/Http/Controllers/ProductoController.php:4555
+ * @see app/Http/Controllers/ProductoController.php:4593
  * @route '/api/app/productos/listar'
  */
 listarApi.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -708,7 +708,7 @@ listarApi.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProductoController::listarApi
- * @see app/Http/Controllers/ProductoController.php:4555
+ * @see app/Http/Controllers/ProductoController.php:4593
  * @route '/api/app/productos/listar'
  */
 listarApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -718,7 +718,7 @@ listarApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProductoController::listarApi
- * @see app/Http/Controllers/ProductoController.php:4555
+ * @see app/Http/Controllers/ProductoController.php:4593
  * @route '/api/app/productos/listar'
  */
     const listarApiForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -728,7 +728,7 @@ listarApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProductoController::listarApi
- * @see app/Http/Controllers/ProductoController.php:4555
+ * @see app/Http/Controllers/ProductoController.php:4593
  * @route '/api/app/productos/listar'
  */
         listarApiForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -737,7 +737,7 @@ listarApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProductoController::listarApi
- * @see app/Http/Controllers/ProductoController.php:4555
+ * @see app/Http/Controllers/ProductoController.php:4593
  * @route '/api/app/productos/listar'
  */
         listarApiForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1331,7 +1331,7 @@ export const destroyApi = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:4997
+ * @see app/Http/Controllers/ProductoController.php:5038
  * @route '/api/app/productos/{producto}/imagenes'
  */
 export const uploadImagenApi = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1346,7 +1346,7 @@ uploadImagenApi.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:4997
+ * @see app/Http/Controllers/ProductoController.php:5038
  * @route '/api/app/productos/{producto}/imagenes'
  */
 uploadImagenApi.url = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -1379,7 +1379,7 @@ uploadImagenApi.url = (args: { producto: number | { id: number } } | [producto: 
 
 /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:4997
+ * @see app/Http/Controllers/ProductoController.php:5038
  * @route '/api/app/productos/{producto}/imagenes'
  */
 uploadImagenApi.post = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1389,7 +1389,7 @@ uploadImagenApi.post = (args: { producto: number | { id: number } } | [producto:
 
     /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:4997
+ * @see app/Http/Controllers/ProductoController.php:5038
  * @route '/api/app/productos/{producto}/imagenes'
  */
     const uploadImagenApiForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1399,7 +1399,7 @@ uploadImagenApi.post = (args: { producto: number | { id: number } } | [producto:
 
             /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:4997
+ * @see app/Http/Controllers/ProductoController.php:5038
  * @route '/api/app/productos/{producto}/imagenes'
  */
         uploadImagenApiForm.post = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1410,7 +1410,7 @@ uploadImagenApi.post = (args: { producto: number | { id: number } } | [producto:
     uploadImagenApi.form = uploadImagenApiForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStock
- * @see app/Http/Controllers/ProductoController.php:4500
+ * @see app/Http/Controllers/ProductoController.php:4538
  * @route '/api/productos/{producto}/stock'
  */
 export const obtenerStock = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1425,7 +1425,7 @@ obtenerStock.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStock
- * @see app/Http/Controllers/ProductoController.php:4500
+ * @see app/Http/Controllers/ProductoController.php:4538
  * @route '/api/productos/{producto}/stock'
  */
 obtenerStock.url = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -1458,7 +1458,7 @@ obtenerStock.url = (args: { producto: number | { id: number } } | [producto: num
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStock
- * @see app/Http/Controllers/ProductoController.php:4500
+ * @see app/Http/Controllers/ProductoController.php:4538
  * @route '/api/productos/{producto}/stock'
  */
 obtenerStock.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1467,7 +1467,7 @@ obtenerStock.get = (args: { producto: number | { id: number } } | [producto: num
 })
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStock
- * @see app/Http/Controllers/ProductoController.php:4500
+ * @see app/Http/Controllers/ProductoController.php:4538
  * @route '/api/productos/{producto}/stock'
  */
 obtenerStock.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1477,7 +1477,7 @@ obtenerStock.head = (args: { producto: number | { id: number } } | [producto: nu
 
     /**
 * @see \App\Http\Controllers\ProductoController::obtenerStock
- * @see app/Http/Controllers/ProductoController.php:4500
+ * @see app/Http/Controllers/ProductoController.php:4538
  * @route '/api/productos/{producto}/stock'
  */
     const obtenerStockForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1487,7 +1487,7 @@ obtenerStock.head = (args: { producto: number | { id: number } } | [producto: nu
 
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerStock
- * @see app/Http/Controllers/ProductoController.php:4500
+ * @see app/Http/Controllers/ProductoController.php:4538
  * @route '/api/productos/{producto}/stock'
  */
         obtenerStockForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1496,7 +1496,7 @@ obtenerStock.head = (args: { producto: number | { id: number } } | [producto: nu
         })
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerStock
- * @see app/Http/Controllers/ProductoController.php:4500
+ * @see app/Http/Controllers/ProductoController.php:4538
  * @route '/api/productos/{producto}/stock'
  */
         obtenerStockForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1512,7 +1512,7 @@ obtenerStock.head = (args: { producto: number | { id: number } } | [producto: nu
     obtenerStock.form = obtenerStockForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
- * @see app/Http/Controllers/ProductoController.php:4525
+ * @see app/Http/Controllers/ProductoController.php:4563
  * @route '/api/productos/stock/multiples'
  */
 export const obtenerStockMultiples = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1527,7 +1527,7 @@ obtenerStockMultiples.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
- * @see app/Http/Controllers/ProductoController.php:4525
+ * @see app/Http/Controllers/ProductoController.php:4563
  * @route '/api/productos/stock/multiples'
  */
 obtenerStockMultiples.url = (options?: RouteQueryOptions) => {
@@ -1536,7 +1536,7 @@ obtenerStockMultiples.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
- * @see app/Http/Controllers/ProductoController.php:4525
+ * @see app/Http/Controllers/ProductoController.php:4563
  * @route '/api/productos/stock/multiples'
  */
 obtenerStockMultiples.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1546,7 +1546,7 @@ obtenerStockMultiples.post = (options?: RouteQueryOptions): RouteDefinition<'pos
 
     /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
- * @see app/Http/Controllers/ProductoController.php:4525
+ * @see app/Http/Controllers/ProductoController.php:4563
  * @route '/api/productos/stock/multiples'
  */
     const obtenerStockMultiplesForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1556,7 +1556,7 @@ obtenerStockMultiples.post = (options?: RouteQueryOptions): RouteDefinition<'pos
 
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockMultiples
- * @see app/Http/Controllers/ProductoController.php:4525
+ * @see app/Http/Controllers/ProductoController.php:4563
  * @route '/api/productos/stock/multiples'
  */
         obtenerStockMultiplesForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1567,7 +1567,7 @@ obtenerStockMultiples.post = (options?: RouteQueryOptions): RouteDefinition<'pos
     obtenerStockMultiples.form = obtenerStockMultiplesForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
- * @see app/Http/Controllers/ProductoController.php:4647
+ * @see app/Http/Controllers/ProductoController.php:4685
  * @route '/api/productos/sin-restriccion'
  */
 export const obtenerTodosSinRestriccion = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1582,7 +1582,7 @@ obtenerTodosSinRestriccion.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
- * @see app/Http/Controllers/ProductoController.php:4647
+ * @see app/Http/Controllers/ProductoController.php:4685
  * @route '/api/productos/sin-restriccion'
  */
 obtenerTodosSinRestriccion.url = (options?: RouteQueryOptions) => {
@@ -1591,7 +1591,7 @@ obtenerTodosSinRestriccion.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
- * @see app/Http/Controllers/ProductoController.php:4647
+ * @see app/Http/Controllers/ProductoController.php:4685
  * @route '/api/productos/sin-restriccion'
  */
 obtenerTodosSinRestriccion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1600,7 +1600,7 @@ obtenerTodosSinRestriccion.get = (options?: RouteQueryOptions): RouteDefinition<
 })
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
- * @see app/Http/Controllers/ProductoController.php:4647
+ * @see app/Http/Controllers/ProductoController.php:4685
  * @route '/api/productos/sin-restriccion'
  */
 obtenerTodosSinRestriccion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1610,7 +1610,7 @@ obtenerTodosSinRestriccion.head = (options?: RouteQueryOptions): RouteDefinition
 
     /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
- * @see app/Http/Controllers/ProductoController.php:4647
+ * @see app/Http/Controllers/ProductoController.php:4685
  * @route '/api/productos/sin-restriccion'
  */
     const obtenerTodosSinRestriccionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1620,7 +1620,7 @@ obtenerTodosSinRestriccion.head = (options?: RouteQueryOptions): RouteDefinition
 
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
- * @see app/Http/Controllers/ProductoController.php:4647
+ * @see app/Http/Controllers/ProductoController.php:4685
  * @route '/api/productos/sin-restriccion'
  */
         obtenerTodosSinRestriccionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1629,7 +1629,7 @@ obtenerTodosSinRestriccion.head = (options?: RouteQueryOptions): RouteDefinition
         })
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerTodosSinRestriccion
- * @see app/Http/Controllers/ProductoController.php:4647
+ * @see app/Http/Controllers/ProductoController.php:4685
  * @route '/api/productos/sin-restriccion'
  */
         obtenerTodosSinRestriccionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1645,7 +1645,7 @@ obtenerTodosSinRestriccion.head = (options?: RouteQueryOptions): RouteDefinition
     obtenerTodosSinRestriccion.form = obtenerTodosSinRestriccionForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
- * @see app/Http/Controllers/ProductoController.php:4827
+ * @see app/Http/Controllers/ProductoController.php:4868
  * @route '/api/productos/para-actualizar-stock'
  */
 export const obtenerProductosParaActualizarStock = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1660,7 +1660,7 @@ obtenerProductosParaActualizarStock.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
- * @see app/Http/Controllers/ProductoController.php:4827
+ * @see app/Http/Controllers/ProductoController.php:4868
  * @route '/api/productos/para-actualizar-stock'
  */
 obtenerProductosParaActualizarStock.url = (options?: RouteQueryOptions) => {
@@ -1669,7 +1669,7 @@ obtenerProductosParaActualizarStock.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
- * @see app/Http/Controllers/ProductoController.php:4827
+ * @see app/Http/Controllers/ProductoController.php:4868
  * @route '/api/productos/para-actualizar-stock'
  */
 obtenerProductosParaActualizarStock.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1678,7 +1678,7 @@ obtenerProductosParaActualizarStock.get = (options?: RouteQueryOptions): RouteDe
 })
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
- * @see app/Http/Controllers/ProductoController.php:4827
+ * @see app/Http/Controllers/ProductoController.php:4868
  * @route '/api/productos/para-actualizar-stock'
  */
 obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1688,7 +1688,7 @@ obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteD
 
     /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
- * @see app/Http/Controllers/ProductoController.php:4827
+ * @see app/Http/Controllers/ProductoController.php:4868
  * @route '/api/productos/para-actualizar-stock'
  */
     const obtenerProductosParaActualizarStockForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1698,7 +1698,7 @@ obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteD
 
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
- * @see app/Http/Controllers/ProductoController.php:4827
+ * @see app/Http/Controllers/ProductoController.php:4868
  * @route '/api/productos/para-actualizar-stock'
  */
         obtenerProductosParaActualizarStockForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1707,7 +1707,7 @@ obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteD
         })
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerProductosParaActualizarStock
- * @see app/Http/Controllers/ProductoController.php:4827
+ * @see app/Http/Controllers/ProductoController.php:4868
  * @route '/api/productos/para-actualizar-stock'
  */
         obtenerProductosParaActualizarStockForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1723,7 +1723,7 @@ obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteD
     obtenerProductosParaActualizarStock.form = obtenerProductosParaActualizarStockForm
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:4889
+ * @see app/Http/Controllers/ProductoController.php:4930
  * @route '/api/productos/conversiones/comunes'
  */
 export const conversionesComunes = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1738,7 +1738,7 @@ conversionesComunes.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:4889
+ * @see app/Http/Controllers/ProductoController.php:4930
  * @route '/api/productos/conversiones/comunes'
  */
 conversionesComunes.url = (options?: RouteQueryOptions) => {
@@ -1747,7 +1747,7 @@ conversionesComunes.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:4889
+ * @see app/Http/Controllers/ProductoController.php:4930
  * @route '/api/productos/conversiones/comunes'
  */
 conversionesComunes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1756,7 +1756,7 @@ conversionesComunes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 })
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:4889
+ * @see app/Http/Controllers/ProductoController.php:4930
  * @route '/api/productos/conversiones/comunes'
  */
 conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1766,7 +1766,7 @@ conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
     /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:4889
+ * @see app/Http/Controllers/ProductoController.php:4930
  * @route '/api/productos/conversiones/comunes'
  */
     const conversionesComunesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1776,7 +1776,7 @@ conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
             /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:4889
+ * @see app/Http/Controllers/ProductoController.php:4930
  * @route '/api/productos/conversiones/comunes'
  */
         conversionesComunesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1785,7 +1785,7 @@ conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
         })
             /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:4889
+ * @see app/Http/Controllers/ProductoController.php:4930
  * @route '/api/productos/conversiones/comunes'
  */
         conversionesComunesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2011,7 +2011,7 @@ export const historialPrecios = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::importarProductosMasivos
- * @see app/Http/Controllers/ProductoController.php:3263
+ * @see app/Http/Controllers/ProductoController.php:3304
  * @route '/api/productos/importar-masivo'
  */
 export const importarProductosMasivos = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2026,7 +2026,7 @@ importarProductosMasivos.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::importarProductosMasivos
- * @see app/Http/Controllers/ProductoController.php:3263
+ * @see app/Http/Controllers/ProductoController.php:3304
  * @route '/api/productos/importar-masivo'
  */
 importarProductosMasivos.url = (options?: RouteQueryOptions) => {
@@ -2035,7 +2035,7 @@ importarProductosMasivos.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::importarProductosMasivos
- * @see app/Http/Controllers/ProductoController.php:3263
+ * @see app/Http/Controllers/ProductoController.php:3304
  * @route '/api/productos/importar-masivo'
  */
 importarProductosMasivos.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2045,7 +2045,7 @@ importarProductosMasivos.post = (options?: RouteQueryOptions): RouteDefinition<'
 
     /**
 * @see \App\Http\Controllers\ProductoController::importarProductosMasivos
- * @see app/Http/Controllers/ProductoController.php:3263
+ * @see app/Http/Controllers/ProductoController.php:3304
  * @route '/api/productos/importar-masivo'
  */
     const importarProductosMasivosForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2055,7 +2055,7 @@ importarProductosMasivos.post = (options?: RouteQueryOptions): RouteDefinition<'
 
             /**
 * @see \App\Http\Controllers\ProductoController::importarProductosMasivos
- * @see app/Http/Controllers/ProductoController.php:3263
+ * @see app/Http/Controllers/ProductoController.php:3304
  * @route '/api/productos/importar-masivo'
  */
         importarProductosMasivosForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2066,7 +2066,7 @@ importarProductosMasivos.post = (options?: RouteQueryOptions): RouteDefinition<'
     importarProductosMasivos.form = importarProductosMasivosForm
 /**
 * @see \App\Http\Controllers\ProductoController::validarProductosCSV
- * @see app/Http/Controllers/ProductoController.php:3739
+ * @see app/Http/Controllers/ProductoController.php:3780
  * @route '/api/productos/validar-csv'
  */
 export const validarProductosCSV = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2081,7 +2081,7 @@ validarProductosCSV.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::validarProductosCSV
- * @see app/Http/Controllers/ProductoController.php:3739
+ * @see app/Http/Controllers/ProductoController.php:3780
  * @route '/api/productos/validar-csv'
  */
 validarProductosCSV.url = (options?: RouteQueryOptions) => {
@@ -2090,7 +2090,7 @@ validarProductosCSV.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::validarProductosCSV
- * @see app/Http/Controllers/ProductoController.php:3739
+ * @see app/Http/Controllers/ProductoController.php:3780
  * @route '/api/productos/validar-csv'
  */
 validarProductosCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2100,7 +2100,7 @@ validarProductosCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'
 
     /**
 * @see \App\Http\Controllers\ProductoController::validarProductosCSV
- * @see app/Http/Controllers/ProductoController.php:3739
+ * @see app/Http/Controllers/ProductoController.php:3780
  * @route '/api/productos/validar-csv'
  */
     const validarProductosCSVForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2110,7 +2110,7 @@ validarProductosCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'
 
             /**
 * @see \App\Http\Controllers\ProductoController::validarProductosCSV
- * @see app/Http/Controllers/ProductoController.php:3739
+ * @see app/Http/Controllers/ProductoController.php:3780
  * @route '/api/productos/validar-csv'
  */
         validarProductosCSVForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2121,7 +2121,7 @@ validarProductosCSV.post = (options?: RouteQueryOptions): RouteDefinition<'post'
     validarProductosCSV.form = validarProductosCSVForm
 /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
- * @see app/Http/Controllers/ProductoController.php:3860
+ * @see app/Http/Controllers/ProductoController.php:3901
  * @route '/api/productos/cargas-masivas'
  */
 export const listarCargasMasivas = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2136,7 +2136,7 @@ listarCargasMasivas.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
- * @see app/Http/Controllers/ProductoController.php:3860
+ * @see app/Http/Controllers/ProductoController.php:3901
  * @route '/api/productos/cargas-masivas'
  */
 listarCargasMasivas.url = (options?: RouteQueryOptions) => {
@@ -2145,7 +2145,7 @@ listarCargasMasivas.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
- * @see app/Http/Controllers/ProductoController.php:3860
+ * @see app/Http/Controllers/ProductoController.php:3901
  * @route '/api/productos/cargas-masivas'
  */
 listarCargasMasivas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2154,7 +2154,7 @@ listarCargasMasivas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 })
 /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
- * @see app/Http/Controllers/ProductoController.php:3860
+ * @see app/Http/Controllers/ProductoController.php:3901
  * @route '/api/productos/cargas-masivas'
  */
 listarCargasMasivas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2164,7 +2164,7 @@ listarCargasMasivas.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
     /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
- * @see app/Http/Controllers/ProductoController.php:3860
+ * @see app/Http/Controllers/ProductoController.php:3901
  * @route '/api/productos/cargas-masivas'
  */
     const listarCargasMasivasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2174,7 +2174,7 @@ listarCargasMasivas.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
             /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
- * @see app/Http/Controllers/ProductoController.php:3860
+ * @see app/Http/Controllers/ProductoController.php:3901
  * @route '/api/productos/cargas-masivas'
  */
         listarCargasMasivasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2183,7 +2183,7 @@ listarCargasMasivas.head = (options?: RouteQueryOptions): RouteDefinition<'head'
         })
             /**
 * @see \App\Http\Controllers\ProductoController::listarCargasMasivas
- * @see app/Http/Controllers/ProductoController.php:3860
+ * @see app/Http/Controllers/ProductoController.php:3901
  * @route '/api/productos/cargas-masivas'
  */
         listarCargasMasivasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2199,7 +2199,7 @@ listarCargasMasivas.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     listarCargasMasivas.form = listarCargasMasivasForm
 /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3886
+ * @see app/Http/Controllers/ProductoController.php:3927
  * @route '/api/productos/cargas-masivas/{cargo}'
  */
 export const verCargaMasiva = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2214,7 +2214,7 @@ verCargaMasiva.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3886
+ * @see app/Http/Controllers/ProductoController.php:3927
  * @route '/api/productos/cargas-masivas/{cargo}'
  */
 verCargaMasiva.url = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -2247,7 +2247,7 @@ verCargaMasiva.url = (args: { cargo: number | { id: number } } | [cargo: number 
 
 /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3886
+ * @see app/Http/Controllers/ProductoController.php:3927
  * @route '/api/productos/cargas-masivas/{cargo}'
  */
 verCargaMasiva.get = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2256,7 +2256,7 @@ verCargaMasiva.get = (args: { cargo: number | { id: number } } | [cargo: number 
 })
 /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3886
+ * @see app/Http/Controllers/ProductoController.php:3927
  * @route '/api/productos/cargas-masivas/{cargo}'
  */
 verCargaMasiva.head = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2266,7 +2266,7 @@ verCargaMasiva.head = (args: { cargo: number | { id: number } } | [cargo: number
 
     /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3886
+ * @see app/Http/Controllers/ProductoController.php:3927
  * @route '/api/productos/cargas-masivas/{cargo}'
  */
     const verCargaMasivaForm = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2276,7 +2276,7 @@ verCargaMasiva.head = (args: { cargo: number | { id: number } } | [cargo: number
 
             /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3886
+ * @see app/Http/Controllers/ProductoController.php:3927
  * @route '/api/productos/cargas-masivas/{cargo}'
  */
         verCargaMasivaForm.get = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2285,7 +2285,7 @@ verCargaMasiva.head = (args: { cargo: number | { id: number } } | [cargo: number
         })
             /**
 * @see \App\Http\Controllers\ProductoController::verCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3886
+ * @see app/Http/Controllers/ProductoController.php:3927
  * @route '/api/productos/cargas-masivas/{cargo}'
  */
         verCargaMasivaForm.head = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2301,7 +2301,7 @@ verCargaMasiva.head = (args: { cargo: number | { id: number } } | [cargo: number
     verCargaMasiva.form = verCargaMasivaForm
 /**
 * @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3901
+ * @see app/Http/Controllers/ProductoController.php:3942
  * @route '/api/productos/cargas-masivas/{cargo}/revertir'
  */
 export const revertirCargaMasiva = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2316,7 +2316,7 @@ revertirCargaMasiva.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3901
+ * @see app/Http/Controllers/ProductoController.php:3942
  * @route '/api/productos/cargas-masivas/{cargo}/revertir'
  */
 revertirCargaMasiva.url = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -2349,7 +2349,7 @@ revertirCargaMasiva.url = (args: { cargo: number | { id: number } } | [cargo: nu
 
 /**
 * @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3901
+ * @see app/Http/Controllers/ProductoController.php:3942
  * @route '/api/productos/cargas-masivas/{cargo}/revertir'
  */
 revertirCargaMasiva.post = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2359,7 +2359,7 @@ revertirCargaMasiva.post = (args: { cargo: number | { id: number } } | [cargo: n
 
     /**
 * @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3901
+ * @see app/Http/Controllers/ProductoController.php:3942
  * @route '/api/productos/cargas-masivas/{cargo}/revertir'
  */
     const revertirCargaMasivaForm = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2369,7 +2369,7 @@ revertirCargaMasiva.post = (args: { cargo: number | { id: number } } | [cargo: n
 
             /**
 * @see \App\Http\Controllers\ProductoController::revertirCargaMasiva
- * @see app/Http/Controllers/ProductoController.php:3901
+ * @see app/Http/Controllers/ProductoController.php:3942
  * @route '/api/productos/cargas-masivas/{cargo}/revertir'
  */
         revertirCargaMasivaForm.post = (args: { cargo: number | { id: number } } | [cargo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2458,7 +2458,7 @@ createModerno.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     createModerno.form = createModernoForm
 /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
- * @see app/Http/Controllers/ProductoController.php:4360
+ * @see app/Http/Controllers/ProductoController.php:4398
  * @route '/productos/paginados/listar'
  */
 export const getPaginados = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2473,7 +2473,7 @@ getPaginados.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
- * @see app/Http/Controllers/ProductoController.php:4360
+ * @see app/Http/Controllers/ProductoController.php:4398
  * @route '/productos/paginados/listar'
  */
 getPaginados.url = (options?: RouteQueryOptions) => {
@@ -2482,7 +2482,7 @@ getPaginados.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
- * @see app/Http/Controllers/ProductoController.php:4360
+ * @see app/Http/Controllers/ProductoController.php:4398
  * @route '/productos/paginados/listar'
  */
 getPaginados.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2491,7 +2491,7 @@ getPaginados.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
- * @see app/Http/Controllers/ProductoController.php:4360
+ * @see app/Http/Controllers/ProductoController.php:4398
  * @route '/productos/paginados/listar'
  */
 getPaginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2501,7 +2501,7 @@ getPaginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
- * @see app/Http/Controllers/ProductoController.php:4360
+ * @see app/Http/Controllers/ProductoController.php:4398
  * @route '/productos/paginados/listar'
  */
     const getPaginadosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2511,7 +2511,7 @@ getPaginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
- * @see app/Http/Controllers/ProductoController.php:4360
+ * @see app/Http/Controllers/ProductoController.php:4398
  * @route '/productos/paginados/listar'
  */
         getPaginadosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2520,7 +2520,7 @@ getPaginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProductoController::getPaginados
- * @see app/Http/Controllers/ProductoController.php:4360
+ * @see app/Http/Controllers/ProductoController.php:4398
  * @route '/productos/paginados/listar'
  */
         getPaginadosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2536,7 +2536,7 @@ getPaginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     getPaginados.form = getPaginadosForm
 /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
- * @see app/Http/Controllers/ProductoController.php:4478
+ * @see app/Http/Controllers/ProductoController.php:4516
  * @route '/productos/filtros/datos'
  */
 export const getFiltrosData = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2551,7 +2551,7 @@ getFiltrosData.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
- * @see app/Http/Controllers/ProductoController.php:4478
+ * @see app/Http/Controllers/ProductoController.php:4516
  * @route '/productos/filtros/datos'
  */
 getFiltrosData.url = (options?: RouteQueryOptions) => {
@@ -2560,7 +2560,7 @@ getFiltrosData.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
- * @see app/Http/Controllers/ProductoController.php:4478
+ * @see app/Http/Controllers/ProductoController.php:4516
  * @route '/productos/filtros/datos'
  */
 getFiltrosData.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2569,7 +2569,7 @@ getFiltrosData.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
- * @see app/Http/Controllers/ProductoController.php:4478
+ * @see app/Http/Controllers/ProductoController.php:4516
  * @route '/productos/filtros/datos'
  */
 getFiltrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2579,7 +2579,7 @@ getFiltrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 
     /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
- * @see app/Http/Controllers/ProductoController.php:4478
+ * @see app/Http/Controllers/ProductoController.php:4516
  * @route '/productos/filtros/datos'
  */
     const getFiltrosDataForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2589,7 +2589,7 @@ getFiltrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 
             /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
- * @see app/Http/Controllers/ProductoController.php:4478
+ * @see app/Http/Controllers/ProductoController.php:4516
  * @route '/productos/filtros/datos'
  */
         getFiltrosDataForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2598,7 +2598,7 @@ getFiltrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
         })
             /**
 * @see \App\Http\Controllers\ProductoController::getFiltrosData
- * @see app/Http/Controllers/ProductoController.php:4478
+ * @see app/Http/Controllers/ProductoController.php:4516
  * @route '/productos/filtros/datos'
  */
         getFiltrosDataForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3128,7 +3128,7 @@ destroy.delete = (args: { producto: number | { id: number } } | [producto: numbe
     destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
- * @see app/Http/Controllers/ProductoController.php:4710
+ * @see app/Http/Controllers/ProductoController.php:4748
  * @route '/api/productos-comidas/buscar'
  */
 export const buscarProductosComidas = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3143,7 +3143,7 @@ buscarProductosComidas.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
- * @see app/Http/Controllers/ProductoController.php:4710
+ * @see app/Http/Controllers/ProductoController.php:4748
  * @route '/api/productos-comidas/buscar'
  */
 buscarProductosComidas.url = (options?: RouteQueryOptions) => {
@@ -3152,7 +3152,7 @@ buscarProductosComidas.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
- * @see app/Http/Controllers/ProductoController.php:4710
+ * @see app/Http/Controllers/ProductoController.php:4748
  * @route '/api/productos-comidas/buscar'
  */
 buscarProductosComidas.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3161,7 +3161,7 @@ buscarProductosComidas.get = (options?: RouteQueryOptions): RouteDefinition<'get
 })
 /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
- * @see app/Http/Controllers/ProductoController.php:4710
+ * @see app/Http/Controllers/ProductoController.php:4748
  * @route '/api/productos-comidas/buscar'
  */
 buscarProductosComidas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3171,7 +3171,7 @@ buscarProductosComidas.head = (options?: RouteQueryOptions): RouteDefinition<'he
 
     /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
- * @see app/Http/Controllers/ProductoController.php:4710
+ * @see app/Http/Controllers/ProductoController.php:4748
  * @route '/api/productos-comidas/buscar'
  */
     const buscarProductosComidasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3181,7 +3181,7 @@ buscarProductosComidas.head = (options?: RouteQueryOptions): RouteDefinition<'he
 
             /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
- * @see app/Http/Controllers/ProductoController.php:4710
+ * @see app/Http/Controllers/ProductoController.php:4748
  * @route '/api/productos-comidas/buscar'
  */
         buscarProductosComidasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3190,7 +3190,7 @@ buscarProductosComidas.head = (options?: RouteQueryOptions): RouteDefinition<'he
         })
             /**
 * @see \App\Http\Controllers\ProductoController::buscarProductosComidas
- * @see app/Http/Controllers/ProductoController.php:4710
+ * @see app/Http/Controllers/ProductoController.php:4748
  * @route '/api/productos-comidas/buscar'
  */
         buscarProductosComidasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

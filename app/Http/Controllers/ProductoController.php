@@ -2707,20 +2707,47 @@ class ProductoController extends Controller
         $tipo             = $request->string('tipo', 'venta');              // ✅ 'venta' o 'compra'
         $clienteId        = $request->integer('cliente_id', null);          // ✅ NUEVO: Cliente para filtrar tipos_precio
         $permitirSinStock = $request->boolean('permitir_sin_stock', false); // ✅ NUEVO (2026-05-26): Permitir sin stock
+        $empresaIdRequest = $request->integer('empresa_id', null);          // ✅ NUEVO: Permitir pasar empresa_id explícitamente
+
+        // Obtener empresa del usuario (CRÍTICO: siempre validar que pertenezca al usuario)
+        $empresa = $this->obtenerEmpresa($request);
 
         // Obtener almacén: desde request > empresa autenticada > empresa principal > config
         // Prioridad: 1) parámetro explícito, 2) empresa del usuario, 3) empresa principal, 4) config
         if ($request->has('almacen_id')) {
             $almacenId = $request->integer('almacen_id');
+
+            // ✅ CRÍTICO: Validar que el almacén pertenece a la empresa del usuario
+            if ($empresa) {
+                $almacenValido = Almacen::where('id', $almacenId)
+                    ->where('empresa_id', $empresa->id)
+                    ->where('activo', true)
+                    ->exists();
+
+                if (!$almacenValido) {
+                    Log::warning('🚫 [buscarApi] Intento de acceso a almacén no permitido', [
+                        'usuario_id'    => auth()->id(),
+                        'empresa_id'    => $empresa->id,
+                        'almacen_id_solicitado' => $almacenId,
+                    ]);
+
+                    // Usar almacén principal de la empresa como fallback
+                    $almacenId = $empresa->almacen_id_principal ?? config('inventario.almacen_principal_id', 1);
+                }
+            }
         } else {
-            // Obtener empresa del contexto (usuario autenticado o empresa principal)
-            $empresa   = $this->obtenerEmpresa($request);
+            // Usar almacén principal de la empresa
             $almacenId = $empresa?->almacen_id_principal ?? config('inventario.almacen_principal_id', 1);
         }
 
         if (! $q || strlen($q) < 2) {
             return ApiResponse::success([]);
         }
+
+        // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
+        $searchLower   = strtolower($q);
+        // ✅ CRÍTICO: Usar empresa_id de la empresa validada (ya se validó arriba)
+        $userEmpresaId = $empresa?->id;
 
         Log::info('🔍 ProductoController::buscarApi', [
             'q'                  => $q,
@@ -2729,12 +2756,11 @@ class ProductoController extends Controller
             'almacen_id'         => $almacenId,
             'cliente_id'         => $clienteId ?? 'sin especificar', // ✅ NUEVO: Log cliente_id
             'permitir_sin_stock' => $permitirSinStock,               // ✅ NUEVO (2026-05-26): Log permitir_sin_stock
+            'empresa_id'         => $userEmpresaId ?? 'sin asignar', // ✅ NUEVO: Log empresa_id
+            'empresa_id_request' => $empresaIdRequest ?? 'no enviada',
+            'user_empresa_id'    => auth()->user()?->empresa_id ?? 'no asignada',
             'limite'             => $limite,
         ]);
-
-        // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
-        $searchLower   = strtolower($q);
-        $userEmpresaId = auth()->user()?->empresa_id;
 
         // ✅ NUEVO (2026-05-08): Obtener es_farmacia del usuario para permitir venta sin stock
         // ✅ MODIFICADO (2026-05-26): Permitir sin stock si parámetro es true O si es farmacia
@@ -2747,22 +2773,31 @@ class ProductoController extends Controller
         // ✅ Función auxiliar para construir la query base
         // Incluye es_combo para permitir búsqueda automática sin parámetro adicional
         $construirQueryBase = function ($query) use ($userEmpresaId, $almacenId, $tipo, $clienteId, $permitirProductosSinStock) {
-            return $query
+            $q = $query
                 ->select([
                     'id', 'nombre', 'codigo_barras', 'sku', 'categoria_id', 'marca_id',
                     'descripcion', 'peso', 'unidad_medida_id', 'proveedor_id',
                     'stock_minimo', 'stock_maximo', 'limite_venta', 'activo', 'es_fraccionado', 'empresa_id', 'es_combo',
                     'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', // ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
                 ])
-                ->when($userEmpresaId, fn($q) => $q->where('empresa_id', $userEmpresaId))
-                ->where('activo', true)
+                ->where('activo', true);
+
+            // ✅ CRÍTICO: SIEMPRE aplicar filtro de empresa_id si está disponible
+            if ($userEmpresaId) {
+                $q->where('empresa_id', $userEmpresaId);
+            }
+
+            return $q
                 ->when($tipo === 'venta' && ! $permitirProductosSinStock, function ($q) use ($almacenId) {
                     // ✅ MODIFICADO (2026-05-26): Si permitirProductosSinStock es false, filtrar por stock
                     // Si permitirProductosSinStock es true, NO filtrar por stock (permitir todos)
                     return $q->where(function ($subQ) use ($almacenId) {
                         // Productos con stock disponible
                         $subQ->whereHas('stock', function ($sq) use ($almacenId) {
-                            $sq->where('almacen_id', $almacenId)->where('cantidad_disponible', '>', 0);
+                            // ✅ CRÍTICO: Filtrar solo stock NO eliminado (soft delete)
+                            $sq->where('almacen_id', $almacenId)
+                               ->where('cantidad_disponible', '>', 0)
+                               ->whereNull('deleted_at');
                         })
                         // O productos con permiso de venta sin stock
                             ->orWhere('permite_venta_sin_stock', true);
@@ -2807,8 +2842,12 @@ class ProductoController extends Controller
                 'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', // ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
             ])
             ->where('activo', true)
-            ->when($userEmpresaId, fn($q) => $q->where('empresa_id', $userEmpresaId))
             ->whereRaw('LOWER(sku) = ?', [$searchLower]);
+
+        // ✅ CRÍTICO: SIEMPRE aplicar filtro de empresa_id si está disponible
+        if ($userEmpresaId) {
+            $queryProductoPorSku->where('empresa_id', $userEmpresaId);
+        }
 
         // ✅ SIMPLIFICADO: Permitir búsqueda de combos automáticamente
         // El backend determina si es combo basándose en es_combo field
@@ -2901,7 +2940,9 @@ class ProductoController extends Controller
                         ->with('tipoPrecio:id,nombre,codigo');
                 },
                 'stock'        => function ($q) {
-                    $q->select('id', 'producto_id', 'almacen_id', 'cantidad', 'cantidad_disponible', 'cantidad_reservada')
+                    // ✅ CRÍTICO: Filtrar solo registros NO eliminados (active records)
+                    $q->whereNull('deleted_at')
+                        ->select('id', 'producto_id', 'almacen_id', 'cantidad', 'cantidad_disponible', 'cantidad_reservada')
                         ->with('almacen:id,nombre');
                 },
                 'comboItems'   => function ($q) use ($almacenId) {
@@ -4307,22 +4348,19 @@ class ProductoController extends Controller
      */
     private function obtenerEmpresa(Request $request): ?Empresa
     {
-        // 1. Buscar empresa_id explícito en request
-        if ($request->has('empresa_id')) {
-            $empresaId = $request->integer('empresa_id');
-            return Empresa::find($empresaId);
+        $user = Auth::user();
+
+        // ✅ CRÍTICO: Usar empresa_id del usuario autenticado PRIMERO
+        if ($user && $user->empresa_id) {
+            return Empresa::find($user->empresa_id);
         }
 
-        // 2. Si hay usuario autenticado, obtener su empresa (si está disponible)
-        $user = Auth::user();
+        // 2. Si el usuario no tiene empresa asignada, usar empresa principal
         if ($user) {
-            // Si el usuario tiene una empresa asignada (relación custom), usarla
-            // Por ahora asumimos que usa la empresa principal
-            // TODO: Implementar relación user-empresa si es necesario
             return Empresa::principal();
         }
 
-        // 3. Retornar empresa principal como fallback
+        // 3. Sin usuario autenticado, retornar empresa principal como fallback
         return Empresa::principal();
     }
 
@@ -4753,7 +4791,10 @@ class ProductoController extends Controller
                     return $q->where(function ($subQ) use ($almacenId) {
                         // Productos con stock disponible
                         $subQ->whereHas('stock', function ($sq) use ($almacenId) {
-                            $sq->where('almacen_id', $almacenId)->where('cantidad_disponible', '>', 0);
+                            // ✅ CRÍTICO: Filtrar solo stock NO eliminado (soft delete)
+                            $sq->where('almacen_id', $almacenId)
+                               ->where('cantidad_disponible', '>', 0)
+                               ->whereNull('deleted_at');
                         })
                         // O productos con permiso de venta sin stock
                             ->orWhere('permite_venta_sin_stock', true);
