@@ -906,6 +906,7 @@ class ProductoController extends Controller
 
         $payload['es_fraccionado'] = (bool) $producto->es_fraccionado;
         $payload['es_combo']       = (bool) $producto->es_combo;
+        $payload['es_alquilable']  = (bool) $producto->es_alquilable; // ✨ NUEVO - Producto alquilable
         $payload['es_de_produccion'] = (bool) $producto->es_de_produccion; // 🏭 NUEVO
         $payload['visible_app']    = (bool) $producto->visible_app; // ✨ NUEVO - Visible en app
 
@@ -1036,6 +1037,8 @@ class ProductoController extends Controller
                     'permite_venta_sin_stock' => array_key_exists('permite_venta_sin_stock', $data) ? $data['permite_venta_sin_stock'] : $producto->permite_venta_sin_stock,
                     'es_producto_adicional'   => array_key_exists('es_producto_adicional', $data) ? $data['es_producto_adicional'] : $producto->es_producto_adicional,
                     'puede_tener_producto_adicional' => array_key_exists('puede_tener_producto_adicional', $data) ? $data['puede_tener_producto_adicional'] : $producto->puede_tener_producto_adicional,
+                    'es_alquilable'           => array_key_exists('es_alquilable', $data) ? $data['es_alquilable'] : $producto->es_alquilable, // ✨ NUEVO
+                    'es_combo'                => array_key_exists('es_combo', $data) ? $data['es_combo'] : $producto->es_combo, // ✨ NUEVO
                     'principio_activo'        => array_key_exists('principio_activo', $data) ? $sanitize($data['principio_activo']) : $producto->principio_activo,
                     'uso_de_medicacion'       => array_key_exists('uso_de_medicacion', $data) ? $sanitize($data['uso_de_medicacion']) : $producto->uso_de_medicacion,
                     'visible_app'             => $data['visible_app'] ?? $producto->visible_app,                  // ✨ NUEVO - Visible en app
