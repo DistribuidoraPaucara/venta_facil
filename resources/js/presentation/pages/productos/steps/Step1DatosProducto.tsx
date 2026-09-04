@@ -48,6 +48,12 @@ export interface Step1Props {
     permite_productos_fraccionados?: boolean; // ✨ NUEVO: Control de empresa
     es_farmacia?: boolean; // ✨ NUEVO - Indica si la empresa es farmacia
     visible_app?: boolean; // ✨ NUEVO
+    permite_vender_sin_stock?: boolean; // ✅ NUEVO: Control de empresa
+    permite_productos_alquilables?: boolean; // ✅ NUEVO: Control de empresa
+    permite_productos_comida?: boolean; // ✅ NUEVO: Control de empresa
+    permite_productos_combo?: boolean; // ✅ NUEVO: Control de empresa
+    permite_productos_adicionales?: boolean; // ✅ NUEVO: Control de empresa
+    permite_productos_produccion?: boolean; // ✅ NUEVO: Control de empresa
 }
 
 function Step1DatosProducto({
@@ -61,6 +67,12 @@ function Step1DatosProducto({
     permite_productos_fraccionados, // ✨ NUEVO
     es_farmacia, // ✨ NUEVO - Indica si la empresa es farmacia
     visible_app, // ✨ NUEVO
+    permite_vender_sin_stock, // ✅ NUEVO: Control de empresa
+    permite_productos_alquilables, // ✅ NUEVO: Control de empresa
+    permite_productos_comida, // ✅ NUEVO: Control de empresa
+    permite_productos_combo, // ✅ NUEVO: Control de empresa
+    permite_productos_adicionales, // ✅ NUEVO: Control de empresa
+    permite_productos_produccion, // ✅ NUEVO: Control de empresa
 }: Step1Props) {
     // Estados para controlar la búsqueda de proveedores
     const [lastSearchQuery, setLastSearchQuery] = useState<string>('');
@@ -141,10 +153,10 @@ function Step1DatosProducto({
             setData('sku', productoData.sku || '');
             setData('descripcion', productoData.descripcion || '');
             setData('peso', productoData.peso || null);
-            setData('unidad_medida_id', productoData.unidad_medida_id ? Number(productoData.unidad_medida_id) : '');
-            setData('categoria_id', productoData.categoria_id ? Number(productoData.categoria_id) : '');
-            setData('marca_id', productoData.marca_id ? Number(productoData.marca_id) : '');
-            setData('proveedor_id', productoData.proveedor_id ? Number(productoData.proveedor_id) : '');
+            setData('unidad_medida_id', productoData.unidad_medida_id ? Number(productoData.unidad_medida_id) : null);
+            setData('categoria_id', productoData.categoria_id ? Number(productoData.categoria_id) : null);
+            setData('marca_id', productoData.marca_id ? Number(productoData.marca_id) : null);
+            setData('proveedor_id', productoData.proveedor_id ? Number(productoData.proveedor_id) : null);
             setData('stock_minimo', productoData.stock_minimo || 0);
             setData('stock_maximo', productoData.stock_maximo || 50);
             setData('limite_venta', productoData.limite_venta || null); // ✨ NUEVO
@@ -312,7 +324,7 @@ function Step1DatosProducto({
                                 id="proveedor"
                                 label=""
                                 value={data.proveedor_id ?? ''}
-                                onChange={(value) => setData('proveedor_id', value ? Number(value) : '')}
+                                onChange={(value) => setData('proveedor_id', value ? Number(value) : null)}
                                 onSearch={searchProveedores}
                                 placeholder="Busca o crea tu Proveedor"
                                 emptyText="No se encontró ningún proveedor. Puedes crear uno nuevo clickeando el botón +"
@@ -438,7 +450,7 @@ function Step1DatosProducto({
                         placeholder="Seleccione una categoría"
                         value={data.categoria_id ?? ''}
                         options={categoriasOptions}
-                        onChange={(value) => setData('categoria_id', value ? Number(value) : '')}
+                        onChange={(value) => setData('categoria_id', value ? Number(value) : null)}
                         error={errors.categoria_id}
                         allowClear={true}
                         emptyText="No se encontraron categorías"
@@ -465,7 +477,7 @@ function Step1DatosProducto({
                         placeholder="Seleccione una marca"
                         value={data.marca_id ?? ''}
                         options={marcasOptions}
-                        onChange={(value) => setData('marca_id', value ? Number(value) : '')}
+                        onChange={(value) => setData('marca_id', value ? Number(value) : null)}
                         error={errors.marca_id}
                         allowClear={true}
                         emptyText="No se encontraron marcas"
@@ -492,7 +504,7 @@ function Step1DatosProducto({
                         placeholder="Seleccione una unidad"
                         value={data.unidad_medida_id ?? unidadesOptions.find((u) => u.description === 'UN')?.value ?? ''}
                         options={unidadesOptions}
-                        onChange={(value) => setData('unidad_medida_id', value ? Number(value) : '')}
+                        onChange={(value) => setData('unidad_medida_id', value ? Number(value) : null)}
                         error={errors.unidad_medida_id}
                         allowClear={true}
                         emptyText="No se encontraron unidades"
@@ -711,23 +723,19 @@ function Step1DatosProducto({
                     colorScheme="orange"
                 /> */}
 
-                {/* ✅ NUEVA SECCIÓN: Venta sin Stock (solo para farmacias) */}
-                <FeatureToggle
-                    id="permite_venta_sin_stock"
-                    checked={!!data.permite_venta_sin_stock}
-                    onCheckedChange={(v) => setData('permite_venta_sin_stock', !!v)}
-                    icon="⚙️"
-                    title="Vender sin Stock"
-                    description="Marca este producto si es un servicio que se puede vender incluso sin inventario disponible."
-                    hint="Ejemplo: Inyecciones, curaciones, aplicación de medicamentos"
-                    colorScheme="purple"
-                    /* additionalContent={
-                          <div>
-                              <p className="text-sm font-medium">✅ <strong>Servicio Habilitado:</strong> Este producto se puede vender sin stock disponible</p>
-                              <p className="mt-1 text-xs opacity-75">Se permitirá crear ventas incluso si el inventario es 0 o negativo</p>
-                          </div>
-                      } */
-                />
+                {/* ✅ NUEVA SECCIÓN: Venta sin Stock (controlado por empresa) */}
+                {permite_vender_sin_stock && (
+                    <FeatureToggle
+                        id="permite_venta_sin_stock"
+                        checked={!!data.permite_venta_sin_stock}
+                        onCheckedChange={(v) => setData('permite_venta_sin_stock', !!v)}
+                        icon="⚙️"
+                        title="Vender sin Stock"
+                        description="Marca este producto si es un servicio que se puede vender incluso sin inventario disponible."
+                        hint="Ejemplo: Inyecciones, curaciones, aplicación de medicamentos"
+                        colorScheme="purple"
+                    />
+                )}
 
                 {/* ✨ NUEVA SECCIÓN: Visibilidad en App */}
                 <FeatureToggle
@@ -745,52 +753,59 @@ function Step1DatosProducto({
                     colorScheme="green"
                 />
 
-                <FeatureToggle
-                    id="es_de_produccion"
-                    checked={!!data.es_de_produccion}
-                    onCheckedChange={(v) => setData('es_de_produccion', !!v)}
-                    icon="🏭"
-                    title="Es Producto de Producción"
-                    description={
-                        data.es_de_produccion
-                            ? '✅ Este producto es resultado de una receta de producción'
-                            : '❌ Este es un producto básico sin receta'
-                    }
-                    hint="Activa esta opción si este producto se elabora internamente con una receta que asocia otros productos como ingredientes"
-                    colorScheme="orange"
-                />
+                {/* 🏭 Producto de Producción (controlado por empresa) */}
+                {permite_productos_produccion && (
+                    <FeatureToggle
+                        id="es_de_produccion"
+                        checked={!!data.es_de_produccion}
+                        onCheckedChange={(v) => setData('es_de_produccion', !!v)}
+                        icon="🏭"
+                        title="Es Producto de Producción"
+                        description={
+                            data.es_de_produccion
+                                ? '✅ Este producto es resultado de una receta de producción'
+                                : '❌ Este es un producto básico sin receta'
+                        }
+                        hint="Activa esta opción si este producto se elabora internamente con una receta que asocia otros productos como ingredientes"
+                        colorScheme="orange"
+                    />
+                )}
 
-                {/* ✨ NUEVA SECCIÓN: Producto Adicional */}
-                <FeatureToggle
-                    id="es_producto_adicional"
-                    checked={!!data.es_producto_adicional}
-                    onCheckedChange={(v) => setData('es_producto_adicional', !!v)}
-                    icon="🌶️"
-                    title="Es Producto Adicional"
-                    description={
-                        data.es_producto_adicional
-                            ? '✅ Este producto es un adicional (topping, salsa, etc.)'
-                            : '❌ Este no es un producto adicional'
-                    }
-                    hint="Marca este producto si es un adicional que se puede agregar a otros productos (ej: salsa extra, topping, guarnición)"
-                    colorScheme="orange"
-                />
+                {/* ✨ NUEVA SECCIÓN: Producto Adicional (controlado por empresa) */}
+                {permite_productos_adicionales && (
+                    <FeatureToggle
+                        id="es_producto_adicional"
+                        checked={!!data.es_producto_adicional}
+                        onCheckedChange={(v) => setData('es_producto_adicional', !!v)}
+                        icon="🌶️"
+                        title="Es Producto Adicional"
+                        description={
+                            data.es_producto_adicional
+                                ? '✅ Este producto es un adicional (topping, salsa, etc.)'
+                                : '❌ Este no es un producto adicional'
+                        }
+                        hint="Marca este producto si es un adicional que se puede agregar a otros productos (ej: salsa extra, topping, guarnición)"
+                        colorScheme="orange"
+                    />
+                )}
 
-                {/* ✨ NUEVA SECCIÓN: Puede Tener Adicionales */}
-                <FeatureToggle
-                    id="puede_tener_producto_adicional"
-                    checked={!!data.puede_tener_producto_adicional}
-                    onCheckedChange={(v) => setData('puede_tener_producto_adicional', !!v)}
-                    icon="🍔"
-                    title="Puede Tener Adicionales"
-                    description={
-                        data.puede_tener_producto_adicional
-                            ? '✅ Este producto puede recibir adicionales'
-                            : '❌ Este producto no permite adicionales'
-                    }
-                    hint="Marca este producto si permite que se le agreguen otros productos como adicionales (ej: hamburguesa, pizza, bebidas)"
-                    colorScheme="purple"
-                />
+                {/* ✨ NUEVA SECCIÓN: Puede Tener Adicionales (controlado por empresa) */}
+                {permite_productos_adicionales && (
+                    <FeatureToggle
+                        id="puede_tener_producto_adicional"
+                        checked={!!data.puede_tener_producto_adicional}
+                        onCheckedChange={(v) => setData('puede_tener_producto_adicional', !!v)}
+                        icon="🍔"
+                        title="Puede Tener Adicionales"
+                        description={
+                            data.puede_tener_producto_adicional
+                                ? '✅ Este producto puede recibir adicionales'
+                                : '❌ Este producto no permite adicionales'
+                        }
+                        hint="Marca este producto si permite que se le agreguen otros productos como adicionales (ej: hamburguesa, pizza, bebidas)"
+                        colorScheme="purple"
+                    />
+                )}
             </div>
 
             {/* ✨ NUEVA SECCIÓN: Información de Medicamentos (solo para farmacias) */}
