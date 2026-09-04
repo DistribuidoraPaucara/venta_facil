@@ -379,6 +379,11 @@ trait SimpleCrudController
             \App\Models\Categoria::class,
             \App\Models\TipoPrecio::class,
             \App\Models\Producto::class,
+            \App\Models\Almacen::class,
+            \App\Models\Empleado::class,
+            \App\Models\UnidadMedida::class,
+            \App\Models\Cliente::class,
+            \App\Models\Proveedor::class,
         ];
 
         return in_array($modelClass, $tenantModels);
