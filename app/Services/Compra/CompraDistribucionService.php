@@ -132,8 +132,10 @@ class CompraDistribucionService
                         continue;
                     }
 
+                    // ✅ CRÍTICO: Buscar incluyen soft-deleted (pueden estar marcados como deleted)
                     // Buscar o crear StockProducto para este lote específico
-                    $stockProducto = StockProducto::where('producto_id', $productoId)
+                    $stockProducto = StockProducto::withTrashed() // ← Incluir soft-deleted
+                        ->where('producto_id', $productoId)
                         ->where('almacen_id', $almacenId)
                         ->where(function ($q) use ($lote) {
                             if ($lote) {
@@ -144,6 +146,15 @@ class CompraDistribucionService
                         })
                         ->lockForUpdate()
                         ->first();
+
+                    // ✅ Si estaba soft-deleted, restaurar
+                    if ($stockProducto && $stockProducto->trashed()) {
+                        $stockProducto->restore();
+                        Log::info('♻️ [CompraDistribucionService] StockProducto restaurado', [
+                            'stock_id' => $stockProducto->id,
+                            'producto_id' => $productoId,
+                        ]);
+                    }
 
                     if (!$stockProducto) {
                         $stockProducto = StockProducto::create([
@@ -327,7 +338,16 @@ class CompraDistribucionService
                     $totalReservadoAntes = null;
 
                     foreach ($productosMovimientos as $movimiento) {
-                        $stock = $movimiento->stockProducto;
+                        // ✅ CRÍTICO: Usar withTrashed para restaurar soft-deleted stocks
+                        $stock = $movimiento->stockProducto()->withTrashed()->first();
+
+                        if ($stock && $stock->trashed()) {
+                            $stock->restore();
+                            Log::info('♻️ [CompraDistribucionService::revertir] StockProducto restaurado', [
+                                'stock_id' => $stock->id,
+                            ]);
+                        }
+
                         $cantidadARevertir = abs($movimiento->cantidad);
                         $almacenId = $stock->almacen_id;
 
