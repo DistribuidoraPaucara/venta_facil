@@ -33,10 +33,6 @@ class SetTenant
                 'usuario_id' => $user->id,
                 'empresa_id' => $user->empresa_id,
             ]);
-        } else {
-            \Illuminate\Support\Facades\Log::warning('⚠️ [SetTenant] Usuario sin empresa_id', [
-                'usuario_id' => $user?->id,
-            ]);
         }
 
         return $next($request);
