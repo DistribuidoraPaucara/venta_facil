@@ -71,6 +71,12 @@ export default function ProductoForm({
     almacenes = [], // ✨ NUEVO - Almacenes disponibles
     sectores = {}, // ✨ NUEVO - Sectores pre-cargados por almacén
     productos = [], // 🏭 NUEVO - Productos disponibles como ingredientes
+    permite_vender_sin_stock = false,
+    permite_productos_alquilables = false,
+    permite_productos_comida = false,
+    permite_productos_combo = false,
+    permite_productos_adicionales = false,
+    permite_productos_produccion = false,
 }: ProductoFormPagePropsExtended) {
     // 🔐 Obtener permisos del usuario desde Inertia
     const { auth } = usePage().props as any;
@@ -906,6 +912,12 @@ export default function ProductoForm({
                                         permite_productos_fraccionados={permite_productos_fraccionados} // ✨ NUEVO
                                         es_farmacia={es_farmacia} // ✨ NUEVO
                                         visible_app={data.visible_app} // ✨ NUEVO
+                                        permite_vender_sin_stock={permite_vender_sin_stock}
+                                        permite_productos_alquilables={permite_productos_alquilables}
+                                        permite_productos_comida={permite_productos_comida}
+                                        permite_productos_combo={permite_productos_combo}
+                                        permite_productos_adicionales={permite_productos_adicionales}
+                                        permite_productos_produccion={permite_productos_produccion}
                                     />
                                 </TabsContent>
 
