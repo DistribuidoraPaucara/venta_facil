@@ -154,6 +154,8 @@ class UpdateProductoRequest extends FormRequest
             'permite_venta_sin_stock'  => ['nullable', 'boolean'], // ✅ NUEVO (2026-05-08) - Para servicios/inyectables
             'es_producto_adicional'    => ['nullable', 'boolean'], // ✨ NUEVO - Indica si es un adicional
             'puede_tener_producto_adicional' => ['nullable', 'boolean'], // ✨ NUEVO - Indica si puede tener adicionales
+            'es_alquilable'            => ['nullable', 'boolean'], // ✨ NUEVO - Indica si el producto es alquilable
+            'es_combo'                 => ['nullable', 'boolean'], // ✨ NUEVO - Indica si el producto es un combo
             'conversiones'             => ['nullable', 'array'],
             'conversiones.*.unidad_base_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id'],
             'conversiones.*.unidad_destino_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id', 'different:conversiones.*.unidad_base_id'],
@@ -263,6 +265,8 @@ class UpdateProductoRequest extends FormRequest
             'permite_venta_sin_stock.boolean'          => 'El campo venta sin stock debe ser verdadero o falso.', // ✅ NUEVO (2026-05-08)
             'es_producto_adicional.boolean'            => 'El campo producto adicional debe ser verdadero o falso.', // ✨ NUEVO
             'puede_tener_producto_adicional.boolean'   => 'El campo puede tener adicionales debe ser verdadero o falso.', // ✨ NUEVO
+            'es_alquilable.boolean'                    => 'El campo alquilable debe ser verdadero o falso.', // ✨ NUEVO
+            'es_combo.boolean'                         => 'El campo combo debe ser verdadero o falso.', // ✨ NUEVO
             'conversiones.array'                       => 'Las conversiones deben ser un arreglo.',
             'conversiones.*.unidad_base_id.required_with' => 'La unidad base es obligatoria en cada conversión.',
             'conversiones.*.unidad_base_id.integer'    => 'La unidad base debe ser un ID numérico.',
