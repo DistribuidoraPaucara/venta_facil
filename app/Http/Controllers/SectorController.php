@@ -45,6 +45,28 @@ class SectorController extends Controller
     }
 
     /**
+     * Override para asignar empresa_id al crear sector
+     */
+    public function store(\Illuminate\Http\Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $data = $request->validate($this->getValidationRules());
+
+        // ✅ Obtener el almacén para heredar su empresa_id
+        $almacen = Almacen::find($data['almacen_id']);
+        if (!$almacen) {
+            return redirect()->route('sectores.index')->with('error', 'Almacén no encontrado');
+        }
+
+        // ✅ Asignar empresa_id del almacén
+        $data['empresa_id'] = $almacen->empresa_id;
+        $data['es_generico'] = false;
+
+        Sector::create($data);
+
+        return $this->redirectToIndexWithSuccess('creado');
+    }
+
+    /**
      * Override para cargar relaciones en el índice
      */
     public function index(Request $request): Response
