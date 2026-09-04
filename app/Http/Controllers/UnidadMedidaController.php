@@ -57,7 +57,7 @@ class UnidadMedidaController extends Controller
         $modelClass = $this->getModel();
         $q = $request->string('q');
 
-        $items = $modelClass::query()
+        $items = $modelClass::porEmpresa()  // ✅ Filtrar por empresa
             ->when($q, function ($query) use ($q) {
                 $searchLower = strtolower($q);
                 return $query->where(function ($sub) use ($searchLower) {
@@ -88,7 +88,7 @@ class UnidadMedidaController extends Controller
             $page = $request->integer('page', 1);
             $perPage = $request->integer('per_page', 20);
 
-            $query = UnidadMedida::query();
+            $query = UnidadMedida::porEmpresa();  // ✅ Filtrar por empresa
 
             if ($q) {
                 $searchLower = strtolower($q);
