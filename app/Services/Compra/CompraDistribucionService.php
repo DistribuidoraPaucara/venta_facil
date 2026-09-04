@@ -169,9 +169,14 @@ class CompraDistribucionService
                     $cantidadDisponibleAnterior = (float) $stockProducto->cantidad_disponible;
                     $cantidadReservadaAnterior = (float) $stockProducto->cantidad_reservada;
 
-                    // Actualizar stock
-                    $stockProducto->increment('cantidad', $cantidad);
-                    $stockProducto->increment('cantidad_disponible', $cantidad);
+                    // ✅ CRÍTICO: Usar UN SOLO UPDATE para evitar violación de constraint
+                    // La constraint se valida después de cada update, así que ambas columnas deben actualizarse juntas
+                    DB::table('stock_productos')
+                        ->where('id', $stockProducto->id)
+                        ->update([
+                            'cantidad' => DB::raw('cantidad + ' . $cantidad),
+                            'cantidad_disponible' => DB::raw('cantidad_disponible + ' . $cantidad),
+                        ]);
 
                     // Recargar para obtener valores DESPUÉS
                     $stockProducto->refresh();
@@ -346,9 +351,13 @@ class CompraDistribucionService
                         $cantidadDisponibleAnterior = $stock->cantidad_disponible;
                         $cantidadReservadaAnterior = $stock->cantidad_reservada;
 
-                        // Revertir stock
-                        $stock->decrement('cantidad', $cantidadARevertir);
-                        $stock->decrement('cantidad_disponible', $cantidadARevertir);
+                        // ✅ CRÍTICO: Usar UN SOLO UPDATE para evitar violación de constraint
+                        DB::table('stock_productos')
+                            ->where('id', $stock->id)
+                            ->update([
+                                'cantidad' => DB::raw('cantidad - ' . $cantidadARevertir),
+                                'cantidad_disponible' => DB::raw('cantidad_disponible - ' . $cantidadARevertir),
+                            ]);
 
                         // Recargar para obtener DESPUÉS
                         $stock->refresh();
