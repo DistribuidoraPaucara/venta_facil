@@ -53,7 +53,7 @@ class SectorController extends Controller
         $q = $request->string('q');
 
         // Construir query con búsqueda opcional y cargar relaciones
-        $items = $modelClass::query()
+        $items = $modelClass::porEmpresa()  // ✅ Filtrar por empresa del usuario
             ->with('almacen') // ✅ Cargar la relación almacén
             ->when($q, function ($query) use ($q, $modelClass) {
                 // Usar searchByName scope si el modelo lo tiene
@@ -86,7 +86,8 @@ class SectorController extends Controller
      */
     public function create(): Response
     {
-        $almacenes = Almacen::where('activo', true)
+        $almacenes = Almacen::porEmpresa()  // ✅ Filtrar por empresa
+            ->where('activo', true)
             ->orderBy('nombre')
             ->get()
             ->map(fn($almacen) => [
@@ -108,9 +109,10 @@ class SectorController extends Controller
     public function edit($id): Response
     {
         $modelClass = $this->getModel();
-        $item = $modelClass::findOrFail($id);
+        $item = $modelClass::porEmpresa()->findOrFail($id);  // ✅ Validar que pertenece a la empresa
 
-        $almacenes = Almacen::where('activo', true)
+        $almacenes = Almacen::porEmpresa()  // ✅ Filtrar por empresa
+            ->where('activo', true)
             ->orderBy('nombre')
             ->get()
             ->map(fn($almacen) => [
