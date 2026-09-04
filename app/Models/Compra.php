@@ -168,9 +168,13 @@ class Compra extends Model
                         $cantidadARestarEnEsteLote = min($cantidadDisponibleEnEsteLote, $cantidadRestante);
 
                         if ($cantidadARestarEnEsteLote > 0) {
-                            // Restar del stock
-                            $stockProducto->decrement('cantidad', (int) $cantidadARestarEnEsteLote);
-                            $stockProducto->decrement('cantidad_disponible', (int) $cantidadARestarEnEsteLote);
+                            // ✅ CRÍTICO: Usar UN SOLO UPDATE para evitar violación de constraint chk_suma_consistente
+                            DB::table('stock_productos')
+                                ->where('id', $stockProducto->id)
+                                ->update([
+                                    'cantidad' => DB::raw('cantidad - ' . (int)$cantidadARestarEnEsteLote),
+                                    'cantidad_disponible' => DB::raw('cantidad_disponible - ' . (int)$cantidadARestarEnEsteLote),
+                                ]);
 
                             // Recargar para obtener DESPUÉS
                             $stockProducto->refresh();

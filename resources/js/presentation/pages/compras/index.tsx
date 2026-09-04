@@ -69,9 +69,9 @@ export default function ComprasIndex() {
         </div>
 
         {/* Estadísticas */}
-        {estadisticas && (
+        {/* {estadisticas && (
           <EstadisticasComprasComponent estadisticas={estadisticas} />
-        )}
+        )} */}
 
         {/* Filtros */}
         <FiltrosComprasComponent
