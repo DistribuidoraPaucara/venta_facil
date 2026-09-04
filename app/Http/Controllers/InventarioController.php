@@ -3464,11 +3464,16 @@ class InventarioController extends Controller
     public function buscarProductosAlmacen(Request $request, $almacenId): JsonResponse
     {
         try {
+            // ✅ CRÍTICO: Obtener empresa del usuario para validar almacén
+            $userEmpresaId = auth()->user()?->empresa_id;
+
             $searchTerm = $request->input('q', '');
             $limit = (int) $request->input('limit', 10);
 
-            // Validar almacén
-            $almacen = Almacen::findOrFail($almacenId);
+            // ✅ CRÍTICO: Validar que el almacén pertenece a la empresa del usuario
+            $almacen = Almacen::where('id', $almacenId)
+                ->where('empresa_id', $userEmpresaId)
+                ->firstOrFail();
 
             if (empty($searchTerm)) {
                 return response()->json([
@@ -3481,14 +3486,17 @@ class InventarioController extends Controller
             $searchLower = strtolower($searchTerm);
             $isNumeric = is_numeric($searchTerm);
 
-            // ✅ PASO 1: Obtener productos que ya existen en stock en este almacén
+            // ✅ PASO 1: Obtener productos que ya existen en stock en este almacén (NO soft-deleted)
             $stockProductos = StockProducto::where('almacen_id', $almacenId)
+                ->withoutTrashed()  // ✅ CRÍTICO: Excluir registros soft-deleted
                 ->with(['producto:id,nombre,sku,codigo_barras', 'producto.codigosBarra'])
                 ->get();
 
             // ✅ PASO 2: Obtener todos los productos (incluyendo los que NO existen en stock)
+            // ✅ CRÍTICO: Filtrar solo productos de la empresa del usuario
             // ✅ CORREGIDO (2026-06-29): Búsqueda EXACTA para ID y SKU, parcial para nombre
             $todosProductos = \App\Models\Producto::with('codigosBarra')
+                ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Solo productos de su empresa
                 ->select('id', 'nombre', 'sku', 'codigo_barras')
                 ->where(function ($query) use ($searchLower, $isNumeric, $searchTerm) {
                     // ID exacto (si es numérico)
