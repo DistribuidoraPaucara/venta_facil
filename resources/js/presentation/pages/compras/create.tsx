@@ -1294,6 +1294,7 @@ export default function CompraForm() {
           <br />
           <ProductosTable
             tipo="compra" // ✅ NUEVO: Indicar que es una compra (no filtrar por stock)
+            almacen_id={Number(data.almacen_id) || undefined} // ✅ CRÍTICO: Pasar almacén seleccionado para traer stock correcto
             productos={props.productos.map(p => ({
               id: p.id,
               nombre: p.nombre,
