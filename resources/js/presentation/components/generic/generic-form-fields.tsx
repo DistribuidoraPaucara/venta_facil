@@ -77,6 +77,14 @@ export default function GenericFormFields<F extends BaseFormData>({
     return false;
   };
 
+  // ✨ NUEVO: Verificar si un campo es requerido (puede ser función o boolean)
+  const isFieldRequired = (field: FormField<F>): boolean => {
+    if (typeof field.required === 'function') {
+      return field.required(data);
+    }
+    return !!field.required;
+  };
+
   const renderField = (field: FormField<F>) => {
     const value = data[field.key];
     const error = errors[field.key];
@@ -217,9 +225,9 @@ export default function GenericFormFields<F extends BaseFormData>({
               options={searchSelectOptions}
               onChange={(val) => onChange(field.key, val === '' ? null : Number(val))}
               disabled={fieldDisabled}
-              required={field.required}
+              required={isFieldRequired(field)}
               error={error}
-              allowClear={!field.required}
+              allowClear={!isFieldRequired(field)}
             />
           );
         }
@@ -238,9 +246,9 @@ export default function GenericFormFields<F extends BaseFormData>({
               }))}
               onChange={(val) => onChange(field.key, val === '' ? null : Number(val))}
               disabled={fieldDisabled}
-              required={field.required}
+              required={isFieldRequired(field)}
               error={error}
-              allowClear={!field.required}
+              allowClear={!isFieldRequired(field)}
             />
           );
         }
