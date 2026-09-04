@@ -70,6 +70,20 @@ class Sector extends Model
     }
 
     /**
+     * Scope: Filtrar por empresa (a través del almacén)
+     */
+    public function scopePorEmpresa($query)
+    {
+        $empresaId = auth()->user()?->empresa_id ?? app('tenant_id');
+        if ($empresaId) {
+            return $query->whereHas('almacen', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            });
+        }
+        return $query;
+    }
+
+    /**
      * Obtener el sector genérico de un almacén
      * Uso: Almacen::find(1)->sectorGenerico()
      */

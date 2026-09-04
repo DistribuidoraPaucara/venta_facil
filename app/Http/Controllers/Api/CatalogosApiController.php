@@ -16,7 +16,8 @@ class CatalogosApiController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Categoria::where('activo', true)
+            'data' => Categoria::porEmpresa()
+                ->where('activo', true)
                 ->select('id', 'nombre')
                 ->get()
         ]);
@@ -26,7 +27,8 @@ class CatalogosApiController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Marca::where('activo', true)
+            'data' => Marca::porEmpresa()
+                ->where('activo', true)
                 ->select('id', 'nombre')
                 ->get()
         ]);
@@ -36,7 +38,8 @@ class CatalogosApiController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Proveedor::where('activo', true)
+            'data' => Proveedor::porEmpresa()
+                ->where('activo', true)
                 ->select('id', 'nombre')
                 ->get()
         ]);
@@ -46,7 +49,8 @@ class CatalogosApiController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => UnidadMedida::where('activo', true)
+            'data' => UnidadMedida::porEmpresa()
+                ->where('activo', true)
                 ->select('id', 'nombre', 'codigo')
                 ->get()
         ]);
@@ -56,7 +60,8 @@ class CatalogosApiController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Almacen::where('activo', true)
+            'data' => Almacen::porEmpresa()
+                ->where('activo', true)
                 ->select('id', 'nombre')
                 ->get()
         ]);
@@ -66,7 +71,8 @@ class CatalogosApiController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Sector::select('id', 'nombre', 'almacen_id')
+            'data' => Sector::porEmpresa()
+                ->select('id', 'nombre', 'almacen_id')
                 ->get()
         ]);
     }
@@ -74,6 +80,15 @@ class CatalogosApiController extends Controller
     public function sectoresPorAlmacen($almacen_id)
     {
         \Log::info('🔄 [CatalogosApiController] Cargando sectores para almacén: ' . $almacen_id);
+
+        // Validar que el almacén pertenece a la empresa del usuario
+        $almacen = Almacen::porEmpresa()->find($almacen_id);
+        if (!$almacen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Almacén no encontrado o no tiene acceso'
+            ], 404);
+        }
 
         $sectores = Sector::where('almacen_id', $almacen_id)
             ->where('activo', true)

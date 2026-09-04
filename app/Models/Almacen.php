@@ -36,6 +36,15 @@ class Almacen extends Model
         return $this->belongsTo(Empresa::class);
     }
 
+    public function scopePorEmpresa($query)
+    {
+        $empresaId = auth()->user()?->empresa_id ?? app('tenant_id');
+        if ($empresaId) {
+            return $query->where('empresa_id', $empresaId);
+        }
+        return $query;
+    }
+
     public function stockProductos()
     {
         return $this->hasMany(StockProducto::class, 'almacen_id');
