@@ -487,7 +487,8 @@ class VentaDistribucionService
 
                 $totalDevuelto = 0;
                 $movimientosCreados = 0;
-                $almacenId = auth()->user()?->empresa?->almacen_id ?? 1;
+                // ✅ CRÍTICO: Usar almacén de la venta original, NO el del usuario autenticado
+                $almacenId = $venta?->almacen_id ?? auth()->user()?->empresa?->almacen_id ?? 1;
                 $movimientoStockService = new \App\Services\Stock\MovimientoStockService(
                     app(\App\Services\Stock\StockValidationService::class)
                 );
