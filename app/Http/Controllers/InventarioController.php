@@ -100,11 +100,22 @@ class InventarioController extends Controller
      */
     public function dashboard(): Response
     {
-        // Estadísticas generales
-        $totalProductos          = Producto::where('activo', true)->count();
-        $productosStockBajo      = Producto::where('activo', true)->stockBajo()->count();
-        $productosProximosVencer = Producto::where('activo', true)->proximosVencer(30)->count();
-        $productosVencidos       = Producto::where('activo', true)->vencidos()->count();
+        // ✅ CRÍTICO: Obtener empresa del usuario para filtrar almacenes y productos
+        $userEmpresaId = auth()->user()?->empresa_id;
+
+        // Estadísticas generales - SOLO de la empresa del usuario
+        $totalProductos          = Producto::where('activo', true)
+            ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa
+            ->count();
+        $productosStockBajo      = Producto::where('activo', true)
+            ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa
+            ->stockBajo()->count();
+        $productosProximosVencer = Producto::where('activo', true)
+            ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa
+            ->proximosVencer(30)->count();
+        $productosVencidos       = Producto::where('activo', true)
+            ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa
+            ->vencidos()->count();
 
         // Stock por almacén - agrupado por producto+almacén con detalles de lotes
         // Incluye productos con cantidad >= 0 (incluyendo 0) y todos los productos sin registros en stock_productos
@@ -116,6 +127,12 @@ class InventarioController extends Controller
             'producto.unidad',
             'producto.conversiones.unidadDestino',
         ])
+            ->whereHas('almacen', function ($q) use ($userEmpresaId) {
+                // ✅ CRÍTICO: Filtrar solo almacenes de la empresa del usuario
+                if ($userEmpresaId) {
+                    $q->where('empresa_id', $userEmpresaId);
+                }
+            })
             ->whereHas('producto', function ($q) {
                 $q->where('activo', true); // Solo productos activos
             })
@@ -210,10 +227,11 @@ class InventarioController extends Controller
         // Convertir a Collection para las operaciones posteriores
         $stockPorAlmacenCollection = collect($stockAgrupado);
 
-        // ✅ IMPORTANTE: Obtener TODOS los productos activos que NO aparecen en $stockPorAlmacen
+        // ✅ IMPORTANTE: Obtener SOLO productos de la empresa del usuario que NO aparecen en $stockPorAlmacen
         // Esto incluye productos sin NINGÚN registro en stock_productos
         $productosConStock = $stockPorAlmacenCollection->pluck('producto_id')->unique();
         $productossinStock = Producto::where('activo', true)
+            ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa del usuario
             ->whereNotIn('id', $productosConStock)
             ->with(['codigoPrincipal', 'precios', 'unidad', 'conversiones.unidadDestino'])
             ->orderBy('nombre')
@@ -260,6 +278,14 @@ class InventarioController extends Controller
             'unidadBase:id,nombre',     // ✅ NUEVO (2026-02-18): Relación para unidad base
         ])
             ->whereBetween('fecha', [now()->subDays(7), now()])
+            ->whereHas('stockProducto', function ($q) use ($userEmpresaId) {
+                // ✅ CRÍTICO: Filtrar por almacenes de la empresa del usuario
+                $q->whereHas('almacen', function ($aq) use ($userEmpresaId) {
+                    if ($userEmpresaId) {
+                        $aq->where('empresa_id', $userEmpresaId);
+                    }
+                });
+            })
             ->whereHas('stockProducto.producto')
             ->orderByDesc('fecha')
             ->limit(10)
@@ -310,15 +336,22 @@ class InventarioController extends Controller
             DB::raw('SUM(ABS(movimientos_inventario.cantidad)) as cantidad_total'),
         ])
             ->join('stock_productos', 'movimientos_inventario.stock_producto_id', '=', 'stock_productos.id')
+            ->join('almacenes', 'stock_productos.almacen_id', '=', 'almacenes.id')  // ✅ CRÍTICO: Join con almacenes
             ->whereBetween('movimientos_inventario.fecha', [now()->startOfMonth(), now()])
+            ->when($userEmpresaId, function ($q) use ($userEmpresaId) {
+                // ✅ CRÍTICO: Filtrar por empresa del usuario
+                return $q->where('almacenes.empresa_id', $userEmpresaId);
+            })
             ->groupBy('stock_productos.producto_id')
             ->orderByRaw('COUNT(*) DESC')
             ->limit(10)
             ->get();
 
-        // Obtener productos en una sola query
+        // Obtener productos en una sola query - SOLO de la empresa del usuario
         $productoIds = $productosMasMovidosData->pluck('producto_id')->unique();
-        $productos   = Producto::whereIn('id', $productoIds)->select('id', 'nombre')->get()->keyBy('id');
+        $productos   = Producto::whereIn('id', $productoIds)
+            ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa
+            ->select('id', 'nombre')->get()->keyBy('id');
 
         $productosMasMovidos = $productosMasMovidosData->map(function ($item) use ($productos) {
             $producto = $productos->get($item->producto_id);
@@ -329,8 +362,9 @@ class InventarioController extends Controller
             ];
         });
 
-        // Obtener lista de almacenes para los filtros
+        // ✅ CRÍTICO: Obtener solo almacenes de la empresa del usuario para los filtros
         $almacenesLista = Almacen::select('id', 'nombre')
+            ->where('empresa_id', $userEmpresaId)
             ->where('activo', true)
             ->orderBy('nombre')
             ->get();

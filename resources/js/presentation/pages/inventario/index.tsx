@@ -66,7 +66,7 @@ export default function Dashboard() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard de Inventario" />
+            <Head title="Dashboardss de Inventario" />
 
             <div className="flex flex-col gap-6 p-6">
                 {/* Header */}
