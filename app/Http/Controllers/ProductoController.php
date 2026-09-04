@@ -285,7 +285,8 @@ class ProductoController extends Controller
         $empresa = auth()->user()?->empresa;
 
         // ✨ Cargar almacenes activos con sus sectores (eager loading eficiente)
-        $almacenes = Almacen::where('activo', true)
+        $almacenes = Almacen::porEmpresa()  // ✅ Filtrar por empresa
+            ->where('activo', true)
             ->with(['sectores' => function ($q) {
                 $q->orderBy('es_generico', 'desc')
                     ->orderBy('nombre', 'asc');
@@ -321,10 +322,10 @@ class ProductoController extends Controller
 
         return Inertia::render('productos/form', [
             'producto'                       => null,
-            'categorias'                     => Categoria::orderBy('nombre')->get(['id', 'nombre']),
-            'marcas'                         => Marca::orderBy('nombre')->get(['id', 'nombre']),
-            'proveedores'                    => \App\Models\Proveedor::orderBy('nombre')->get(['id', 'nombre', 'razon_social']),
-            'unidades'                       => UnidadMedida::orderBy('nombre')->get(['id', 'codigo', 'nombre']),
+            'categorias'                     => Categoria::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'marcas'                         => Marca::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'proveedores'                    => \App\Models\Proveedor::porEmpresa()->orderBy('nombre')->get(['id', 'nombre', 'razon_social']),  // ✅ Filtrado
+            'unidades'                       => UnidadMedida::porEmpresa()->orderBy('nombre')->get(['id', 'codigo', 'nombre']),  // ✅ Filtrado
             'tipos_precio'                   => TipoPrecio::getOptions(),
             'configuraciones_ganancias'      => \App\Models\ConfiguracionGlobal::configuracionesGanancias(),
             'almacenes'                      => $almacenesSelect,    // ✨ MEJORADO: Solo almacenes activos
@@ -342,10 +343,22 @@ class ProductoController extends Controller
     {
         return Inertia::render('productos/form-moderno', [
             'producto'                  => null,
-            'categorias'                => Categoria::orderBy('nombre')->get(['id', 'nombre']),
-            'marcas'                    => Marca::orderBy('nombre')->get(['id', 'nombre']),
-            'unidades'                  => UnidadMedida::orderBy('nombre')->get(['id', 'codigo', 'nombre']),
-            'tipos_precio'              => TipoPrecio::getOptions(),
+            'categorias'                => Categoria::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'marcas'                    => Marca::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'unidades'                  => UnidadMedida::porEmpresa()->orderBy('nombre')->get(['id', 'codigo', 'nombre']),  // ✅ Filtrado
+            'tipos_precio'              => TipoPrecio::porEmpresa()->activos()->ordenados()->get()->map(function ($tipo) {
+                return [
+                    'value'               => $tipo->id,
+                    'code'                => $tipo->codigo,
+                    'label'               => $tipo->nombre,
+                    'description'         => $tipo->descripcion,
+                    'color'               => $tipo->color,
+                    'es_ganancia'         => $tipo->es_ganancia,
+                    'es_precio_base'      => $tipo->es_precio_base,
+                    'icono'               => $tipo->getIcono(),
+                    'tooltip'             => $tipo->getTooltip(),
+                ];
+            })->toArray(),  // ✅ Filtrado
             'configuraciones_ganancias' => \App\Models\ConfiguracionGlobal::configuracionesGanancias(),
         ]);
     }
@@ -909,7 +922,8 @@ class ProductoController extends Controller
         $empresa = auth()->user()?->empresa;
 
         // ✨ Cargar almacenes activos con sus sectores (eager loading eficiente)
-        $almacenes = Almacen::where('activo', true)
+        $almacenes = Almacen::porEmpresa()  // ✅ Filtrar por empresa
+            ->where('activo', true)
             ->with(['sectores' => function ($q) {
                 $q->orderBy('es_generico', 'desc')
                     ->orderBy('nombre', 'asc');
@@ -945,11 +959,23 @@ class ProductoController extends Controller
 
         return Inertia::render('productos/form', [
             'producto'                       => $payload,
-            'categorias'                     => Categoria::orderBy('nombre')->get(['id', 'nombre']),
-            'marcas'                         => Marca::orderBy('nombre')->get(['id', 'nombre']),
-            'proveedores'                    => \App\Models\Proveedor::orderBy('nombre')->get(['id', 'nombre', 'razon_social']),
-            'unidades'                       => UnidadMedida::orderBy('nombre')->get(['id', 'codigo', 'nombre']),
-            'tipos_precio'                   => TipoPrecio::getOptions(),
+            'categorias'                     => Categoria::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'marcas'                         => Marca::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'proveedores'                    => \App\Models\Proveedor::porEmpresa()->orderBy('nombre')->get(['id', 'nombre', 'razon_social']),  // ✅ Filtrado
+            'unidades'                       => UnidadMedida::porEmpresa()->orderBy('nombre')->get(['id', 'codigo', 'nombre']),  // ✅ Filtrado
+            'tipos_precio'                   => TipoPrecio::porEmpresa()->activos()->ordenados()->get()->map(function ($tipo) {
+                return [
+                    'value'               => $tipo->id,
+                    'code'                => $tipo->codigo,
+                    'label'               => $tipo->nombre,
+                    'description'         => $tipo->descripcion,
+                    'color'               => $tipo->color,
+                    'es_ganancia'         => $tipo->es_ganancia,
+                    'es_precio_base'      => $tipo->es_precio_base,
+                    'icono'               => $tipo->getIcono(),
+                    'tooltip'             => $tipo->getTooltip(),
+                ];
+            })->toArray(),  // ✅ Filtrado
             'configuraciones_ganancias'      => \App\Models\ConfiguracionGlobal::configuracionesGanancias(),
             'almacenes'                      => $almacenesSelect,    // ✨ MEJORADO: Solo almacenes activos
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
@@ -978,22 +1004,22 @@ class ProductoController extends Controller
 
                 $producto->update([
                     'nombre'                  => $data['nombre'],
-                    'sku'                     => $sanitize($data['sku'] ?? $producto->sku),
-                    'descripcion'             => $sanitize($data['descripcion'] ?? $producto->descripcion),
+                    'sku'                     => array_key_exists('sku', $data) ? $sanitize($data['sku']) : $producto->sku,
+                    'descripcion'             => array_key_exists('descripcion', $data) ? $sanitize($data['descripcion']) : $producto->descripcion,
                     'peso'                    => $data['peso'] ?? $producto->peso,
-                    'unidad_medida_id'        => $sanitize($data['unidad_medida_id'] ?? $producto->unidad_medida_id),
-                    'categoria_id'            => $sanitize($data['categoria_id'] ?? $producto->categoria_id),  // 🔥 FIX: Permitir null
-                    'marca_id'                => $sanitize($data['marca_id'] ?? $producto->marca_id),         // 🔥 FIX: Permitir null
-                    'proveedor_id'            => $sanitize($data['proveedor_id'] ?? $producto->proveedor_id), // 🔥 FIX: Permitir null
+                    'unidad_medida_id'        => $data['unidad_medida_id'] ?? $producto->unidad_medida_id,
+                    'categoria_id'            => array_key_exists('categoria_id', $data) ? $sanitize($data['categoria_id']) : $producto->categoria_id,
+                    'marca_id'                => array_key_exists('marca_id', $data) ? $sanitize($data['marca_id']) : $producto->marca_id,
+                    'proveedor_id'            => array_key_exists('proveedor_id', $data) ? $sanitize($data['proveedor_id']) : $producto->proveedor_id,
                     'stock_minimo'            => $data['stock_minimo'] ?? $producto->stock_minimo,
                     'stock_maximo'            => $data['stock_maximo'] ?? $producto->stock_maximo,
-                    'limite_venta'            => $sanitize($data['limite_venta'] ?? $producto->limite_venta),                       // ✨ NUEVO
-                    'es_producto_comida'      => $data['es_producto_comida'] ?? $producto->es_producto_comida,           // 🍦 NUEVO - Producto de comida/helado sin stock
-                    'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? $producto->permite_venta_sin_stock, // ✅ NUEVO - Permitir venta sin stock
-                    'es_producto_adicional'   => $data['es_producto_adicional'] ?? $producto->es_producto_adicional,     // ✨ NUEVO - Indica si es un adicional
-                    'puede_tener_producto_adicional' => $data['puede_tener_producto_adicional'] ?? $producto->puede_tener_producto_adicional, // ✨ NUEVO - Indica si puede tener adicionales
-                    'principio_activo'        => $sanitize($data['principio_activo'] ?? $producto->principio_activo),               // ✨ NUEVO - Campo para farmacias
-                    'uso_de_medicacion'       => $sanitize($data['uso_de_medicacion'] ?? $producto->uso_de_medicacion),             // ✨ NUEVO - Campo para farmacias
+                    'limite_venta'            => array_key_exists('limite_venta', $data) ? $sanitize($data['limite_venta']) : $producto->limite_venta,
+                    'es_producto_comida'      => array_key_exists('es_producto_comida', $data) ? $data['es_producto_comida'] : $producto->es_producto_comida,
+                    'permite_venta_sin_stock' => array_key_exists('permite_venta_sin_stock', $data) ? $data['permite_venta_sin_stock'] : $producto->permite_venta_sin_stock,
+                    'es_producto_adicional'   => array_key_exists('es_producto_adicional', $data) ? $data['es_producto_adicional'] : $producto->es_producto_adicional,
+                    'puede_tener_producto_adicional' => array_key_exists('puede_tener_producto_adicional', $data) ? $data['puede_tener_producto_adicional'] : $producto->puede_tener_producto_adicional,
+                    'principio_activo'        => array_key_exists('principio_activo', $data) ? $sanitize($data['principio_activo']) : $producto->principio_activo,
+                    'uso_de_medicacion'       => array_key_exists('uso_de_medicacion', $data) ? $sanitize($data['uso_de_medicacion']) : $producto->uso_de_medicacion,
                     'visible_app'             => $data['visible_app'] ?? $producto->visible_app,                  // ✨ NUEVO - Visible en app
                     'es_de_produccion'        => $data['es_de_produccion'] ?? $producto->es_de_produccion,          // 🏭 NUEVO - Indicador de producción
                     'activo'                  => $data['activo'] ?? $producto->activo,
