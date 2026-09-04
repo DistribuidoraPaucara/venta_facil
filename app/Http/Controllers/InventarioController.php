@@ -698,6 +698,14 @@ class InventarioController extends Controller
             $query->where('referencia_tipo', $referenciaTipo);
         }
 
+        // ✅ CRÍTICO: Filtrar por empresa del usuario - Solo mostrar movimientos de su empresa
+        $empresaUsuario = auth()->user()?->empresa;
+        if ($empresaUsuario) {
+            $query->whereHas('stockProducto.producto', function ($q) use ($empresaUsuario) {
+                $q->where('empresa_id', $empresaUsuario->id);
+            });
+        }
+
         // Obtener total para estadísticas
         $totalMovimientos = $query->count();
         $totalEntradas    = (clone $query)->where('tipo', 'like', 'ENTRADA%')->count();
