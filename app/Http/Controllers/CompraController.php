@@ -237,7 +237,11 @@ class CompraController extends Controller
 
             'monedas'     => Moneda::where('activo', true)->orderBy('codigo')->get(['id', 'codigo', 'nombre', 'simbolo']),
             'estados'     => EstadoDocumento::orderBy('nombre')->get(['id', 'nombre']),
-            'almacenes'   => \App\Models\Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'activo']),
+            // ✅ CRÍTICO: Cargar solo el almacén de la empresa del usuario
+            'almacenes'   => \App\Models\Almacen::where('id', auth()->user()?->empresa?->almacen_id ?? 1)
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'activo']),
         ];
 
         Log::info('CompraController::create - datos finales', [
@@ -504,7 +508,11 @@ class CompraController extends Controller
                 }),
             'monedas'     => Moneda::where('activo', true)->orderBy('codigo')->get(['id', 'codigo', 'nombre', 'simbolo']),
             'estados'     => EstadoDocumento::orderBy('nombre')->get(['id', 'nombre']),
-            'almacenes'   => \App\Models\Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'activo']),
+            // ✅ CRÍTICO: Cargar solo el almacén de la empresa del usuario
+            'almacenes'   => \App\Models\Almacen::where('id', auth()->user()?->empresa?->almacen_id ?? 1)
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'activo']),
         ]);
     }
 
@@ -1252,14 +1260,18 @@ class CompraController extends Controller
      */
     private function registrarEntradaInventario(DetalleCompra $detalle, Compra $compra, ?int $almacenId = null): void
     {
-        // Usar almacén especificado o buscar el primero disponible
+        // ✅ CRÍTICO: Usar almacén de la compra, no el primero disponible
         $almacen = null;
         if ($almacenId) {
             $almacen = \App\Models\Almacen::find($almacenId);
+        } elseif ($compra->almacen_id) {
+            // Si no se especifica, usar el almacén de la compra
+            $almacen = \App\Models\Almacen::find($compra->almacen_id);
         }
 
         if (! $almacen) {
-            $almacen = \App\Models\Almacen::where('activo', true)->first();
+            // Fallback final: usar el almacén del usuario
+            $almacen = \App\Models\Almacen::find(auth()->user()?->empresa?->almacen_id ?? 1);
         }
 
         if (! $almacen) {
