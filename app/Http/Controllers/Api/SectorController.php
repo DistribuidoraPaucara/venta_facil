@@ -42,7 +42,8 @@ class SectorController extends Controller
                 ], 404);
             }
 
-            $sectores = Sector::where('almacen_id', $almacenId)
+            $sectores = Sector::porEmpresa()  // ✅ Filtrar por empresa
+                ->where('almacen_id', $almacenId)
                 ->orderBy('es_generico', 'desc') // Genéricos primero
                 ->orderBy('nombre', 'asc')
                 ->get();
@@ -136,9 +137,13 @@ class SectorController extends Controller
                 'stock_maximo.gte' => 'El stock máximo debe ser mayor o igual al mínimo',
             ]);
 
+            // Obtener el almacén para acceder a su empresa_id
+            $almacen = Almacen::find($validated['almacen_id']);
+
             // Crear sector (es_generico siempre false para creaciones manuales)
             $sector = Sector::create([
                 'almacen_id' => $validated['almacen_id'],
+                'empresa_id' => $almacen->empresa_id,  // ✅ Heredar empresa_id del almacén
                 'nombre' => $validated['nombre'],
                 'descripcion' => $validated['descripcion'] ?? null,
                 'es_generico' => false,
@@ -394,7 +399,8 @@ class SectorController extends Controller
             }
 
             // Obtener todos los sectores del almacén, ordenados
-            $sectores = Sector::where('almacen_id', $almacenId)
+            $sectores = Sector::porEmpresa()  // ✅ Filtrar por empresa
+                ->where('almacen_id', $almacenId)
                 ->orderBy('es_generico', 'desc') // Genéricos primero
                 ->orderBy('nombre', 'asc')
                 ->select('id', 'nombre', 'es_generico', 'descripcion')
