@@ -151,6 +151,42 @@ export const empresasConfig: ModuleConfig<Empresa, EmpresaFormData> = {
       type: 'boolean',
       description: 'Habilita campos de medicamentos (principio activo, uso de medicación)'
     },
+    {
+      key: 'permite_vender_sin_stock',
+      label: 'Permitir Vender sin Stock',
+      type: 'boolean',
+      description: 'Habilita la venta de servicios/inyectables sin inventario'
+    },
+    {
+      key: 'permite_productos_alquilables',
+      label: 'Permitir Productos Alquilables',
+      type: 'boolean',
+      description: 'Habilita la opción de marcar productos como alquilables'
+    },
+    {
+      key: 'permite_productos_comida',
+      label: 'Permitir Productos de Comida',
+      type: 'boolean',
+      description: 'Habilita la opción de crear productos de comida sin control de stock'
+    },
+    {
+      key: 'permite_productos_combo',
+      label: 'Permitir Productos Combo',
+      type: 'boolean',
+      description: 'Habilita la opción de crear combos de productos'
+    },
+    {
+      key: 'permite_productos_adicionales',
+      label: 'Permitir Productos Adicionales',
+      type: 'boolean',
+      description: 'Habilita la opción de crear productos adicionales (toppings, salsas, etc)'
+    },
+    {
+      key: 'permite_productos_produccion',
+      label: 'Permitir Productos de Producción',
+      type: 'boolean',
+      description: 'Habilita la creación de productos con recetas (ingredientes y cantidades)'
+    },
 
     // Estado
     {

@@ -39,6 +39,12 @@ class UpdateEmpresaRequest extends FormRequest
             'es_principal' => ['nullable', 'boolean'],
             'permite_productos_fraccionados' => ['nullable', 'boolean'],
             'es_farmacia' => ['nullable', 'boolean'],
+            'permite_vender_sin_stock' => ['nullable', 'boolean'],
+            'permite_productos_alquilables' => ['nullable', 'boolean'],
+            'permite_productos_comida' => ['nullable', 'boolean'],
+            'permite_productos_combo' => ['nullable', 'boolean'],
+            'permite_productos_adicionales' => ['nullable', 'boolean'],
+            'permite_productos_produccion' => ['nullable', 'boolean'],
         ];
     }
 
@@ -72,6 +78,48 @@ class UpdateEmpresaRequest extends FormRequest
         if ($this->has('es_farmacia')) {
             $this->merge([
                 'es_farmacia' => $this->es_farmacia === true || $this->es_farmacia === 'true' || $this->es_farmacia === '1' || $this->es_farmacia === 1,
+            ]);
+        }
+
+        // ✨ NUEVO: Convertir permite_vender_sin_stock
+        if ($this->has('permite_vender_sin_stock')) {
+            $this->merge([
+                'permite_vender_sin_stock' => $this->permite_vender_sin_stock === true || $this->permite_vender_sin_stock === 'true' || $this->permite_vender_sin_stock === '1' || $this->permite_vender_sin_stock === 1,
+            ]);
+        }
+
+        // ✨ NUEVO: Convertir permite_productos_alquilables
+        if ($this->has('permite_productos_alquilables')) {
+            $this->merge([
+                'permite_productos_alquilables' => $this->permite_productos_alquilables === true || $this->permite_productos_alquilables === 'true' || $this->permite_productos_alquilables === '1' || $this->permite_productos_alquilables === 1,
+            ]);
+        }
+
+        // ✨ NUEVO: Convertir permite_productos_comida
+        if ($this->has('permite_productos_comida')) {
+            $this->merge([
+                'permite_productos_comida' => $this->permite_productos_comida === true || $this->permite_productos_comida === 'true' || $this->permite_productos_comida === '1' || $this->permite_productos_comida === 1,
+            ]);
+        }
+
+        // ✨ NUEVO: Convertir permite_productos_combo
+        if ($this->has('permite_productos_combo')) {
+            $this->merge([
+                'permite_productos_combo' => $this->permite_productos_combo === true || $this->permite_productos_combo === 'true' || $this->permite_productos_combo === '1' || $this->permite_productos_combo === 1,
+            ]);
+        }
+
+        // ✨ NUEVO: Convertir permite_productos_adicionales
+        if ($this->has('permite_productos_adicionales')) {
+            $this->merge([
+                'permite_productos_adicionales' => $this->permite_productos_adicionales === true || $this->permite_productos_adicionales === 'true' || $this->permite_productos_adicionales === '1' || $this->permite_productos_adicionales === 1,
+            ]);
+        }
+
+        // ✨ NUEVO: Convertir permite_productos_produccion
+        if ($this->has('permite_productos_produccion')) {
+            $this->merge([
+                'permite_productos_produccion' => $this->permite_productos_produccion === true || $this->permite_productos_produccion === 'true' || $this->permite_productos_produccion === '1' || $this->permite_productos_produccion === 1,
             ]);
         }
     }

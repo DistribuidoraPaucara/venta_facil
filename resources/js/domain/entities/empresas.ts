@@ -24,6 +24,12 @@ export interface Empresa extends BaseEntity {
   es_principal: boolean;
   permite_productos_fraccionados?: boolean;
   es_farmacia?: boolean;
+  permite_vender_sin_stock?: boolean;
+  permite_productos_alquilables?: boolean;
+  permite_productos_comida?: boolean;
+  permite_productos_combo?: boolean;
+  permite_productos_adicionales?: boolean;
+  permite_productos_produccion?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -49,4 +55,10 @@ export interface EmpresaFormData extends BaseFormData {
   es_principal?: boolean;
   permite_productos_fraccionados?: boolean;
   es_farmacia?: boolean;
+  permite_vender_sin_stock?: boolean;
+  permite_productos_alquilables?: boolean;
+  permite_productos_comida?: boolean;
+  permite_productos_combo?: boolean;
+  permite_productos_adicionales?: boolean;
+  permite_productos_produccion?: boolean;
 }

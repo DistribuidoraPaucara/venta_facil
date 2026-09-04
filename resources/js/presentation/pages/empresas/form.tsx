@@ -39,6 +39,12 @@ const initialEmpresaData: EmpresaFormData = {
   es_principal: false,
   permite_productos_fraccionados: false,
   es_farmacia: false,
+  permite_vender_sin_stock: false,
+  permite_productos_alquilables: false,
+  permite_productos_comida: false,
+  permite_productos_combo: false,
+  permite_productos_adicionales: false,
+  permite_productos_produccion: false,
 };
 
 export default function EmpresaForm({ empresa }: EmpresaFormPageProps) {
