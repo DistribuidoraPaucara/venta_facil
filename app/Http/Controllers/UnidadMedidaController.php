@@ -7,6 +7,7 @@ use App\Models\UnidadMedida;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Inertia\Response as InertiaResponse;
 
 /**
@@ -42,8 +43,16 @@ class UnidadMedidaController extends Controller
 
     protected function getValidationRules(): array
     {
+        $empresaId = auth()->user()?->empresa_id;
+
         return [
-            'codigo' => ['required', 'string', 'max:10', 'unique:unidades_medida,codigo'],
+            'codigo' => [
+                'required',
+                'string',
+                'max:10',
+                // ✅ Unique por empresa, no global
+                Rule::unique('unidades_medida', 'codigo')->where('empresa_id', $empresaId),
+            ],
             'nombre' => ['required', 'string', 'max:255'],
             'activo' => ['boolean'],
         ];
@@ -117,12 +126,22 @@ class UnidadMedidaController extends Controller
     public function storeApi(Request $request): JsonResponse
     {
         try {
+            $empresaId = auth()->user()?->empresa_id;
+
             $validated = $request->validate([
                 'nombre' => ['required', 'string', 'max:255'],
-                'codigo' => ['required', 'string', 'max:10', 'unique:unidades_medida,codigo'],
+                'codigo' => [
+                    'required',
+                    'string',
+                    'max:10',
+                    // ✅ Unique por empresa, no global
+                    Rule::unique('unidades_medida', 'codigo')->where('empresa_id', $empresaId),
+                ],
                 'activo' => ['boolean'],
             ]);
 
+            // Agregar empresa_id automáticamente
+            $validated['empresa_id'] = $empresaId;
             $unidad = UnidadMedida::create($validated);
 
             return response()->json([
@@ -149,10 +168,19 @@ class UnidadMedidaController extends Controller
     {
         try {
             $unidad = UnidadMedida::findOrFail($id);
+            $empresaId = auth()->user()?->empresa_id;
 
             $validated = $request->validate([
                 'nombre' => ['required', 'string', 'max:255'],
-                'codigo' => ['required', 'string', 'max:10', 'unique:unidades_medida,codigo,' . $id],
+                'codigo' => [
+                    'required',
+                    'string',
+                    'max:10',
+                    // ✅ Unique por empresa, excluyendo el registro actual
+                    Rule::unique('unidades_medida', 'codigo')
+                        ->where('empresa_id', $empresaId)
+                        ->ignore($id),
+                ],
                 'activo' => ['boolean'],
             ]);
 
