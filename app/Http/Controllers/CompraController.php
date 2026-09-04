@@ -69,6 +69,10 @@ class CompraController extends Controller
 
         $query = Compra::with(['proveedor', 'usuario', 'estadoDocumento', 'moneda', 'tipoPago']);
 
+        // ✅ CRÍTICO: Filtrar por almacén del usuario (empresa)
+        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
+        $query->where('almacen_id', $almacenIdUsuario);
+
         // Filtro por ID de compra
         if (! empty($filtros['id'])) {
             $query->where('id', $filtros['id']);
@@ -250,6 +254,9 @@ class CompraController extends Controller
 
     public function show($id)
     {
+        // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
+        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
+
         $compra = Compra::with([
             'proveedor',
             'usuario',
@@ -259,7 +266,9 @@ class CompraController extends Controller
             'detalles.producto.codigosBarra',
             'detalles.producto.prestables',
             'almacen'
-        ])->findOrFail($id);
+        ])
+        ->where('almacen_id', $almacenIdUsuario)
+        ->findOrFail($id);
 
         // ✅ NUEVO 2026-03-24: Cargar movimientos de inventario para cada detalle
         $detalles = $compra->detalles->map(function ($detalle) use ($compra) {
@@ -332,6 +341,9 @@ class CompraController extends Controller
 
     public function edit($id)
     {
+        // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
+        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
+
         // ✅ NUEVO 2026-03-06: Cargar detalles con producto y sus relaciones (marca, unidad, codigosBarra, stock)
         $compra = Compra::with([
             'detalles.producto.marca:id,nombre',
@@ -344,7 +356,9 @@ class CompraController extends Controller
             'proveedor',
             'usuario',
             'almacen'
-        ])->findOrFail($id);
+        ])
+        ->where('almacen_id', $almacenIdUsuario)
+        ->findOrFail($id);
 
         Log::info('CompraController::edit() - Compra cargada', [
             'compra_id'              => $compra->id,
@@ -1136,7 +1150,9 @@ class CompraController extends Controller
 
     public function destroy($id)
     {
-        $compra = Compra::findOrFail($id);
+        // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
+        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
+        $compra = Compra::where('almacen_id', $almacenIdUsuario)->findOrFail($id);
 
         try {
             DB::beginTransaction();
@@ -1360,8 +1376,13 @@ class CompraController extends Controller
 
             $motivo = $request->input('motivo', 'Sin motivo especificado');
 
+            // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
+            $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
+
             // 2. Cargar compra
-            $compra = Compra::with(['detalles.producto', 'cuentaPorPagar.pagos'])->findOrFail($id);
+            $compra = Compra::with(['detalles.producto', 'cuentaPorPagar.pagos'])
+                ->where('almacen_id', $almacenIdUsuario)
+                ->findOrFail($id);
 
             Log::info('🟠 [ANULAR COMPRA] COMPRA ENCONTRADA', [
                 'compra_id' => $compra->id,
@@ -2090,7 +2111,11 @@ class CompraController extends Controller
     public function indexApi(Request $request): JsonResponse
     {
         try {
+            // ✅ CRÍTICO: Filtrar por almacén del usuario (empresa)
+            $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
+
             $query = Compra::with(['proveedor:id,nombre,razon_social'])
+                ->where('almacen_id', $almacenIdUsuario)
                 ->orderBy('created_at', 'desc');
 
             // Filtro de búsqueda general (q)
