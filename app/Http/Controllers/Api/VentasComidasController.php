@@ -146,11 +146,20 @@ class VentasComidasController extends Controller
                 $monedaDefecto = Moneda::where('codigo', 'BOB')->first() ??
                     Moneda::first();
 
+                // ✅ CRÍTICO: Obtener empresa del usuario
+                $usuarioAutenticado = Auth::user();
+                $empresaUsuario = $usuarioAutenticado?->empresa;
+                if (!$empresaUsuario) {
+                    $empresaUsuario = \App\Models\Empresa::where('es_principal', true)->where('activo', true)->first();
+                }
+                $empresaIdVenta = $empresaUsuario?->id ?? 1;
+
                 // Crear Venta
                 $venta = Venta::create([
                     'numero'                 => '0', // Se asignará después
                     'cliente_id'             => $validated['cliente_id'],
                     'usuario_id'             => Auth::id(),
+                    'empresa_id'             => $empresaIdVenta, // ✅ CRÍTICO: Asignar empresa del usuario
                     'fecha'                  => today(),
                     'subtotal'               => $validated['total'],
                     'descuento'              => 0,
