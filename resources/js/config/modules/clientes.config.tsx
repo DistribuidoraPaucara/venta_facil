@@ -379,8 +379,7 @@ export const clientesConfig: ModuleConfig<Cliente, ClienteFormData> = {
                 return data.crear_usuario === true || data.cambiar_credenciales === true;
             },
             required: (data) => {
-                // Requerido en creación o si está creando/cambiando usuario
-                if (!data.id) return data.crear_usuario !== false;
+                // ✨ Requerido SOLO si está creando/cambiando usuario
                 return data.crear_usuario === true || data.cambiar_credenciales === true;
             },
             /* description: (data) => {
@@ -406,9 +405,10 @@ export const clientesConfig: ModuleConfig<Cliente, ClienteFormData> = {
                 return isCreatingOrChanging && hasPasswordInput;
             },
             required: (data) => {
-                if (!data.id) return true; // Creación: requerido
-                // Edición: requerido solo si ingresó password nuevo
-                return Boolean(data.password && String(data.password).trim().length > 0);
+                // ✨ Requerido SOLO si está creando/cambiando usuario Y ingresó password
+                const isCreatingOrChanging = data.crear_usuario === true || data.cambiar_credenciales === true;
+                const hasPassword = Boolean(data.password && String(data.password).trim().length > 0);
+                return isCreatingOrChanging && hasPassword;
             },
             // description: '⚠️ Debe coincidir con la contraseña ingresada arriba',
         },
