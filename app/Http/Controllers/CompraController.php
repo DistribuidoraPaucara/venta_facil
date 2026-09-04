@@ -597,10 +597,13 @@ class CompraController extends Controller
                 ]);
 
                 try {
+                    // ✅ CRÍTICO: Usar almacén de la compra, con fallback al almacén del usuario
+                    $almacenIdCompra = (int)($data['almacen_id'] ?? auth()->user()?->empresa?->almacen_id ?? 1);
+
                     $movimientosStock = $this->compraDistribucionService->registrarEntradaCompra(
                         detalles: $detallesParaInventario,
                         numeroCompra: $compra->numero,
-                        almacenId: (int)($data['almacen_id'] ?? 1),
+                        almacenId: $almacenIdCompra,
                         usuarioId: Auth::id() ?? 1
                     );
 
