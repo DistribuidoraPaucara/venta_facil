@@ -332,6 +332,12 @@ class ProductoController extends Controller
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
             'permite_productos_fraccionados' => $empresa?->permite_productos_fraccionados ?? false,
             'es_farmacia'                    => $empresa?->es_farmacia ?? false,
+            'permite_vender_sin_stock'       => $empresa?->permite_vender_sin_stock ?? false,  // ✅ NUEVO
+            'permite_productos_alquilables'  => $empresa?->permite_productos_alquilables ?? false,  // ✅ NUEVO
+            'permite_productos_comida'       => $empresa?->permite_productos_comida ?? false,  // ✅ NUEVO
+            'permite_productos_combo'        => $empresa?->permite_productos_combo ?? false,  // ✅ NUEVO
+            'permite_productos_adicionales'  => $empresa?->permite_productos_adicionales ?? false,  // ✅ NUEVO
+            'permite_productos_produccion'   => $empresa?->permite_productos_produccion ?? false,  // ✅ NUEVO
             'productos'                      => $productosActivos, // 🏭 NUEVO: Para ingredientes
         ]);
     }
@@ -360,6 +366,12 @@ class ProductoController extends Controller
                 ];
             })->toArray(),  // ✅ Filtrado
             'configuraciones_ganancias' => \App\Models\ConfiguracionGlobal::configuracionesGanancias(),
+            'permite_vender_sin_stock'       => auth()->user()?->empresa?->permite_vender_sin_stock ?? false,  // ✅ NUEVO
+            'permite_productos_alquilables'  => auth()->user()?->empresa?->permite_productos_alquilables ?? false,  // ✅ NUEVO
+            'permite_productos_comida'       => auth()->user()?->empresa?->permite_productos_comida ?? false,  // ✅ NUEVO
+            'permite_productos_combo'        => auth()->user()?->empresa?->permitir_productos_combo ?? false,  // ✅ NUEVO
+            'permite_productos_adicionales'  => auth()->user()?->empresa?->permite_productos_adicionales ?? false,  // ✅ NUEVO
+            'permite_productos_produccion'   => auth()->user()?->empresa?->permite_productos_produccion ?? false,  // ✅ NUEVO
         ]);
     }
 
@@ -981,6 +993,12 @@ class ProductoController extends Controller
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
             'permite_productos_fraccionados' => $empresa?->permite_productos_fraccionados ?? false,
             'es_farmacia'                    => $empresa?->es_farmacia ?? false,
+            'permite_vender_sin_stock'       => $empresa?->permite_vender_sin_stock ?? false,  // ✅ NUEVO
+            'permite_productos_alquilables'  => $empresa?->permite_productos_alquilables ?? false,  // ✅ NUEVO
+            'permite_productos_comida'       => $empresa?->permite_productos_comida ?? false,  // ✅ NUEVO
+            'permite_productos_combo'        => $empresa?->permite_productos_combo ?? false,  // ✅ NUEVO
+            'permite_productos_adicionales'  => $empresa?->permite_productos_adicionales ?? false,  // ✅ NUEVO
+            'permite_productos_produccion'   => $empresa?->permite_productos_produccion ?? false,  // ✅ NUEVO
             'productos'                      => $productosActivos, // 🏭 NUEVO: Para ingredientes
         ]);
     }

@@ -35,6 +35,12 @@ class Empresa extends Model
         'permite_productos_fraccionados',
         'logistica_envios',      // ✨ NUEVO
         'es_farmacia',           // ✨ NUEVO - Para habilitar campos de medicamentos
+        'permite_vender_sin_stock',
+        'permite_productos_alquilables',
+        'permite_productos_comida',
+        'permite_productos_combo',
+        'permite_productos_adicionales',
+        'permite_productos_produccion',
     ];
 
     protected function casts(): array
@@ -46,6 +52,12 @@ class Empresa extends Model
             'permite_productos_fraccionados' => 'boolean',
             'logistica_envios' => 'boolean',        // ✨ NUEVO
             'es_farmacia' => 'boolean',             // ✨ NUEVO
+            'permite_vender_sin_stock' => 'boolean',
+            'permite_productos_alquilables' => 'boolean',
+            'permite_productos_comida' => 'boolean',
+            'permite_productos_combo' => 'boolean',
+            'permite_productos_adicionales' => 'boolean',
+            'permite_productos_produccion' => 'boolean',
         ];
     }
 
