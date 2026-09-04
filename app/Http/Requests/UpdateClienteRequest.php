@@ -120,7 +120,13 @@ class UpdateClienteRequest extends FormRequest
      */
     public function rules(): array
     {
-        $cliente = $this->route('cliente');
+        // ✨ Obtener el cliente (puede ser objeto o ID)
+        $clienteParam = $this->route('cliente');
+        $clienteId = is_object($clienteParam) ? $clienteParam->id : $clienteParam;
+
+        // Obtener el cliente para acceder a user_id
+        $cliente = \App\Models\Cliente::find($clienteId);
+        $userIdToIgnore = $cliente?->user_id;
 
         return [
             // Campos básicos
@@ -131,7 +137,9 @@ class UpdateClienteRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('users', 'usernick')->ignore($cliente->user_id),
+                $userIdToIgnore
+                    ? Rule::unique('users', 'usernick')->ignore($userIdToIgnore)
+                    : Rule::unique('users', 'usernick'),
             ],
             'password'                       => 'nullable|string|min:8',
             'password_confirmation'          => 'required_with:password|same:password',
