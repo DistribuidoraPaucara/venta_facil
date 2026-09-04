@@ -34,6 +34,8 @@ export interface Step1Props {
         permite_venta_sin_stock?: boolean; // ✅ NUEVO (2026-05-08) - Para servicios/inyectables en farmacias
         es_producto_adicional?: boolean; // ✨ NUEVO - Indica si es un adicional
         puede_tener_producto_adicional?: boolean; // ✨ NUEVO - Indica si puede tener adicionales
+        es_alquilable?: boolean; // ✨ NUEVO - Indica si el producto es alquilable
+        es_combo?: boolean; // ✨ NUEVO - Indica si el producto es un combo
         principio_activo?: string | null; // ✨ NUEVO - Ingrediente activo para medicamentos
         uso_de_medicacion?: string | null; // ✨ NUEVO - Indicaciones de uso para medicamentos
         visible_app?: boolean; // ✨ NUEVO - Visible en app
@@ -711,17 +713,47 @@ function Step1DatosProducto({
                     />
                 )}
 
-                {/* 🍦 NUEVA SECCIÓN: Producto de Comida/Helado */}
-                {/* <FeatureToggle
-                    id="es_producto_comida"
-                    checked={!!data.es_producto_comida}
-                    onCheckedChange={(v) => setData('es_producto_comida', !!v)}
-                    icon="🍦"
-                    title="Producto Resort"
-                    description="Marca este producto si es una comida o helado que se vende sin control de stock."
-                    hint="Ejemplo: Helados, postres, bebidas personalizadas"
-                    colorScheme="orange"
-                /> */}
+                {/* 🍦 NUEVA SECCIÓN: Producto de Comida/Helado (controlado por empresa) */}
+                {permite_productos_comida && (
+                    <FeatureToggle
+                        id="es_producto_comida"
+                        checked={!!data.es_producto_comida}
+                        onCheckedChange={(v) => setData('es_producto_comida', !!v)}
+                        icon="🍦"
+                        title="Producto de Comida"
+                        description="Marca este producto si es una comida o helado que se vende sin control de stock."
+                        hint="Ejemplo: Helados, postres, bebidas personalizadas"
+                        colorScheme="orange"
+                    />
+                )}
+
+                {/* 🏨 NUEVA SECCIÓN: Producto Alquilable (controlado por empresa) */}
+                {permite_productos_alquilables && (
+                    <FeatureToggle
+                        id="es_alquilable"
+                        checked={!!data.es_alquilable}
+                        onCheckedChange={(v) => setData('es_alquilable', !!v)}
+                        icon="🏨"
+                        title="Producto Alquilable"
+                        description="Marca este producto si se puede alquilar en lugar de vender."
+                        hint="Ejemplo: Equipos, decoraciones, maquinaria, disfraces"
+                        colorScheme="amber"
+                    />
+                )}
+
+                {/* 📦 NUEVA SECCIÓN: Producto Combo (controlado por empresa) */}
+                {permite_productos_combo && (
+                    <FeatureToggle
+                        id="es_combo"
+                        checked={!!data.es_combo}
+                        onCheckedChange={(v) => setData('es_combo', !!v)}
+                        icon="📦"
+                        title="Producto Combo"
+                        description="Marca este producto si es un combo que contiene múltiples productos."
+                        hint="Ejemplo: Combo promocional, paquete, kit"
+                        colorScheme="pink"
+                    />
+                )}
 
                 {/* ✅ NUEVA SECCIÓN: Venta sin Stock (controlado por empresa) */}
                 {permite_vender_sin_stock && (
