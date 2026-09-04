@@ -95,6 +95,7 @@ class Almacen extends Model
             if (!$sectorExistente) {
                 Sector::create([
                     'almacen_id' => $almacen->id,
+                    'empresa_id' => $almacen->empresa_id,  // ✅ Heredar empresa_id del almacén
                     'nombre' => 'General',
                     'es_generico' => true,
                     'descripcion' => 'Sector genérico automático - Productos sin clasificación específica',

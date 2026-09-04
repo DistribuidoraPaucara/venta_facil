@@ -20,6 +20,7 @@ class Sector extends Model
         'descripcion',
         'stock_minimo',
         'stock_maximo',
+        'empresa_id',
     ];
 
     protected function casts(): array
@@ -35,6 +36,14 @@ class Sector extends Model
     public function almacen(): BelongsTo
     {
         return $this->belongsTo(Almacen::class, 'almacen_id');
+    }
+
+    /**
+     * Relación: Un sector pertenece a una empresa
+     */
+    public function empresa(): BelongsTo
+    {
+        return $this->belongsTo(Empresa::class);
     }
 
     /**
@@ -70,15 +79,13 @@ class Sector extends Model
     }
 
     /**
-     * Scope: Filtrar por empresa (a través del almacén)
+     * Scope: Filtrar por empresa
      */
     public function scopePorEmpresa($query)
     {
         $empresaId = auth()->user()?->empresa_id ?? app('tenant_id');
         if ($empresaId) {
-            return $query->whereHas('almacen', function ($q) use ($empresaId) {
-                $q->where('empresa_id', $empresaId);
-            });
+            return $query->where('empresa_id', $empresaId);
         }
         return $query;
     }
