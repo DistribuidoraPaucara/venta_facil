@@ -369,7 +369,7 @@ class ProductoController extends Controller
             'permite_vender_sin_stock'       => auth()->user()?->empresa?->permite_vender_sin_stock ?? false,  // ✅ NUEVO
             'permite_productos_alquilables'  => auth()->user()?->empresa?->permite_productos_alquilables ?? false,  // ✅ NUEVO
             'permite_productos_comida'       => auth()->user()?->empresa?->permite_productos_comida ?? false,  // ✅ NUEVO
-            'permite_productos_combo'        => auth()->user()?->empresa?->permitir_productos_combo ?? false,  // ✅ NUEVO
+            'permite_productos_combo'        => auth()->user()?->empresa?->permite_productos_combo ?? false,  // ✅ NUEVO
             'permite_productos_adicionales'  => auth()->user()?->empresa?->permite_productos_adicionales ?? false,  // ✅ NUEVO
             'permite_productos_produccion'   => auth()->user()?->empresa?->permite_productos_produccion ?? false,  // ✅ NUEVO
         ]);
