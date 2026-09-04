@@ -1093,6 +1093,9 @@ class InventarioController extends Controller
      */
     public function ajusteForm(Request $request): Response
     {
+        // ✅ CRÍTICO: Obtener empresa del usuario
+        $userEmpresaId = auth()->user()?->empresa_id;
+
         $almacenId = $request->integer('almacen_id');
         $tipoAjuste = $request->string('tipo_ajuste'); // 'entrada', 'salida', o vacío para todos
         $perPage = $request->integer('per_page', 15);
@@ -1110,7 +1113,13 @@ class InventarioController extends Controller
         $query = AjusteInventario::with([
             'almacen:id,nombre',
             'user:id,name',
-        ]);
+        ])
+            ->whereHas('almacen', function ($q) use ($userEmpresaId) {
+                // ✅ CRÍTICO: Filtrar solo ajustes de almacenes de la empresa del usuario
+                if ($userEmpresaId) {
+                    $q->where('empresa_id', $userEmpresaId);
+                }
+            });
 
         // Filtrar por almacén si se proporciona
         if ($almacenId) {
@@ -1147,7 +1156,11 @@ class InventarioController extends Controller
             ];
         });
 
-        $almacenes = Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        // ✅ CRÍTICO: Obtener solo almacenes de la empresa del usuario
+        $almacenes = Almacen::where('empresa_id', $userEmpresaId)
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
 
         return Inertia::render('inventario/ajuste', [
             'almacenes'            => $almacenes,

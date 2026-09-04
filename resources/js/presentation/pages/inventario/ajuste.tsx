@@ -662,15 +662,15 @@ export default function AjusteInventario() {
                                     onClick={() => router.visit('/inventario/ajuste-tabla')}
                                     className="transition-colors"
                                 >
-                                    📊 Ajuste por Tabla
+                                    ➕ Crear Ajuste
                                 </Button>
-                                <Button
+                                {/* <Button
                                     variant={vista === 'historico' ? 'default' : 'outline'}
                                     onClick={() => setVista('historico')}
                                     className="transition-colors"
                                 >
                                     📋 Histórico
-                                </Button>
+                                </Button> */}
                             </div>
                         </div>
 
