@@ -223,7 +223,14 @@ export default function GenericFormFields<F extends BaseFormData>({
               placeholder={field.placeholder || 'Seleccionar...'}
               value={value ? String(value) : ''}
               options={searchSelectOptions}
-              onChange={(val) => onChange(field.key, val === '' ? null : Number(val))}
+              onChange={(val) => {
+                if (val === '') {
+                  onChange(field.key, null);
+                } else {
+                  const numValue = Number(val);
+                  onChange(field.key, isNaN(numValue) ? val : numValue);
+                }
+              }}
               disabled={fieldDisabled}
               required={isFieldRequired(field)}
               error={error}
@@ -244,7 +251,14 @@ export default function GenericFormFields<F extends BaseFormData>({
                 value: String(opt.value),
                 label: opt.label
               }))}
-              onChange={(val) => onChange(field.key, val === '' ? null : Number(val))}
+              onChange={(val) => {
+                if (val === '') {
+                  onChange(field.key, null);
+                } else {
+                  const numValue = Number(val);
+                  onChange(field.key, isNaN(numValue) ? val : numValue);
+                }
+              }}
               disabled={fieldDisabled}
               required={isFieldRequired(field)}
               error={error}
@@ -258,7 +272,16 @@ export default function GenericFormFields<F extends BaseFormData>({
           <select
             id={fieldKey}
             value={value ? String(value) : ''}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(field.key, e.target.value === '' ? null : Number(e.target.value))}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              const newValue = e.target.value;
+              // ✅ Mantener valor como string si es texto, convertir a número solo si es numérico
+              if (newValue === '') {
+                onChange(field.key, null);
+              } else {
+                const numValue = Number(newValue);
+                onChange(field.key, isNaN(numValue) ? newValue : numValue);
+              }
+            }}
             disabled={fieldDisabled}
             className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 ${error ? 'border-2 border-red-500 focus-visible:ring-red-500 dark:border-red-500 bg-red-50 dark:bg-red-950/30' : ''}`}
           >
