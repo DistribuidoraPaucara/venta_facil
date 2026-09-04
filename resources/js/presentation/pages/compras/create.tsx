@@ -720,7 +720,7 @@ export default function CompraForm() {
     return false;
   };
 
-  // ✨ NUEVO: Limpiar borrador de localStorage
+  // ✨ NUEVO: Limpiar borrador de localStorage Y resetear detalles del formulario
   const clearDraft = async () => {
     try {
       const confirmed = await NotificationService.confirm(
@@ -733,8 +733,10 @@ export default function CompraForm() {
 
       if (confirmed) {
         localStorage.removeItem('compra-create-draft');
+        // ✅ CRÍTICO: Limpiar también los detalles del formulario (no solo localStorage)
+        setData('detalles', []);
         NotificationService.success('Borrador eliminado correctamente');
-        console.log('✅ Borrador de compra eliminado');
+        console.log('✅ Borrador de compra eliminado - Detalles limpiados');
       }
     } catch (err) {
       console.error('Error al limpiar el borrador:', err);
