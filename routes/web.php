@@ -861,8 +861,27 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::post('ajuste', [\App\Http\Controllers\InventarioController::class, 'procesarAjuste'])->middleware('permission:inventario.ajuste.procesar')->name('ajuste.procesar');
         // ✅ NUEVO: Ruta para ajuste por tabla editable
         Route::get('ajuste-tabla', function () {
-            $almacenes = \App\Models\Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
-            $stock_productos = \App\Models\StockProducto::with(['producto:id,nombre,sku,codigo_barras,codigo_qr', 'producto.codigosBarra', 'almacen:id,nombre'])->get();
+            // ✅ CRÍTICO: Obtener empresa del usuario para filtrar almacenes y stock
+            $userEmpresaId = auth()->user()?->empresa_id;
+
+            $almacenes = \App\Models\Almacen::where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get(['id', 'nombre']);
+
+            // ✅ CRÍTICO: Filtrar stock_productos solo para almacenes de la empresa del usuario
+            $stock_productos = \App\Models\StockProducto::with([
+                'producto:id,nombre,sku,codigo_barras,codigo_qr',
+                'producto.codigosBarra',
+                'almacen:id,nombre'
+            ])
+                ->whereHas('almacen', function ($q) use ($userEmpresaId) {
+                    if ($userEmpresaId) {
+                        $q->where('empresa_id', $userEmpresaId);
+                    }
+                })
+                ->get();
+
             // ✅ Cargar tipos de ajuste para la tabla
             $tipos_ajuste_inventario = \App\Models\TipoAjusteInventario::where('activo', true)->orderBy('label')->get();
             return \Inertia\Inertia::render('inventario/ajuste-tabla', [
