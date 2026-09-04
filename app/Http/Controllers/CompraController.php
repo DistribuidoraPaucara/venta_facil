@@ -1395,7 +1395,7 @@ class CompraController extends Controller
             $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
 
             // 2. Cargar compra
-            $compra = Compra::with(['detalles.producto', 'cuentaPorPagar.pagos'])
+            $compra = Compra::with(['detalles.producto', 'cuentaPorPagar.pagos', 'estadoDocumento'])
                 ->where('almacen_id', $almacenIdUsuario)
                 ->findOrFail($id);
 
