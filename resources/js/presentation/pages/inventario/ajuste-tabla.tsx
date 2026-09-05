@@ -182,6 +182,7 @@ export default function AjusteTabla() {
     const [ajustes, setAjustes] = useState<AjusteItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [observacionGeneral, setObservacionGeneral] = useState<string>(''); // ✅ NUEVA: Observación general del documento
+    const [tipoAjusteSeleccionado, setTipoAjusteSeleccionado] = useState<number | null>(null); // ✅ NUEVO: Tipo de ajuste global
 
     // Cargar tipos de ajuste si no vienen del backend
     const [tiposAjuste, setTiposAjuste] = useState<TipoAjusteInventario[]>(tipos_ajuste_inventario);
@@ -271,9 +272,6 @@ export default function AjusteTabla() {
     const [isSearchingMain, setIsSearchingMain] = useState(false);
     const mainInputRef = useRef<HTMLInputElement>(null);
     const mainSearchContainerRef = useRef<HTMLDivElement>(null);
-
-    // ✅ NUEVO: Tipo de ajuste global para toda la tabla
-    const [tipoAjusteSeleccionado, setTipoAjusteSeleccionado] = useState<number | null>(null);
 
     // Filtrar stock_productos según almacén seleccionado
     const stockProductosFiltrados = useMemo(() => {
