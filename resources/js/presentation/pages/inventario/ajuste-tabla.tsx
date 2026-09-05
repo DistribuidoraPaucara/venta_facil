@@ -947,77 +947,111 @@ export default function AjusteTabla() {
                                     <tbody>
                                         {ajustes.map((ajuste, idx) => (
                                             <tr key={ajuste.id} className="border-b hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-700">
-                                                {/* Producto - Search Input */}
+                                                {/* Producto - Mostrar seleccionado o Input de búsqueda */}
                                                 <td className="relative px-4 py-3">
-                                                    <div className="relative">
-                                                        <div className="relative flex items-center gap-1">
-                                                            <div className="relative flex-1">
-                                                                <Search
-                                                                    size={16}
-                                                                    className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 transform text-gray-400 dark:text-gray-500"
-                                                                />
-                                                                <Input
-                                                                    ref={(el) => {
-                                                                        if (el) inputRefsRef.current[ajuste.id] = el;
-                                                                    }}
-                                                                    type="text"
-                                                                    placeholder="SKU o nombre..."
-                                                                    value={searchTerms[ajuste.id] || ''}
-                                                                    onChange={(e) => {
+                                                    {ajuste.producto ? (
+                                                        // ✅ Si hay producto seleccionado, mostrar con opción de cambiar
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex items-center justify-between rounded-md bg-blue-50 p-2 dark:bg-blue-900/20">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="truncate text-sm font-semibold dark:text-blue-300">
+                                                                        {ajuste.producto.sku && `[${ajuste.producto.sku}] `}
+                                                                        {ajuste.producto.nombre}
+                                                                    </p>
+                                                                    {ajuste.producto.lote && (
+                                                                        <p className="truncate text-xs text-gray-600 dark:text-gray-400">
+                                                                            📦 Lote: {ajuste.producto.lote}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
                                                                         setSearchTerms((prev) => ({
                                                                             ...prev,
-                                                                            [ajuste.id]: e.target.value,
+                                                                            [ajuste.id]: '',
                                                                         }));
+                                                                        seleccionarProducto(ajuste.id, null as any);
                                                                     }}
-                                                                    onKeyPress={(e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            e.preventDefault();
-                                                                            buscarProductos(ajuste.id, searchTerms[ajuste.id] || '');
-                                                                        }
-                                                                    }}
-                                                                    onFocus={() =>
-                                                                        searchResults[ajuste.id]?.length > 0 &&
-                                                                        setShowDropdown((prev) => ({
-                                                                            ...prev,
-                                                                            [ajuste.id]: true,
-                                                                        }))
-                                                                    }
-                                                                    className="w-full pr-10 pl-8"
-                                                                />
-                                                                {loadingSearch[ajuste.id] && (
-                                                                    <Loader
-                                                                        size={16}
-                                                                        className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 transform animate-spin text-blue-500"
-                                                                    />
-                                                                )}
+                                                                    className="ml-2 flex-shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                                                    title="Cambiar producto"
+                                                                >
+                                                                    ✕
+                                                                </button>
                                                             </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => buscarProductos(ajuste.id, searchTerms[ajuste.id] || '')}
-                                                                disabled={loadingSearch[ajuste.id] || !almacenSeleccionado}
-                                                                className="flex items-center justify-center rounded-md bg-blue-500 p-2 text-white transition hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600"
-                                                                title="Buscar (Enter)"
-                                                            >
-                                                                <Search size={16} />
-                                                            </button>
                                                         </div>
+                                                    ) : (
+                                                        // ✅ Si no hay producto, mostrar input de búsqueda
+                                                        <div className="relative">
+                                                            <div className="relative flex items-center gap-1">
+                                                                <div className="relative flex-1">
+                                                                    <Search
+                                                                        size={16}
+                                                                        className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 transform text-gray-400 dark:text-gray-500"
+                                                                    />
+                                                                    <Input
+                                                                        ref={(el) => {
+                                                                            if (el) inputRefsRef.current[ajuste.id] = el;
+                                                                        }}
+                                                                        type="text"
+                                                                        placeholder="SKU o nombre..."
+                                                                        value={searchTerms[ajuste.id] || ''}
+                                                                        onChange={(e) => {
+                                                                            setSearchTerms((prev) => ({
+                                                                                ...prev,
+                                                                                [ajuste.id]: e.target.value,
+                                                                            }));
+                                                                        }}
+                                                                        onKeyPress={(e) => {
+                                                                            if (e.key === 'Enter') {
+                                                                                e.preventDefault();
+                                                                                buscarProductos(ajuste.id, searchTerms[ajuste.id] || '');
+                                                                            }
+                                                                        }}
+                                                                        onFocus={() =>
+                                                                            searchResults[ajuste.id]?.length > 0 &&
+                                                                            setShowDropdown((prev) => ({
+                                                                                ...prev,
+                                                                                [ajuste.id]: true,
+                                                                            }))
+                                                                        }
+                                                                        className="w-full pr-10 pl-8"
+                                                                    />
+                                                                    {loadingSearch[ajuste.id] && (
+                                                                        <Loader
+                                                                            size={16}
+                                                                            className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 transform animate-spin text-blue-500"
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => buscarProductos(ajuste.id, searchTerms[ajuste.id] || '')}
+                                                                    disabled={loadingSearch[ajuste.id] || !almacenSeleccionado}
+                                                                    className="flex items-center justify-center rounded-md bg-blue-500 p-2 text-white transition hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                                                                    title="Buscar (Enter)"
+                                                                >
+                                                                    <Search size={16} />
+                                                                </button>
+                                                            </div>
 
-                                                        {/* Dropdown Portal - Renderizado fuera de la tabla */}
-                                                        <DropdownPortal
-                                                            ajusteId={ajuste.id}
-                                                            inputRef={
-                                                                {
-                                                                    current: inputRefsRef.current[ajuste.id] || null,
-                                                                } as React.RefObject<HTMLInputElement>
-                                                            }
-                                                            searchResults={searchResults[ajuste.id] || []}
-                                                            loadingSearch={loadingSearch[ajuste.id] || false}
-                                                            onSelectProduct={(producto) => {
-                                                                seleccionarProducto(ajuste.id, producto);
-                                                            }}
-                                                            visible={showDropdown[ajuste.id] || false}
-                                                        />
-                                                    </div>
+                                                            {/* Dropdown Portal - Renderizado fuera de la tabla */}
+                                                            <DropdownPortal
+                                                                ajusteId={ajuste.id}
+                                                                inputRef={
+                                                                    {
+                                                                        current: inputRefsRef.current[ajuste.id] || null,
+                                                                    } as React.RefObject<HTMLInputElement>
+                                                                }
+                                                                searchResults={searchResults[ajuste.id] || []}
+                                                                loadingSearch={loadingSearch[ajuste.id] || false}
+                                                                onSelectProduct={(producto) => {
+                                                                    seleccionarProducto(ajuste.id, producto);
+                                                                }}
+                                                                visible={showDropdown[ajuste.id] || false}
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 {/* 📥/📤 MOVIMIENTO - ENTRADA O SALIDA - INTERACTIVO */}
                                                 <td className="px-4 py-3 text-center">
