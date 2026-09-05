@@ -464,6 +464,8 @@ export default function AjusteTabla() {
     // ✅ NUEVO: Agregar producto desde el listado de sugerencias
     const agregarDesdeListado = useCallback(
         async (producto: any) => {
+            console.log('🔥 agregarDesdeListado LLAMADA con:', producto);
+
             try {
                 // Si no existe en almacén, crear stock_producto
                 if (!producto.existe_en_almacen && producto.producto_id && almacenSeleccionado) {
@@ -499,8 +501,9 @@ export default function AjusteTabla() {
                 }
 
                 // Crear nueva fila en la tabla
+                const idTemporal = `temp_${Date.now()}_${Math.random()}`;
                 const nuevoAjuste: AjusteItem = {
-                    id: generarIdTemporal(),
+                    id: idTemporal,
                     stock_producto_id: producto.id || producto.stock_producto_id,
                     cantidad_actual: parseFloat(producto.cantidad_actual) || 0,
                     cantidad_ajuste: 0,
@@ -509,7 +512,14 @@ export default function AjusteTabla() {
                     producto: producto,
                 };
 
-                setAjustes((prev) => [...prev, nuevoAjuste]);
+                console.log('📝 Nuevo ajuste a agregar:', nuevoAjuste);
+
+                setAjustes((prev) => {
+                    console.log('📊 Ajustes antes:', prev);
+                    const actualizado = [...prev, nuevoAjuste];
+                    console.log('📊 Ajustes después:', actualizado);
+                    return actualizado;
+                });
 
                 // Limpiar búsqueda
                 setMainSearchTerm('');
@@ -521,7 +531,7 @@ export default function AjusteTabla() {
                 toast.error('Error al agregar producto');
             }
         },
-        [almacenSeleccionado, generarIdTemporal]
+        [almacenSeleccionado]
     );
 
     // Agregar nueva fila de ajuste
