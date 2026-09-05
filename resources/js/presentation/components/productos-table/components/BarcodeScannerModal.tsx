@@ -1,5 +1,5 @@
-import React from 'react';
-import BarcodeScannerComponent from 'react-qr-barcode-scanner';
+import React, { useEffect, useRef, useState } from 'react';
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 
 interface BarcodeScannerModalProps {
     isOpen: boolean;
@@ -16,6 +16,120 @@ export default function BarcodeScannerModal({
     onError,
     error
 }: BarcodeScannerModalProps) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [manualInput, setManualInput] = useState('');
+    const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+    const scanningRef = useRef(false);
+
+    useEffect(() => {
+        if (!isOpen || !videoRef.current) return;
+
+        let animationFrameId: number;
+        let initTimeout: NodeJS.Timeout;
+
+        const startScanning = async () => {
+            try {
+                setIsScanning(true);
+
+                // ✅ Inicializar el reader si no existe
+                if (!readerRef.current) {
+                    readerRef.current = new BrowserMultiFormatReader();
+                }
+
+                // ✅ Acceder a la cámara
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
+                });
+
+                streamRef.current = stream;
+
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    await new Promise((resolve) => {
+                        if (videoRef.current) {
+                            videoRef.current.onloadedmetadata = resolve;
+                        }
+                    });
+                }
+
+                scanningRef.current = true;
+
+                // ✅ Loop de escaneo continuo
+                const scanFrame = async () => {
+                    if (!scanningRef.current || !videoRef.current || !readerRef.current) return;
+
+                    try {
+                        const result = await readerRef.current.decodeFromVideoElement(videoRef.current);
+                        if (result) {
+                            console.log('✅ Código detectado:', result.getText());
+                            onScan(result.getText());
+                            return; // Detener el loop una vez que se escanea
+                        }
+                    } catch (err) {
+                        // ✅ NotFoundException es normal cuando no hay código - ignorar
+                        if (!(err instanceof NotFoundException)) {
+                            console.warn('⚠️ Error escaneando:', err);
+                        }
+                    }
+
+                    // ✅ Continuar intentando cada 100ms
+                    animationFrameId = requestAnimationFrame(scanFrame);
+                };
+
+                scanFrame();
+            } catch (err) {
+                const errorMsg = err instanceof Error ? err.message : String(err);
+                console.error('❌ Error iniciando scanner:', err);
+
+                // ✅ Mensajes de error más específicos
+                if (errorMsg.includes('Permission denied')) {
+                    onError('Permiso de cámara denegado. Verifica los permisos del navegador.');
+                } else if (errorMsg.includes('NotFoundError')) {
+                    onError('No se encontró ninguna cámara en tu dispositivo.');
+                } else if (errorMsg.includes('NotAllowedError')) {
+                    onError('Debes permitir acceso a la cámara para usar el scanner.');
+                } else {
+                    onError(`Error: ${errorMsg}`);
+                }
+
+                setIsScanning(false);
+            }
+        };
+
+        // ✅ Esperar un poco para que el modal se renderice primero
+        initTimeout = setTimeout(startScanning, 300);
+
+        return () => {
+            clearTimeout(initTimeout);
+            scanningRef.current = false;
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            // ✅ Detener stream de video
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach((track) => {
+                    track.stop();
+                });
+                streamRef.current = null;
+            }
+
+            setIsScanning(false);
+        };
+    }, [isOpen, onScan, onError]);
+
+    const handleManualSubmit = () => {
+        if (manualInput.trim()) {
+            console.log('✅ Código ingresado manualmente:', manualInput);
+            onScan(manualInput.trim());
+            setManualInput('');
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -23,7 +137,7 @@ export default function BarcodeScannerModal({
             <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 max-w-md w-full mx-4">
                 <div className="flex justify-between items-center mb-3">
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                        Escanear código
+                        Escanear código de barras/QR
                     </h3>
                     <button
                         type="button"
@@ -36,58 +150,66 @@ export default function BarcodeScannerModal({
                     </button>
                 </div>
 
-                <div className="mb-3">
-                    <BarcodeScannerComponent
-                        width={280}
-                        height={280}
-                        onUpdate={(err, result) => {
-                            try {
-                                if (result) {
-                                    // ✅ Manejar diferentes formatos de resultado
-                                    const texto = typeof result === 'string'
-                                        ? result
-                                        : result.getText?.()
-                                        ? result.getText()
-                                        : result.text
-                                        ? result.text
-                                        : result.toString?.()
-                                        ? result.toString()
-                                        : null;
-
-                                    if (texto) {
-                                        console.log('✅ Código escaneado:', texto);
-                                        onScan(texto);
-                                    } else {
-                                        onError('No se pudo extraer el código del resultado');
-                                    }
-                                } else if (err) {
-                                    // ✅ Solo mostrar error si no es el error típico de "sin código"
-                                    if (typeof err === 'string' && err.includes('not found')) {
-                                        // Ignorar el error común cuando no hay código visible
-                                        return;
-                                    }
-                                    console.warn('⚠️ Error del scanner:', err);
-                                    // No mostrar error visual para cada frame sin código
-                                }
-                            } catch (error) {
-                                console.error('❌ Error procesando resultado del scanner:', error);
-                                onError(`Error al procesar: ${error instanceof Error ? error.message : 'desconocido'}`);
-                            }
-                        }}
+                {/* Video feed */}
+                <div className="mb-3 bg-black rounded-md overflow-hidden relative">
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-64 object-cover"
+                        style={{ aspectRatio: '1/1' }}
                     />
+                    {isScanning && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-48 h-48 border-2 border-green-500 rounded-lg opacity-50"></div>
+                        </div>
+                    )}
                 </div>
 
+                {/* Status */}
+                <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                        {isScanning ? '🔍 Apunta a un código de barras o QR...' : '⏳ Iniciando cámara...'}
+                    </p>
+                </div>
+
+                {/* Error message */}
                 {error && (
                     <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                        <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">⚠️ Error del scanner</p>
-                        <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
-                            {error}
-                        </p>
-                        <p className="text-xs text-red-500 dark:text-red-500 mt-2">
-                            💡 Verifica: permisos de cámara, iluminación, o intenta entrada manual
-                        </p>
+                        <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">⚠️ Error</p>
+                        <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">{error}</p>
                     </div>
                 )}
+
+                {/* Manual input */}
+                <div className="mb-3">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        O ingresa manualmente:
+                    </label>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={manualInput}
+                            onChange={(e) => setManualInput(e.target.value)}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleManualSubmit();
+                                }
+                            }}
+                            placeholder="Código de barras..."
+                            className="flex-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                            autoFocus
+                        />
+                        <button
+                            type="button"
+                            onClick={handleManualSubmit}
+                            disabled={!manualInput.trim()}
+                            className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Agregar
+                        </button>
+                    </div>
+                </div>
 
                 <div className="flex justify-end gap-1.5">
                     <button
