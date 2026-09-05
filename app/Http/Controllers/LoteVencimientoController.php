@@ -5,6 +5,7 @@ use App\Models\StockProducto;
 use App\Models\Producto;
 use App\Models\Almacen;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -12,9 +13,15 @@ class LoteVencimientoController extends Controller
 {
     public function index(Request $request)
     {
+        // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
+        $empresaId = Auth::user()->empresa_id;
+
         // Base query usando StockProducto (que tiene lotes y vencimientos actuales)
         $query = StockProducto::with(['producto', 'almacen'])
             ->whereNotNull('lote')  // Solo mostrar registros con lote
+            ->whereHas('almacen', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            })
             ->when($request->producto_id, function ($q) use ($request) {
                 $q->where('producto_id', $request->producto_id);
             })
@@ -68,7 +75,11 @@ class LoteVencimientoController extends Controller
         });
 
         // Estadísticas
-        $todosLotes = StockProducto::whereNotNull('lote');
+        // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
+        $todosLotes = StockProducto::whereNotNull('lote')
+            ->whereHas('almacen', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            });
 
         $estadisticas = [
             'total_lotes' => (clone $todosLotes)->count(),
@@ -97,8 +108,15 @@ class LoteVencimientoController extends Controller
             'lotes'        => $lotes,
             'filtros'      => $request->only(['producto_id', 'estado_vencimiento', 'almacen_id', 'q']),
             'estadisticas' => $estadisticas,
-            'productos'    => Producto::select('id', 'nombre')->orderBy('nombre')->get(),
-            'almacenes'    => Almacen::select('id', 'nombre')->orderBy('nombre')->get(),
+            // ✅ MODIFICADO: Filtrar productos y almacenes por empresa del usuario autenticado
+            'productos'    => Producto::where('empresa_id', $empresaId)
+                ->select('id', 'nombre')
+                ->orderBy('nombre')
+                ->get(),
+            'almacenes'    => Almacen::where('empresa_id', $empresaId)
+                ->select('id', 'nombre')
+                ->orderBy('nombre')
+                ->get(),
         ]);
     }
 
@@ -149,8 +167,14 @@ class LoteVencimientoController extends Controller
      */
     public function export(Request $request)
     {
+        // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
+        $empresaId = Auth::user()->empresa_id;
+
         $query = StockProducto::with(['producto', 'almacen'])
             ->whereNotNull('lote')
+            ->whereHas('almacen', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            })
             ->when($request->estado_vencimiento, function ($q) use ($request) {
                 $estado = $request->estado_vencimiento;
                 match ($estado) {
