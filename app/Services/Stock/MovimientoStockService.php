@@ -273,6 +273,11 @@ class MovimientoStockService
                 // ✅ NUEVO (2026-08-22): Para salidas, guardar cantidad como negativa en BD
                 $cantidadAGuardar = $this->debeSerNegativa($tipo) ? -abs($cantidad) : abs($cantidad);
 
+                // ✅ CRÍTICO (2026-09-04): El constraint chk_suma_anterior verifica:
+                //   cantidad_total_anterior = cantidad_disponible_anterior + cantidad_reservada_anterior
+                // Por eso cantidad_total_* DEBE ser del LOTE ESPECÍFICO, no del PRODUCTO TOTAL
+                // Los totales del PRODUCTO van en disponible_total_* / reservada_total_*
+
                 $movimiento = MovimientoInventario::create([
                     'stock_producto_id' => $stockProductoId,
                     'cantidad' => $cantidadAGuardar,
@@ -283,9 +288,11 @@ class MovimientoStockService
                     'cantidad_disponible_posterior' => $nuevaDisponible,
                     'cantidad_reservada_anterior' => $reservadaAnterior,
                     'cantidad_reservada_posterior' => $nuevaReservada,
-                    // ✅ NUEVO (2026-06-28): TOTALES de TODOS los lotes (centralizado)
-                    'cantidad_total_anterior' => $totalesAntes['cantidad_total'],
-                    'cantidad_total_posterior' => $totalesDespues['cantidad_total'],
+                    // ✅ CRÍTICO: cantidad_total_* DEBE SATISFACER EL CONSTRAINT
+                    //   = disponible_anterior + reservada_anterior (del MISMO lote)
+                    'cantidad_total_anterior' => $disponibleAnterior + $reservadaAnterior,
+                    'cantidad_total_posterior' => $nuevaDisponible + $nuevaReservada,
+                    // ✅ NUEVO (2026-06-28): TOTALES de TODOS los lotes (para auditoría futura)
                     'disponible_total_anterior' => $totalesAntes['disponible_total'],
                     'disponible_total_posterior' => $totalesDespues['disponible_total'],
                     'reservada_total_anterior' => $totalesAntes['reservada_total'],
