@@ -236,6 +236,23 @@ export default function AjusteTabla() {
         };
     }, []);
 
+    // ✅ NUEVO: Cuando cambia el tipo de ajuste en la cabecera, actualizar TODOS los ajustes
+    useEffect(() => {
+        if (tipoAjusteSeleccionado && ajustes.length > 0) {
+            const tipoSeleccionado = tiposAjuste.find((t) => t.id === tipoAjusteSeleccionado);
+            if (tipoSeleccionado) {
+                setAjustes((prevAjustes) =>
+                    prevAjustes.map((ajuste) => ({
+                        ...ajuste,
+                        tipo_ajuste: tipoSeleccionado.tipo_operacion,
+                        tipo_ajuste_inventario_id: tipoAjusteSeleccionado,
+                        tipoAjusteInventario: tipoSeleccionado,
+                    })),
+                );
+            }
+        }
+    }, [tipoAjusteSeleccionado]);
+
     // Estados para búsqueda de productos
     const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
     const [searchResults, setSearchResults] = useState<{ [key: string]: any[] }>({});
