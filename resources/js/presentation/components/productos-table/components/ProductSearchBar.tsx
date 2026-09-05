@@ -144,7 +144,7 @@ export default function ProductSearchBar({
     return (
         <>
             {/* Buscador de productos */}
-            <div className="sticky top-0 z-10 pb-1 mb-2">
+            <div className="sticky top-0 z-10 pb-1 mb-2 mt-3">
                 <div className="flex gap-2">
                     <div className="flex-1 relative">
                         <input
@@ -186,8 +186,8 @@ export default function ProductSearchBar({
                         type="button"
                         disabled={readOnly}
                         onClick={openScannerModal}
-                        className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center sm:hidden"
-                        title="Escanear código de barras"
+                        className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                        title="Escanear código de barras (QR/Código de barras)"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M12 15h4.01M12 21h4.01M12 18h4.01M12 9h4.01M12 6h4.01M12 3h4.01" />

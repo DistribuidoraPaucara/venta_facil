@@ -303,7 +303,6 @@ export default function VentaForm() {
     // ✅ NUEVO (2026-05-03): Auto-seleccionar tipo de pago y actualizar monto_pagado_inicial basado en montos de pago
     // ✅ CORREGIDO (2026-09-04): Ahora aplica a TODAS las empresas, no solo farmacias
     useEffect(() => {
-
         const efectivo = Number(montoEfectivo) || 0;
         const transferencia = Number(montoTransferencia) || 0;
         const totalPagado = efectivo + transferencia;
@@ -1567,7 +1566,7 @@ export default function VentaForm() {
 
                 {/* Información básica */}
                 <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                    <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
                         {/* Campo número oculto - se genera automáticamente */}
                         <input type="hidden" value={data.numero} onChange={(e) => setData('numero', e.target.value)} />
                         <div>
@@ -1875,7 +1874,6 @@ export default function VentaForm() {
                             </div>
                         </div>
                     )}
-                    <br />
                     <ProductosTable
                         productos={productosSeguro}
                         detalles={detallesWithProducts}
@@ -1902,11 +1900,11 @@ export default function VentaForm() {
                 </div>
                 {/* Totales */}
                 {detallesWithProducts.length > 0 && (
-                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                             {/* Descuento general */}
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Descuento general</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descuento general</label>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -1927,7 +1925,7 @@ export default function VentaForm() {
 
                             {/* Desglose de Pagos: Efectivo */}
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Efectivo</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Efectivo</label>
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
                                     <input
@@ -1949,7 +1947,7 @@ export default function VentaForm() {
 
                             {/* Desglose de Pagos: Transferencia/QR */}
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Transferencia/QR</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Transferencia/QR</label>
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
                                     <input
@@ -1971,10 +1969,10 @@ export default function VentaForm() {
                         </div>
 
                         {/* ✅ NUEVO: Resumen completo de la transacción */}
-                        <div className="mt-2">
+                        <div>
                             {data.descuento > 0 && (
                                 <>
-                                    <div className="mt-6 space-y-2 border-t border-gray-200 pt-4 dark:border-zinc-700">
+                                    <div>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-700 dark:text-gray-300">Subtotal:</span>
                                             <span className="text-right font-medium text-gray-900 dark:text-white">
@@ -1991,7 +1989,7 @@ export default function VentaForm() {
                                 </>
                             )}
 
-                            <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-lg font-bold dark:border-zinc-700">
+                            <div className="flex items-center justify-between pt-1 text-lg font-bold">
                                 <span className="text-gray-900 dark:text-white">Total:</span>
                                 <span className="text-right text-gray-900 dark:text-white">{formatCurrencyMinimalDecimals(data.total)}</span>
                             </div>
@@ -2039,7 +2037,7 @@ export default function VentaForm() {
                         className="inline-flex items-center rounded-md border border-gray-300 bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-900"
                         title="Limpiar el borrador de venta guardado en localStorage"
                     >
-                        🗑️ Limpiar borrador
+                        🗑️ Limpiar
                     </button>
 
                     {/* ✅ NUEVO: Botón para refrescar datos desde el servidor */}
@@ -2088,7 +2086,6 @@ export default function VentaForm() {
                 onClienteCreated={handleClienteCreated}
                 searchQuery={clienteSearchQuery}
             />
-
         </AppLayout>
     );
 }
