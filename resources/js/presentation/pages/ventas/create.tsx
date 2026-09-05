@@ -1,6 +1,5 @@
 import { useCajaWarning } from '@/application/hooks/use-caja-warning';
 import AppLayout from '@/layouts/app-layout';
-import VentaPreviewModal from '@/presentation/components/VentaPreviewModal';
 import { AlertSinCaja } from '@/presentation/components/cajas/alert-sin-caja';
 import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
@@ -126,7 +125,6 @@ export default function VentaForm() {
     );
 
     const [detallesWithProducts, setDetallesWithProducts] = useState<DetalleProducto[]>([]);
-    const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [stockValido, setStockValido] = useState(true);
 
     // ✅ NUEVO: Estados para direcciones del cliente
@@ -1140,8 +1138,8 @@ export default function VentaForm() {
             return;
         }
 
-        // Mostrar modal de vista previa
-        setShowPreviewModal(true);
+        // ✅ CORREGIDO (2026-09-04): Crear venta directamente sin modal de vista previa
+        await handleConfirmSubmit();
     };
 
     const handleConfirmSubmit = async () => {
@@ -2077,21 +2075,6 @@ export default function VentaForm() {
                     })()}
                 </div>
             </form>
-
-            {/* Modal de Vista Previa */}
-            <VentaPreviewModal
-                isOpen={showPreviewModal}
-                onClose={() => setShowPreviewModal(false)}
-                onConfirm={handleConfirmSubmit}
-                data={data}
-                detallesWithProducts={detallesWithProducts}
-                cliente={selectedClienteForModal}
-                moneda={selectedMoneda}
-                estadoDocumento={selectedEstado}
-                processing={isSubmitting}
-                isEditing={isEditing}
-                comboItemsMap={comboItemsMap}
-            />
 
             {/* Modal para crear cliente */}
             <ModalCrearCliente
