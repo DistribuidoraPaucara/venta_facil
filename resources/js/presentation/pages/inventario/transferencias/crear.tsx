@@ -48,10 +48,6 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         detalles: [] as DetalleTransferencia[],
     });
 
-    const [productoSeleccionado, setProductoSeleccionado] = useState<string>('');
-    const [cantidadProducto, setCantidadProducto] = useState<string>('');
-    const [loteProducto, setLoteProducto] = useState<string>('');
-    const [fechaVencimiento, setFechaVencimiento] = useState<string>('');
 
     // ✅ NUEVOS: Estados para búsqueda dinámica de productos
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -152,24 +148,39 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         };
     }, []);
 
-    // ✅ Agregar producto desde búsqueda
-    const agregarProductoDesdeSearch = (producto: any, lote?: any) => {
-        setProductoSeleccionado(producto.id.toString());
-        setSearchTerm(producto.nombre);
-        setCantidadProducto('');
-        // Si se selecciona un lote específico, llenar los campos de lote y fecha_vencimiento
-        if (lote) {
-            setLoteProducto(lote.lote || '');
-            setFechaVencimiento(lote.fecha_vencimiento ? new Date(lote.fecha_vencimiento).toISOString().split('T')[0] : '');
-        } else {
-            setLoteProducto('');
-            setFechaVencimiento('');
+    // ✅ Agregar producto con su lote a la tabla
+    const agregarProductoATabla = (producto: any, lote?: any) => {
+        // Validar si el producto ya existe en la tabla
+        const productoExiste = data.detalles.some(
+            d => d.producto_id === producto.id &&
+                 (lote ? d.lote === lote.lote : !d.lote)
+        );
+
+        if (productoExiste) {
+            NotificationService.warning('Este producto con este lote ya está agregado');
+            return;
         }
+
+        // Crear nuevo detalle
+        const nuevoDetalle: DetalleTransferencia = {
+            producto_id: producto.id,
+            cantidad: 0, // Se editará en la tabla
+            lote: lote?.lote || undefined,
+            fecha_vencimiento: lote?.fecha_vencimiento || undefined,
+        };
+
+        // Agregar a la tabla
+        setData('detalles', [...data.detalles, nuevoDetalle]);
+
+        // Limpiar búsqueda
+        setSearchTerm('');
         setSearchResults([]);
+
+        NotificationService.success(`✅ ${producto.nombre} agregado a la tabla`);
     };
 
-    // ✅ Manejar búsqueda y agregar automáticamente si hay 1 solo lote
-    const handleBuscarYCargar = async () => {
+    // ✅ Manejar búsqueda y mostrar opciones
+    const handleBuscarProducto = async () => {
         if (!searchTerm.trim() || !data.almacen_origen_id) {
             return;
         }
@@ -183,19 +194,12 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
             if (resultado.success && resultado.data && resultado.data.length > 0) {
                 const producto = resultado.data[0]; // Tomar el primer producto encontrado
 
-                // Si el producto tiene solo 1 lote, agregarlo automáticamente
+                // Si el producto tiene solo 1 lote, agregarlo automáticamente a la tabla
                 if (producto.stock && producto.stock.length === 1) {
-                    agregarProductoDesdeSearch(producto, producto.stock[0]);
-                    // Limpiar búsqueda
-                    setSearchTerm('');
-                    // Focus en cantidad para que el usuario pueda escribir la cantidad
-                    setTimeout(() => {
-                        document.getElementById('cantidad')?.focus();
-                    }, 100);
+                    agregarProductoATabla(producto, producto.stock[0]);
                 } else if (producto.stock && producto.stock.length > 1) {
-                    // Si hay múltiples lotes, mostrar sugerencias
+                    // Si hay múltiples lotes, mostrar sugerencias para que elija
                     setSearchResults([producto]);
-                    agregarProductoDesdeSearch(producto); // Seleccionar el producto pero sin lote
                 } else {
                     // Sin stock disponible
                     NotificationService.warning('Este producto no tiene stock disponible');
@@ -211,55 +215,11 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         }
     };
 
-    const agregarProducto = () => {
-        // Validaciones previas básicas
-        if (!productoSeleccionado || !cantidadProducto || parseInt(cantidadProducto) <= 0) {
-            NotificationService.warning('Debe seleccionar un producto y una cantidad válida');
-            return;
-        }
-
-        // Crear detalle provisional
-        const nuevoDetalle: DetalleTransferencia = {
-            producto_id: parseInt(productoSeleccionado),
-            cantidad: parseInt(cantidadProducto),
-            lote: loteProducto || undefined,
-            fecha_vencimiento: fechaVencimiento || undefined,
-        };
-
-        // Validar con el service
-        const erroresDetalle = transferenciasService.validarDetalleTransferencia(
-            nuevoDetalle,
-            productos,
-            data.almacen_origen_id as string
-        );
-
-        if (erroresDetalle.length > 0) {
-            erroresDetalle.forEach(error => NotificationService.error(error));
-            return;
-        }
-
-        // Verificar si ya existe el producto en la lista
-        const existe = data.detalles.find(d => d.producto_id === parseInt(productoSeleccionado));
-        if (existe) {
-            NotificationService.warning('Este producto ya está agregado a la transferencia');
-            return;
-        }
-
-        // Agregar el detalle
-        setData('detalles', [...data.detalles, nuevoDetalle]);
-
-        // Mostrar notificación de éxito
-        const nombreProducto = transferenciasService.obtenerNombreProducto(
-            parseInt(productoSeleccionado),
-            productos
-        );
-        NotificationService.success(`✅ ${nombreProducto} agregado a la transferencia`);
-
-        // Limpiar formulario
-        setProductoSeleccionado('');
-        setCantidadProducto('');
-        setLoteProducto('');
-        setFechaVencimiento('');
+    // ✅ Actualizar cantidad en la tabla
+    const actualizarCantidadDetalle = (index: number, cantidad: number) => {
+        const nuevosDetalles = [...data.detalles];
+        nuevosDetalles[index].cantidad = cantidad;
+        setData('detalles', nuevosDetalles);
     }; const eliminarProducto = (index: number) => {
         const nuevosDetalles = data.detalles.filter((_, i) => i !== index);
         setData('detalles', nuevosDetalles);
@@ -430,9 +390,9 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                             <CardTitle>Productos a Transferir</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {/* Agregar Producto */}
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                                <div className="md:col-span-3 relative" ref={searchRef}>
+                            {/* Buscador de Producto */}
+                            <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div className="md:col-span-4 relative" ref={searchRef}>
                                     <Label htmlFor="producto">Producto</Label>
                                     <div className="space-y-2">
                                         <div className="relative flex gap-2">
@@ -458,7 +418,7 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                             </div>
                                             <Button
                                                 type="button"
-                                                onClick={() => handleBuscarYCargar()}
+                                                onClick={() => handleBuscarProducto()}
                                                 disabled={!searchTerm.trim() || !data.almacen_origen_id || isSearching}
                                                 variant="outline"
                                                 className="mt-6"
@@ -491,7 +451,7 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                                             {producto.stock.map((lote, loteIdx) => (
                                                                 <div
                                                                     key={loteIdx}
-                                                                    onClick={() => agregarProductoDesdeSearch(producto, lote)}
+                                                                    onClick={() => agregarProductoATabla(producto, lote)}
                                                                     className="p-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-600 transition"
                                                                 >
                                                                     <div className="flex items-center justify-between">
@@ -522,129 +482,105 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                         </div>
                                     )}
                                 </div>
-
-                                <div>
-                                    <Label htmlFor="cantidad">Cantidad</Label>
-                                    <Input
-                                        id="cantidad"
-                                        type="number"
-                                        min="1"
-                                        value={cantidadProducto}
-                                        onChange={(e) => setCantidadProducto(e.target.value)}
-                                        placeholder="0"
-                                    />
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="lote">Lote</Label>
-                                    <Input
-                                        id="lote"
-                                        value={loteProducto}
-                                        onChange={(e) => setLoteProducto(e.target.value)}
-                                        placeholder="Lote"
-                                        maxLength={50}
-                                    />
-                                </div>
-
-                                <div className="flex items-end">
-                                    <Button
-                                        type="button"
-                                        onClick={agregarProducto}
-                                        disabled={!productoSeleccionado || !cantidadProducto || parseInt(cantidadProducto) <= 0}
-                                        className="w-full"
-                                    >
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Agregar
-                                    </Button>
-                                </div>
                             </div>
 
-                            {/* Lista de Productos */}
+                            {/* Tabla de Productos Agregados */}
                             <div className="space-y-2">
                                 {data.detalles.length === 0 ? (
                                     <div className="text-center py-8 text-gray-500">
-                                        No hay productos agregados
+                                        Busca y agrega productos para comenzar
                                     </div>
                                 ) : (
-                                    data.detalles.map((detalle, index) => {
-                                        const producto = productos.find(p => p.id === detalle.producto_id);
-                                        if (!producto) return null;
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="border-b dark:border-slate-700 bg-gray-50 dark:bg-slate-700">
+                                                <tr>
+                                                    <th className="text-left p-3 font-semibold">Producto</th>
+                                                    <th className="text-left p-3 font-semibold">Lote</th>
+                                                    <th className="text-center p-3 font-semibold">Stock Origen</th>
+                                                    <th className="text-center p-3 font-semibold">Cantidad</th>
+                                                    <th className="text-center p-3 font-semibold">Stock Destino</th>
+                                                    <th className="text-center p-3 font-semibold">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {data.detalles.map((detalle, index) => {
+                                                    const producto = productos.find(p => p.id === detalle.producto_id);
+                                                    if (!producto) return null;
 
-                                        // Calcular stocks
-                                        const stockActualOrigen = data.almacen_origen_id
-                                            ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
-                                            : 0;
-                                        const stockPosteriorOrigen = Math.max(0, stockActualOrigen - detalle.cantidad);
+                                                    const stockActualOrigen = data.almacen_origen_id
+                                                        ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
+                                                        : 0;
+                                                    const stockPosteriorOrigen = Math.max(0, stockActualOrigen - detalle.cantidad);
 
-                                        const stockActualDestino = data.almacen_destino_id
-                                            ? (producto.stock_por_almacen?.[data.almacen_destino_id] || 0)
-                                            : 0;
-                                        const stockPosteriorDestino = stockActualDestino + detalle.cantidad;
+                                                    const stockActualDestino = data.almacen_destino_id
+                                                        ? (producto.stock_por_almacen?.[data.almacen_destino_id] || 0)
+                                                        : 0;
+                                                    const stockPosteriorDestino = stockActualDestino + detalle.cantidad;
 
-                                        return (
-                                            <div key={index} className="p-4 border rounded-lg bg-white dark:bg-gray-900 space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="font-medium">
-                                                            {producto.codigo} - {producto.nombre}
-                                                        </div>
-                                                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                                                            📦 Cantidad a transferir: <span className="font-semibold text-blue-600 dark:text-blue-400">{detalle.cantidad}</span>
-                                                            {detalle.lote && ` • Lote: ${detalle.lote}`}
-                                                            {detalle.fecha_vencimiento && ` • Vence: ${detalle.fecha_vencimiento}`}
-                                                        </div>
-                                                    </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => eliminarProducto(index)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-
-                                                {/* Mostrar stocks antes y después */}
-                                                <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t">
-                                                    <div className="space-y-2">
-                                                        <div className="font-semibold text-gray-700 dark:text-gray-300">
-                                                            📤 {almacenOrigen?.nombre || 'Almacén Origen'}
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span>Stock Actual:</span>
-                                                            <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                                                                {stockActualOrigen.toFixed(2)}
-                                                            </Badge>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span>Stock Posterior:</span>
-                                                            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                                                {stockPosteriorOrigen.toFixed(2)}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-2">
-                                                        <div className="font-semibold text-gray-700 dark:text-gray-300">
-                                                            📥 {almacenDestino?.nombre || 'Almacén Destino'}
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span>Stock Actual:</span>
-                                                            <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                                                                {stockActualDestino.toFixed(2)}
-                                                            </Badge>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span>Stock Posterior:</span>
-                                                            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                                                {stockPosteriorDestino.toFixed(2)}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
+                                                    return (
+                                                        <tr key={index} className="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
+                                                            <td className="p-3">
+                                                                <div>
+                                                                    <p className="font-medium">{producto.nombre}</p>
+                                                                    <p className="text-xs text-gray-600 dark:text-gray-400">[{producto.codigo}]</p>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="text-xs">
+                                                                    {detalle.lote ? (
+                                                                        <>
+                                                                            <p className="font-medium">{detalle.lote}</p>
+                                                                            {detalle.fecha_vencimiento && (
+                                                                                <p className="text-gray-600 dark:text-gray-400">
+                                                                                    📅 {new Date(detalle.fecha_vencimiento).toLocaleDateString('es-ES')}
+                                                                                </p>
+                                                                            )}
+                                                                        </>
+                                                                    ) : (
+                                                                        <p className="text-gray-500 italic">Sin lote</p>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-center">
+                                                                <div>
+                                                                    <p className="text-green-600 dark:text-green-400 font-semibold">{stockActualOrigen.toFixed(2)}</p>
+                                                                    <p className="text-xs text-gray-600 dark:text-gray-400">→ {stockPosteriorOrigen.toFixed(2)}</p>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <Input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={detalle.cantidad || ''}
+                                                                    onChange={(e) => actualizarCantidadDetalle(index, parseInt(e.target.value) || 0)}
+                                                                    className="text-center w-20"
+                                                                    placeholder="0"
+                                                                />
+                                                            </td>
+                                                            <td className="p-3 text-center">
+                                                                <div>
+                                                                    <p className="text-blue-600 dark:text-blue-400 font-semibold">{stockActualDestino.toFixed(2)}</p>
+                                                                    <p className="text-xs text-gray-600 dark:text-gray-400">→ {stockPosteriorDestino.toFixed(2)}</p>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-center">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => eliminarProducto(index)}
+                                                                    className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 )}
                             </div>
 
