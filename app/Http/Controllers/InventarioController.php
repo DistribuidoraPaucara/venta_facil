@@ -1939,39 +1939,10 @@ class InventarioController extends Controller
             ->select('id', 'nombre', 'direccion', 'ubicacion_fisica', 'requiere_transporte_externo')
             ->get();
 
-        $vehiculos = Vehiculo::activos()->get();
-        $choferes  = User::role('Chofer')->get(['id', 'name'])->map(fn($user) => ['id' => $user->id, 'name' => $user->name]);
-
-        // ✅ CRÍTICO: Filtrar productos y stock solo para almacenes de la empresa
-        $almacenIds = $almacenes->pluck('id')->toArray();
-        $productos = Producto::where('activo', true)
-            ->with(['codigoPrincipal', 'stock' => function ($query) use ($almacenIds) {
-                $query->select('producto_id', 'almacen_id', 'cantidad')
-                    ->where('cantidad', '>', 0)
-                    ->whereIn('almacen_id', $almacenIds);  // ✅ Solo stocks de almacenes de la empresa
-            }])
-            ->select('id', 'nombre', 'codigo_qr')
-            ->orderBy('nombre')
-            ->get()
-            ->map(function ($producto) {
-                $stockTotal = $producto->stock->sum('cantidad');
-
-                return [
-                    'id'                => $producto->id,
-                    'nombre'            => $producto->nombre,
-                    'codigo'            => $producto->codigoPrincipal?->codigo ?? $producto->codigo_qr ?? 'SIN-CODIGO',
-                    'stock_disponible'  => $stockTotal,
-                    'stock_por_almacen' => $producto->stock->groupBy('almacen_id')->map(function ($stock) {
-                        return $stock->sum('cantidad');
-                    })->toArray(),
-                ];
-            });
-
+        // ✅ OPTIMIZACIÓN (2026-09-05): Productos se cargan via API /api/productos/buscar
+        // No se envían en el page load inicial para mejorar performance
         return Inertia::render('inventario/transferencias/crear', [
             'almacenes' => $almacenes,
-            'vehiculos' => $vehiculos,
-            'choferes'  => $choferes,
-            'productos' => $productos,
         ]);
     }
 
