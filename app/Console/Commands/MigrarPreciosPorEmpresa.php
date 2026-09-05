@@ -30,7 +30,7 @@ class MigrarPreciosPorEmpresa extends Command
 
         // Si no se especifica empresa, procesar todas
         if (!$empresaId) {
-            $empresas = Empresa::where('activa', true)->get();
+            $empresas = Empresa::where('activo', true)->get();
             $this->info("📋 Procesando " . $empresas->count() . " empresas");
         } else {
             $empresas = Empresa::where('id', $empresaId)->get();
