@@ -732,6 +732,7 @@ class EmpleadoController extends Controller
     }
 
     /**
+     * ✅ MODIFICADO (2026-09-05): Obtener roles dinámicamente desde BD
      * Define la jerarquía de roles y qué roles puede asignar cada uno
      * Retorna un array con los roles que el usuario actual puede asignar
      */
@@ -743,15 +744,6 @@ class EmpleadoController extends Controller
             return [];
         }
 
-        // ✅ ROLES DISPONIBLES: SOLO los 5 roles principales (minúsculas para consistencia con frontend)
-        $rolesDisponibles = [
-            'admin',
-            'manager',
-            'preventista',
-            'chofer',
-            'cajero',
-        ];
-
         // 🔍 DEBUG: Log de roles del usuario
         $rolesDelUsuario = $user->getRoleNames()->toArray();
         Log::info('🔍 DEBUG getRolesAsignablesPorUsuario', [
@@ -761,8 +753,16 @@ class EmpleadoController extends Controller
         ]);
 
         // Verificar qué roles puede asignar el usuario actual
-        // ✅ Cualquier usuario autenticado puede asignar estos 5 roles
+        // ✅ MODIFICADO: Obtener TODOS los roles de la BD (excepto Super Admin)
+        // Esto permite que cualquier nuevo rol creado en la BD esté automáticamente disponible
         if ($user->exists) {
+            $rolesDisponibles = Role::where('name', '!=', 'Super Admin')
+                ->pluck('name')
+                ->map(fn($role) => strtolower($role))
+                ->toArray();
+
+            Log::info('✅ Roles disponibles (desde BD):', ['roles' => $rolesDisponibles]);
+
             return $rolesDisponibles;
         }
 
