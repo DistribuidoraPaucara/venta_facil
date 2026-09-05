@@ -564,6 +564,9 @@ class InventarioController extends Controller
      */
     public function controlVencimientos(Request $request): Response
     {
+        // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
+        $empresaId = auth()->user()->empresa_id;
+
         $almacenId = $request->integer('almacen_id');
         $estado = (string) $request->string('estado', ''); // vencido, critico, urgente, atencion, vigente, todos
         $busqueda = (string) $request->string('busqueda', '');
@@ -572,6 +575,9 @@ class InventarioController extends Controller
         $query = StockProducto::with(['producto.categoria', 'almacen'])
             ->withoutTrashed()
             ->whereNotNull('fecha_vencimiento')
+            ->whereHas('almacen', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            })
             ->whereHas('producto', function ($q) {
                 $q->where('activo', true);
             })
@@ -629,7 +635,11 @@ class InventarioController extends Controller
             });
         }
 
-        $almacenes = Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        // ✅ MODIFICADO: Filtrar almacenes por empresa del usuario autenticado
+        $almacenes = Almacen::where('activo', true)
+            ->where('empresa_id', $empresaId)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
 
         return Inertia::render('inventario/control-vencimientos', [
             'productos' => $stocks->values(),
