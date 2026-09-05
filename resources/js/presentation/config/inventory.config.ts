@@ -74,6 +74,7 @@ export interface EstadoConfig {
   label: string;
   bgColor: string;
   textColor: string;
+  actions?: string[];
 }
 
 export const ESTADOS_TRANSFERENCIA: Record<EstadoTransferencia, EstadoConfig> = {
@@ -82,24 +83,28 @@ export const ESTADOS_TRANSFERENCIA: Record<EstadoTransferencia, EstadoConfig> = 
     label: 'Borrador',
     bgColor: 'bg-gray-100 dark:bg-gray-900/20',
     textColor: 'text-gray-800 dark:text-gray-300',
+    actions: ['enviar', 'edit', 'cancelar'],
   },
   ENVIADO: {
     estado: 'ENVIADO',
     label: 'Enviado',
     bgColor: 'bg-blue-100 dark:bg-blue-900/20',
     textColor: 'text-blue-800 dark:text-blue-300',
+    actions: ['recibir', 'cancelar'],
   },
   RECIBIDO: {
     estado: 'RECIBIDO',
     label: 'Recibido',
     bgColor: 'bg-green-100 dark:bg-green-900/20',
     textColor: 'text-green-800 dark:text-green-300',
+    actions: [],
   },
   CANCELADO: {
     estado: 'CANCELADO',
     label: 'Cancelado',
     bgColor: 'bg-red-100 dark:bg-red-900/20',
     textColor: 'text-red-800 dark:text-red-300',
+    actions: [],
   },
 };
 
