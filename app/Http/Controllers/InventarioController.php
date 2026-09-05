@@ -4083,16 +4083,24 @@ class InventarioController extends Controller
                         // Si fue entrada, crear salida inversa
                         $tipoInverso = MovimientoInventario::TIPO_SALIDA_AJUSTE;
                         $cantidadInversa = -abs($movimiento->cantidad);
-                        // ✅ REVERTIR ENTRADA: restar de cantidad Y cantidad_disponible
-                        $stockProducto->decrement('cantidad', abs($movimiento->cantidad));
-                        $stockProducto->decrement('cantidad_disponible', abs($movimiento->cantidad));
+                        // ✅ CRÍTICO: Usar UN SOLO UPDATE para evitar violación de constraint chk_suma_consistente
+                        DB::table('stock_productos')
+                            ->where('id', $stockProducto->id)
+                            ->update([
+                                'cantidad' => DB::raw('cantidad - ' . (int)abs($movimiento->cantidad)),
+                                'cantidad_disponible' => DB::raw('cantidad_disponible - ' . (int)abs($movimiento->cantidad)),
+                            ]);
                     } else {
                         // Si fue salida, crear entrada inversa
                         $tipoInverso = MovimientoInventario::TIPO_ENTRADA_AJUSTE;
                         $cantidadInversa = abs($movimiento->cantidad);
-                        // ✅ REVERTIR SALIDA: sumar a cantidad Y cantidad_disponible
-                        $stockProducto->increment('cantidad', abs($movimiento->cantidad));
-                        $stockProducto->increment('cantidad_disponible', abs($movimiento->cantidad));
+                        // ✅ CRÍTICO: Usar UN SOLO UPDATE para evitar violación de constraint chk_suma_consistente
+                        DB::table('stock_productos')
+                            ->where('id', $stockProducto->id)
+                            ->update([
+                                'cantidad' => DB::raw('cantidad + ' . (int)abs($movimiento->cantidad)),
+                                'cantidad_disponible' => DB::raw('cantidad_disponible + ' . (int)abs($movimiento->cantidad)),
+                            ]);
                     }
 
                     // Capturar valores DESPUÉS
