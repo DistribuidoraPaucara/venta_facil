@@ -2,7 +2,6 @@ import { useCajaWarning } from '@/application/hooks/use-caja-warning';
 import AppLayout from '@/layouts/app-layout';
 import VentaPreviewModal from '@/presentation/components/VentaPreviewModal';
 import { AlertSinCaja } from '@/presentation/components/cajas/alert-sin-caja';
-import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -244,8 +243,6 @@ export default function VentaForm() {
     const [clienteSearchQuery, setClienteSearchQuery] = useState('');
 
     // Estado para el modal de selección de salida (imprimir, Excel, PDF)
-    const [showOutputModal, setShowOutputModal] = useState(false);
-    const [ventaCreada, setVentaCreada] = useState<{ id: number; numero: string; fecha: string } | null>(null);
 
     // ✅ NUEVO: Estado para manejar el cargando al guardar venta
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1374,13 +1371,6 @@ export default function VentaForm() {
                 setMontoTransferencia(''); // Limpiar monto transferencia
                 setPagos([]);
 
-                // ✅ NUEVO: Guardar datos de la venta y mostrar modal de selección de salida
-                setVentaCreada({
-                    id: ventaId,
-                    numero: result.data.numero,
-                    fecha: result.data.fecha,
-                });
-
                 // ✅ NUEVO (2026-07-16): Detectar si hay prestables y abrir pantalla de préstamo
                 (async () => {
                     try {
@@ -1427,7 +1417,16 @@ export default function VentaForm() {
                     }
                 })();
 
-                setShowOutputModal(true);
+                // ✅ NUEVO (2026-09-04): Abrir directamente URL de impresión en lugar de modal
+                if (result.data?.caja_id) {
+                    const printUrl = `/cajas/${result.data.caja_id}/cierre/imprimir?formato=TICKET_80&accion=stream`;
+                    window.open(printUrl, '_blank');
+
+                    console.log('🖨️ Abriendo impresión directa:', {
+                        caja_id: result.data.caja_id,
+                        url: printUrl,
+                    });
+                }
             } else {
                 // ❌ ERROR: Mostrar mensaje y mantener formulario
                 const errorMessage = result.message || 'Error al procesar la venta';
@@ -2102,22 +2101,6 @@ export default function VentaForm() {
                 searchQuery={clienteSearchQuery}
             />
 
-            {/* Modal de Selección de Salida (Imprimir, Excel, PDF) */}
-            {ventaCreada && (
-                <OutputSelectionModal
-                    isOpen={showOutputModal}
-                    onClose={() => {
-                        setShowOutputModal(false);
-                        setVentaCreada(null);
-                    }}
-                    documentoId={ventaCreada.id}
-                    tipoDocumento="venta"
-                    documentoInfo={{
-                        numero: ventaCreada.numero,
-                        fecha: ventaCreada.fecha,
-                    }}
-                />
-            )}
         </AppLayout>
     );
 }

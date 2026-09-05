@@ -759,7 +759,9 @@ class VentaController extends Controller
 
             // 4. Responder siempre con JSON (el frontend maneja la redirección)
             return $this->respondSuccess(
-                data: $ventaDTO,
+                data: array_merge($ventaDTO->toArray(), [
+                    'caja_id' => $cajaId,  // ✅ NUEVO (2026-09-04): Incluir caja_id para redirección
+                ]),
                 message: 'Venta creada exitosamente',
                 statusCode: 201,
             );
