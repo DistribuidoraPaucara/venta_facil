@@ -172,6 +172,9 @@ export default function VentaForm() {
     const [cajaInfo, setCajaInfo] = useState<CajaInfo>({ tiene_caja_abierta: true });
     const [cargandoCaja, setCargandoCaja] = useState(false);
 
+    // ✅ NUEVO: Estado para modal de confirmación de limpieza
+    const [showClearDraftConfirm, setShowClearDraftConfirm] = useState(false);
+
     // ✅ NUEVO: Rastrear qué tipos de precio han sido seleccionados manualmente por el usuario
     const [manuallySelectedTipoPrecio, setManuallySelectedTipoPrecio] = useState<Record<number, boolean>>({});
 
@@ -1087,8 +1090,12 @@ export default function VentaForm() {
 
     // ✅ NUEVO: Función para limpiar manualmente el borrador de localStorage
     const limpiarBorrador = () => {
-        const confirmar = window.confirm('¿Deseas limpiar el borrador? Esta acción no se puede deshacer.');
-        if (!confirmar) return;
+        setShowClearDraftConfirm(true); // Mostrar modal de confirmación
+    };
+
+    // ✅ NUEVO: Función para confirmar limpieza
+    const confirmarLimpiarBorrador = () => {
+        setShowClearDraftConfirm(false);
 
         try {
             localStorage.removeItem('venta-create-draft');
@@ -2099,6 +2106,41 @@ export default function VentaForm() {
                 onClienteCreated={handleClienteCreated}
                 searchQuery={clienteSearchQuery}
             />
+
+            {/* ✅ NUEVO: Modal de confirmación para limpiar borrador */}
+            {showClearDraftConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/60">
+                    <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg max-w-sm w-full mx-4 p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                                <span className="text-2xl">⚠️</span>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                ¿Limpiar borrador?
+                            </h3>
+                        </div>
+
+                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                            Se eliminará el borrador guardado en localStorage. <strong>Esta acción no se puede deshacer.</strong>
+                        </p>
+
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowClearDraftConfirm(false)}
+                                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmarLimpiarBorrador}
+                                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-medium"
+                            >
+                                🗑️ Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 }
