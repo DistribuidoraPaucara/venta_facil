@@ -1415,12 +1415,12 @@ export default function VentaForm() {
                 })();
 
                 // ✅ NUEVO (2026-09-04): Abrir directamente URL de impresión en lugar de modal
-                if (result.data?.caja_id) {
-                    const printUrl = `/cajas/${result.data.caja_id}/cierre/imprimir?formato=TICKET_80&accion=stream`;
+                if (result.data?.id) {
+                    const printUrl = `/ventas/${result.data.id}/imprimir?formato=TICKET_80&accion=stream`;
                     window.open(printUrl, '_blank');
 
                     console.log('🖨️ Abriendo impresión directa:', {
-                        caja_id: result.data.caja_id,
+                        venta_id: result.data.id,
                         url: printUrl,
                     });
                 }
