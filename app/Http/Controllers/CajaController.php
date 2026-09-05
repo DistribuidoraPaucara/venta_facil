@@ -11,6 +11,7 @@ use App\Models\EstadoCierre;
 use App\Models\MovimientoCaja;
 use App\Models\TipoPago;
 use App\Models\TipoOperacionCaja;
+use App\Models\User;
 use App\Services\CierreCajaService;
 use App\Services\DesgloseMovimientoCajaService;
 use App\Services\ExcelExportService;
@@ -987,11 +988,17 @@ class CajaController extends Controller
         // ✅ NUEVO (2026-07-22): Filtro por estado de caja
         $filtroEstado = $request->query('estado', 'abierta'); // Por defecto: abierta
 
+        // ✅ MODIFICADO: Filtrar aperturas por empresa del usuario autenticado
+        $empresaId = Auth::user()->empresa_id;
+
         // Obtener aperturas según filtro
         if ($filtroEstado === 'cerrada') {
             // Aperturas CON cierre (cajas cerradas)
             $aperturasColleccion = AperturaCaja::with(['cierre.estadoCierre', 'caja.usuario'])
                 ->whereHas('cierre') // Solo aperturas CON cierre (cerradas)
+                ->whereHas('caja.usuario', function($query) use ($empresaId) {
+                    $query->where('empresa_id', $empresaId);
+                })
                 ->orderBy('fecha', 'desc')
                 ->get()
                 ->groupBy('caja_id')
@@ -1000,6 +1007,9 @@ class CajaController extends Controller
             // Aperturas SIN cierre (cajas abiertas) - DEFAULT
             $aperturasColleccion = AperturaCaja::with(['cierre.estadoCierre', 'caja.usuario'])
                 ->whereDoesntHave('cierre') // Solo aperturas SIN cierre (abiertas)
+                ->whereHas('caja.usuario', function($query) use ($empresaId) {
+                    $query->where('empresa_id', $empresaId);
+                })
                 ->orderBy('fecha', 'desc')
                 ->get()
                 ->groupBy('caja_id')
@@ -1007,24 +1017,35 @@ class CajaController extends Controller
         }
 
         // ✅ NUEVO (2026-08-07): Obtener TODAS las cajas, no solo las que tienen aperturas
+        // ✅ MODIFICADO: Filtrar cajas por empresa del usuario autenticado
         // Esto permite que el admin vea cajas sin aperturas también
-        $cajas = Caja::with(['usuario'])
+        $empresaId = Auth::user()->empresa_id;
+        $cajas = Caja::whereHas('usuario', function($query) use ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        })->with(['usuario'])
             ->get();
 
         // Obtener IDs de cajas según filtro (para compatibilidad con cajas_abiertas)
         $cajaIds = $aperturasColleccion->pluck('caja_id')->toArray();
 
         // ✅ NUEVO (2026-08-07): Obtener aperturas para la tabla del Dashboard
+        // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
         // Considerar:
         // 1. Cajas ABIERTAS hace días (sin cierre, cualquier fecha anterior)
         // 2. Cajas CERRADAS hoy (con cierre, fecha = hoy)
         $aperturasAbriertasAntiguos = AperturaCaja::with(['cierre.estadoCierre', 'caja.usuario'])
             ->whereDoesntHave('cierre')  // SIN cierre = abierta
+            ->whereHas('caja.usuario', function($query) use ($empresaId) {
+                $query->where('empresa_id', $empresaId);
+            })
             ->orderBy('fecha', 'desc')
             ->get();
 
         $aperturasCerradasHoy = AperturaCaja::with(['cierre.estadoCierre', 'caja.usuario'])
             ->whereHas('cierre')  // CON cierre = cerrada
+            ->whereHas('caja.usuario', function($query) use ($empresaId) {
+                $query->where('empresa_id', $empresaId);
+            })
             ->whereDate('fecha', today())  // Cerrada HOY
             ->orderBy('fecha', 'desc')
             ->get();
@@ -1033,7 +1054,11 @@ class CajaController extends Controller
         $aperturasParaTabla = $aperturasAbriertasAntiguos->concat($aperturasCerradasHoy);
 
         // ✅ Para mantener compatibilidad con filtros existentes, también fusionar con colección original
+        // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
         $aperturasDiarias = AperturaCaja::with(['cierre.estadoCierre'])
+            ->whereHas('caja.usuario', function($query) use ($empresaId) {
+                $query->where('empresa_id', $empresaId);
+            })
             ->whereDate('fecha', today())
             ->get();
 
@@ -1044,7 +1069,10 @@ class CajaController extends Controller
         $cajas_abiertas = $cajas->count(); // Ya solo tiene cajas abiertas
 
         // ✅ NUEVO: Obtener información de cierres pendientes por usuario
+        // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
+        $usuariosEmpresa = User::where('empresa_id', $empresaId)->pluck('id')->toArray();
         $cierresPendientesPorUsuario = CierreCaja::where('estado_cierre_id', \App\Models\EstadoCierre::obtenerIdPendiente())
+            ->whereIn('user_id', $usuariosEmpresa)
             ->groupBy('user_id')
             ->selectRaw('user_id, COUNT(*) as cantidad')
             ->get()
