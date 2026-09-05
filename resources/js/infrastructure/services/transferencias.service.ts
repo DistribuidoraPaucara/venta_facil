@@ -106,8 +106,14 @@ export class TransferenciasService extends GenericService<Transferencia, Transfe
     const errors: string[] = [];
 
     // Validar producto existe
+    // Primero busca en el array de productos del servidor
     const producto = productos.find(p => p.id === detalle.producto_id);
-    if (!producto) {
+
+    // Si no está en el array pero tiene producto_nombre, significa que fue buscado dinámicamente
+    // y es válido, así que no reportar error
+    const productoValido = producto || (detalle as any).producto_nombre;
+
+    if (!productoValido) {
       errors.push('Producto no encontrado');
       return errors;
     }
@@ -133,7 +139,8 @@ export class TransferenciasService extends GenericService<Transferencia, Transfe
     }
 
     // Validar stock disponible en almacén origen
-    if (almacenOrigenId) {
+    if (almacenOrigenId && producto) {
+      // Solo validar stock si tenemos datos del array de productos
       const stockEnOrigen = producto.stock_por_almacen?.[almacenOrigenId] || 0;
       if (detalle.cantidad > stockEnOrigen) {
         errors.push(`Stock insuficiente. Disponible en almacén origen: ${stockEnOrigen} unidades`);
