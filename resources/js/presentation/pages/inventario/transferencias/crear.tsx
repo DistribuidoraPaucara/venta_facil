@@ -194,8 +194,21 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         setIsSearching(true);
         try {
             const url = `/api/productos/buscar?q=${encodeURIComponent(searchTerm)}&almacen_id=${data.almacen_origen_id}&limite=10`;
+
+            console.log('🔍 [Transferencias] URL de búsqueda:', url);
+
             const response = await fetch(url, { headers: { Accept: 'application/json' } });
             const resultado = await response.json();
+
+            console.log('📥 [Transferencias] RESPUESTA COMPLETA DEL BACKEND:', resultado);
+            console.log('📊 [Transferencias] Primer producto:', resultado.data?.[0]);
+
+            if (resultado.data?.[0]) {
+                console.log('📈 [Transferencias] Stock del producto:', resultado.data[0].stock);
+                console.log('💾 [Transferencias] Stock por almacén:', resultado.data[0].stock_por_almacen);
+                console.log('📦 [Transferencias] Cantidad disponible:', resultado.data[0].cantidad_disponible);
+                console.log('💵 [Transferencias] Precios:', resultado.data[0].precios);
+            }
 
             if (resultado.success && resultado.data && resultado.data.length > 0) {
                 const producto = resultado.data[0]; // Tomar el primer producto encontrado
@@ -214,7 +227,7 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                 NotificationService.warning('Producto no encontrado');
             }
         } catch (error) {
-            console.error('Error en búsqueda:', error);
+            console.error('❌ [Transferencias] Error en búsqueda:', error);
             NotificationService.error('Error al buscar producto');
         } finally {
             setIsSearching(false);
@@ -516,6 +529,17 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                                     const productoCodigo = (detalle as any).producto_codigo || productos.find(p => p.id === detalle.producto_id)?.codigo || '';
 
                                                     const producto = productos.find(p => p.id === detalle.producto_id);
+
+                                                    console.log(`📋 [Tabla] Detalle ${index}:`, {
+                                                        productoId: detalle.producto_id,
+                                                        nombre: productoNombre,
+                                                        lote: detalle.lote,
+                                                        cantidad: detalle.cantidad,
+                                                        producto: producto,
+                                                        stockPorAlmacen: producto?.stock_por_almacen,
+                                                        almacenOrigen: data.almacen_origen_id,
+                                                    });
+
                                                     const stockActualOrigen = data.almacen_origen_id && producto
                                                         ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
                                                         : 0;
