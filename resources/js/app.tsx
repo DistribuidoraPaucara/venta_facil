@@ -159,7 +159,7 @@ createInertiaApp({
         root.render(
             <QueryClientProvider client={queryClient}>
                 <WebSocketProvider
-                    autoConnect={true}
+                    autoConnect={false}
                     sanctumToken={sanctumToken}
                     userId={userId}
                     channels={channels}

@@ -167,7 +167,7 @@ export default function VentaForm() {
     }
 
     const [cajaInfo, setCajaInfo] = useState<CajaInfo | null>(null);
-    const [cargandoCaja, setCargandoCaja] = useState(true);
+    const [cargandoCaja, setCargandoCaja] = useState(false);
 
     // ✅ NUEVO: Rastrear qué tipos de precio han sido seleccionados manualmente por el usuario
     const [manuallySelectedTipoPrecio, setManuallySelectedTipoPrecio] = useState<Record<number, boolean>>({});
@@ -181,19 +181,25 @@ export default function VentaForm() {
         return licoreria?.id || null;
     }, [tipos_precio]);
 
-    // Verificar si hay caja abierta (de cualquier día)
+    // Verificar si hay caja abierta (de cualquier día) - en background sin bloquear render
     useEffect(() => {
         const verificarCaja = async () => {
             try {
-                const response = await fetch('/ventas/check-caja-abierta');
+                const controller = new AbortController();
+                // Timeout de 5 segundos para no esperar indefinidamente
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                const response = await fetch('/ventas/check-caja-abierta', {
+                    signal: controller.signal,
+                });
+
+                clearTimeout(timeoutId);
                 const data = await response.json();
                 setCajaInfo(data);
             } catch (error) {
                 console.error('❌ Error verificando caja (Ventas):', error);
                 // Si hay error, permitir acceso (mejor UX que bloquear)
                 setCajaInfo({ tiene_caja_abierta: true });
-            } finally {
-                setCargandoCaja(false);
             }
         };
 
@@ -1560,7 +1566,7 @@ export default function VentaForm() {
                 )}
 
                 {/* Información básica */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                     <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {/* Campo número oculto - se genera automáticamente */}
                         <input type="hidden" value={data.numero} onChange={(e) => setData('numero', e.target.value)} />
