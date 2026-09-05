@@ -134,7 +134,7 @@ procesar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     procesar.form = procesarForm
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3855
+ * @see app/Http/Controllers/InventarioController.php:3826
  * @route '/inventario/ajuste/imprimir'
  */
 export const imprimir = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +149,7 @@ imprimir.definition = {
 
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3855
+ * @see app/Http/Controllers/InventarioController.php:3826
  * @route '/inventario/ajuste/imprimir'
  */
 imprimir.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ imprimir.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3855
+ * @see app/Http/Controllers/InventarioController.php:3826
  * @route '/inventario/ajuste/imprimir'
  */
 imprimir.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -167,7 +167,7 @@ imprimir.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3855
+ * @see app/Http/Controllers/InventarioController.php:3826
  * @route '/inventario/ajuste/imprimir'
  */
 imprimir.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -177,7 +177,7 @@ imprimir.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3855
+ * @see app/Http/Controllers/InventarioController.php:3826
  * @route '/inventario/ajuste/imprimir'
  */
     const imprimirForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -187,7 +187,7 @@ imprimir.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3855
+ * @see app/Http/Controllers/InventarioController.php:3826
  * @route '/inventario/ajuste/imprimir'
  */
         imprimirForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -196,7 +196,7 @@ imprimir.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3855
+ * @see app/Http/Controllers/InventarioController.php:3826
  * @route '/inventario/ajuste/imprimir'
  */
         imprimirForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

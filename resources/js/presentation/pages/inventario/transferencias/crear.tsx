@@ -84,18 +84,19 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
 
     // ✅ NUEVA: Búsqueda dinámica de productos
     const buscarProductos = useCallback(
-        async (term: string) => {
-            if (!term.trim() || !data.almacen_origen_id) {
+        async (term?: string) => {
+            const busqueda = term || searchTerm;
+            if (!busqueda.trim() || !data.almacen_origen_id) {
                 setSearchResults([]);
                 return;
             }
 
             try {
                 setIsSearching(true);
-                const url = `/api/productos/buscar?q=${encodeURIComponent(term)}&almacen_id=${data.almacen_origen_id}&limite=10`;
+                const url = `/api/productos/buscar?q=${encodeURIComponent(busqueda)}&almacen_id=${data.almacen_origen_id}&limite=10`;
 
                 console.log('🔍 [Transferencias] Buscando productos:', {
-                    termino: term,
+                    termino: busqueda,
                     almacen_id: data.almacen_origen_id,
                     url: url,
                 });
@@ -124,7 +125,7 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                 setIsSearching(false);
             }
         },
-        [data.almacen_origen_id]
+        [data.almacen_origen_id, searchTerm]
     );
 
     // ✅ Cerrar sugerencias al presionar Escape o hacer click afuera
@@ -152,11 +153,19 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
     }, []);
 
     // ✅ Agregar producto desde búsqueda
-    const agregarProductoDesdeSearch = (producto: any) => {
+    const agregarProductoDesdeSearch = (producto: any, lote?: any) => {
         setProductoSeleccionado(producto.id.toString());
         setSearchTerm(producto.nombre);
-        setSearchResults([]);
         setCantidadProducto('');
+        // Si se selecciona un lote específico, llenar los campos de lote y fecha_vencimiento
+        if (lote) {
+            setLoteProducto(lote.lote || '');
+            setFechaVencimiento(lote.fecha_vencimiento ? new Date(lote.fecha_vencimiento).toISOString().split('T')[0] : '');
+        } else {
+            setLoteProducto('');
+            setFechaVencimiento('');
+        }
+        setSearchResults([]);
     };
 
     const agregarProducto = () => {
@@ -379,57 +388,94 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {/* Agregar Producto */}
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                                <div className="md:col-span-2 relative" ref={searchRef}>
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div className="md:col-span-3 relative" ref={searchRef}>
                                     <Label htmlFor="producto">Producto</Label>
-                                    <div className="relative">
-                                        <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                                        <Input
-                                            id="producto"
-                                            type="text"
-                                            placeholder="Buscar producto..."
-                                            value={searchTerm}
-                                            onChange={(e) => {
-                                                setSearchTerm(e.target.value);
-                                                buscarProductos(e.target.value);
-                                            }}
-                                            onKeyPress={(e) => {
-                                                if (e.key === 'Enter' && searchResults.length > 0) {
-                                                    agregarProductoDesdeSearch(searchResults[0]);
-                                                }
-                                            }}
-                                            className="pl-10"
-                                        />
-                                        {isSearching && (
-                                            <Loader className="absolute top-3 right-3 h-4 w-4 animate-spin text-blue-500 pointer-events-none" />
+                                    <div className="space-y-2">
+                                        <div className="relative flex gap-2">
+                                            <div className="relative flex-1">
+                                                <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                                <Input
+                                                    id="producto"
+                                                    type="text"
+                                                    placeholder="Código o nombre del producto..."
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    onKeyPress={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            buscarProductos(searchTerm);
+                                                        }
+                                                    }}
+                                                    className="pl-10"
+                                                    disabled={!data.almacen_origen_id}
+                                                />
+                                                {isSearching && (
+                                                    <Loader className="absolute top-3 right-3 h-4 w-4 animate-spin text-blue-500 pointer-events-none" />
+                                                )}
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                onClick={() => buscarProductos()}
+                                                disabled={!searchTerm.trim() || !data.almacen_origen_id || isSearching}
+                                                variant="outline"
+                                                className="mt-6"
+                                            >
+                                                <Search className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        {!data.almacen_origen_id && (
+                                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                                                Selecciona un almacén origen primero
+                                            </p>
                                         )}
                                     </div>
 
-                                    {/* Dropdown de sugerencias */}
-                                    {searchTerm && searchResults.length > 0 && (
-                                        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                                            {searchResults.map((producto, idx) => {
-                                                const stockDisponible = data.almacen_origen_id
-                                                    ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
-                                                    : 0;
-
-                                                return (
-                                                    <div
-                                                        key={idx}
-                                                        onClick={() => agregarProductoDesdeSearch(producto)}
-                                                        className="flex cursor-pointer items-center justify-between border-b p-3 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700 last:border-b-0"
-                                                    >
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="truncate text-sm font-medium dark:text-white">
-                                                                [{producto.sku || producto.codigo}] {producto.nombre}
-                                                            </p>
-                                                            <p className="truncate text-xs text-gray-600 dark:text-gray-400">
-                                                                📦 Stock: {stockDisponible.toFixed(2)}
-                                                            </p>
-                                                        </div>
+                                    {/* Dropdown de sugerencias con lotes */}
+                                    {searchResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                                            {searchResults.map((producto, idx) => (
+                                                <div key={idx} className="border-b dark:border-slate-700 last:border-b-0">
+                                                    {/* Header del producto */}
+                                                    <div className="p-3 bg-gray-100 dark:bg-slate-700 sticky top-0">
+                                                        <p className="font-medium text-sm dark:text-white">
+                                                            [{producto.sku || producto.codigo}] {producto.nombre}
+                                                        </p>
                                                     </div>
-                                                );
-                                            })}
+
+                                                    {/* Lotes */}
+                                                    {producto.stock && producto.stock.length > 0 ? (
+                                                        <div className="divide-y dark:divide-slate-700">
+                                                            {producto.stock.map((lote, loteIdx) => (
+                                                                <div
+                                                                    key={loteIdx}
+                                                                    onClick={() => agregarProductoDesdeSearch(producto, lote)}
+                                                                    className="p-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-600 transition"
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-xs font-medium dark:text-gray-300">
+                                                                                {lote.lote ? `Lote: ${lote.lote}` : '📦 Sin lote'}
+                                                                            </p>
+                                                                            {lote.fecha_vencimiento && (
+                                                                                <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                                                    📅 Vence: {new Date(lote.fecha_vencimiento).toLocaleDateString('es-ES')}
+                                                                                </p>
+                                                                            )}
+                                                                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                                                📦 Disponible: <span className="font-semibold text-blue-600 dark:text-blue-400">{lote.cantidad_disponible}</span>
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-3 text-xs text-gray-500 dark:text-gray-400">
+                                                            Sin stock disponible
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
@@ -447,7 +493,7 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="lote">Lote (opcional)</Label>
+                                    <Label htmlFor="lote">Lote</Label>
                                     <Input
                                         id="lote"
                                         value={loteProducto}

@@ -3218,6 +3218,8 @@ class ProductoController extends Controller
                         'sector_id' => $s->sector_id,
                         'cantidad' => $s->cantidad,
                         'cantidad_disponible' => $s->cantidad_disponible,
+                        'lote' => $s->lote,
+                        'fecha_vencimiento' => $s->fecha_vencimiento,
                         'almacen' => $s->almacen ? ['id' => $s->almacen->id, 'nombre' => $s->almacen->nombre] : null,
                         'sector' => $s->sector ? ['id' => $s->sector->id, 'nombre' => $s->sector->nombre, 'almacen_id' => $s->sector->almacen_id] : null,
                     ])->all(),
