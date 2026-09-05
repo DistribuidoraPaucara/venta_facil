@@ -1927,18 +1927,28 @@ class InventarioController extends Controller
 
     /**
      * Mostrar formulario para crear transferencia
+     * ✅ MEJORADO: Solo muestra almacenes de la empresa del usuario autenticado
      */
     public function formularioCrearTransferencia(): Response
     {
-        $almacenes = Almacen::where('activo', true)
+        $empresaId = auth()->user()->empresa_id;
+
+        // ✅ CRÍTICO: Filtrar almacenes por empresa_id del usuario
+        $almacenes = Almacen::where('empresa_id', $empresaId)
+            ->where('activo', true)
             ->select('id', 'nombre', 'direccion', 'ubicacion_fisica', 'requiere_transporte_externo')
             ->get();
+
         $vehiculos = Vehiculo::activos()->get();
         $choferes  = User::role('Chofer')->get(['id', 'name'])->map(fn($user) => ['id' => $user->id, 'name' => $user->name]);
+
+        // ✅ CRÍTICO: Filtrar productos y stock solo para almacenes de la empresa
+        $almacenIds = $almacenes->pluck('id')->toArray();
         $productos = Producto::where('activo', true)
-            ->with(['codigoPrincipal', 'stock' => function ($query) {
+            ->with(['codigoPrincipal', 'stock' => function ($query) use ($almacenIds) {
                 $query->select('producto_id', 'almacen_id', 'cantidad')
-                    ->where('cantidad', '>', 0);
+                    ->where('cantidad', '>', 0)
+                    ->whereIn('almacen_id', $almacenIds);  // ✅ Solo stocks de almacenes de la empresa
             }])
             ->select('id', 'nombre', 'codigo_qr')
             ->orderBy('nombre')
