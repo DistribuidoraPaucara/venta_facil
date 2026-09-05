@@ -161,16 +161,22 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
             return;
         }
 
-        // Crear nuevo detalle
-        const nuevoDetalle: DetalleTransferencia = {
+        // Crear nuevo detalle con datos del producto
+        const nuevoDetalle: DetalleTransferencia & {
+            producto_nombre?: string;
+            producto_codigo?: string;
+        } = {
             producto_id: producto.id,
             cantidad: 0, // Se editará en la tabla
             lote: lote?.lote || undefined,
             fecha_vencimiento: lote?.fecha_vencimiento || undefined,
+            // Guardar también los datos del producto para renderizar en la tabla
+            producto_nombre: producto.nombre,
+            producto_codigo: producto.codigo,
         };
 
         // Agregar a la tabla
-        setData('detalles', [...data.detalles, nuevoDetalle]);
+        setData('detalles', [...data.detalles, nuevoDetalle as any]);
 
         // Limpiar búsqueda
         setSearchTerm('');
@@ -505,15 +511,17 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                             </thead>
                                             <tbody>
                                                 {data.detalles.map((detalle, index) => {
-                                                    const producto = productos.find(p => p.id === detalle.producto_id);
-                                                    if (!producto) return null;
+                                                    // Usar datos guardados en detalle o buscar en el array productos
+                                                    const productoNombre = (detalle as any).producto_nombre || productos.find(p => p.id === detalle.producto_id)?.nombre || 'Producto desconocido';
+                                                    const productoCodigo = (detalle as any).producto_codigo || productos.find(p => p.id === detalle.producto_id)?.codigo || '';
 
-                                                    const stockActualOrigen = data.almacen_origen_id
+                                                    const producto = productos.find(p => p.id === detalle.producto_id);
+                                                    const stockActualOrigen = data.almacen_origen_id && producto
                                                         ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
                                                         : 0;
                                                     const stockPosteriorOrigen = Math.max(0, stockActualOrigen - detalle.cantidad);
 
-                                                    const stockActualDestino = data.almacen_destino_id
+                                                    const stockActualDestino = data.almacen_destino_id && producto
                                                         ? (producto.stock_por_almacen?.[data.almacen_destino_id] || 0)
                                                         : 0;
                                                     const stockPosteriorDestino = stockActualDestino + detalle.cantidad;
@@ -522,8 +530,8 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                                         <tr key={index} className="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
                                                             <td className="p-3">
                                                                 <div>
-                                                                    <p className="font-medium">{producto.nombre}</p>
-                                                                    <p className="text-xs text-gray-600 dark:text-gray-400">[{producto.codigo}]</p>
+                                                                    <p className="font-medium">{productoNombre}</p>
+                                                                    <p className="text-xs text-gray-600 dark:text-gray-400">[{productoCodigo}]</p>
                                                                 </div>
                                                             </td>
                                                             <td className="p-3">
