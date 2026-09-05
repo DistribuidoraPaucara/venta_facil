@@ -166,7 +166,10 @@ export default function VentaForm() {
         mensaje?: string;
     }
 
-    const [cajaInfo, setCajaInfo] = useState<CajaInfo | null>(null);
+    // ✅ OPTIMIZADO: Inicializar como caja abierta (asunción optimista)
+    // La pantalla se abre inmediatamente sin mostrar error de caja
+    // Si la verificación dice que no hay caja, se actualiza y muestra el error
+    const [cajaInfo, setCajaInfo] = useState<CajaInfo>({ tiene_caja_abierta: true });
     const [cargandoCaja, setCargandoCaja] = useState(false);
 
     // ✅ NUEVO: Rastrear qué tipos de precio han sido seleccionados manualmente por el usuario
