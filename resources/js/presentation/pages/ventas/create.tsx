@@ -1145,7 +1145,6 @@ export default function VentaForm() {
     const handleConfirmSubmit = async () => {
         // ✅ NUEVO: Prevenir múltiples clicks estableciendo loading state
         setIsSubmitting(true);
-        setShowPreviewModal(false);
 
         // ✅ NUEVO: Verificar si el tipo de pago seleccionado es CREDITO y ajustar política de pago
         const tipoPagoSeleccionado = tipos_pago?.find((t: any) => t.id === data.tipo_pago_id);
