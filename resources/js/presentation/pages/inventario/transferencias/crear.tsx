@@ -161,10 +161,25 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
             return;
         }
 
+        // Calcular stock por almacén desde el array stock
+        // El endpoint retorna un array stock con los lotes, necesitamos sumar la cantidad
+        const stockPorAlmacen: any = {};
+        if (producto.stock && Array.isArray(producto.stock)) {
+            producto.stock.forEach((s: any) => {
+                if (!stockPorAlmacen[s.almacen_id]) {
+                    stockPorAlmacen[s.almacen_id] = 0;
+                }
+                stockPorAlmacen[s.almacen_id] += parseFloat(s.cantidad || 0);
+            });
+        }
+
+        console.log('💾 [Agregar] Stock por almacén calculado:', stockPorAlmacen);
+
         // Crear nuevo detalle con datos del producto
         const nuevoDetalle: DetalleTransferencia & {
             producto_nombre?: string;
             producto_codigo?: string;
+            stock_por_almacen?: any;
         } = {
             producto_id: producto.id,
             cantidad: 0, // Se editará en la tabla
@@ -173,6 +188,8 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
             // Guardar también los datos del producto para renderizar en la tabla
             producto_nombre: producto.nombre,
             producto_codigo: producto.codigo,
+            // Guardar stock por almacén
+            stock_por_almacen: stockPorAlmacen,
         };
 
         // Agregar a la tabla
@@ -530,23 +547,25 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
 
                                                     const producto = productos.find(p => p.id === detalle.producto_id);
 
+                                                    // Usar stock guardado en detalle o buscar en productos
+                                                    const stockPorAlmacen = (detalle as any).stock_por_almacen || producto?.stock_por_almacen || {};
+
                                                     console.log(`📋 [Tabla] Detalle ${index}:`, {
                                                         productoId: detalle.producto_id,
                                                         nombre: productoNombre,
                                                         lote: detalle.lote,
                                                         cantidad: detalle.cantidad,
-                                                        producto: producto,
-                                                        stockPorAlmacen: producto?.stock_por_almacen,
+                                                        stockPorAlmacen: stockPorAlmacen,
                                                         almacenOrigen: data.almacen_origen_id,
                                                     });
 
-                                                    const stockActualOrigen = data.almacen_origen_id && producto
-                                                        ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
+                                                    const stockActualOrigen = data.almacen_origen_id && stockPorAlmacen
+                                                        ? (stockPorAlmacen[data.almacen_origen_id] || 0)
                                                         : 0;
                                                     const stockPosteriorOrigen = Math.max(0, stockActualOrigen - detalle.cantidad);
 
-                                                    const stockActualDestino = data.almacen_destino_id && producto
-                                                        ? (producto.stock_por_almacen?.[data.almacen_destino_id] || 0)
+                                                    const stockActualDestino = data.almacen_destino_id && stockPorAlmacen
+                                                        ? (stockPorAlmacen[data.almacen_destino_id] || 0)
                                                         : 0;
                                                     const stockPosteriorDestino = stockActualDestino + detalle.cantidad;
 
