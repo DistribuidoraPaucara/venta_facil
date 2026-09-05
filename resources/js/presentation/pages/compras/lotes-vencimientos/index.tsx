@@ -25,8 +25,8 @@ import type { Almacen } from '@/domain/entities/almacenes';
 // Interfaces específicas para lotes
 interface LoteDetalle {
     id: number;
-    producto: Producto;
-    almacen: Almacen;
+    producto: Producto | null;  // ✅ Hacer nullable en caso que venga null del backend
+    almacen: Almacen | null;    // ✅ Hacer nullable en caso que venga null del backend
     lote: string;
     fecha_vencimiento: string | null;
     cantidad: number;
@@ -77,8 +77,8 @@ const GestionLotesVencimientos: React.FC<Props> = ({
         console.log('📋 Total de lotes:', lotes.total);
         console.table(lotes.data.map(l => ({
             id: l.id,
-            producto: l.producto.nombre,
-            almacen: l.almacen.nombre,
+            producto: l.producto?.nombre || 'N/A',
+            almacen: l.almacen?.nombre || 'N/A',
             lote: l.lote,
             fecha_vencimiento: l.fecha_vencimiento,
             dias_para_vencer: l.dias_para_vencer,
@@ -404,10 +404,10 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                                                     <div className="flex items-center">
                                                         <div>
                                                             <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                                {lote.producto.nombre}
+                                                                {lote.producto?.nombre || 'Producto no encontrado'}
                                                             </div>
                                                             <div className="text-sm text-gray-500">
-                                                                {lote.producto.codigo}
+                                                                {lote.producto?.codigo || '-'}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -421,7 +421,7 @@ const GestionLotesVencimientos: React.FC<Props> = ({
 
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                        {lote.almacen.nombre}
+                                                        {lote.almacen?.nombre || 'Almacén no encontrado'}
                                                     </div>
                                                 </td>
 
@@ -501,11 +501,11 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Nombre:</span>
-                                                <span className="font-medium">{loteSeleccionado.producto.nombre}</span>
+                                                <span className="font-medium">{loteSeleccionado.producto?.nombre || 'Producto no encontrado'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Código:</span>
-                                                <span className="font-medium">{loteSeleccionado.producto.codigo || 'N/A'}</span>
+                                                <span className="font-medium">{loteSeleccionado.producto?.codigo || 'N/A'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Lote:</span>
@@ -521,11 +521,11 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Nombre:</span>
-                                                <span className="font-medium">{loteSeleccionado.almacen.nombre}</span>
+                                                <span className="font-medium">{loteSeleccionado.almacen?.nombre || 'Almacén no encontrado'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Ubicación:</span>
-                                                <span className="font-medium">{loteSeleccionado.almacen.ubicacion || 'N/A'}</span>
+                                                <span className="font-medium">{loteSeleccionado.almacen?.ubicacion || 'N/A'}</span>
                                             </div>
                                         </div>
                                     </div>
