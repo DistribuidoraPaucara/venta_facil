@@ -354,10 +354,9 @@ export default function ProductoTableRow({
                             return !nombre.includes('costo') && !nombre.includes('cost');
                         });
 
+                        // ✅ OPTIMIZADO: Si solo hay precio de venta, no mostrar leyenda
                         if (preciosVenta.length <= 1) {
-                            return detalle.tipo_precio_nombre ? (
-                                <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">{detalle.tipo_precio_nombre}</div>
-                            ) : null;
+                            return null; // No mostrar leyenda si solo hay un tipo de precio
                         }
 
                         // ✅ PRIORIDAD:
