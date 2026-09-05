@@ -11,7 +11,13 @@ import { Almacen } from '@/domain/entities/almacenes';
 import type { StockProducto } from '@/domain/entities/movimientos-inventario';
 import { Id, Pagination } from '@/domain/entities/shared';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
-import { Printer } from 'lucide-react';
+import { Printer, MoreVertical } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/presentation/components/ui/dropdown-menu';
 import {
     Dialog,
     DialogContent,
@@ -1262,7 +1268,7 @@ export default function AjusteInventario() {
                                                     <TableHead className="text-center">📦 Productos</TableHead>
                                                     <TableHead className="text-center">📥 Entradas</TableHead>
                                                     <TableHead className="text-center">📤 Salidas</TableHead>
-                                                    <TableHead>📝 Observación</TableHead>
+                                                    {/* <TableHead>📝 Observación</TableHead> */}
                                                     <TableHead className="text-center">📊 Estado</TableHead>
                                                     <TableHead className="text-center">⚙️ Acciones</TableHead>
                                                 </TableRow>
@@ -1304,11 +1310,11 @@ export default function AjusteInventario() {
                                                                 {ajuste.cantidad_salidas}
                                                             </div>
                                                         </TableCell>
-                                                        <TableCell className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+                                                        {/* <TableCell className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
                                                             <div className="truncate" title={ajuste.observacion || ''}>
                                                                 {ajuste.observacion || '(sin observación)'}
                                                             </div>
-                                                        </TableCell>
+                                                        </TableCell> */}
                                                         <TableCell className="text-center">
                                                             {ajuste.estado === 'anulado' ? (
                                                                 <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 font-semibold text-sm">
@@ -1325,32 +1331,37 @@ export default function AjusteInventario() {
                                                             )}
                                                         </TableCell>
                                                         <TableCell className="text-center">
-                                                            <div className="flex gap-2 justify-center">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => handleAbrirImpresion(ajuste.id)}
-                                                                    className="gap-2"
-                                                                    title="Imprimir ajuste"
-                                                                >
-                                                                    <Printer className="h-4 w-4" />
-                                                                    <span className="hidden sm:inline">Imprimir</span>
-                                                                </Button>
-                                                                {ajuste.estado !== 'anulado' && hasRole('admin') && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
                                                                     <Button
                                                                         size="sm"
-                                                                        variant="destructive"
-                                                                        onClick={() => setAjusteParaAnular(ajuste.id)}
-                                                                        className="gap-2"
-                                                                        title="Anular ajuste"
+                                                                        variant="ghost"
+                                                                        className="h-8 w-8 p-0"
                                                                     >
-                                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                                                        </svg>
-                                                                        <span className="hidden sm:inline">Anular</span>
+                                                                        <MoreVertical className="h-4 w-4" />
                                                                     </Button>
-                                                                )}
-                                                            </div>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleAbrirImpresion(ajuste.id)}
+                                                                        className="cursor-pointer gap-2"
+                                                                    >
+                                                                        <Printer className="h-4 w-4" />
+                                                                        Imprimir
+                                                                    </DropdownMenuItem>
+                                                                    {ajuste.estado !== 'anulado' && hasRole('admin') && (
+                                                                        <DropdownMenuItem
+                                                                            onClick={() => setAjusteParaAnular(ajuste.id)}
+                                                                            className="cursor-pointer gap-2 text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+                                                                        >
+                                                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                                                            </svg>
+                                                                            Anular
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}
