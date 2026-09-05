@@ -113,7 +113,7 @@ export default function ProductoTableRow({
                 )}
             </td>
             {/* Disponibilidad */}
-            <td className="items-start text-xs px-2 py-2 w-20">
+            <td className="w-20 items-start px-2 py-2 text-xs">
                 {!proformaConvertida &&
                     (() => {
                         const stockDisponible =
@@ -125,7 +125,7 @@ export default function ProductoTableRow({
                         const stockTotal = (productoInfo as any)?.stock_total_calc ?? (productoInfo as any)?.stock_total ?? 0;
                         return (
                             <div
-                                className={`flex flex-col rounded p-1 text-xs ${
+                                className={`flex flex-col rounded p-1 text-xs text-center ${
                                     stockDisponible === 0
                                         ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200'
                                         : stockDisponible < 5
@@ -135,48 +135,46 @@ export default function ProductoTableRow({
                             >
                                 {/* Disp. {stockDisponible} | Res. {stockReservado} | Total {stockTotal} */}
                                 {/* disponible */}
-                                <p>Disp.: {stockDisponible}</p>
+                                <p>{stockDisponible}</p>
                                 {/* Reservado */}
-                                <p>Res.: {stockReservado}</p>
+                                {/* <p>Res.: {stockReservado}</p> */}
                                 {/* Total */}
-                                <p>T: {stockTotal}</p>
+                                {/* <p>T: {stockTotal}</p> */}
                             </div>
                         );
                     })()}
             </td>
 
             {/* Cantidad */}
-            <td className="items-start px-2 py-2">
-                <div className="flex flex-col items-center gap-2">
-                    <input
-                        type="text"
-                        inputMode="decimal"
-                        disabled={readOnly}
-                        value={editingField?.index === index && editingField?.field === 'cantidad' ? editingField.value : detalle.cantidad.toString()}
-                        placeholder="0.00"
-                        onFocus={() => {
-                            setEditingField({
-                                index,
-                                field: 'cantidad',
-                                value: detalle.cantidad.toString(),
-                            });
-                        }}
-                        onChange={(e) => {
-                            const valor = e.target.value;
-                            setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
-                            if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
-                                const num = valor === '' ? 0 : parseFloat(valor);
-                                if (num >= 0) {
-                                    onUpdateDetail(index, 'cantidad', num);
-                                }
+            <td className="items-center px-2 py-2">
+                <input
+                    type="text"
+                    inputMode="decimal"
+                    disabled={readOnly}
+                    value={editingField?.index === index && editingField?.field === 'cantidad' ? editingField.value : detalle.cantidad.toString()}
+                    placeholder="0.00"
+                    onFocus={() => {
+                        setEditingField({
+                            index,
+                            field: 'cantidad',
+                            value: detalle.cantidad.toString(),
+                        });
+                    }}
+                    onChange={(e) => {
+                        const valor = e.target.value;
+                        setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                        if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                            const num = valor === '' ? 0 : parseFloat(valor);
+                            if (num >= 0) {
+                                onUpdateDetail(index, 'cantidad', num);
                             }
-                        }}
-                        onBlur={() => {
-                            setEditingField(null);
-                        }}
-                        className="w-24 flex-col rounded-lg border border-gray-300 px-1 py-1 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                    />
-                </div>
+                        }
+                    }}
+                    onBlur={() => {
+                        setEditingField(null);
+                    }}
+                    className="w-24 flex-col rounded-lg border border-gray-300 px-1 py-1 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                />
             </td>
 
             {/* Precio Unitario (Compra) */}
@@ -452,11 +450,11 @@ export default function ProductoTableRow({
             </td>
 
             {/* Categoría */}
-            <td className="items-start px-2 py-2 text-center">
+            {/* <td className="items-start px-2 py-2 text-center">
                 <span className="font-small text-xs text-gray-700 dark:text-gray-300">
                     {typeof productoInfo?.categoria === 'string' ? productoInfo.categoria : productoInfo?.categoria?.nombre || '-'}
                 </span>
-            </td>
+            </td> */}
 
             {/* Unidad */}
             <td className="items-start px-2 py-2 text-center">

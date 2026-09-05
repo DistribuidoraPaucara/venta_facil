@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ModalComprasDiferenciaCostoComponent } from '@/presentation/components/precios/modal-compras-diferencia-costo';
 import { preciosService } from '@/application/services/precios.service';
 import type { Producto } from '@/domain/entities/ventas';
-import { DetalleProducto, ProductosTableProps } from './types';
+import { ModalComprasDiferenciaCostoComponent } from '@/presentation/components/precios/modal-compras-diferencia-costo';
+import { useCallback, useEffect, useState } from 'react';
+import FarmaciaMedicamentoModal from './components/FarmaciaMedicamentoModal';
 import ProductSearchBar from './components/ProductSearchBar';
 import ProductoTableRow from './components/ProductoTableRow';
-import FarmaciaMedicamentoModal from './components/FarmaciaMedicamentoModal';
+import { DetalleProducto, ProductosTableProps } from './types';
 
 // ✅ HELPER FUNCTION: Normalizar fechas para inputs type="date"
 const normalizeDateForInput = (date: string | null | undefined): string => {
@@ -23,14 +23,14 @@ const validarTipoPrecio = (producto: any, precioUnitario: number): { tipo_precio
     // Si el producto tiene precios disponibles, buscar coincidencia exacta
     const precios = producto.precios || producto.precios_venta || [];
     if (Array.isArray(precios)) {
-        const precioCoincidet = precios.find((p: any) =>
-            Math.abs(p.precio - precioUnitario) < 0.01 // Permitir pequeña tolerancia por decimales
+        const precioCoincidet = precios.find(
+            (p: any) => Math.abs(p.precio - precioUnitario) < 0.01, // Permitir pequeña tolerancia por decimales
         );
 
         if (precioCoincidet) {
             return {
                 tipo_precio_id: precioCoincidet.tipo_precio_id,
-                tipo_precio_nombre: precioCoincidet.nombre || precioCoincidet.tipo_precio_nombre
+                tipo_precio_nombre: precioCoincidet.nombre || precioCoincidet.tipo_precio_nombre,
             };
         }
     }
@@ -38,7 +38,7 @@ const validarTipoPrecio = (producto: any, precioUnitario: number): { tipo_precio
     // Si no hay coincidencia, retornar null (representa "OTROS")
     console.log('📌 [validarTipoPrecio] Precio personalizado detectado:', {
         producto: producto.nombre,
-        precio: precioUnitario
+        precio: precioUnitario,
     });
     return { tipo_precio_id: null, tipo_precio_nombre: null };
 };
@@ -65,7 +65,7 @@ export default function ProductosTable({
     onDetallesActualizados,
     es_farmacia = false,
     permitirProductosSinStock = false, // ✅ NUEVO (2026-05-26): Permitir productos sin stock
-    proformaConvertida = false // ✅ NUEVO (2026-05-29): Ocultar disponibilidad si está convertida
+    proformaConvertida = false, // ✅ NUEVO (2026-05-29): Ocultar disponibilidad si está convertida
 }: ProductosTableProps) {
     // ✅ DEBUG (2026-05-26): Verificar que permitirProductosSinStock llegue correctamente
     // console.log('📦 [ProductosTable] permitirProductosSinStock recibido:', permitirProductosSinStock);
@@ -99,7 +99,7 @@ export default function ProductosTable({
         precioActual: null,
         precioCostoNuevo: null,
         detalleIndex: null,
-        productoData: null
+        productoData: null,
     });
 
     // ✅ useEffect: Auto-expand combos recién agregados
@@ -114,14 +114,14 @@ export default function ProductosTable({
             const tieneComponentes = ((ultimoDetalle.producto as any).combo_items?.length || 0) > 0;
 
             if (tieneComponentes && !expandedCombos[ultimoIndice]) {
-                setExpandedCombos(prev => ({
+                setExpandedCombos((prev) => ({
                     ...prev,
-                    [ultimoIndice]: true
+                    [ultimoIndice]: true,
                 }));
 
                 const comboItems = ((ultimoDetalle.producto as any).combo_items || []).map((item: any) => ({
                     ...item,
-                    incluido: item.es_obligatorio === true
+                    incluido: item.es_obligatorio === true,
                 }));
 
                 /* console.log('📦 [ProductosTable] Combo agregado:', {
@@ -136,9 +136,9 @@ export default function ProductosTable({
                     }))
                 }); */
 
-                setComboItemsMap(prev => ({
+                setComboItemsMap((prev) => ({
                     ...prev,
-                    [comboId]: comboItems
+                    [comboId]: comboItems,
                 }));
             }
         }
@@ -149,36 +149,34 @@ export default function ProductosTable({
             // 1️⃣ PRIORIDAD: Si el detalle YA viene con tipo_precio_id del backend, usarlo
             if (ultimoDetalle.tipo_precio_id) {
                 console.log(`✅ [ProductosTable] Inicializando selectedTipoPrecio con backend: ${ultimoDetalle.tipo_precio_id}`);
-                setSelectedTipoPrecio(prev => ({
+                setSelectedTipoPrecio((prev) => ({
                     ...prev,
-                    [ultimoDetalle.producto_id]: String(ultimoDetalle.tipo_precio_id)
+                    [ultimoDetalle.producto_id]: String(ultimoDetalle.tipo_precio_id),
                 }));
             }
             // 2️⃣ Si no, usar el recomendado
             else if (ultimoDetalle.tipo_precio_id_recomendado) {
                 console.log(`ℹ️ [ProductosTable] Inicializando selectedTipoPrecio con recomendado: ${ultimoDetalle.tipo_precio_id_recomendado}`);
-                setSelectedTipoPrecio(prev => ({
+                setSelectedTipoPrecio((prev) => ({
                     ...prev,
-                    [ultimoDetalle.producto_id]: String(ultimoDetalle.tipo_precio_id_recomendado)
+                    [ultimoDetalle.producto_id]: String(ultimoDetalle.tipo_precio_id_recomendado),
                 }));
             }
             // 3️⃣ Si no hay nada, buscar un precio de venta
             else {
                 const precios = ultimoDetalle.producto?.precios || [];
-                const preciosVenta = precios.filter(p => {
+                const preciosVenta = precios.filter((p) => {
                     const nombre = (p.nombre || '').toLowerCase();
                     return !nombre.includes('costo') && !nombre.includes('cost');
                 });
 
-                const precioVenta = preciosVenta.find(p =>
-                    (p.nombre || '').toLowerCase().includes('venta')
-                ) || preciosVenta[0];
+                const precioVenta = preciosVenta.find((p) => (p.nombre || '').toLowerCase().includes('venta')) || preciosVenta[0];
 
                 if (precioVenta) {
                     console.log(`ℹ️ [ProductosTable] Inicializando selectedTipoPrecio con preciosVenta: ${precioVenta.tipo_precio_id}`);
-                    setSelectedTipoPrecio(prev => ({
+                    setSelectedTipoPrecio((prev) => ({
                         ...prev,
-                        [ultimoDetalle.producto_id]: String(precioVenta.tipo_precio_id)
+                        [ultimoDetalle.producto_id]: String(precioVenta.tipo_precio_id),
                     }));
                 }
             }
@@ -220,7 +218,7 @@ export default function ProductosTable({
                             return {
                                 ...item,
                                 _isChecked: debeEstarIncluido,
-                                incluido: debeEstarIncluido
+                                incluido: debeEstarIncluido,
                             };
                         });
 
@@ -244,9 +242,7 @@ export default function ProductosTable({
         }
 
         const detallesActualizados = detalles.map((detalle, index) => {
-            const detalleRango = carritoCalculado?.detalles?.find(
-                (dr: any) => dr.producto_id === detalle.producto_id
-            );
+            const detalleRango = carritoCalculado?.detalles?.find((dr: any) => dr.producto_id === detalle.producto_id);
 
             // ✅ CRÍTICO: No actualizar si:
             // 1. El usuario seleccionó "OTROS" (tipo_precio_id === null)
@@ -260,7 +256,7 @@ export default function ProductosTable({
                 detalleRango.tipo_precio_nombre !== null &&
                 detalleRango.tipo_precio_nombre !== detalle.tipo_precio_nombre &&
                 !manuallySelectedTipoPrecio[detalle.producto_id] &&
-                !tieneOtrosSeleccionado  // ✅ NUEVO: No tocar si tiene "OTROS" seleccionado
+                !tieneOtrosSeleccionado // ✅ NUEVO: No tocar si tiene "OTROS" seleccionado
             ) {
                 const nuevoSubtotal = detalleRango.cantidad * (detalleRango.precio_unitario || detalle.precio_unitario);
 
@@ -269,16 +265,14 @@ export default function ProductosTable({
                     tipo_precio_id: detalleRango.tipo_precio_id,
                     tipo_precio_nombre: detalleRango.tipo_precio_nombre,
                     precio_unitario: detalleRango.precio_unitario ?? detalle.precio_unitario,
-                    subtotal: nuevoSubtotal
+                    subtotal: nuevoSubtotal,
                 };
             }
 
             return detalle;
         });
 
-        const huboCambios = detallesActualizados.some((det, idx) =>
-            JSON.stringify(det) !== JSON.stringify(detalles[idx])
-        );
+        const huboCambios = detallesActualizados.some((det, idx) => JSON.stringify(det) !== JSON.stringify(detalles[idx]));
 
         if (huboCambios && onDetallesActualizados) {
             onDetallesActualizados(detallesActualizados);
@@ -286,23 +280,26 @@ export default function ProductosTable({
     }, [carritoCalculado, detalles, manuallySelectedTipoPrecio, onDetallesActualizados]);
 
     // ✅ Handlers para modal de cascada
-    const handleGuardarPreciosModal = useCallback(async (
-        preciosCambiados: Array<{
-            precio_id: number;
-            precio_nuevo: number;
-            porcentaje_ganancia: number;
-            motivo: string;
-        }>
-    ) => {
-        return await preciosService.actualizarLote(preciosCambiados);
-    }, []);
+    const handleGuardarPreciosModal = useCallback(
+        async (
+            preciosCambiados: Array<{
+                precio_id: number;
+                precio_nuevo: number;
+                porcentaje_ganancia: number;
+                motivo: string;
+            }>,
+        ) => {
+            return await preciosService.actualizarLote(preciosCambiados);
+        },
+        [],
+    );
 
     const handlePreciosActualizados = useCallback(() => {
-        setModalCascadaState(prev => ({ ...prev, isOpen: false }));
+        setModalCascadaState((prev) => ({ ...prev, isOpen: false }));
     }, []);
 
     const handleCerrarModalCascada = useCallback(() => {
-        setModalCascadaState(prev => ({ ...prev, isOpen: false }));
+        setModalCascadaState((prev) => ({ ...prev, isOpen: false }));
     }, []);
 
     const handleAbrirModalCascada = useCallback((index: number, detalle: DetalleProducto) => {
@@ -312,7 +309,7 @@ export default function ProductosTable({
             precioActual: detalle.precio_costo || null,
             precioCostoNuevo: detalle.precio_unitario || null,
             detalleIndex: index,
-            productoData: detalle.producto || { id: detalle.producto_id, nombre: 'Producto' }
+            productoData: detalle.producto || { id: detalle.producto_id, nombre: 'Producto' },
         });
     }, []);
 
@@ -322,7 +319,7 @@ export default function ProductosTable({
             return precioBase;
         }
 
-        const conversion = conversiones.find(c => c.unidad_destino_id === unidadDestinoId);
+        const conversion = conversiones.find((c) => c.unidad_destino_id === unidadDestinoId);
         if (!conversion || conversion.factor_conversion === 0) {
             return precioBase;
         }
@@ -356,7 +353,7 @@ export default function ProductosTable({
                     detalle_index: index,
                     producto: producto?.nombre,
                     precio_nuevo: precioUnitario,
-                    accion: 'Limpiando tipo_precio_id y tipo_precio_nombre para que se muestren como "OTROS"'
+                    accion: 'Limpiando tipo_precio_id y tipo_precio_nombre para que se muestren como "OTROS"',
                 });
 
                 // ✅ CRÍTICO (2026-07-03): Actualizar el detalle con el nuevo precio y limpiar tipo_precio
@@ -366,7 +363,7 @@ export default function ProductosTable({
                     onUpdateDetailMultiple(index, {
                         precio_unitario: value,
                         tipo_precio_id: null,
-                        tipo_precio_nombre: null
+                        tipo_precio_nombre: null,
                     });
                 } else {
                     // Fallback: si no está disponible, hacer las llamadas individuales
@@ -402,16 +399,14 @@ export default function ProductosTable({
                     const itemDelMapa = itemsActualesDelMapa?.find((im: any) => im.id === item.id);
 
                     // Obtener estado de incluido (si existe en el mapa, preservar; si no, usar default)
-                    const incluido = itemDelMapa?.incluido !== undefined
-                        ? itemDelMapa.incluido
-                        : (item.es_obligatorio !== false);
+                    const incluido = itemDelMapa?.incluido !== undefined ? itemDelMapa.incluido : item.es_obligatorio !== false;
 
                     // ✅ IMPORTANTE: Guardar SIEMPRE la cantidad ORIGINAL del combo, no la multiplicada
                     // La multiplicación ocurre en el backend cuando se expande el combo
                     return {
                         ...item,
                         cantidad: item.cantidad, // ✅ CANTIDAD ORIGINAL (ej: 10 o 1, no 30 o 3)
-                        incluido: incluido
+                        incluido: incluido,
                     };
                 });
 
@@ -420,13 +415,13 @@ export default function ProductosTable({
                     campo: field,
                     valor: value,
                     items_original: comboItems.map((i: any) => ({ id: i.id, cantidad: i.cantidad })),
-                    items_actualizado: comboItemsActualizados.map((i: any) => ({ id: i.id, cantidad: i.cantidad }))
+                    items_actualizado: comboItemsActualizados.map((i: any) => ({ id: i.id, cantidad: i.cantidad })),
                 });
 
                 if (comboId) {
-                    setComboItemsMap(prev => ({
+                    setComboItemsMap((prev) => ({
                         ...prev,
-                        [comboId]: comboItemsActualizados
+                        [comboId]: comboItemsActualizados,
                     }));
                     // ✅ IMPORTANTE: Notificar al padre (create.tsx) sobre los cambios en items del combo
                     onComboItemsChange?.(index, comboItemsActualizados);
@@ -457,71 +452,54 @@ export default function ProductosTable({
 
             {/* Lista de productos agregados */}
             {detalles.length > 0 ? (
-                <div className="w-full overflow-x-auto relative">
+                <div className="relative w-full overflow-x-auto">
                     {/* Indicador de carga */}
                     {isCalculatingPrices && (
-                        <div className="absolute top-0 right-0 flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-bl-lg border-l border-b border-blue-200 dark:border-blue-800 z-10">
-                            <div className="w-3 h-3 border-2 border-blue-400 border-t-blue-700 dark:border-t-blue-300 rounded-full animate-spin"></div>
+                        <div className="absolute top-0 right-0 z-10 flex items-center gap-1.5 rounded-bl-lg border-b border-l border-blue-200 bg-blue-50 px-3 py-1.5 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-400 border-t-blue-700 dark:border-t-blue-300"></div>
                             <span className="text-xs font-medium">Actualizando...</span>
                         </div>
                     )}
 
                     {/* Tabla de productos */}
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
-                        <thead className="bg-gradient-to-b from-gray-100 to-gray-50 dark:from-zinc-700 dark:to-zinc-800 border-b-2 border-gray-300 dark:border-zinc-600">
+                        <thead className="border-b-2 border-gray-300 bg-gradient-to-b from-gray-100 to-gray-50 dark:border-zinc-600 dark:from-zinc-700 dark:to-zinc-800">
                             <tr>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    Producto
-                                </th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    SKU
-                                </th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    Disp.
-                                </th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    Cantidad
-                                </th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Producto</th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">SKU</th>
+                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disponible</th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Cantidad</th>
                                 {tipo === 'compra' && (
                                     <>
-                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
+                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
                                             Precio Compra
                                         </th>
-                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                            Lote
-                                        </th>
-                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
+                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
+                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
                                             Vencimiento
                                         </th>
                                     </>
                                 )}
                                 {tipo === 'venta' && (
-                                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
+                                    <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
                                         Precio Unitario
                                     </th>
                                 )}
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    Subtotal
-                                </th>
-                                 <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    Categoría
-                                </th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    Unidad
-                                </th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    Marca
-                                </th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
-                                    -
-                                </th>
+                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Subtotal</th>
+                                {/* <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
+                                    Cat.
+                                </th> */}
+                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Un.</th>
+                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Marca</th>
+                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">-</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-zinc-700 font-small text-xs">
+                        <tbody className="font-small divide-y divide-gray-200 bg-white text-xs dark:divide-zinc-700 dark:bg-zinc-900">
                             {detalles.map((detalle, index) => {
-                                const productoInfo = detalle.producto || productos.find(p => p.id === detalle.producto_id);
+                                const productoInfo = detalle.producto || productos.find((p) => p.id === detalle.producto_id);
                                 const precioCosto = detalle.precio_costo || productoInfo?.precio_costo || 0;
-                                const tieneDiferencia = tipo === 'compra' && precioCosto > 0 && Math.abs(detalle.precio_unitario - precioCosto) > 0.01;
+                                const tieneDiferencia =
+                                    tipo === 'compra' && precioCosto > 0 && Math.abs(detalle.precio_unitario - precioCosto) > 0.01;
                                 const esAumento = precioCosto > 0 && detalle.precio_unitario > precioCosto;
 
                                 return (
@@ -562,16 +540,17 @@ export default function ProductosTable({
                     </table>
                 </div>
             ) : (
-                <div className="text-center items-center justify-center">
+                <div className="items-center justify-center text-center">
                     <svg className="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                        />
                     </svg>
-                    <h3 className="mt-1.5 text-xs font-medium text-gray-900 dark:text-white">
-                        Sin productos
-                    </h3>
-                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        Busca y agrega productos
-                    </p>
+                    <h3 className="mt-1.5 text-xs font-medium text-gray-900 dark:text-white">Sin productos</h3>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Busca y agrega productos</p>
                 </div>
             )}
 
@@ -587,10 +566,7 @@ export default function ProductosTable({
             />
 
             {/* Modal de información de medicamentos */}
-            <FarmaciaMedicamentoModal
-                producto={farmaciaProdutoSeleccionado}
-                onClose={() => setFarmaciaProdutoSeleccionado(null)}
-            />
+            <FarmaciaMedicamentoModal producto={farmaciaProdutoSeleccionado} onClose={() => setFarmaciaProdutoSeleccionado(null)} />
         </div>
     );
 }

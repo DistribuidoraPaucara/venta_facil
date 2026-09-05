@@ -186,8 +186,8 @@ export default function ProductSearchBar({
                         type="button"
                         disabled={readOnly}
                         onClick={openScannerModal}
-                        className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
-                        title="Escanear código de barras (QR/Código de barras)"
+                        className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center sm:hidden"
+                        title="Escanear código de barras"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M12 15h4.01M12 21h4.01M12 18h4.01M12 9h4.01M12 6h4.01M12 3h4.01" />
@@ -278,7 +278,7 @@ export default function ProductSearchBar({
                                             <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">Stock</th>
                                             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Unidad</th>
                                             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Marca</th>
-                                            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Categoría</th>
+                                            {/* <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Categoría</th> */}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -347,7 +347,7 @@ export default function ProductSearchBar({
                                                         <span className="text-gray-400">-</span>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-3 text-xs">
+                                                {/* <td className="px-3 py-3 text-xs">
                                                     {producto.categoria ? (
                                                         <span className="inline-block bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-full font-medium">
                                                             {producto.categoria.nombre}
@@ -355,7 +355,7 @@ export default function ProductSearchBar({
                                                     ) : (
                                                         <span className="text-gray-400">-</span>
                                                     )}
-                                                </td>
+                                                </td> */}
                                             </tr>
                                         ))}
                                     </tbody>

@@ -1099,6 +1099,16 @@ export default function VentaForm() {
             setClienteValue(null);
             setClienteDisplay('');
             setManuallySelectedTipoPrecio({});
+
+            // ✅ NUEVO: Seleccionar automáticamente cliente GENERAL después de limpiar
+            const clienteGeneral = clientesSeguro.find((c: Cliente) => c.codigo_cliente === 'GENERAL');
+            if (clienteGeneral) {
+                setData('cliente_id', clienteGeneral.id);
+                setClienteValue(clienteGeneral.id);
+                setClienteDisplay(clienteGeneral.nombre + (clienteGeneral.nit ? ` (${clienteGeneral.nit})` : ''));
+                setClienteSeleccionado(clienteGeneral);
+            }
+
             NotificationService.success('Borrador de venta eliminado');
         } catch (error) {
             console.error('Error limpiando borrador:', error);
