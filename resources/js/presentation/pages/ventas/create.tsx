@@ -1897,7 +1897,7 @@ export default function VentaForm() {
                 {/* Totales */}
                 {detallesWithProducts.length > 0 && (
                     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                        <div className={`grid grid-cols-1 gap-4 'sm:grid-cols-3'}`}>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             {/* Descuento general */}
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Descuento general</label>
