@@ -24,9 +24,13 @@ import type { TipoDocumento } from '@/domain/entities/tipos-documento';
 import type { TipoPago } from '@/domain/entities/tipos-pago';
 import type { DetalleVentaFormData, EstadoDocumento, Moneda, Producto, Venta } from '@/domain/entities/ventas';
 
+import {
+    abrirPantallaPrestamoEnNuevaVentana,
+    calcularPrestamesParaVenta,
+    tieneProductosPrestables,
+} from '@/infrastructure/helpers/prestables.helper';
 import ventasService from '@/infrastructure/services/ventas.service';
 import { formatCurrencyMinimalDecimals } from '@/lib/utils';
-import { abrirPantallaPrestamoEnNuevaVentana, calcularPrestamesParaVenta, tieneProductosPrestables } from '@/infrastructure/helpers/prestables.helper';
 
 interface TipoPrecio {
     id: number;
@@ -296,9 +300,8 @@ export default function VentaForm() {
     const [montoTransferencia, setMontoTransferencia] = useState<number | ''>('');
 
     // ✅ NUEVO (2026-05-03): Auto-seleccionar tipo de pago y actualizar monto_pagado_inicial basado en montos de pago
+    // ✅ CORREGIDO (2026-09-04): Ahora aplica a TODAS las empresas, no solo farmacias
     useEffect(() => {
-        // ✅ NUEVO: Solo ejecutar este efecto en modo farmacia (desglose de pagos)
-        if (!isFarmacia) return;
 
         const efectivo = Number(montoEfectivo) || 0;
         const transferencia = Number(montoTransferencia) || 0;
@@ -1222,39 +1225,40 @@ export default function VentaForm() {
             }),
         };
 
-        // ✅ NUEVO (2026-05-03): Preparar pagos según es_farmacia
+        // ✅ NUEVO (2026-05-03): Preparar pagos con desglose de Efectivo + Transferencia
+        // ✅ CORREGIDO (2026-09-04): Ahora se aplica a TODAS las empresas, no solo farmacias
         const pagosAEnviar = [];
 
-        if (es_farmacia) {
-            // 🏥 FARMACIA: Desglose de Efectivo + Transferencia
-            const efectivo = Number(montoEfectivo) || 0;
-            const transferencia = Number(montoTransferencia) || 0;
+        // Desglose de Efectivo + Transferencia (para TODAS las empresas)
+        const efectivo = Number(montoEfectivo) || 0;
+        const transferencia = Number(montoTransferencia) || 0;
 
-            if (efectivo > 0) {
-                pagosAEnviar.push({
-                    tipo_pago_id: 1, // EFECTIVO
-                    monto: efectivo,
-                });
-            }
-
-            if (transferencia > 0) {
-                pagosAEnviar.push({
-                    tipo_pago_id: 2, // TRANSFERENCIA/QR
-                    monto: transferencia,
-                });
-            }
-
-            console.log('💳 [VentaForm] Pagos desglosados (FARMACIA) a enviar:', {
-                cantidad_formas_pago: pagosAEnviar.length,
-                detalle_pagos: pagosAEnviar.map((p) => ({
-                    tipo_pago_id: p.tipo_pago_id,
-                    tipo_pago: p.tipo_pago_id === 1 ? 'EFECTIVO' : p.tipo_pago_id === 2 ? 'TRANSFERENCIA/QR' : 'OTRO',
-                    monto: p.monto,
-                })),
-                total_pagado: pagosAEnviar.reduce((sum, p) => sum + p.monto, 0),
+        if (efectivo > 0) {
+            pagosAEnviar.push({
+                tipo_pago_id: 1, // EFECTIVO
+                monto: efectivo,
             });
-        } else {
-            // 🏪 NO FARMACIA: Monto único con tipo_pago_id seleccionado
+        }
+
+        if (transferencia > 0) {
+            pagosAEnviar.push({
+                tipo_pago_id: 2, // TRANSFERENCIA/QR
+                monto: transferencia,
+            });
+        }
+
+        console.log('💳 [VentaForm] Pagos desglosados a enviar:', {
+            cantidad_formas_pago: pagosAEnviar.length,
+            detalle_pagos: pagosAEnviar.map((p) => ({
+                tipo_pago_id: p.tipo_pago_id,
+                tipo_pago: p.tipo_pago_id === 1 ? 'EFECTIVO' : p.tipo_pago_id === 2 ? 'TRANSFERENCIA/QR' : 'OTRO',
+                monto: p.monto,
+            })),
+            total_pagado: pagosAEnviar.reduce((sum, p) => sum + p.monto, 0),
+        });
+
+        // Fallback: si no hay desglose, usar monto único con tipo_pago_id seleccionado
+        if (pagosAEnviar.length === 0) {
             const montoPagado = Number(data.monto_pagado_inicial) || 0;
 
             if (montoPagado > 0 && data.tipo_pago_id) {
@@ -1263,7 +1267,7 @@ export default function VentaForm() {
                     monto: montoPagado,
                 });
 
-                console.log('💳 [VentaForm] Pago único (NO FARMACIA) a enviar:', {
+                console.log('💳 [VentaForm] Pago único (FALLBACK) a enviar:', {
                     tipo_pago_id: data.tipo_pago_id,
                     tipo_pago_nombre:
                         data.tipo_pago_id === 1
@@ -1413,7 +1417,7 @@ export default function VentaForm() {
                                     clienteCodigo,
                                     ventaId,
                                     prestables,
-                                    ventaCompleta.data.direccion_cliente_id
+                                    ventaCompleta.data.direccion_cliente_id,
                                 );
                             }
                         }
@@ -1561,7 +1565,7 @@ export default function VentaForm() {
 
                 {/* Información básica */}
                 <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
+                    <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {/* Campo número oculto - se genera automáticamente */}
                         <input type="hidden" value={data.numero} onChange={(e) => setData('numero', e.target.value)} />
                         <div>
@@ -1780,7 +1784,7 @@ export default function VentaForm() {
                                         <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-900/20">
                                             {/* Selector de direcciones */}
                                             <div className="dark:border-amber-800">
-                                                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                                <label className="mb-2 block text-sm font-semibold text-gray-900 dark:text-white">
                                                     📍 Direcciones Disponibles
                                                 </label>
                                                 {cargandoDirecciones ? (
@@ -1805,7 +1809,7 @@ export default function VentaForm() {
                                                                 {dir.observaciones ? (
                                                                     <>
                                                                         <div className="flex items-center justify-between">
-                                                                            <p className="text-sm font-semibold text-gray-900 dark:text-white uppercase">
+                                                                            <p className="text-sm font-semibold text-gray-900 uppercase dark:text-white">
                                                                                 🏷️ {dir.observaciones}
                                                                             </p>
                                                                             {dir.es_principal && (
@@ -1865,8 +1869,6 @@ export default function VentaForm() {
                                             </div>
                                         </div>
                                     )}
-
-                                    
                                 </div>
                             </div>
                         </div>
@@ -1899,7 +1901,7 @@ export default function VentaForm() {
                 {/* Totales */}
                 {detallesWithProducts.length > 0 && (
                     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                        <div className={`grid grid-cols-1 gap-4 ${es_farmacia ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+                        <div className={`grid grid-cols-1 gap-4 'sm:grid-cols-3'}`}>
                             {/* Descuento general */}
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Descuento general</label>
@@ -1921,83 +1923,49 @@ export default function VentaForm() {
                                 />
                             </div>
 
-                            {/* ✅ FARMACIA: Desglose de Pagos (Efectivo + Transferencia) */}
-                            {es_farmacia ? (
-                                <>
-                                    {/* Desglose de Pagos: Efectivo */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Efectivo</label>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                value={montoEfectivo}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setMontoEfectivo(valor === '' ? '' : parseFloat(valor) || 0);
-                                                }}
-                                                onWheel={(e) => e.preventDefault()}
-                                                disabled={isSubmitting}
-                                                className="flex-1 [appearance:textfield] rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [&::-webkit-inner-spin-button]:[appearance:none] [&::-webkit-outer-spin-button]:[appearance:none]"
-                                                placeholder="0.00"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Desglose de Pagos: Transferencia/QR */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Transferencia/QR</label>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                value={montoTransferencia}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setMontoTransferencia(valor === '' ? '' : parseFloat(valor) || 0);
-                                                }}
-                                                onWheel={(e) => e.preventDefault()}
-                                                disabled={isSubmitting}
-                                                className="flex-1 [appearance:textfield] rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [&::-webkit-inner-spin-button]:[appearance:none] [&::-webkit-outer-spin-button]:[appearance:none]"
-                                                placeholder="0.00"
-                                            />
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                /* ✅ NO FARMACIA: Input único de Monto Pagado */
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Monto Pagado</label>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={
-                                                data.monto_pagado_inicial === 0 && data.monto_pagado_inicial.toString() === '0'
-                                                    ? ''
-                                                    : data.monto_pagado_inicial
-                                            }
-                                            onChange={(e) => {
-                                                const valor = e.target.value;
-                                                const montoPagado = valor === '' ? 0 : parseFloat(valor);
-                                                if (!isNaN(montoPagado) && montoPagado >= 0) {
-                                                    setData('monto_pagado_inicial', montoPagado);
-                                                }
-                                            }}
-                                            onWheel={(e) => e.preventDefault()}
-                                            disabled={false}
-                                            className="flex-1 [appearance:textfield] rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [&::-webkit-inner-spin-button]:[appearance:none] [&::-webkit-outer-spin-button]:[appearance:none]"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
+                            {/* Desglose de Pagos: Efectivo */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Efectivo</label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={montoEfectivo}
+                                        onChange={(e) => {
+                                            const valor = e.target.value;
+                                            setMontoEfectivo(valor === '' ? '' : parseFloat(valor) || 0);
+                                        }}
+                                        onWheel={(e) => e.preventDefault()}
+                                        disabled={isSubmitting}
+                                        className="flex-1 [appearance:textfield] rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [&::-webkit-inner-spin-button]:[appearance:none] [&::-webkit-outer-spin-button]:[appearance:none]"
+                                        placeholder="0.00"
+                                    />
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Desglose de Pagos: Transferencia/QR */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Transferencia/QR</label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={montoTransferencia}
+                                        onChange={(e) => {
+                                            const valor = e.target.value;
+                                            setMontoTransferencia(valor === '' ? '' : parseFloat(valor) || 0);
+                                        }}
+                                        onWheel={(e) => e.preventDefault()}
+                                        disabled={isSubmitting}
+                                        className="flex-1 [appearance:textfield] rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [&::-webkit-inner-spin-button]:[appearance:none] [&::-webkit-outer-spin-button]:[appearance:none]"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* ✅ NUEVO: Resumen completo de la transacción */}
