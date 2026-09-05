@@ -457,7 +457,6 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                                 onClick={() => handleBuscarProducto()}
                                                 disabled={!searchTerm.trim() || !data.almacen_origen_id || isSearching}
                                                 variant="outline"
-                                                className="mt-6"
                                             >
                                                 <Search className="h-4 w-4" />
                                             </Button>
