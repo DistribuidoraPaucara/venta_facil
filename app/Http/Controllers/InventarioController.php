@@ -1696,16 +1696,24 @@ class InventarioController extends Controller
 
     /**
      * Listado de transferencias entre almacenes
+     * ✅ MEJORADO: Filtra solo transferencias de la empresa del usuario autenticado
      */
     public function transferencias(Request $request): Response
     {
+        // Obtener empresa_id del usuario autenticado
+        $empresaId = auth()->user()->empresa_id;
+
+        // ✅ CRÍTICO: Filtrar transferencias por empresa del usuario
+        // Solo mostrar transferencias entre almacenes que pertenecen a su empresa
         $query = TransferenciaInventario::with([
-            'almacenOrigen:id,nombre',
-            'almacenDestino:id,nombre',
+            'almacenOrigen:id,nombre,empresa_id',
+            'almacenDestino:id,nombre,empresa_id',
             'usuario:id,name',
             'vehiculo:id,placa',
             'chofer:id,licencia',
-        ]);
+        ])
+        ->whereHas('almacenOrigen', fn($q) => $q->where('empresa_id', $empresaId))
+        ->whereHas('almacenDestino', fn($q) => $q->where('empresa_id', $empresaId));
 
         if ($request->filled('estado')) {
             $query->porEstado($request->string('estado'));
@@ -1723,7 +1731,11 @@ class InventarioController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $almacenes = Almacen::where('activo', true)->get(['id', 'nombre']);
+        // ✅ CRÍTICO: Filtrar almacenes por empresa_id del usuario
+        $almacenes = Almacen::where('empresa_id', $empresaId)
+            ->where('activo', true)
+            ->get(['id', 'nombre']);
+
         $vehiculos = Vehiculo::activos()->get(['id', 'placa']);
         $choferes  = User::role('Chofer')->get(['id', 'name'])->map(fn($user) => ['id' => $user->id, 'name' => $user->name]);
         $estados   = TransferenciaInventario::getEstados();
