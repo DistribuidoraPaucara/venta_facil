@@ -155,14 +155,28 @@ class MovimientoInventarioService
             // Usar el primer stock_producto_id de los detalles (para compatibilidad)
             $stock_producto_id = !empty($detallesLotes) ? $detallesLotes[0]['stock_producto_id'] : null;
 
+            // ✅ CRÍTICO: cantidad_anterior y cantidad_posterior del LOTE específico, no del total del producto
+            // El constraint chk_suma_anterior verifica: cantidad_disponible_anterior + cantidad_reservada_anterior == cantidad_anterior
+            // Por eso cantidad_anterior DEBE ser la suma de disponible + reservada del lote
+            if (!empty($detallesLotes)) {
+                // Si hay un solo lote: usar sus valores
+                $primerLote = $detallesLotes[0];
+                $cantidadAnteriorLote = ($primerLote['cantidad_disponible_anterior'] ?? 0) + ($primerLote['cantidad_reservada_anterior'] ?? 0);
+                $cantidadPosteriorLote = ($primerLote['cantidad_disponible_posterior'] ?? 0) + ($primerLote['cantidad_reservada_posterior'] ?? 0);
+            } else {
+                // Si no hay lotes, usar totales
+                $cantidadAnteriorLote = $cantidadDisponibleAnterior + $cantidadReservadaAnterior;
+                $cantidadPosteriorLote = $cantidadDisponiblePosterior + $cantidadReservadaPosterior;
+            }
+
             // Crear movimiento AGRUPADO
             // ✅ CORREGIDO (2026-06-29): Guardar en AMBAS columnas (cantidad_disponible_* y disponible_total_*)
             // porque cantidad_disponible_* son del lote específico, mientras que disponible_total_* son del total
             $movimiento = MovimientoInventario::create([
                 'stock_producto_id' => $stock_producto_id,
                 'cantidad' => $cantidad, // Cantidad neta (puede ser negativa)
-                'cantidad_anterior' => $cantidadTotalAnterior,
-                'cantidad_posterior' => $cantidadTotalPosterior,
+                'cantidad_anterior' => $cantidadAnteriorLote,  // ✅ suma(disponible + reservada), satisface constraint
+                'cantidad_posterior' => $cantidadPosteriorLote,  // ✅ suma(disponible + reservada)
                 // ✅ 8 columnas de auditoría (cantidad_total + disponible_total + reservada_total)
                 'cantidad_total_anterior' => $cantidadTotalAnterior,
                 'cantidad_total_posterior' => $cantidadTotalPosterior,

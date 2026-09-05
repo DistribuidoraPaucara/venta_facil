@@ -84,10 +84,10 @@ class EmpleadoController extends Controller
 
         // Aplicar ordenamiento
         if ($orderBy === 'nombre') {
-            // Para nombre, ordenar por el nombre del usuario relacionado
-            $query->leftJoin('users', 'empleados.user_id', '=', 'users.id')
-                ->select('empleados.*')
-                ->orderBy('users.name', $orderDir);
+            // Para nombre, usar una subquery para evitar ambigüedad en el join
+            $query->orderByRaw(
+                'COALESCE((SELECT name FROM users WHERE users.id = empleados.user_id), empleados.codigo_empleado) ' . $orderDir
+            );
         } else {
             $query->orderBy($orderBy, $orderDir);
         }
@@ -196,9 +196,9 @@ class EmpleadoController extends Controller
         // Validaciones condicionales si se crea usuario
         if ($request->crear_usuario || $request->puede_acceder_sistema) {
             $request->validate([
-                'email'    => 'nullable|string|email|max:255|unique:users', // Email es completamente opcional
-                'usernick' => 'required|string|max:255|unique:users',       // Usernick es requerido si puede acceder al sistema
-                'password' => 'required|string|min:8|confirmed',            // Password requerido al crear usuario
+                'email'    => ['nullable', 'string', 'email', 'max:255', Rule::unique('users')->where('empresa_id', Auth::user()?->empresa_id)],
+                'usernick' => ['required', 'string', 'max:255', Rule::unique('users')->where('empresa_id', Auth::user()?->empresa_id)],
+                'password' => 'required|string|min:8|confirmed',
             ]);
         }
 
@@ -480,7 +480,9 @@ class EmpleadoController extends Controller
                 'string',
                 'email',
                 'max:255',
-                $empleado->user_id ? Rule::unique('users')->ignore($empleado->user_id) : 'unique:users',
+                $empleado->user_id
+                    ? Rule::unique('users')->ignore($empleado->user_id)->where('empresa_id', Auth::user()?->empresa_id)
+                    : Rule::unique('users')->where('empresa_id', Auth::user()?->empresa_id),
             ];
         }
 
@@ -522,7 +524,9 @@ class EmpleadoController extends Controller
                 'nullable',
                 'string',
                 'max:255',
-                $empleado->user_id ? Rule::unique('users')->ignore($empleado->user_id) : 'unique:users',
+                $empleado->user_id
+                    ? Rule::unique('users')->ignore($empleado->user_id)->where('empresa_id', Auth::user()?->empresa_id)
+                    : Rule::unique('users')->where('empresa_id', Auth::user()?->empresa_id),
             ];
         }
 

@@ -3,6 +3,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class EmpleadoRequest extends FormRequest
 {
@@ -19,6 +20,8 @@ class EmpleadoRequest extends FormRequest
      */
     public function rules(): array
     {
+        $empresaId = Auth::user()?->empresa_id;
+
         $rules = [
             'nombre'                => 'required|string|max:255',
             'ci'                    => 'nullable|string|max:20',
@@ -29,9 +32,9 @@ class EmpleadoRequest extends FormRequest
             'crear_usuario'         => 'boolean',
             'puede_acceder_sistema' => 'boolean',
             'rol'                   => 'nullable|string',
-            'usernick'              => 'nullable|string|max:100|unique:users,usernick',
-            'email'                 => 'nullable|email|max:255|unique:users,email', // Email es completamente opcional - el usuario puede loguearse con usernick
-            'password'              => 'nullable|string|min:8|confirmed', // Para cambio de contraseña
+            'usernick'              => ['nullable', 'string', 'max:100', Rule::unique('users')->where('empresa_id', $empresaId)],
+            'email'                 => ['nullable', 'email', 'max:255', Rule::unique('users')->where('empresa_id', $empresaId)],
+            'password'              => 'nullable|string|min:8|confirmed',
         ];
 
         // Verificar si estamos editando un empleado o creando uno nuevo
@@ -41,7 +44,7 @@ class EmpleadoRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('empleados')->ignore($this->route('empleado')->id),
+                Rule::unique('empleados')->ignore($this->route('empleado')->id)->where('empresa_id', $empresaId),
             ];
 
             // Si estamos editando, permitir actualizar email y usernick del usuario relacionado
@@ -50,19 +53,19 @@ class EmpleadoRequest extends FormRequest
                     'nullable',
                     'email',
                     'max:255',
-                    Rule::unique('users')->ignore($this->route('empleado')->user_id),
+                    Rule::unique('users')->ignore($this->route('empleado')->user_id)->where('empresa_id', $empresaId),
                 ];
 
                 $rules['usernick'] = [
                     'nullable',
                     'string',
                     'max:100',
-                    Rule::unique('users')->ignore($this->route('empleado')->user_id),
+                    Rule::unique('users')->ignore($this->route('empleado')->user_id)->where('empresa_id', $empresaId),
                 ];
             }
         } else {
             // Creación de empleado
-            $rules['codigo_empleado'] = 'nullable|string|max:20|unique:empleados,codigo_empleado';
+            $rules['codigo_empleado'] = ['nullable', 'string', 'max:20', Rule::unique('empleados')->where('empresa_id', $empresaId)];
         }
 
         return $rules;
