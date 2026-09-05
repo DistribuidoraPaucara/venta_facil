@@ -212,6 +212,30 @@ export default function AjusteTabla() {
         }
     }, [almacenes]);
 
+    // ✅ NUEVO: Cerrar sugerencias al presionar Escape o hacer click afuera
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setMainSearchResults([]);
+                setMainSearchTerm('');
+            }
+        };
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (mainSearchContainerRef.current && !mainSearchContainerRef.current.contains(e.target as Node)) {
+                setMainSearchResults([]);
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     // Estados para búsqueda de productos
     const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
     const [searchResults, setSearchResults] = useState<{ [key: string]: any[] }>({});
@@ -229,6 +253,7 @@ export default function AjusteTabla() {
     const [mainSearchResults, setMainSearchResults] = useState<any[]>([]);
     const [isSearchingMain, setIsSearchingMain] = useState(false);
     const mainInputRef = useRef<HTMLInputElement>(null);
+    const mainSearchContainerRef = useRef<HTMLDivElement>(null);
 
     // Filtrar stock_productos según almacén seleccionado
     const stockProductosFiltrados = useMemo(() => {
@@ -810,7 +835,7 @@ export default function AjusteTabla() {
                             </div>
 
                             {/* Buscador Principal */}
-                            <div className="md:col-span-2">
+                            <div className="md:col-span-2" ref={mainSearchContainerRef}>
                                 <label className="mb-2 block text-sm font-medium dark:text-gray-200">
                                     🔍 Buscar Producto
                                 </label>
