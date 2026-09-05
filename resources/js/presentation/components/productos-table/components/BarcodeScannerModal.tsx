@@ -33,16 +33,30 @@ export default function BarcodeScannerModal({
             try {
                 setIsScanning(true);
 
+                // ✅ Verificar si getUserMedia está disponible
+                if (!navigator?.mediaDevices?.getUserMedia) {
+                    onError(
+                        'Tu navegador no soporta acceso a cámara. ' +
+                        'Asegúrate de usar HTTPS, permisos habilitados, y navegador moderno (Chrome, Firefox, Safari).'
+                    );
+                    setIsScanning(false);
+                    return;
+                }
+
                 // ✅ Inicializar el reader si no existe
                 if (!readerRef.current) {
                     readerRef.current = new BrowserMultiFormatReader();
                 }
 
-                // ✅ Acceder a la cámara
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' },
+                // ✅ Acceder a la cámara con fallback
+                const stream = await (navigator.mediaDevices?.getUserMedia?.({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
                     audio: false
-                });
+                }) || Promise.reject('getUserMedia no disponible'));
 
                 streamRef.current = stream;
 
@@ -85,16 +99,23 @@ export default function BarcodeScannerModal({
                 console.error('❌ Error iniciando scanner:', err);
 
                 // ✅ Mensajes de error más específicos
-                if (errorMsg.includes('Permission denied')) {
-                    onError('Permiso de cámara denegado. Verifica los permisos del navegador.');
+                let mensajeError = '';
+
+                if (errorMsg.includes('Permission denied') || errorMsg.includes('NotAllowedError')) {
+                    mensajeError = '❌ Permiso de cámara denegado. Verifica los permisos en la configuración del navegador.';
                 } else if (errorMsg.includes('NotFoundError')) {
-                    onError('No se encontró ninguna cámara en tu dispositivo.');
-                } else if (errorMsg.includes('NotAllowedError')) {
-                    onError('Debes permitir acceso a la cámara para usar el scanner.');
+                    mensajeError = '❌ No se encontró cámara en tu dispositivo.';
+                } else if (errorMsg.includes('NotSupportedError')) {
+                    mensajeError = '❌ Tu navegador no soporta acceso a cámara en este sitio.';
+                } else if (errorMsg.includes('getUserMedia no disponible')) {
+                    mensajeError = '❌ getUserMedia no disponible. Verifica: HTTPS, permisos, navegador moderno.';
+                } else if (errorMsg.includes('HTTPS')) {
+                    mensajeError = '❌ Se requiere HTTPS para acceder a la cámara.';
                 } else {
-                    onError(`Error: ${errorMsg}`);
+                    mensajeError = `❌ Error: ${errorMsg}. Usa la entrada manual como alternativa.`;
                 }
 
+                onError(mensajeError);
                 setIsScanning(false);
             }
         };
