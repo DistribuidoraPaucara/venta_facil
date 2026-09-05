@@ -92,19 +92,33 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
 
             try {
                 setIsSearching(true);
-                const response = await fetch(
-                    `/api/productos/buscar?q=${encodeURIComponent(term)}&almacen_id=${data.almacen_origen_id}&limite=10`,
-                    { headers: { Accept: 'application/json' } }
-                );
+                const url = `/api/productos/buscar?q=${encodeURIComponent(term)}&almacen_id=${data.almacen_origen_id}&limite=10`;
+
+                console.log('🔍 [Transferencias] Buscando productos:', {
+                    termino: term,
+                    almacen_id: data.almacen_origen_id,
+                    url: url,
+                });
+
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
 
                 const resultado = await response.json();
+
+                console.log('📥 [Transferencias] Respuesta del backend:', {
+                    success: resultado.success,
+                    status: response.status,
+                    respuesta_completa: resultado,
+                    cantidad_productos: resultado.data?.length || 0,
+                    productos: resultado.data,
+                });
+
                 if (resultado.success) {
                     setSearchResults(resultado.data || []);
                 } else {
                     setSearchResults([]);
                 }
             } catch (error) {
-                console.error('Error en búsqueda:', error);
+                console.error('❌ [Transferencias] Error en búsqueda:', error);
                 setSearchResults([]);
             } finally {
                 setIsSearching(false);
@@ -286,59 +300,7 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                         required
                                         error={errors.almacen_destino_id}
                                     />
-                                </div>
-
-                                {/* Mostrar información contextual de la transferencia */}
-                                {almacenOrigen && almacenDestino && (
-                                    <>
-                                        {requiereTransporte ? (
-                                            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                                    <strong>🚛 Transferencia Física</strong><br />
-                                                    Esta transferencia requiere transporte entre ubicaciones diferentes.
-                                                    {(() => {
-                                                        if (almacenOrigen?.requiere_transporte_externo || almacenDestino?.requiere_transporte_externo) {
-                                                            return <span className="block mt-1 font-medium">⚠️ Almacén con transporte externo requerido</span>;
-                                                        }
-
-                                                        if (almacenOrigen?.ubicacion_fisica && almacenDestino?.ubicacion_fisica && almacenOrigen.ubicacion_fisica !== almacenDestino.ubicacion_fisica) {
-                                                            return <span className="block mt-1">📍 {almacenOrigen.ubicacion_fisica} → {almacenDestino.ubicacion_fisica}</span>;
-                                                        }
-
-                                                        return <span className="block mt-1">🏢 Transferencia entre almacenes diferentes</span>;
-                                                    })()}
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                                                <p className="text-sm text-green-800 dark:text-green-200">
-                                                    <strong>📦 Transferencia Interna</strong><br />
-                                                    Movimiento interno en la misma ubicación física.
-                                                    {(() => {
-                                                        if (almacenOrigen?.ubicacion_fisica && almacenDestino?.ubicacion_fisica) {
-                                                            return <span className="block mt-1">📍 Misma ubicación: {almacenOrigen.ubicacion_fisica}</span>;
-                                                        }
-
-                                                        return <span className="block mt-1">🏢 Sin transporte requerido</span>;
-                                                    })()}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-
-                                {/* Mostrar campos de transporte solo si es transferencia física */}
-                                {requiereTransporte && (
-                                    <>
-                                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                            <p className="text-sm text-blue-800 dark:text-blue-200">
-                                                <strong>🚛 Transferencia Física</strong><br />
-                                                Esta transferencia requiere transporte entre almacenes diferentes.
-                                            </p>
-                                        </div>
-
-                                    </>
-                                )}
+                                </div>                               
 
                                 <div>
                                     <Label htmlFor="observaciones">Observaciones</Label>
