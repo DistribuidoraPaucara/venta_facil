@@ -433,12 +433,9 @@ export default function AjusteTabla() {
             try {
                 setIsSearchingMain(true);
 
-                const response = await fetch(
-                    `/api/inventario/productos-almacen/${almacenSeleccionado}?q=${encodeURIComponent(term)}&limit=15`,
-                    {
-                        headers: { Accept: 'application/json' },
-                    }
-                );
+                const response = await fetch(`/api/inventario/productos-almacen/${almacenSeleccionado}?q=${encodeURIComponent(term)}&limit=15`, {
+                    headers: { Accept: 'application/json' },
+                });
 
                 const data = await response.json();
 
@@ -458,7 +455,7 @@ export default function AjusteTabla() {
                 setIsSearchingMain(false);
             }
         },
-        [almacenSeleccionado]
+        [almacenSeleccionado],
     );
 
     // ✅ NUEVO: Agregar producto desde el listado de sugerencias
@@ -531,7 +528,7 @@ export default function AjusteTabla() {
                 toast.error('Error al agregar producto');
             }
         },
-        [almacenSeleccionado]
+        [almacenSeleccionado],
     );
 
     // Agregar nueva fila de ajuste
@@ -843,100 +840,89 @@ export default function AjusteTabla() {
                                     </SelectContent>
                                 </Select>
                             </div>
-
-                            {/* Buscador Principal */}
-                            <div className="md:col-span-2" ref={mainSearchContainerRef}>
-                                <label className="mb-2 block text-sm font-medium dark:text-gray-200">
-                                    🔍 Buscar Producto
-                                </label>
-                                <div className="relative">
-                                    <Search className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" size={18} />
-                                    <Input
-                                        ref={mainInputRef}
-                                        type="text"
-                                        placeholder="SKU, código de barras o nombre del producto..."
-                                        value={mainSearchTerm}
-                                        onChange={(e) => {
-                                            setMainSearchTerm(e.target.value);
-                                            // Auto-buscar mientras escribe
-                                            if (e.target.value.length > 0) {
-                                                buscarProductosGlobal(e.target.value);
-                                            } else {
-                                                setMainSearchResults([]);
-                                            }
-                                        }}
-                                        onKeyPress={(e) => {
-                                            if (e.key === 'Enter') {
-                                                buscarProductosGlobal(mainSearchTerm);
-                                            }
-                                        }}
-                                        className="w-full pl-10 text-base"
-                                        disabled={!almacenSeleccionado}
-                                    />
-                                    {isSearchingMain && (
-                                        <Loader className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-blue-500" size={18} />
-                                    )}
-                                </div>
-
-                                {/* Listado de Sugerencias */}
-                                {mainSearchTerm && mainSearchResults.length > 0 && (
-                                    <div className="absolute z-50 mt-2 max-h-96 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                                        {mainSearchResults.map((resultado, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="cursor-pointer border-b p-4 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700"
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium dark:text-white truncate">
-                                                            {resultado.sku && `[${resultado.sku}] `}
-                                                            {resultado.nombre}
-                                                        </p>
-                                                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400 md:grid-cols-4">
-                                                            {resultado.lote && (
-                                                                <span>📦 Lote: {resultado.lote}</span>
-                                                            )}
-                                                            <span>Actual: <span className="font-semibold text-blue-600 dark:text-blue-400">{parseFloat(resultado.cantidad_actual || 0).toFixed(2)}</span></span>
-                                                            <span>Disponible: <span className="font-semibold text-green-600 dark:text-green-400">{parseFloat(resultado.cantidad_disponible || 0).toFixed(2)}</span></span>
-                                                            <span>
-                                                                {resultado.existe_en_almacen ? (
-                                                                    <span className="text-green-600 dark:text-green-400">✓ En almacén</span>
-                                                                ) : (
-                                                                    <span className="text-orange-600 dark:text-orange-400">+ Nuevo</span>
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="default"
-                                                        className="ml-2 whitespace-nowrap"
-                                                        onClick={() => agregarDesdeListado(resultado)}
-                                                    >
-                                                        Agregar
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                            {/* Observación General */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium dark:text-gray-200">📝 Observación General (Opcional)</label>
+                                <Textarea
+                                    value={observacionGeneral}
+                                    onChange={(e) => setObservacionGeneral(e.target.value)}
+                                    placeholder="Ej: Ajuste por faltantes encontrados en recuento físico..."
+                                    className="w-full"
+                                    rows={2}
+                                />
                             </div>
                         </div>
-
-                        {/* Observación General */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium dark:text-gray-200">
-                                📝 Observación General (Opcional)
-                            </label>
-                            <Textarea
-                                value={observacionGeneral}
-                                onChange={(e) => setObservacionGeneral(e.target.value)}
-                                placeholder="Ej: Ajuste por faltantes encontrados en recuento físico..."
-                                className="w-full"
-                                rows={2}
-                            />
-                        </div>
                     </div>
+                </div>
+
+                {/* Buscador Principal */}
+                <div className="md:col-span-2" ref={mainSearchContainerRef}>
+                    <label className="mb-2 block text-sm font-medium dark:text-gray-200">🔍 Buscar Producto</label>
+                    <div className="relative">
+                        <Search className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" size={18} />
+                        <Input
+                            ref={mainInputRef}
+                            type="text"
+                            placeholder="SKU, código de barras o nombre del producto..."
+                            value={mainSearchTerm}
+                            onChange={(e) => {
+                                setMainSearchTerm(e.target.value);
+                                // Auto-buscar mientras escribe
+                                if (e.target.value.length > 0) {
+                                    buscarProductosGlobal(e.target.value);
+                                } else {
+                                    setMainSearchResults([]);
+                                }
+                            }}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    buscarProductosGlobal(mainSearchTerm);
+                                }
+                            }}
+                            className="w-full pl-10 text-base"
+                            disabled={!almacenSeleccionado}
+                        />
+                        {isSearchingMain && (
+                            <Loader className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-blue-500" size={18} />
+                        )}
+                    </div>
+
+                    {/* Listado de Sugerencias - Compacto */}
+                    {mainSearchTerm && mainSearchResults.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                            {mainSearchResults.map((resultado, idx) => (
+                                <div key={idx} className="flex cursor-pointer items-center justify-between border-b p-2 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium dark:text-white">
+                                            {resultado.sku && `[${resultado.sku}] `}
+                                            {resultado.nombre}
+                                        </p>
+                                        <div className="mt-1 flex gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                            {resultado.lote && <span>📦 {resultado.lote}</span>}
+                                            <span className="text-blue-600 dark:text-blue-400">
+                                                {parseFloat(resultado.cantidad_actual || 0).toFixed(2)}
+                                            </span>
+                                            <span className="text-green-600 dark:text-green-400">
+                                                ✓ {parseFloat(resultado.cantidad_disponible || 0).toFixed(2)}
+                                            </span>
+                                            {!resultado.existe_en_almacen && <span className="text-orange-600 dark:text-orange-400">+ Nuevo</span>}
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="xs"
+                                        variant="default"
+                                        className="ml-2 flex-shrink-0 whitespace-nowrap"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            agregarDesdeListado(resultado);
+                                        }}
+                                    >
+                                        Agregar
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Tabla de Ajustes */}
