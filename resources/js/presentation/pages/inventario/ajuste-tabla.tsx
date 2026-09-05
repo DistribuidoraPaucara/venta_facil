@@ -255,6 +255,9 @@ export default function AjusteTabla() {
     const mainInputRef = useRef<HTMLInputElement>(null);
     const mainSearchContainerRef = useRef<HTMLDivElement>(null);
 
+    // ✅ NUEVO: Tipo de ajuste global para toda la tabla
+    const [tipoAjusteSeleccionado, setTipoAjusteSeleccionado] = useState<number | null>(null);
+
     // Filtrar stock_productos según almacén seleccionado
     const stockProductosFiltrados = useMemo(() => {
         if (!almacenSeleccionado) return [];
@@ -499,13 +502,16 @@ export default function AjusteTabla() {
 
                 // Crear nueva fila en la tabla
                 const idTemporal = `temp_${Date.now()}_${Math.random()}`;
+                const tipoSeleccionado = tiposAjuste.find((t) => t.id === tipoAjusteSeleccionado);
                 const nuevoAjuste: AjusteItem = {
                     id: idTemporal,
                     stock_producto_id: producto.id || producto.stock_producto_id,
                     cantidad_actual: parseFloat(producto.cantidad_actual) || 0,
                     cantidad_ajuste: 0,
                     cantidad_nueva: parseFloat(producto.cantidad_actual) || 0,
-                    tipo_ajuste: 'entrada',
+                    tipo_ajuste: tipoSeleccionado?.tipo_operacion || 'entrada',
+                    tipo_ajuste_inventario_id: tipoAjusteSeleccionado || undefined,
+                    tipoAjusteInventario: tipoSeleccionado,
                     producto: producto,
                 };
 
@@ -528,22 +534,24 @@ export default function AjusteTabla() {
                 toast.error('Error al agregar producto');
             }
         },
-        [almacenSeleccionado],
+        [almacenSeleccionado, tipoAjusteSeleccionado, tiposAjuste],
     );
 
     // Agregar nueva fila de ajuste
     const agregarFila = useCallback(() => {
+        const tipoSeleccionado = tiposAjuste.find((t) => t.id === tipoAjusteSeleccionado);
         const nuevaFila: AjusteItem = {
             id: generarIdTemporal(),
             stock_producto_id: null,
             cantidad_actual: 0,
             cantidad_ajuste: 0,
             cantidad_nueva: 0,
-            tipo_ajuste: 'entrada',
-            observacion: '',
+            tipo_ajuste: tipoSeleccionado?.tipo_operacion || 'entrada',
+            tipo_ajuste_inventario_id: tipoAjusteSeleccionado || undefined,
+            tipoAjusteInventario: tipoSeleccionado,
         };
         setAjustes([...ajustes, nuevaFila]);
-    }, [ajustes]);
+    }, [ajustes, tipoAjusteSeleccionado, tiposAjuste]);
 
     // Eliminar fila de ajuste
     const eliminarFila = useCallback(
@@ -813,12 +821,12 @@ export default function AjusteTabla() {
             <div className="space-y-4 p-6">
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
 
-                <div className="flex items-center justify-between">
+                {/* <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold dark:text-white">Ajuste de Inventario</h1>
                         <p className="mt-1 text-gray-500 dark:text-gray-400">Realiza ajustes de stock por tabla editable</p>
                     </div>
-                </div>
+                </div> */}
 
                 {/* ✅ NUEVO: Buscador Principal - Estilo Ventas */}
                 <div className="rounded-lg bg-white p-6 shadow dark:bg-slate-800 dark:shadow-slate-900">
@@ -941,6 +949,46 @@ export default function AjusteTabla() {
                 {almacenSeleccionado && (
                     <div className="overflow-hidden rounded-lg bg-white shadow dark:bg-slate-800 dark:shadow-slate-900">
                         <form onSubmit={procesarAjustes}>
+                            {/* Cabecera de Control - Tipo de Ajuste Global */}
+                            <div className="border-b bg-gray-50 px-6 py-4 dark:border-slate-600 dark:bg-slate-700">
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium dark:text-gray-200">Tipo de Ajuste</label>
+                                        <Select
+                                            value={String(tipoAjusteSeleccionado || '')}
+                                            onValueChange={(val) => {
+                                                const tipo = tiposAjuste.find((t) => String(t.id) === val);
+                                                if (tipo) {
+                                                    setTipoAjusteSeleccionado(Number(val));
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecciona el tipo de ajuste..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {tiposAjuste.map((tipo) => (
+                                                    <SelectItem key={tipo.id} value={String(tipo.id)}>
+                                                        {tipo.tipo_operacion === 'entrada' ? '📥' : '📤'} {tipo.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex items-end gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={agregarFila}
+                                            className="w-full"
+                                        >
+                                            <Plus size={16} /> Agregar Fila
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Tabla */}
                             <div className="overflow-x-auto overflow-y-visible">
                                 <table className="relative w-full">
@@ -1098,52 +1146,6 @@ export default function AjusteTabla() {
                                                             📤 SALIDA
                                                         </button>
                                                     </div>
-                                                    {/* Mostrar tipos filtrados según ENTRADA/SALIDA */}
-                                                    <Select
-                                                        value={String(ajuste.tipo_ajuste_inventario_id || '')}
-                                                        onValueChange={(val) => {
-                                                            const tipo = tiposAjuste.find((t) => String(t.id) === val);
-                                                            if (tipo) {
-                                                                setAjustes((prevAjustes) =>
-                                                                    prevAjustes.map((a) => {
-                                                                        if (a.id !== ajuste.id) return a;
-                                                                        return {
-                                                                            ...a,
-                                                                            tipo_ajuste_inventario_id: tipo.id,
-                                                                            tipoAjusteInventario: tipo,
-                                                                            // ✅ NO actualizar tipo_ajuste - son independientes
-                                                                        };
-                                                                    }),
-                                                                );
-                                                            }
-                                                        }}
-                                                    >
-                                                        <SelectTrigger className={`w-full ${!ajuste.tipo_ajuste ? 'border-yellow-300' : ''}`}>
-                                                            <SelectValue
-                                                                placeholder={ajuste.tipoAjusteInventario?.label || 'Selecciona subtipo...'}
-                                                            />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {/* Mostrar todos los tipos si están vacíos, sino filtrar */}
-                                                            {tiposAjuste.length === 0 ? (
-                                                                <div className="p-2 text-sm text-gray-500">Cargando tipos de ajuste...</div>
-                                                            ) : (
-                                                                (() => {
-                                                                    const tiposFiltrados = tiposAjuste.filter(
-                                                                        (tipo) => tipo.tipo_operacion === ajuste.tipo_ajuste,
-                                                                    );
-                                                                    // Si no hay tipos filtrados, mostrar todos
-                                                                    const tiposAMostrar = tiposFiltrados.length > 0 ? tiposFiltrados : tiposAjuste;
-
-                                                                    return tiposAMostrar.map((tipo) => (
-                                                                        <SelectItem key={tipo.id} value={String(tipo.id)}>
-                                                                            {tipo.tipo_operacion === 'entrada' ? '📥' : '📤'} {tipo.label}
-                                                                        </SelectItem>
-                                                                    ));
-                                                                })()
-                                                            )}
-                                                        </SelectContent>
-                                                    </Select>
                                                 </td>
 
                                                 {/* Stock Actual */}
