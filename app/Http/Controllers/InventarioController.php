@@ -1790,12 +1790,17 @@ class InventarioController extends Controller
                     ]);
                 }
 
+                // ✅ NUEVO: Ejecutar automáticamente ENVIAR + RECIBIR
+                // Esto hace la transferencia inmediatamente sin pasos intermedios
+                $transferencia->enviar();
+                $transferencia->recibir();
+
                 return $transferencia;
             });
 
             return redirect()
                 ->route('inventario.transferencias.show', $transferencia)
-                ->with('success', "Transferencia {$transferencia->numero} creada exitosamente");
+                ->with('success', "✅ Transferencia {$transferencia->numero} completada exitosamente. Stock actualizado en ambos almacenes.");
 
         } catch (\Exception $e) {
             return redirect()
