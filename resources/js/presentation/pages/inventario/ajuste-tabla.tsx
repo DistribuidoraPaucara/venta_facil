@@ -859,33 +859,44 @@ export default function AjusteTabla() {
                 <div className="md:col-span-2">
                     <label className="mb-2 block text-sm font-medium dark:text-gray-200">🔍 Buscar Producto</label>
                     <div className="relative" ref={mainSearchContainerRef}>
-                        <Search className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" size={18} />
-                        <Input
-                            ref={mainInputRef}
-                            type="text"
-                            placeholder="SKU, código de barras o nombre del producto..."
-                            value={mainSearchTerm}
-                            onChange={(e) => {
-                                setMainSearchTerm(e.target.value);
-                                console.log('🔤 mainSearchTerm actualizado a:', e.target.value);
-                                // Auto-buscar mientras escribe
-                                if (e.target.value.length > 0) {
-                                    buscarProductosGlobal(e.target.value);
-                                } else {
-                                    setMainSearchResults([]);
-                                }
-                            }}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                    buscarProductosGlobal(mainSearchTerm);
-                                }
-                            }}
-                            className="w-full pl-10 text-base"
-                            disabled={!almacenSeleccionado}
-                        />
-                        {isSearchingMain && (
-                            <Loader className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-blue-500" size={18} />
-                        )}
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <Search className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" size={18} />
+                                <Input
+                                    ref={mainInputRef}
+                                    type="text"
+                                    placeholder="SKU, código de barras o nombre del producto..."
+                                    value={mainSearchTerm}
+                                    onChange={(e) => {
+                                        setMainSearchTerm(e.target.value);
+                                        // Limpiar resultados si el input queda vacío
+                                        if (e.target.value.trim() === '') {
+                                            setMainSearchResults([]);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            buscarProductosGlobal(mainSearchTerm);
+                                        }
+                                    }}
+                                    className="w-full pl-10 text-base"
+                                    disabled={!almacenSeleccionado}
+                                />
+                                {isSearchingMain && (
+                                    <Loader className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-blue-500" size={18} />
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => buscarProductosGlobal(mainSearchTerm)}
+                                disabled={!mainSearchTerm.trim() || !almacenSeleccionado || isSearchingMain}
+                                className="flex items-center justify-center rounded-md bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                                title="Buscar"
+                            >
+                                <Search size={18} />
+                            </button>
+                        </div>
 
                         {/* Listado de Sugerencias - Compacto */}
                         {mainSearchTerm && mainSearchResults.length > 0 && (
