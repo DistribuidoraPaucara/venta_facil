@@ -22,8 +22,6 @@ import type {
 
 interface CrearTransferenciaProps extends PageProps {
     almacenes: Almacen[];
-    vehiculos: Vehiculo[];
-    choferes: Chofer[];
     productos: Producto[];
 }
 
@@ -42,12 +40,10 @@ const breadcrumbs = [
     },
 ];
 
-export default function CrearTransferencia({ almacenes, vehiculos, choferes, productos = [] }: CrearTransferenciaProps) {
+export default function CrearTransferencia({ almacenes, productos = [] }: CrearTransferenciaProps) {
     const { data, setData, post, processing, errors } = useForm({
         almacen_origen_id: '',
         almacen_destino_id: '',
-        vehiculo_id: '',
-        chofer_id: '',
         observaciones: '',
         detalles: [] as DetalleTransferencia[],
     });
@@ -85,17 +81,6 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
             : almacen.direccion || 'Sin ubicación definida',
     }));
 
-    const vehiculosOptions = vehiculos.map(vehiculo => ({
-        value: vehiculo.id,
-        label: `${vehiculo.placa}${vehiculo.marca ? ` - ${vehiculo.marca}` : ''}${vehiculo.modelo ? ` ${vehiculo.modelo}` : ''}`,
-    }));
-
-    const choferesOptions = choferes
-        .filter(chofer => chofer.user && chofer.user.name)
-        .map(chofer => ({
-            value: chofer.id,
-            label: `${chofer.user.name} - ${chofer.licencia || 'Sin licencia'}`,
-        }));
 
     // ✅ NUEVA: Búsqueda dinámica de productos
     const buscarProductos = useCallback(
@@ -252,13 +237,6 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
     const requiereTransporte = transferenciasService.esTransferenciaFisica(almacenOrigen, almacenDestino);
 
     // Limpiar campos de transporte si no se requiere
-    React.useEffect(() => {
-        if (!requiereTransporte) {
-            if (data.vehiculo_id) setData('vehiculo_id', '');
-            if (data.chofer_id) setData('chofer_id', '');
-        }
-    }, [requiereTransporte, data.vehiculo_id, data.chofer_id, setData]);
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Nueva Transferencia" />
@@ -359,31 +337,6 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
                                             </p>
                                         </div>
 
-                                        <div>
-                                            <Label htmlFor="vehiculo_id">Vehículo</Label>
-                                            <SearchSelect
-                                                id="vehiculo_id"
-                                                value={data.vehiculo_id}
-                                                options={vehiculosOptions}
-                                                onChange={(value) => setData('vehiculo_id', value.toString())}
-                                                placeholder="Seleccionar vehículo (opcional)"
-                                                allowClear
-                                                error={errors.vehiculo_id}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="chofer_id">Chofer</Label>
-                                            <SearchSelect
-                                                id="chofer_id"
-                                                value={data.chofer_id}
-                                                options={choferesOptions}
-                                                onChange={(value) => setData('chofer_id', value.toString())}
-                                                placeholder="Seleccionar chofer (opcional)"
-                                                allowClear
-                                                error={errors.chofer_id}
-                                            />
-                                        </div>
                                     </>
                                 )}
 
@@ -442,21 +395,6 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
                                                 <span className="block text-xs ml-4">📍 {almacenDestino.ubicacion_fisica}</span>
                                             )}
 
-                                            {requiereTransporte && (
-                                                <>
-                                                    <br />
-                                                    <span className="block font-medium">🚛 Transporte:</span>
-                                                    {data.vehiculo_id && (
-                                                        <span className="block ml-4">• Vehículo: {vehiculos.find(v => v.id === parseInt(data.vehiculo_id))?.placa}</span>
-                                                    )}
-                                                    {data.chofer_id && (
-                                                        <span className="block ml-4">• Chofer: {choferes.find(c => c.id === parseInt(data.chofer_id))?.user.name}</span>
-                                                    )}
-                                                    {!data.vehiculo_id && !data.chofer_id && (
-                                                        <span className="block ml-4 text-amber-600 dark:text-amber-400">• Sin asignar</span>
-                                                    )}
-                                                </>
-                                            )}
                                         </p>
                                     </div>
                                 )}
