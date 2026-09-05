@@ -192,36 +192,39 @@ class MovimientoInventario extends Model
                 }
             }
 
-            // 3️⃣ VALIDAR TOTAL DE TODOS LOS LOTES: cantidad_total_anterior = disponible_total_anterior + reservada_total_anterior
+            // 3️⃣ VALIDAR CANTIDAD_TOTAL_ANTERIOR: cantidad_total_anterior = cantidad_disponible_anterior + cantidad_reservada_anterior
+            // ✅ CORREGIDO (2026-09-04): Verifica el LOTE específico, no el total del producto
+            // El constraint chk_suma_anterior en la BD verifica exactamente esto
             if (
                 $model->cantidad_total_anterior !== null &&
-                $model->disponible_total_anterior !== null &&
-                $model->reservada_total_anterior !== null
+                $model->cantidad_disponible_anterior !== null &&
+                $model->cantidad_reservada_anterior !== null
             ) {
-                $sumaTotalAnterior = (float)$model->disponible_total_anterior + (float)$model->reservada_total_anterior;
+                $sumaTotalAnterior = (float)$model->cantidad_disponible_anterior + (float)$model->cantidad_reservada_anterior;
                 if (abs((float)$model->cantidad_total_anterior - $sumaTotalAnterior) > 0.001) {
                     throw new \Exception(
                         "❌ INCONSISTENCIA EN TOTAL (ANTES): " .
                         "cantidad_total_anterior({$model->cantidad_total_anterior}) ≠ " .
-                        "disponible_total_anterior({$model->disponible_total_anterior}) + " .
-                        "reservada_total_anterior({$model->reservada_total_anterior}) = {$sumaTotalAnterior}"
+                        "cantidad_disponible_anterior({$model->cantidad_disponible_anterior}) + " .
+                        "cantidad_reservada_anterior({$model->cantidad_reservada_anterior}) = {$sumaTotalAnterior}"
                     );
                 }
             }
 
-            // 4️⃣ VALIDAR TOTAL DE TODOS LOS LOTES: cantidad_total_posterior = disponible_total_posterior + reservada_total_posterior
+            // 4️⃣ VALIDAR CANTIDAD_TOTAL_POSTERIOR: cantidad_total_posterior = cantidad_disponible_posterior + cantidad_reservada_posterior
+            // ✅ CORREGIDO (2026-09-04): Verifica el LOTE específico, no el total del producto
             if (
                 $model->cantidad_total_posterior !== null &&
-                $model->disponible_total_posterior !== null &&
-                $model->reservada_total_posterior !== null
+                $model->cantidad_disponible_posterior !== null &&
+                $model->cantidad_reservada_posterior !== null
             ) {
-                $sumaTotalPostetrior = (float)$model->disponible_total_posterior + (float)$model->reservada_total_posterior;
-                if (abs((float)$model->cantidad_total_posterior - $sumaTotalPostetrior) > 0.001) {
+                $sumaTotalPosterior = (float)$model->cantidad_disponible_posterior + (float)$model->cantidad_reservada_posterior;
+                if (abs((float)$model->cantidad_total_posterior - $sumaTotalPosterior) > 0.001) {
                     throw new \Exception(
                         "❌ INCONSISTENCIA EN TOTAL (DESPUÉS): " .
                         "cantidad_total_posterior({$model->cantidad_total_posterior}) ≠ " .
-                        "disponible_total_posterior({$model->disponible_total_posterior}) + " .
-                        "reservada_total_posterior({$model->reservada_total_posterior}) = {$sumaTotalPostetrior}"
+                        "cantidad_disponible_posterior({$model->cantidad_disponible_posterior}) + " .
+                        "cantidad_reservada_posterior({$model->cantidad_reservada_posterior}) = {$sumaTotalPosterior}"
                     );
                 }
             }
