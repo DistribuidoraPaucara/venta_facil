@@ -41,19 +41,50 @@ export default function BarcodeScannerModal({
                         width={280}
                         height={280}
                         onUpdate={(err, result) => {
-                            if (result) {
-                                onScan(result.getText());
-                            } else if (err) {
-                                onError(typeof err === 'string' ? err : 'Error al escanear');
+                            try {
+                                if (result) {
+                                    // ✅ Manejar diferentes formatos de resultado
+                                    const texto = typeof result === 'string'
+                                        ? result
+                                        : result.getText?.()
+                                        ? result.getText()
+                                        : result.text
+                                        ? result.text
+                                        : result.toString?.()
+                                        ? result.toString()
+                                        : null;
+
+                                    if (texto) {
+                                        console.log('✅ Código escaneado:', texto);
+                                        onScan(texto);
+                                    } else {
+                                        onError('No se pudo extraer el código del resultado');
+                                    }
+                                } else if (err) {
+                                    // ✅ Solo mostrar error si no es el error típico de "sin código"
+                                    if (typeof err === 'string' && err.includes('not found')) {
+                                        // Ignorar el error común cuando no hay código visible
+                                        return;
+                                    }
+                                    console.warn('⚠️ Error del scanner:', err);
+                                    // No mostrar error visual para cada frame sin código
+                                }
+                            } catch (error) {
+                                console.error('❌ Error procesando resultado del scanner:', error);
+                                onError(`Error al procesar: ${error instanceof Error ? error.message : 'desconocido'}`);
                             }
                         }}
                     />
                 </div>
 
                 {error && (
-                    <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                        <p className="text-xs text-red-600 dark:text-red-400">
+                    <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                        <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">⚠️ Error del scanner</p>
+                        <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
                             {error}
+                        </p>
+                        <p className="text-xs text-red-500 dark:text-red-500 mt-2">
+                            💡 Verifica: permisos de cámara, iluminación, o intenta entrada manual
                         </p>
                     </div>
                 )}
