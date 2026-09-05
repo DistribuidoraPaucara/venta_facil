@@ -224,6 +224,12 @@ export default function AjusteTabla() {
     const dropdownRefsRef = useRef<{ [key: string]: HTMLDivElement | null }>({});
     const inputRefsRef = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
+    // ✅ NUEVOS: Estados para buscador principal (estilo ventas)
+    const [mainSearchTerm, setMainSearchTerm] = useState('');
+    const [mainSearchResults, setMainSearchResults] = useState<any[]>([]);
+    const [isSearchingMain, setIsSearchingMain] = useState(false);
+    const mainInputRef = useRef<HTMLInputElement>(null);
+
     // Filtrar stock_productos según almacén seleccionado
     const stockProductosFiltrados = useMemo(() => {
         if (!almacenSeleccionado) return [];
@@ -384,6 +390,113 @@ export default function AjusteTabla() {
             }
         },
         [almacenSeleccionado, seleccionarProducto],
+    );
+
+    // ✅ NUEVO: Búsqueda global desde el buscador principal (estilo ventas)
+    const buscarProductosGlobal = useCallback(
+        async (term: string) => {
+            if (!almacenSeleccionado) {
+                toast.error('Selecciona un almacén primero');
+                return;
+            }
+
+            if (term.trim() === '') {
+                setMainSearchResults([]);
+                return;
+            }
+
+            try {
+                setIsSearchingMain(true);
+
+                const response = await fetch(
+                    `/api/inventario/productos-almacen/${almacenSeleccionado}?q=${encodeURIComponent(term)}&limit=15`,
+                    {
+                        headers: { Accept: 'application/json' },
+                    }
+                );
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Mostrar resultados directamente (incluye todos los lotes)
+                    setMainSearchResults(data.data || []);
+                    console.log('🔍 Resultados búsqueda global:', data.data);
+                } else {
+                    toast.error(data.message || 'Error en la búsqueda');
+                    setMainSearchResults([]);
+                }
+            } catch (error) {
+                console.error('Error buscando productos:', error);
+                toast.error('Error en la búsqueda');
+                setMainSearchResults([]);
+            } finally {
+                setIsSearchingMain(false);
+            }
+        },
+        [almacenSeleccionado]
+    );
+
+    // ✅ NUEVO: Agregar producto desde el listado de sugerencias
+    const agregarDesdeListado = useCallback(
+        async (producto: any) => {
+            try {
+                // Si no existe en almacén, crear stock_producto
+                if (!producto.existe_en_almacen && producto.producto_id && almacenSeleccionado) {
+                    console.log('📦 Creando stock_producto para producto nuevo:', {
+                        producto_id: producto.producto_id,
+                        almacen_id: almacenSeleccionado,
+                        nombre: producto.nombre,
+                        sku: producto.sku,
+                    });
+
+                    const createResponse = await fetch('/api/inventario/crear-stock-producto', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'application/json',
+                        },
+                        body: JSON.stringify({
+                            producto_id: producto.producto_id,
+                            almacen_id: almacenSeleccionado,
+                        }),
+                    });
+
+                    const createData = await createResponse.json();
+
+                    if (!createData.success) {
+                        toast.error('Error al crear stock: ' + createData.message);
+                        return;
+                    }
+
+                    producto.id = createData.data.stock_producto_id;
+                    producto.stock_producto_id = createData.data.stock_producto_id;
+                    console.log('✅ Stock creado:', createData.data);
+                }
+
+                // Crear nueva fila en la tabla
+                const nuevoAjuste: AjusteItem = {
+                    id: generarIdTemporal(),
+                    stock_producto_id: producto.id || producto.stock_producto_id,
+                    cantidad_actual: parseFloat(producto.cantidad_actual) || 0,
+                    cantidad_ajuste: 0,
+                    cantidad_nueva: parseFloat(producto.cantidad_actual) || 0,
+                    tipo_ajuste: 'entrada',
+                    producto: producto,
+                };
+
+                setAjustes((prev) => [...prev, nuevoAjuste]);
+
+                // Limpiar búsqueda
+                setMainSearchTerm('');
+                setMainSearchResults([]);
+
+                toast.success(`${producto.nombre} agregado a la tabla`);
+            } catch (error) {
+                console.error('Error:', error);
+                toast.error('Error al agregar producto');
+            }
+        },
+        [almacenSeleccionado, generarIdTemporal]
     );
 
     // Agregar nueva fila de ajuste
@@ -675,38 +788,118 @@ export default function AjusteTabla() {
                     </div>
                 </div>
 
-                {/* Selector de Almacén y Observación General */}
-                <div className="space-y-4 rounded-lg bg-white p-6 shadow dark:bg-slate-800 dark:shadow-slate-900">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium dark:text-gray-200">Almacén</label>
-                            <Select value={almacenSeleccionado} onValueChange={setAlmacenSeleccionado}>
-                                <SelectTrigger className="w-full max-w-md">
-                                    <SelectValue placeholder="Selecciona un almacén" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {almacenes.map((almacen) => (
-                                        <SelectItem key={almacen.id} value={String(almacen.id)}>
-                                            {almacen.nombre}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                {/* ✅ NUEVO: Buscador Principal - Estilo Ventas */}
+                <div className="rounded-lg bg-white p-6 shadow dark:bg-slate-800 dark:shadow-slate-900">
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            {/* Almacén */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium dark:text-gray-200">Almacén</label>
+                                <Select value={almacenSeleccionado} onValueChange={setAlmacenSeleccionado}>
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Selecciona un almacén" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {almacenes.map((almacen) => (
+                                            <SelectItem key={almacen.id} value={String(almacen.id)}>
+                                                {almacen.nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Buscador Principal */}
+                            <div className="md:col-span-2">
+                                <label className="mb-2 block text-sm font-medium dark:text-gray-200">
+                                    🔍 Buscar Producto
+                                </label>
+                                <div className="relative">
+                                    <Search className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" size={18} />
+                                    <Input
+                                        ref={mainInputRef}
+                                        type="text"
+                                        placeholder="SKU, código de barras o nombre del producto..."
+                                        value={mainSearchTerm}
+                                        onChange={(e) => {
+                                            setMainSearchTerm(e.target.value);
+                                            // Auto-buscar mientras escribe
+                                            if (e.target.value.length > 0) {
+                                                buscarProductosGlobal(e.target.value);
+                                            } else {
+                                                setMainSearchResults([]);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                buscarProductosGlobal(mainSearchTerm);
+                                            }
+                                        }}
+                                        className="w-full pl-10 text-base"
+                                        disabled={!almacenSeleccionado}
+                                    />
+                                    {isSearchingMain && (
+                                        <Loader className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-blue-500" size={18} />
+                                    )}
+                                </div>
+
+                                {/* Listado de Sugerencias */}
+                                {mainSearchTerm && mainSearchResults.length > 0 && (
+                                    <div className="absolute z-50 mt-2 max-h-96 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                                        {mainSearchResults.map((resultado, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="cursor-pointer border-b p-4 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700"
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium dark:text-white truncate">
+                                                            {resultado.sku && `[${resultado.sku}] `}
+                                                            {resultado.nombre}
+                                                        </p>
+                                                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400 md:grid-cols-4">
+                                                            {resultado.lote && (
+                                                                <span>📦 Lote: {resultado.lote}</span>
+                                                            )}
+                                                            <span>Actual: <span className="font-semibold text-blue-600 dark:text-blue-400">{parseFloat(resultado.cantidad_actual || 0).toFixed(2)}</span></span>
+                                                            <span>Disponible: <span className="font-semibold text-green-600 dark:text-green-400">{parseFloat(resultado.cantidad_disponible || 0).toFixed(2)}</span></span>
+                                                            <span>
+                                                                {resultado.existe_en_almacen ? (
+                                                                    <span className="text-green-600 dark:text-green-400">✓ En almacén</span>
+                                                                ) : (
+                                                                    <span className="text-orange-600 dark:text-orange-400">+ Nuevo</span>
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="default"
+                                                        className="ml-2 whitespace-nowrap"
+                                                        onClick={() => agregarDesdeListado(resultado)}
+                                                    >
+                                                        Agregar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* ✅ NUEVA: Observación General del Documento */}
+                        {/* Observación General */}
                         <div>
-                            <label className="mb-2 block text-sm font-medium dark:text-gray-200">📝 Observación General del Ajuste (Opcional)</label>
+                            <label className="mb-2 block text-sm font-medium dark:text-gray-200">
+                                📝 Observación General (Opcional)
+                            </label>
                             <Textarea
                                 value={observacionGeneral}
                                 onChange={(e) => setObservacionGeneral(e.target.value)}
                                 placeholder="Ej: Ajuste por faltantes encontrados en recuento físico..."
                                 className="w-full"
-                                rows={3}
+                                rows={2}
                             />
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Esta observación se mostrará en el documento y en la impresión
-                            </p>
                         </div>
                     </div>
                 </div>

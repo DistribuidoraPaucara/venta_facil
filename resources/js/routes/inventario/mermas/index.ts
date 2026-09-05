@@ -462,7 +462,7 @@ rechazar.post = (args: { merma: string | number } | [merma: string | number ] | 
     rechazar.form = rechazarForm
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:4188
+ * @see app/Http/Controllers/InventarioController.php:4196
  * @route '/inventario/mermas/{id}/imprimir'
  */
 export const imprimir = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -477,7 +477,7 @@ imprimir.definition = {
 
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:4188
+ * @see app/Http/Controllers/InventarioController.php:4196
  * @route '/inventario/mermas/{id}/imprimir'
  */
 imprimir.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -505,7 +505,7 @@ imprimir.url = (args: { id: string | number } | [id: string | number ] | string 
 
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:4188
+ * @see app/Http/Controllers/InventarioController.php:4196
  * @route '/inventario/mermas/{id}/imprimir'
  */
 imprimir.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -514,7 +514,7 @@ imprimir.get = (args: { id: string | number } | [id: string | number ] | string 
 })
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:4188
+ * @see app/Http/Controllers/InventarioController.php:4196
  * @route '/inventario/mermas/{id}/imprimir'
  */
 imprimir.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -524,7 +524,7 @@ imprimir.head = (args: { id: string | number } | [id: string | number ] | string
 
     /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:4188
+ * @see app/Http/Controllers/InventarioController.php:4196
  * @route '/inventario/mermas/{id}/imprimir'
  */
     const imprimirForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -534,7 +534,7 @@ imprimir.head = (args: { id: string | number } | [id: string | number ] | string
 
             /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:4188
+ * @see app/Http/Controllers/InventarioController.php:4196
  * @route '/inventario/mermas/{id}/imprimir'
  */
         imprimirForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -543,7 +543,7 @@ imprimir.head = (args: { id: string | number } | [id: string | number ] | string
         })
             /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:4188
+ * @see app/Http/Controllers/InventarioController.php:4196
  * @route '/inventario/mermas/{id}/imprimir'
  */
         imprimirForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
