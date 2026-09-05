@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { PageProps } from '@inertiajs/core';
@@ -9,7 +9,7 @@ import { Textarea } from '@/presentation/components/ui/textarea';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { Input } from '@/presentation/components/ui/input';
 import { Badge } from '@/presentation/components/ui/badge';
-import { Trash2, Plus, Package } from 'lucide-react';
+import { Trash2, Plus, Package, Search, Loader } from 'lucide-react';
 import NotificationService from '@/infrastructure/services/notification.service';
 import transferenciasService from '@/infrastructure/services/transferencias.service';
 import type {
@@ -57,6 +57,12 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
     const [loteProducto, setLoteProducto] = useState<string>('');
     const [fechaVencimiento, setFechaVencimiento] = useState<string>('');
 
+    // ✅ NUEVOS: Estados para búsqueda dinámica de productos
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+
     const productosOptions = productos.map(producto => {
         const stockEnOrigen = data.almacen_origen_id ?
             (producto.stock_por_almacen?.[data.almacen_origen_id] || 0) :
@@ -90,6 +96,69 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
             value: chofer.id,
             label: `${chofer.user.name} - ${chofer.licencia || 'Sin licencia'}`,
         }));
+
+    // ✅ NUEVA: Búsqueda dinámica de productos
+    const buscarProductos = useCallback(
+        async (term: string) => {
+            if (!term.trim() || !data.almacen_origen_id) {
+                setSearchResults([]);
+                return;
+            }
+
+            try {
+                setIsSearching(true);
+                const response = await fetch(
+                    `/api/productos/buscar?q=${encodeURIComponent(term)}&almacen_id=${data.almacen_origen_id}&limite=10`,
+                    { headers: { Accept: 'application/json' } }
+                );
+
+                const resultado = await response.json();
+                if (resultado.success) {
+                    setSearchResults(resultado.data || []);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch (error) {
+                console.error('Error en búsqueda:', error);
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        },
+        [data.almacen_origen_id]
+    );
+
+    // ✅ Cerrar sugerencias al presionar Escape o hacer click afuera
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setSearchResults([]);
+                setSearchTerm('');
+            }
+        };
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+                setSearchResults([]);
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    // ✅ Agregar producto desde búsqueda
+    const agregarProductoDesdeSearch = (producto: any) => {
+        setProductoSeleccionado(producto.id.toString());
+        setSearchTerm(producto.nombre);
+        setSearchResults([]);
+        setCantidadProducto('');
+    };
 
     const agregarProducto = () => {
         // Validaciones previas básicas
@@ -411,16 +480,58 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
                         <CardContent className="space-y-4">
                             {/* Agregar Producto */}
                             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                                <div className="md:col-span-2">
+                                <div className="md:col-span-2 relative" ref={searchRef}>
                                     <Label htmlFor="producto">Producto</Label>
-                                    <SearchSelect
-                                        id="producto"
-                                        value={productoSeleccionado}
-                                        options={productosOptions}
-                                        onChange={(value) => setProductoSeleccionado(value.toString())}
-                                        placeholder="Buscar producto..."
-                                        searchPlaceholder="Buscar por código o nombre..."
-                                    />
+                                    <div className="relative">
+                                        <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                        <Input
+                                            id="producto"
+                                            type="text"
+                                            placeholder="Buscar producto..."
+                                            value={searchTerm}
+                                            onChange={(e) => {
+                                                setSearchTerm(e.target.value);
+                                                buscarProductos(e.target.value);
+                                            }}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter' && searchResults.length > 0) {
+                                                    agregarProductoDesdeSearch(searchResults[0]);
+                                                }
+                                            }}
+                                            className="pl-10"
+                                        />
+                                        {isSearching && (
+                                            <Loader className="absolute top-3 right-3 h-4 w-4 animate-spin text-blue-500 pointer-events-none" />
+                                        )}
+                                    </div>
+
+                                    {/* Dropdown de sugerencias */}
+                                    {searchTerm && searchResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                                            {searchResults.map((producto, idx) => {
+                                                const stockDisponible = data.almacen_origen_id
+                                                    ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
+                                                    : 0;
+
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() => agregarProductoDesdeSearch(producto)}
+                                                        className="flex cursor-pointer items-center justify-between border-b p-3 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700 last:border-b-0"
+                                                    >
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm font-medium dark:text-white">
+                                                                [{producto.sku || producto.codigo}] {producto.nombre}
+                                                            </p>
+                                                            <p className="truncate text-xs text-gray-600 dark:text-gray-400">
+                                                                📦 Stock: {stockDisponible.toFixed(2)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div>
