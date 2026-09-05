@@ -577,31 +577,85 @@ export default function CrearTransferencia({ almacenes, vehiculos, choferes, pro
                                         No hay productos agregados
                                     </div>
                                 ) : (
-                                    data.detalles.map((detalle, index) => (
-                                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-white dark:bg-gray-900">
-                                            <div className="flex-1">
-                                                <div className="font-medium">
-                                                    {(() => {
-                                                        const producto = productos.find(p => p.id === detalle.producto_id);
-                                                        return producto ? `${producto.codigo} - ${producto.nombre}` : 'Producto no encontrado';
-                                                    })()}
+                                    data.detalles.map((detalle, index) => {
+                                        const producto = productos.find(p => p.id === detalle.producto_id);
+                                        if (!producto) return null;
+
+                                        // Calcular stocks
+                                        const stockActualOrigen = data.almacen_origen_id
+                                            ? (producto.stock_por_almacen?.[data.almacen_origen_id] || 0)
+                                            : 0;
+                                        const stockPosteriorOrigen = Math.max(0, stockActualOrigen - detalle.cantidad);
+
+                                        const stockActualDestino = data.almacen_destino_id
+                                            ? (producto.stock_por_almacen?.[data.almacen_destino_id] || 0)
+                                            : 0;
+                                        const stockPosteriorDestino = stockActualDestino + detalle.cantidad;
+
+                                        return (
+                                            <div key={index} className="p-4 border rounded-lg bg-white dark:bg-gray-900 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="font-medium">
+                                                            {producto.codigo} - {producto.nombre}
+                                                        </div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                                                            📦 Cantidad a transferir: <span className="font-semibold text-blue-600 dark:text-blue-400">{detalle.cantidad}</span>
+                                                            {detalle.lote && ` • Lote: ${detalle.lote}`}
+                                                            {detalle.fecha_vencimiento && ` • Vence: ${detalle.fecha_vencimiento}`}
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => eliminarProducto(index)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
-                                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                                    Cantidad: {detalle.cantidad}
-                                                    {detalle.lote && ` • Lote: ${detalle.lote}`}
-                                                    {detalle.fecha_vencimiento && ` • Vence: ${detalle.fecha_vencimiento}`}
+
+                                                {/* Mostrar stocks antes y después */}
+                                                <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t">
+                                                    <div className="space-y-2">
+                                                        <div className="font-semibold text-gray-700 dark:text-gray-300">
+                                                            📤 {almacenOrigen?.nombre || 'Almacén Origen'}
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span>Stock Actual:</span>
+                                                            <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                                                {stockActualOrigen.toFixed(2)}
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span>Stock Posterior:</span>
+                                                            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                                                {stockPosteriorOrigen.toFixed(2)}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <div className="font-semibold text-gray-700 dark:text-gray-300">
+                                                            📥 {almacenDestino?.nombre || 'Almacén Destino'}
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span>Stock Actual:</span>
+                                                            <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                                                {stockActualDestino.toFixed(2)}
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span>Stock Posterior:</span>
+                                                            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                                                {stockPosteriorDestino.toFixed(2)}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => eliminarProducto(index)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
 
