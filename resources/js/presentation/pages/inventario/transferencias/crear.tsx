@@ -168,6 +168,49 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         setSearchResults([]);
     };
 
+    // ✅ Manejar búsqueda y agregar automáticamente si hay 1 solo lote
+    const handleBuscarYCargar = async () => {
+        if (!searchTerm.trim() || !data.almacen_origen_id) {
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const url = `/api/productos/buscar?q=${encodeURIComponent(searchTerm)}&almacen_id=${data.almacen_origen_id}&limite=10`;
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            const resultado = await response.json();
+
+            if (resultado.success && resultado.data && resultado.data.length > 0) {
+                const producto = resultado.data[0]; // Tomar el primer producto encontrado
+
+                // Si el producto tiene solo 1 lote, agregarlo automáticamente
+                if (producto.stock && producto.stock.length === 1) {
+                    agregarProductoDesdeSearch(producto, producto.stock[0]);
+                    // Limpiar búsqueda
+                    setSearchTerm('');
+                    // Focus en cantidad para que el usuario pueda escribir la cantidad
+                    setTimeout(() => {
+                        document.getElementById('cantidad')?.focus();
+                    }, 100);
+                } else if (producto.stock && producto.stock.length > 1) {
+                    // Si hay múltiples lotes, mostrar sugerencias
+                    setSearchResults([producto]);
+                    agregarProductoDesdeSearch(producto); // Seleccionar el producto pero sin lote
+                } else {
+                    // Sin stock disponible
+                    NotificationService.warning('Este producto no tiene stock disponible');
+                }
+            } else {
+                NotificationService.warning('Producto no encontrado');
+            }
+        } catch (error) {
+            console.error('Error en búsqueda:', error);
+            NotificationService.error('Error al buscar producto');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
     const agregarProducto = () => {
         // Validaciones previas básicas
         if (!productoSeleccionado || !cantidadProducto || parseInt(cantidadProducto) <= 0) {
@@ -415,7 +458,7 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                             </div>
                                             <Button
                                                 type="button"
-                                                onClick={() => buscarProductos()}
+                                                onClick={() => handleBuscarYCargar()}
                                                 disabled={!searchTerm.trim() || !data.almacen_origen_id || isSearching}
                                                 variant="outline"
                                                 className="mt-6"
