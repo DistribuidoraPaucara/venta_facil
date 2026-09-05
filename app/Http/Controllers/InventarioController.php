@@ -1333,7 +1333,7 @@ class InventarioController extends Controller
             $validated = $request->validate([
                 'almacen_id' => 'required|integer|exists:almacenes,id',
                 'ajustes' => 'required|array|min:1',
-                'ajustes.*.stock_producto_id' => 'required|integer|exists:stock_productos,id',
+                'ajustes.*.stock_producto_id' => 'required|integer',
                 'ajustes.*.nueva_cantidad' => 'required|numeric|min:0',
                 'ajustes.*.observacion' => 'nullable|string|max:500',
                 'ajustes.*.tipo_ajuste' => 'nullable|in:entrada,salida',
@@ -1344,14 +1344,32 @@ class InventarioController extends Controller
                 'ajustes.required' => 'Debes agregar al menos un ajuste',
                 'ajustes.min' => 'Debes agregar al menos un ajuste',
                 'ajustes.*.stock_producto_id.required' => 'El producto es requerido en todas las filas',
-                'ajustes.*.stock_producto_id.exists' => 'Uno o más productos no existen',
                 'ajustes.*.nueva_cantidad.required' => 'La cantidad es requerida',
                 'ajustes.*.nueva_cantidad.numeric' => 'La cantidad debe ser un número',
                 'ajustes.*.nueva_cantidad.min' => 'La cantidad no puede ser negativa',
             ]);
 
-            // Usar el método privado que crea cabecera + detalles
-            $resultado = $this->procesarAjustesInventario($validated['ajustes']);
+            // ✅ CRÍTICO: Validar que todos los stock_productos pertenecen al almacén seleccionado
+            $stockIds = array_column($validated['ajustes'], 'stock_producto_id');
+            $stockProductos = StockProducto::whereIn('id', $stockIds)
+                ->where('almacen_id', $validated['almacen_id'])
+                ->pluck('id')
+                ->toArray();
+
+            if (count($stockProductos) !== count($stockIds)) {
+                $faltantes = array_diff($stockIds, $stockProductos);
+                \Log::warning('Productos no pertenecen al almacén seleccionado', [
+                    'almacen_id' => $validated['almacen_id'],
+                    'stock_ids_faltantes' => $faltantes,
+                ]);
+                return ApiResponse::error(
+                    'Los productos [' . implode(', ', $faltantes) . '] no pertenecen al almacén seleccionado',
+                    422
+                );
+            }
+
+            // ✅ CRÍTICO: Pasar almacen_id al método privado para obtener cantidades correctas
+            $resultado = $this->procesarAjustesInventario($validated['ajustes'], $validated['almacen_id']);
 
             // El resultado ya contiene movimientos + ajuste_inventario_id
             return ApiResponse::success(
@@ -1370,6 +1388,7 @@ class InventarioController extends Controller
             \Log::error('Error al procesar ajuste de tabla:', [
                 'error' => $e->getMessage(),
                 'ajustes' => $request->input('ajustes'),
+                'almacen_id' => $request->input('almacen_id'),
             ]);
 
             return ApiResponse::error(
@@ -1386,17 +1405,18 @@ class InventarioController extends Controller
      * En lugar de UN movimiento por lote, crea UN movimiento por producto
      *
      * @param array $ajustes Array de ajustes a procesar
+     * @param int|null $almacenId ID del almacén (si null, usa el del usuario autenticado)
      * @return array Array de movimientos creados (AGRUPADOS por producto)
      * @throws \Exception Si hay error al procesar
      */
-    private function procesarAjustesInventario(array $ajustes): array
+    private function procesarAjustesInventario(array $ajustes, ?int $almacenId = null): array
     {
         $movimientos = [];
         $ajusteInventarioId = null;
 
-        DB::transaction(function () use ($ajustes, &$movimientos, &$ajusteInventarioId) {
-            // Obtener el almacén del usuario
-            $almacenId = auth()->user()->empresa->almacen_id ?? 1;
+        DB::transaction(function () use ($ajustes, &$movimientos, &$ajusteInventarioId, $almacenId) {
+            // ✅ CRÍTICO: Usar almacén del parámetro, o caer back al del usuario
+            $almacenSeleccionado = $almacenId ?? auth()->user()->empresa->almacen_id ?? 1;
 
             // Contadores para el ajuste maestro
             $cantidadEntradas = 0;
@@ -1410,7 +1430,7 @@ class InventarioController extends Controller
             // Crear el registro maestro de AjusteInventario (sin número aún)
             $ajuste = AjusteInventario::create([
                 'numero' => 'TEMP',
-                'almacen_id' => $almacenId,
+                'almacen_id' => $almacenSeleccionado,
                 'user_id' => auth()->id(),
                 'cantidad_entradas' => 0,
                 'cantidad_salidas' => 0,
@@ -1436,7 +1456,7 @@ class InventarioController extends Controller
                 $movimientos = $this->ajusteDistribucionService->registrarAjustesAgrupados(
                     ajustes: $ajustes,
                     numeroAjuste: $numeroFinal,
-                    almacenId: $almacenId,
+                    almacenId: $almacenSeleccionado,
                     usuarioId: auth()->id() ?? 1,
                     ajusteId: $ajusteInventarioId  // ✅ NUEVO (2026-06-29): Pasar ajuste_id para referencia_id
                 );

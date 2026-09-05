@@ -874,6 +874,29 @@ export default function AjusteTabla() {
                                     rows={2}
                                 />
                             </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium dark:text-gray-200">Tipo de Ajuste</label>
+                                <Select
+                                    value={String(tipoAjusteSeleccionado || '')}
+                                    onValueChange={(val) => {
+                                        const tipo = tiposAjuste.find((t) => String(t.id) === val);
+                                        if (tipo) {
+                                            setTipoAjusteSeleccionado(Number(val));
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecciona el tipo de ajuste..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {tiposAjuste.map((tipo) => (
+                                            <SelectItem key={tipo.id} value={String(tipo.id)}>
+                                                {tipo.tipo_operacion === 'entrada' ? '📥' : '📤'} {tipo.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -907,7 +930,10 @@ export default function AjusteTabla() {
                                     disabled={!almacenSeleccionado}
                                 />
                                 {isSearchingMain && (
-                                    <Loader className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-blue-500" size={18} />
+                                    <Loader
+                                        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-blue-500"
+                                        size={18}
+                                    />
                                 )}
                             </div>
                             <button
@@ -923,9 +949,12 @@ export default function AjusteTabla() {
 
                         {/* Listado de Sugerencias - Compacto */}
                         {mainSearchTerm && mainSearchResults.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                            <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
                                 {mainSearchResults.map((resultado, idx) => (
-                                    <div key={idx} className="flex cursor-pointer items-center justify-between border-b p-2 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700">
+                                    <div
+                                        key={idx}
+                                        className="flex cursor-pointer items-center justify-between border-b p-2 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700"
+                                    >
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-medium dark:text-white">
                                                 {resultado.sku && `[${resultado.sku}] `}
@@ -939,7 +968,9 @@ export default function AjusteTabla() {
                                                 <span className="text-green-600 dark:text-green-400">
                                                     ✓ {parseFloat(resultado.cantidad_disponible || 0).toFixed(2)}
                                                 </span>
-                                                {!resultado.existe_en_almacen && <span className="text-orange-600 dark:text-orange-400">+ Nuevo</span>}
+                                                {!resultado.existe_en_almacen && (
+                                                    <span className="text-orange-600 dark:text-orange-400">+ Nuevo</span>
+                                                )}
                                             </div>
                                         </div>
                                         <Button
@@ -965,32 +996,9 @@ export default function AjusteTabla() {
                     <div className="overflow-hidden rounded-lg bg-white shadow dark:bg-slate-800 dark:shadow-slate-900">
                         <form onSubmit={procesarAjustes}>
                             {/* Cabecera de Control - Tipo de Ajuste Global */}
-                            <div className="border-b bg-gray-50 px-6 py-4 dark:border-slate-600 dark:bg-slate-700">
+                            {/* <div className="border-b bg-gray-50 px-6 py-4 dark:border-slate-600 dark:bg-slate-700">
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <div>
-                                        <label className="mb-2 block text-sm font-medium dark:text-gray-200">Tipo de Ajuste</label>
-                                        <Select
-                                            value={String(tipoAjusteSeleccionado || '')}
-                                            onValueChange={(val) => {
-                                                const tipo = tiposAjuste.find((t) => String(t.id) === val);
-                                                if (tipo) {
-                                                    setTipoAjusteSeleccionado(Number(val));
-                                                }
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecciona el tipo de ajuste..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {tiposAjuste.map((tipo) => (
-                                                    <SelectItem key={tipo.id} value={String(tipo.id)}>
-                                                        {tipo.tipo_operacion === 'entrada' ? '📥' : '📤'} {tipo.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex items-end gap-2">
+                                    {/* <div className="flex items-end gap-2">
                                         <Button
                                             type="button"
                                             variant="outline"
@@ -1002,7 +1010,7 @@ export default function AjusteTabla() {
                                         </Button>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Tabla */}
                             <div className="overflow-x-auto overflow-y-visible">
@@ -1027,7 +1035,7 @@ export default function AjusteTabla() {
                                                         // ✅ Si hay producto seleccionado, mostrar con opción de cambiar
                                                         <div className="flex flex-col gap-2">
                                                             <div className="flex items-center justify-between rounded-md bg-blue-50 p-2 dark:bg-blue-900/20">
-                                                                <div className="flex-1 min-w-0">
+                                                                <div className="min-w-0 flex-1">
                                                                     <p className="truncate text-sm font-semibold dark:text-blue-300">
                                                                         {ajuste.producto.sku && `[${ajuste.producto.sku}] `}
                                                                         {ajuste.producto.nombre}
