@@ -68,6 +68,11 @@ export default function ProductoTableRow({
 }: ProductoTableRowProps) {
     const productoInfo = detalle.producto as any;
     console.log('ProductoTableRow - productoInfo:', productoInfo);
+    console.log('📊 [ProductoTableRow] Detalle cantidad:', {
+        cantidad: detalle.cantidad,
+        unidad_medida_id: detalle.unidad_medida_id,
+        unidad_venta_id: detalle.unidad_venta_id,
+    });
     const esCombo = productoInfo && productoInfo.es_combo;
     const precioCosto = detalle.precio_costo || productoInfo?.precio_costo || 0;
 
