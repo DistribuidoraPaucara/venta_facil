@@ -417,29 +417,35 @@ export default function ProductoTableRow({
                         // 3. Si tiene tipo_precio_id → usarlo (del detalle del backend)
                         // 4. Fallback: tipo_precio_id_recomendado o default
                         // ✅ REFACTORIZADO (2026-07-03): Usar producto_id como clave en lugar de index
+                        // ✅ MEJORADO: Incluir unidad_medida_id en el valor para productos fraccionados
                         const productoId = detalle.producto_id;
-                        const valorInicial =
-                            selectedTipoPrecio[productoId] !== undefined
-                                ? String(selectedTipoPrecio[productoId]) // Usuario seleccionó algo
-                                : detalle.tipo_precio_id === null
-                                  ? 'otros' // Mostrar "OTROS" si es null
-                                  : detalle.tipo_precio_id
-                                    ? String(detalle.tipo_precio_id) // ✅ Usar siempre el del detalle si existe
-                                    : detalle.tipo_precio_id_recomendado
-                                      ? String(detalle.tipo_precio_id_recomendado)
-                                      : default_tipo_precio_id
-                                        ? String(default_tipo_precio_id)
-                                        : '';
+                        const unidadMedidaId = detalle.unidad_medida_id || detalle.unidad_venta_id;
+
+                        let valorInicial = '';
+                        if (selectedTipoPrecio[productoId] !== undefined) {
+                            valorInicial = String(selectedTipoPrecio[productoId]); // Usuario seleccionó algo
+                        } else if (detalle.tipo_precio_id === null) {
+                            valorInicial = 'otros'; // Mostrar "OTROS" si es null
+                        } else if (detalle.tipo_precio_id) {
+                            // Para el valor inicial, incluir unidad_medida_id si está disponible
+                            valorInicial = unidadMedidaId
+                                ? `${detalle.tipo_precio_id}_${unidadMedidaId}`
+                                : String(detalle.tipo_precio_id);
+                        } else if (detalle.tipo_precio_id_recomendado) {
+                            valorInicial = String(detalle.tipo_precio_id_recomendado);
+                        } else if (default_tipo_precio_id) {
+                            valorInicial = String(default_tipo_precio_id);
+                        }
 
                         return (
                             <select
                                 disabled={readOnly}
                                 value={valorInicial}
                                 onChange={(e) => {
-                                    const tipoPrecioIdSeleccionado = e.target.value;
+                                    const valorSeleccionado = e.target.value;
 
                                     // ✅ NUEVO: Manejar opción "OTROS"
-                                    if (tipoPrecioIdSeleccionado === 'otros') {
+                                    if (valorSeleccionado === 'otros') {
                                         if (onManualTipoPrecioChange) {
                                             // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
                                             onManualTipoPrecioChange(detalle.producto_id);
@@ -457,11 +463,15 @@ export default function ProductoTableRow({
                                     }
 
                                     // ✅ IMPORTANTE: Para productos fraccionados, hay múltiples precios con el mismo tipo_precio_id
-                                    // Buscar por tipo_precio_id Y unidad_medida_id
+                                    // El valor es "tipo_precio_id_unidad_medida_id" para distinguir entre opciones
+                                    const partes = valorSeleccionado.split('_');
+                                    const tipoPrecioIdSeleccionado = parseInt(partes[0]);
+                                    const unidadMedidaIdSeleccionada = partes[1] ? parseInt(partes[1]) : null;
+
                                     const precioSeleccionado = preciosVenta.find(
                                         (p) =>
                                             String(p.tipo_precio_id) === String(tipoPrecioIdSeleccionado) &&
-                                            Number(p.unidad_medida_id) === Number(detalle.unidad_medida_id || detalle.unidad_venta_id),
+                                            (unidadMedidaIdSeleccionada === null || Number(p.unidad_medida_id) === unidadMedidaIdSeleccionada),
                                     );
 
                                     if (precioSeleccionado) {
@@ -472,12 +482,13 @@ export default function ProductoTableRow({
 
                                         setSelectedTipoPrecio((prev) => ({
                                             ...prev,
-                                            [productoId]: tipoPrecioIdSeleccionado,
+                                            [productoId]: valorSeleccionado,
                                         }));
 
                                         onUpdateDetail(index, 'tipo_precio_id', precioSeleccionado.tipo_precio_id);
                                         onUpdateDetail(index, 'tipo_precio_nombre', precioSeleccionado.nombre || '');
                                         onUpdateDetail(index, 'precio_unitario', precioSeleccionado.precio || 0);
+                                        onUpdateDetail(index, 'unidad_medida_id', precioSeleccionado.unidad_medida_id || null);
                                     }
                                 }}
                                 className="font-small mt-1 rounded-lg border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
@@ -515,11 +526,17 @@ export default function ProductoTableRow({
                                         ? `${precio.nombre || `Tipo ${precio.tipo_precio_id}`} - ${unidadNombre}`
                                         : precio.nombre || `Tipo ${precio.tipo_precio_id}`;
 
+                                    // ✅ IMPORTANTE: Value incluye tipo_precio_id y unidad_medida_id para poder distinguir
+                                    // precios de la misma familia pero de diferentes unidades (Kg vs Gr)
+                                    const optionValue = precio.unidad_medida_id
+                                        ? `${precio.tipo_precio_id}_${precio.unidad_medida_id}`
+                                        : String(precio.tipo_precio_id);
+
                                     return (
                                         <option
                                             className="font-small text-xs"
-                                            key={precio.id || precio.tipo_precio_id}
-                                            value={String(precio.tipo_precio_id)}
+                                            key={precio.id || optionValue}
+                                            value={optionValue}
                                         >
                                             {nombreConUnidad} - {precioFormato}
                                         </option>
