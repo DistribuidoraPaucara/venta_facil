@@ -177,57 +177,6 @@ export default function ProductoTableRow({
                         className="w-24 flex-col rounded-lg border border-gray-300 px-1 py-1 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
                     />
                     {/* ✨ NUEVO: Selector de unidades para productos fraccionados */}
-                    {detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0 && (
-                        <div className="flex gap-1">
-                            {/* Opción base (Kilogramo) */}
-                            <button
-                                type="button"
-                                disabled={readOnly}
-                                onClick={() => {
-                                    const precioBase = productoInfo?.precios?.find(
-                                        (p: any) => p.unidad_medida_id === detalle.unidad_medida_id && p.tipo_precio_id === (detalle.tipo_precio_id || 10)
-                                    );
-                                    onUpdateDetail(index, 'unidad_venta_id', detalle.unidad_medida_id);
-                                    if (precioBase) {
-                                        onUpdateDetail(index, 'precio_unitario', precioBase.precio);
-                                    }
-                                }}
-                                className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
-                                    (detalle.unidad_venta_id || detalle.unidad_medida_id) === detalle.unidad_medida_id
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                                } disabled:opacity-50`}
-                            >
-                                {detalle.unidad_medida_nombre || 'Base'} ({productoInfo?.precios?.find((p: any) => p.unidad_medida_id === detalle.unidad_medida_id && p.tipo_precio_id === (detalle.tipo_precio_id || 10))?.precio ?? 0} Bs)
-                            </button>
-                            {/* Opciones de conversión */}
-                            {detalle.conversiones.map((conv: any) => {
-                                const precioConv = productoInfo?.precios?.find(
-                                    (p: any) => p.unidad_medida_id === conv.unidad_destino_id && p.tipo_precio_id === (detalle.tipo_precio_id || 10)
-                                );
-                                return (
-                                    <button
-                                        key={conv.unidad_destino_id}
-                                        type="button"
-                                        disabled={readOnly}
-                                        onClick={() => {
-                                            onUpdateDetail(index, 'unidad_venta_id', conv.unidad_destino_id);
-                                            if (precioConv) {
-                                                onUpdateDetail(index, 'precio_unitario', precioConv.precio);
-                                            }
-                                        }}
-                                        className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
-                                            detalle.unidad_venta_id === conv.unidad_destino_id
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                                        } disabled:opacity-50`}
-                                    >
-                                        {conv.unidad_destino_nombre || `Unidad ${conv.unidad_destino_id}`} ({precioConv?.precio ?? 0} Bs)
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
                 </div>
             </td>
 
