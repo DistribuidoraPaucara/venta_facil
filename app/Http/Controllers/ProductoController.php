@@ -772,9 +772,22 @@ class ProductoController extends Controller
                 return $precio->tipoPrecio ? $precio->tipoPrecio->orden : 999;
             })
             ->map(function ($pr) {
+                // ✅ IMPORTANTE: Preservar precisión de 6 decimales para productos fraccionados
+                $monto = (float) $pr->precio;
+
+                // DEBUG: Log para verificar valor de conversión
+                if ($pr->unidad_medida_id && $monto > 0 && $monto < 0.1) {
+                    Log::info("📦 [edit] Precio conversión detectado", [
+                        'precio_id' => $pr->id,
+                        'precio_raw' => $pr->precio,
+                        'precio_float' => $monto,
+                        'unidad_medida_id' => $pr->unidad_medida_id,
+                    ]);
+                }
+
                 return [
                     'id'               => $pr->id,
-                    'monto'            => (float) $pr->precio,
+                    'monto'            => $monto,
                     'tipo_precio_id'   => (int) $pr->tipo_precio_id,
                     'unidad_medida_id' => $pr->unidad_medida_id,
                 ];
