@@ -447,6 +447,27 @@ export default function ProductoTableRow({
 
                                         // ✅ CRÍTICO: Usar updateDetailMultiple para hacer TODOS los cambios de una sola vez
                                         // Esto evita estados inconsistentes donde unidad_venta_id ≠ precio_unitario
+
+                                        // ✅ NUEVO: Convertir cantidad si la unidad cambió
+                                        let cantidadConvertida = detalle.cantidad;
+                                        const unidadActual = detalle.unidad_medida_id || detalle.unidad_venta_id;
+                                        const unidadNueva = precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id;
+
+                                        if (unidadActual !== unidadNueva && detalle.es_fraccionado && detalle.conversiones) {
+                                            const conversion = detalle.conversiones.find(
+                                                (c: any) => c.unidad_destino_id === unidadNueva || c.unidad_origen_id === unidadNueva
+                                            );
+                                            if (conversion) {
+                                                if (conversion.unidad_destino_id === unidadNueva) {
+                                                    // Cambio de unidad base a conversión → multiplicar
+                                                    cantidadConvertida = detalle.cantidad * conversion.factor_conversion;
+                                                } else if (conversion.unidad_origen_id === unidadNueva) {
+                                                    // Cambio de conversión a unidad base → dividir
+                                                    cantidadConvertida = detalle.cantidad / conversion.factor_conversion;
+                                                }
+                                            }
+                                        }
+
                                         if (onUpdateDetailMultiple) {
                                             onUpdateDetailMultiple(index, {
                                                 tipo_precio_id: precioSeleccionado.tipo_precio_id,
@@ -454,6 +475,7 @@ export default function ProductoTableRow({
                                                 precio_unitario: precioSeleccionado.precio || 0,
                                                 unidad_medida_id: precioSeleccionado.unidad_medida_id || null,
                                                 unidad_venta_id: precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id,
+                                                cantidad: cantidadConvertida,
                                             });
                                         } else {
                                             // Fallback si onUpdateDetailMultiple no está disponible
