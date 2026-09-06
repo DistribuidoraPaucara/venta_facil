@@ -456,8 +456,12 @@ export default function ProductoTableRow({
                                         return;
                                     }
 
+                                    // ✅ IMPORTANTE: Para productos fraccionados, hay múltiples precios con el mismo tipo_precio_id
+                                    // Buscar por tipo_precio_id Y unidad_medida_id
                                     const precioSeleccionado = preciosVenta.find(
-                                        (p) => String(p.tipo_precio_id) === String(tipoPrecioIdSeleccionado),
+                                        (p) =>
+                                            String(p.tipo_precio_id) === String(tipoPrecioIdSeleccionado) &&
+                                            Number(p.unidad_medida_id) === Number(detalle.unidad_medida_id || detalle.unidad_venta_id),
                                     );
 
                                     if (precioSeleccionado) {
