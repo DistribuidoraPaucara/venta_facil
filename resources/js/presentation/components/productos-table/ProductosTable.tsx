@@ -332,7 +332,8 @@ export default function ProductosTable({
         if (parteDecimal === 0) {
             return Math.floor(precio).toString();
         }
-        return precio.toFixed(2);
+        // ✅ Usar 6 decimales para productos fraccionados (0.008 en lugar de 0.01)
+        return precio.toFixed(6);
     };
 
     // ✅ Handler para actualizar detalle (con lógica de combos)
