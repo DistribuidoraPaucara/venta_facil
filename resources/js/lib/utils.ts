@@ -24,6 +24,7 @@ export function formatCurrencyWith2Decimals(amount: number, currency = 'BOB'): s
 }
 
 // ✅ NUEVO: Formatear moneda mostrando solo decimales necesarios
+// ✅ MEJORADO: Soportar hasta 6 decimales para productos fraccionados
 export function formatCurrencyMinimalDecimals(amount: number, currency = 'BOB'): string {
     // Determinar cuántos decimales son necesarios
     const decimalPart = amount % 1;
@@ -31,9 +32,10 @@ export function formatCurrencyMinimalDecimals(amount: number, currency = 'BOB'):
     let maxDecimals = 2;
 
     if (decimalPart !== 0) {
-        // Si tiene decimales, mostrar hasta 2
-        const decimalStr = Math.abs(decimalPart).toFixed(2).substring(2);
-        minDecimals = decimalStr.length;
+        // Para productos fraccionados, verificar si necesita más de 2 decimales
+        const decimalStr = Math.abs(decimalPart).toFixed(6).replace(/0+$/, ''); // Remover ceros al final
+        minDecimals = Math.max(2, Math.min(decimalStr.length, 6));
+        maxDecimals = 6; // Permitir hasta 6 decimales para fractionales
     }
 
     return new Intl.NumberFormat('es-BO', {
