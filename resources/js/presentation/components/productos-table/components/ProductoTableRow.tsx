@@ -454,16 +454,24 @@ export default function ProductoTableRow({
                                         const unidadNueva = precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id;
 
                                         if (unidadActual !== unidadNueva && detalle.es_fraccionado && detalle.conversiones) {
-                                            const conversion = detalle.conversiones.find(
-                                                (c: any) => c.unidad_destino_id === unidadNueva || c.unidad_origen_id === unidadNueva
-                                            );
-                                            if (conversion) {
-                                                if (conversion.unidad_destino_id === unidadNueva) {
-                                                    // Cambio de unidad base a conversión → multiplicar
-                                                    cantidadConvertida = detalle.cantidad * conversion.factor_conversion;
-                                                } else if (conversion.unidad_origen_id === unidadNueva) {
-                                                    // Cambio de conversión a unidad base → dividir
-                                                    cantidadConvertida = detalle.cantidad / conversion.factor_conversion;
+                                            // ✅ IMPORTANTE: La unidad base es detalle.unidad_medida_id (ej: Kg)
+                                            // Las conversiones apuntan DESDE la base HACIA otras unidades (Kg → Gr)
+
+                                            if (unidadNueva === detalle.unidad_medida_id) {
+                                                // Volviendo a la unidad base → dividir por factor
+                                                const conversionActual = detalle.conversiones.find(
+                                                    (c: any) => c.unidad_destino_id === unidadActual
+                                                );
+                                                if (conversionActual) {
+                                                    cantidadConvertida = detalle.cantidad / conversionActual.factor_conversion;
+                                                }
+                                            } else {
+                                                // Yendo a una conversión → multiplicar por factor
+                                                const conversionNueva = detalle.conversiones.find(
+                                                    (c: any) => c.unidad_destino_id === unidadNueva
+                                                );
+                                                if (conversionNueva) {
+                                                    cantidadConvertida = detalle.cantidad * conversionNueva.factor_conversion;
                                                 }
                                             }
                                         }
