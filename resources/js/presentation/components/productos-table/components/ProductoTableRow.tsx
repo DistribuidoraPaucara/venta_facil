@@ -485,6 +485,9 @@ export default function ProductoTableRow({
                                             [productoId]: valorSeleccionado,
                                         }));
 
+                                        // ✅ IMPORTANTE: Limpiar editingField para que el input de precio muestre el nuevo valor
+                                        setEditingField(null);
+
                                         onUpdateDetail(index, 'tipo_precio_id', precioSeleccionado.tipo_precio_id);
                                         onUpdateDetail(index, 'tipo_precio_nombre', precioSeleccionado.nombre || '');
                                         onUpdateDetail(index, 'precio_unitario', precioSeleccionado.precio || 0);
