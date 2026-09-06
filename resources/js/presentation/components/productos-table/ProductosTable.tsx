@@ -524,6 +524,7 @@ export default function ProductosTable({
                                         comboItemsMap={comboItemsMap}
                                         setComboItemsMap={setComboItemsMap}
                                         onUpdateDetail={handleUpdateDetail}
+                                        onUpdateDetailMultiple={onUpdateDetailMultiple}
                                         onRemoveDetail={onRemoveDetail}
                                         onManualTipoPrecioChange={onManualTipoPrecioChange}
                                         onAbrirModalCascada={handleAbrirModalCascada}
