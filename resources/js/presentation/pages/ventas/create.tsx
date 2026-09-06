@@ -1589,6 +1589,9 @@ export default function VentaForm() {
                     <div className="grid grid-cols-1 items-start">
                         {/* Campo número oculto - se genera automáticamente */}
                         <input type="hidden" value={data.numero} onChange={(e) => setData('numero', e.target.value)} />
+                        {/* Campo moneda oculto - se establece automáticamente a BOB */}
+                        <input type="hidden" value={data.moneda_id} onChange={(e) => setData('moneda_id', Number(e.target.value))} />
+
                         <div>
                             <InputSearch
                                 id="cliente_search"
@@ -1634,8 +1637,6 @@ export default function VentaForm() {
                                 </p>
                             )}
                         </div>
-                        {/* Campo moneda oculto - se establece automáticamente a BOB */}
-                        <input type="hidden" value={data.moneda_id} onChange={(e) => setData('moneda_id', Number(e.target.value))} />
 
                         {/* <div>
                             <SearchSelect

@@ -662,9 +662,35 @@ export default function ProductoForm({
     const toggleTipoPrecio = (tipoId: number, checked: boolean) => {
         const exists = (data.precios || []).some((p: Precio) => Number(p.tipo_precio_id) === Number(tipoId));
         if (checked && !exists) {
-            const nuevo = { monto: 0, tipo_precio_id: tipoId } as Precio;
-            const nuevosPrecios = [...data.precios, nuevo];
-            setData('precios', nuevosPrecios);
+            const nuevosPrecios = [];
+
+            // ✅ IMPORTANTE: Para productos fraccionados, crear precios para CADA unidad
+            if (data.es_fraccionado && data.conversiones && data.conversiones.length > 0) {
+                // Crear precio para la unidad base
+                nuevosPrecios.push({
+                    monto: 0,
+                    tipo_precio_id: tipoId,
+                    unidad_medida_id: data.unidad_medida_id,
+                });
+
+                // Crear precios para cada conversión
+                data.conversiones.forEach((conv: any) => {
+                    nuevosPrecios.push({
+                        monto: 0,
+                        tipo_precio_id: tipoId,
+                        unidad_medida_id: conv.unidad_destino_id,
+                    } as Precio);
+                });
+            } else {
+                // Para productos simples, crear un solo precio
+                nuevosPrecios.push({
+                    monto: 0,
+                    tipo_precio_id: tipoId,
+                    unidad_medida_id: data.unidad_medida_id,
+                } as Precio);
+            }
+
+            setData('precios', [...data.precios, ...nuevosPrecios]);
         } else if (!checked && exists) {
             // ✅ IMPORTANTE: Eliminar TODOS los precios de este tipo (todas las unidades)
             const preciosFiltrados = (data.precios || []).filter((p: Precio) => Number(p.tipo_precio_id) !== Number(tipoId));
