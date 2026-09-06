@@ -381,7 +381,8 @@ export default function ProductoTableRow({
                         // ✅ REFACTORIZADO (2026-07-03): Usar producto_id como clave en lugar de index
                         // ✅ MEJORADO: Incluir unidad_medida_id en el valor para productos fraccionados
                         const productoId = detalle.producto_id;
-                        const unidadMedidaId = detalle.unidad_medida_id || detalle.unidad_venta_id;
+                        // ✅ CRITICAL FIX: Usar unidad_venta_id (la unidad ACTUAL de venta), NO unidad_medida_id (que es siempre la base)
+                        const unidadActualDeVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
 
                         let valorInicial = '';
                         if (selectedTipoPrecio[productoId] !== undefined) {
@@ -389,10 +390,12 @@ export default function ProductoTableRow({
                         } else if (detalle.tipo_precio_id === null) {
                             valorInicial = 'otros'; // Mostrar "OTROS" si es null
                         } else if (detalle.tipo_precio_id) {
-                            // Para el valor inicial, incluir unidad_medida_id si está disponible
-                            valorInicial = unidadMedidaId
-                                ? `${detalle.tipo_precio_id}_${unidadMedidaId}`
+                            // Para el valor inicial, incluir unidad_venta_id si es diferente a la base
+                            const debeMostrarUnidad = unidadActualDeVenta && unidadActualDeVenta !== detalle.unidad_medida_id;
+                            valorInicial = debeMostrarUnidad
+                                ? `${detalle.tipo_precio_id}_${unidadActualDeVenta}`
                                 : String(detalle.tipo_precio_id);
+                            console.log(`📋 [Select valorInicial] unidad_medida_id=${detalle.unidad_medida_id}, unidad_venta_id=${detalle.unidad_venta_id}, unidadActualDeVenta=${unidadActualDeVenta}, debeMostrarUnidad=${debeMostrarUnidad}, valorInicial=${valorInicial}`);
                         } else if (detalle.tipo_precio_id_recomendado) {
                             valorInicial = String(detalle.tipo_precio_id_recomendado);
                         } else if (default_tipo_precio_id) {
