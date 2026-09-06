@@ -479,15 +479,24 @@ export default function ProductoTableRow({
                                 className="font-small mt-1 rounded-lg border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
                             >
                                 {!valorInicial && <option value="">Seleccionar tipo de precio</option>}
-                                {preciosVenta.map((precio) => (
-                                    <option
-                                        className="font-small text-xs"
-                                        key={precio.id || precio.tipo_precio_id}
-                                        value={String(precio.tipo_precio_id)}
-                                    >
-                                        {precio.nombre || `Tipo ${precio.tipo_precio_id}`} - {formatCurrencyWith2Decimals(precio.precio || 0)}
-                                    </option>
-                                ))}
+                                {preciosVenta.map((precio) => {
+                                    // ✅ Mostrar precio con hasta 6 decimales para productos fraccionados
+                                    const precioFormato = (precio.precio || 0).toLocaleString('es-BO', {
+                                        style: 'currency',
+                                        currency: 'BOB',
+                                        minimumFractionDigits: precio.precio % 1 === 0 ? 0 : 2,
+                                        maximumFractionDigits: 6,
+                                    });
+                                    return (
+                                        <option
+                                            className="font-small text-xs"
+                                            key={precio.id || precio.tipo_precio_id}
+                                            value={String(precio.tipo_precio_id)}
+                                        >
+                                            {precio.nombre || `Tipo ${precio.tipo_precio_id}`} - {precioFormato}
+                                        </option>
+                                    );
+                                })}
                                 {/* ✅ NUEVO: Opción OTROS para precios personalizados */}
                                 <option value="otros" className="font-small text-xs">
                                     ➕ OTROS (Precio Personalizado)
