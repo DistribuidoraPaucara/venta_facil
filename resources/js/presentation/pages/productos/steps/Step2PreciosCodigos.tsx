@@ -177,7 +177,7 @@ function Step2PreciosCodigos(props: Step2Props) {
         const nuevosPrecios: Precio[] = [
             {
                 tipo_precio_id: tipoPrecioId,
-                monto: Number(precioUnidadBase.toFixed(2)),
+                monto: Number(precioUnidadBase.toFixed(6)), // ✅ Usar 6 decimales para productos fraccionados
                 unidad_medida_id: undefined, // NULL en BD - precio de unidad base
             }
         ];
@@ -186,13 +186,14 @@ function Step2PreciosCodigos(props: Step2Props) {
         props.data.conversiones.forEach((conv: any, idx: number) => {
             // Calcular: Precio CAJA / Factor = Precio TABLETA
             // Ej: 45 Bs / 30 = 1.5 Bs por tableta
+            // Para Kg a Gramos: 8 Bs / 1000 = 0.008 Bs
             const precioUnidadDestino = precioUnidadBase / conv.factor_conversion;
 
-            // console.log(`✨ Conversión ${idx + 1}: ${precioUnidadBase.toFixed(2)} Bs ÷ ${conv.factor_conversion} = ${precioUnidadDestino.toFixed(2)} Bs (Unidad destino ID: ${conv.unidad_destino_id})`);
+            // console.log(`✨ Conversión ${idx + 1}: ${precioUnidadBase.toFixed(6)} Bs ÷ ${conv.factor_conversion} = ${precioUnidadDestino.toFixed(6)} Bs (Unidad destino ID: ${conv.unidad_destino_id})`);
 
             nuevosPrecios.push({
                 tipo_precio_id: tipoPrecioId,
-                monto: Number(precioUnidadDestino.toFixed(2)),
+                monto: Number(precioUnidadDestino.toFixed(6)), // ✅ Usar 6 decimales para precisión
                 unidad_medida_id: conv.unidad_destino_id,
             });
         });
@@ -205,14 +206,14 @@ function Step2PreciosCodigos(props: Step2Props) {
         // 5️⃣ PASO 5: Actualizar estado visual de preciosPorUnidad para mostrar los calculados
         const visualState: typeof preciosPorUnidad[number] = {
             [Number(props.data.unidad_medida_id)]: {
-                monto: Number(precioUnidadBase.toFixed(2)),
+                monto: Number(precioUnidadBase.toFixed(6)), // ✅ Usar 6 decimales
                 manual: false,
             },
         };
         props.data.conversiones.forEach((conv: any) => {
             const precioUnidadDestino = precioUnidadBase / conv.factor_conversion;
             visualState[conv.unidad_destino_id] = {
-                monto: Number(precioUnidadDestino.toFixed(2)),
+                monto: Number(precioUnidadDestino.toFixed(6)), // ✅ Usar 6 decimales
                 manual: false,
             };
         });
