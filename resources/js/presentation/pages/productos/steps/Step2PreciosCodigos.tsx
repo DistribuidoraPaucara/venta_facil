@@ -873,7 +873,24 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                         />
                                                     </div>
                                                 </td>
-                                                <td className="px-2 py-2 text-xs text-left text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{tpIcono(tp)} {tpNombre(tp)}</td>
+                                                <td className="px-2 py-2 text-xs text-left text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{tpIcono(tp)} {tpNombre(tp)}</span>
+                                                        <span className="font-bold text-green-600 dark:text-green-400">{pct}%</span>
+                                                        <div className="flex gap-1">
+                                                            {tp.es_precio_base && (
+                                                                <span className="inline-block text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full font-medium">
+                                                                    📊 Base
+                                                                </span>
+                                                            )}
+                                                            {tp.es_ganancia && (
+                                                                <span className="inline-block text-xs bg-green-200 dark:bg-green-900 text-green-900 dark:text-green-100 px-2 py-0.5 rounded-full font-medium">
+                                                                    💰 Ganancia
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
                                                 <td className="px-2 py-2 text-center">
                                                     {checked ? (
                                                         <div className="flex items-center justify-center gap-1">

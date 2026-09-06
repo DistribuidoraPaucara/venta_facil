@@ -4,6 +4,8 @@ import { Label } from '@/presentation/components/ui/label';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { Trash2 } from 'lucide-react';
 import NotificationService from '@/infrastructure/services/notification.service';
+import { useState, useCallback } from 'react';
+import axios from 'axios';
 
 interface Ingrediente {
     producto_id: number | string;
@@ -32,6 +34,42 @@ export default function StepRecetaIngredientes({
     console.log('📦 StepRecetaIngredientes - productosDisponibles:', productosDisponibles);
     console.log('📦 StepRecetaIngredientes - unidadesDisponibles:', unidadesDisponibles);
     console.log('📦 StepRecetaIngredientes - ingredientes:', ingredientes);
+
+    // ✨ NUEVO: Estado para búsqueda dinámica de productos
+    const [productosCache, setProductosCache] = useState<Array<{ id: number | string; nombre: string }>>([]);
+    const [searchingIndex, setSearchingIndex] = useState<number | null>(null);
+
+    // ✨ NUEVO: Búsqueda dinámica de productos via API
+    const buscarProductos = useCallback(async (query: string, index: number) => {
+        if (!query || query.length < 2) {
+            setProductosCache([]);
+            return;
+        }
+
+        try {
+            setSearchingIndex(index);
+            const response = await axios.get('/api/app/productos/buscar', {
+                params: {
+                    q: query,
+                    limite: 20,
+                    tipo_busqueda: 'parcial',
+                },
+            });
+
+            const resultados = (response.data.data || []).map((p: any) => ({
+                id: p.id,
+                nombre: p.nombre,
+            }));
+
+            console.log('✅ Productos encontrados:', resultados);
+            setProductosCache(resultados);
+        } catch (error) {
+            console.error('❌ Error buscando productos:', error);
+            setProductosCache([]);
+        } finally {
+            setSearchingIndex(null);
+        }
+    }, []);
     const addIngrediente = () => {
         // 🏭 NUEVO: Seleccionar por defecto la unidad "UN" (Unidad)
         const unidadUN = unidadesDisponibles.find((u: any) => u.codigo === 'UN');
@@ -106,15 +144,17 @@ export default function StepRecetaIngredientes({
                                     <td className="px-4 py-3 relative" style={{ overflow: 'visible' }}>
                                         <SearchSelect
                                             id={`ingrediente_producto_${index}`}
-                                            placeholder="Selecciona un producto"
+                                            placeholder="Busca un producto..."
                                             value={String(ing.producto_id) || ''}
-                                            options={productosDisponibles.map((p) => ({
+                                            options={productosCache.map((p) => ({
                                                 value: String(p.id),
                                                 label: p.nombre,
                                             }))}
+                                            onSearch={(query) => buscarProductos(query, index)}
                                             onChange={(value) => updateIngrediente(index, 'producto_id', value)}
                                             allowClear={true}
-                                            emptyText="No hay productos disponibles"
+                                            emptyText={searchingIndex === index ? "🔍 Buscando..." : "Escribe para buscar productos"}
+                                            loading={searchingIndex === index}
                                         />
                                     </td>
 

@@ -1586,7 +1586,7 @@ export default function VentaForm() {
 
                 {/* Información básica */}
                 <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                    <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 items-start">
                         {/* Campo número oculto - se genera automáticamente */}
                         <input type="hidden" value={data.numero} onChange={(e) => setData('numero', e.target.value)} />
                         <div>
@@ -1637,7 +1637,7 @@ export default function VentaForm() {
                         {/* Campo moneda oculto - se establece automáticamente a BOB */}
                         <input type="hidden" value={data.moneda_id} onChange={(e) => setData('moneda_id', Number(e.target.value))} />
 
-                        <div>
+                        {/* <div>
                             <SearchSelect
                                 label="Tipo de Pago"
                                 placeholder="Seleccionar tipo de pago"
@@ -1649,7 +1649,7 @@ export default function VentaForm() {
                                 searchPlaceholder="Buscar tipo de pago..."
                                 emptyText="No se encontraron tipos de pago"
                             />
-                        </div>
+                        </div> */}
 
                         {/* ✅ REFACTORIZADO (2026-07-03): Toggle Switch elegante en lugar de dos botones */}
                         {logistica_envios && (

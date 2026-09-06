@@ -43,7 +43,9 @@ export interface Step1Props {
     };
     errors: Record<string, string>;
     categoriasOptions: Option[];
+    onCategoriasSearch?: (query: string) => Promise<Option[]>; // ✨ NUEVO: Búsqueda dinámica de categorías
     marcasOptions: Option[];
+    onMarcasSearch?: (query: string) => Promise<Option[]>; // ✨ NUEVO: Búsqueda dinámica de marcas
     unidadesOptions: Option[];
     setData: (key: string, value: unknown) => void; // follows useForm API used in parent
     getInputClassName: (fieldName: keyof Record<string, string>) => string;
@@ -62,7 +64,9 @@ function Step1DatosProducto({
     data,
     errors,
     categoriasOptions,
+    onCategoriasSearch,
     marcasOptions,
+    onMarcasSearch,
     unidadesOptions,
     setData,
     getInputClassName,
@@ -446,17 +450,16 @@ function Step1DatosProducto({
                             <span>Crear</span>
                         </a>
                     </div>
-                    <SearchSelect
+                    <InputSearch
                         id="categoria"
                         label=""
-                        placeholder="Seleccione una categoría"
                         value={data.categoria_id ?? ''}
                         options={categoriasOptions}
+                        onSearch={onCategoriasSearch || (async () => [])}
                         onChange={(value) => setData('categoria_id', value ? Number(value) : null)}
                         error={errors.categoria_id}
-                        allowClear={true}
-                        emptyText="No se encontraron categorías"
-                        searchPlaceholder="Buscar categorías..."
+                        placeholder="Busca una categoría..."
+                        emptyText="No se encontró la categoría"
                     />
                 </div>
                 <div className="space-y-1">
@@ -473,17 +476,16 @@ function Step1DatosProducto({
                             <span>Crear</span>
                         </a>
                     </div>
-                    <SearchSelect
+                    <InputSearch
                         id="marca"
                         label=""
-                        placeholder="Seleccione una marca"
                         value={data.marca_id ?? ''}
                         options={marcasOptions}
+                        onSearch={onMarcasSearch || (async () => [])}
                         onChange={(value) => setData('marca_id', value ? Number(value) : null)}
                         error={errors.marca_id}
-                        allowClear={true}
-                        emptyText="No se encontraron marcas"
-                        searchPlaceholder="Buscar marcas..."
+                        placeholder="Busca una marca..."
+                        emptyText="No se encontró la marca"
                     />
                 </div>
                 <div className="space-y-1">

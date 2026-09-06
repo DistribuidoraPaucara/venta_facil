@@ -128,7 +128,8 @@ class TipoPrecio extends Model
      */
     public static function getOptions(): array
     {
-        return static::activos()
+        return static::porEmpresa()
+            ->activos()
             ->ordenados()
             ->get()
             ->map(function ($tipo) {

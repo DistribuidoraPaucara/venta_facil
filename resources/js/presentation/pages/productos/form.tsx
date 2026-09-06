@@ -7,7 +7,8 @@ import { Button } from '@/presentation/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/presentation/components/ui/tabs';
 import { useEntitySelect } from '@/presentation/hooks/use-search-select';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import axios from 'axios';
 import Step1DatosProducto from './steps/Step1DatosProducto';
 import Step2PreciosCodigos from './steps/Step2PreciosCodigos';
 import Step3Almacenes, { validarYAjustarAlmacenes } from './steps/Step3Almacenes'; // ✨ NUEVO: Almacenes y sectores
@@ -135,6 +136,60 @@ export default function ProductoForm({
 
     const [ingredientesState, setIngredientesState] = useState<Ingrediente[]>(getInitialIngredientes());
 
+    // ✨ NUEVO: Búsqueda dinámica de categorías via API
+    const buscarCategorias = useCallback(async (query: string) => {
+        if (!query || query.length < 2) {
+            return [];
+        }
+
+        try {
+            const response = await axios.get('/api/app/categorias-crud', {
+                params: {
+                    q: query,
+                    per_page: 20,
+                },
+            });
+
+            const resultados = (response.data.data?.data || []).map((c: any) => ({
+                value: c.id,
+                label: c.nombre,
+            }));
+
+            console.log('✅ Categorías encontradas:', resultados);
+            return resultados;
+        } catch (error) {
+            console.error('❌ Error buscando categorías:', error);
+            return [];
+        }
+    }, []);
+
+    // ✨ NUEVO: Búsqueda dinámica de marcas via API
+    const buscarMarcas = useCallback(async (query: string) => {
+        if (!query || query.length < 2) {
+            return [];
+        }
+
+        try {
+            const response = await axios.get('/api/app/marcas', {
+                params: {
+                    q: query,
+                    per_page: 20,
+                },
+            });
+
+            const resultados = (response.data.data?.data || []).map((m: any) => ({
+                value: m.id,
+                label: m.nombre,
+            }));
+
+            console.log('✅ Marcas encontradas:', resultados);
+            return resultados;
+        } catch (error) {
+            console.error('❌ Error buscando marcas:', error);
+            return [];
+        }
+    }, []);
+
     // 🏭 NUEVO: Convertir productos de props al formato esperado
     const productosDisponibles = Array.isArray(productos) ? (productos as any[]).map((p: any) => ({ id: p.id, nombre: p.nombre })) : [];
 
@@ -150,8 +205,7 @@ export default function ProductoForm({
     const unidadUNId = (unidades as any[])?.find((u: any) => u.codigo === 'UN')?.id || '';
 
     // Configurar hooks de búsqueda para cada entidad
-    const categoriasSelect = useEntitySelect(categorias);
-    const marcasSelect = useEntitySelect(marcas);
+    // ✨ categoriasSelect y marcasSelect ya no se usan - búsqueda dinámica via buscarCategorias y buscarMarcas
 
     const unidadesSelect = useEntitySelect(unidades, {
         searchFields: ['nombre', 'codigo'],
@@ -904,8 +958,10 @@ export default function ProductoForm({
                                     <Step1DatosProducto
                                         data={data}
                                         errors={errors}
-                                        categoriasOptions={categoriasSelect.filteredOptions}
-                                        marcasOptions={marcasSelect.filteredOptions}
+                                        categoriasOptions={[]}
+                                        onCategoriasSearch={buscarCategorias}
+                                        marcasOptions={[]}
+                                        onMarcasSearch={buscarMarcas}
                                         unidadesOptions={unidadesSelect.filteredOptions}
                                         setData={setData}
                                         getInputClassName={getInputClassName}

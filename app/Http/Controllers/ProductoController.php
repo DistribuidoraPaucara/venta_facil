@@ -317,13 +317,14 @@ class ProductoController extends Controller
             'ubicacion_fisica' => $a->ubicacion_fisica,
         ]);
 
-        $productosActivos = Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
-        Log::info('🏭 Productos cargados para create():', ['cantidad' => $productosActivos->count(), 'productos' => $productosActivos->pluck('nombre')]);
+        // ✨ OPTIMIZACIÓN: No cargar todos los productos (puede haber cientos/miles)
+        // El frontend buscará dinámicamente via /api/app/productos/buscar
+        Log::info('🏭 Productos - Lazy loading habilitado via API');
 
         return Inertia::render('productos/form', [
             'producto'                       => null,
-            'categorias'                     => Categoria::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
-            'marcas'                         => Marca::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'categorias'                     => [], // ✨ Vacío - búsqueda dinámica via /api/app/categorias-crud?q=
+            'marcas'                         => [], // ✨ Vacío - búsqueda dinámica via /api/app/marcas?q=
             'proveedores'                    => \App\Models\Proveedor::porEmpresa()->orderBy('nombre')->get(['id', 'nombre', 'razon_social']),  // ✅ Filtrado
             'unidades'                       => UnidadMedida::porEmpresa()->orderBy('nombre')->get(['id', 'codigo', 'nombre']),  // ✅ Filtrado
             'tipos_precio'                   => TipoPrecio::getOptions(),
@@ -338,7 +339,7 @@ class ProductoController extends Controller
             'permite_productos_combo'        => $empresa?->permite_productos_combo ?? false,  // ✅ NUEVO
             'permite_productos_adicionales'  => $empresa?->permite_productos_adicionales ?? false,  // ✅ NUEVO
             'permite_productos_produccion'   => $empresa?->permite_productos_produccion ?? false,  // ✅ NUEVO
-            'productos'                      => $productosActivos, // 🏭 NUEVO: Para ingredientes
+            'productos'                      => [], // ✨ Vacío - búsqueda dinámica via /api/app/productos/buscar
         ]);
     }
 
@@ -967,28 +968,17 @@ class ProductoController extends Controller
             'ubicacion_fisica' => $a->ubicacion_fisica,
         ]);
 
-        $productosActivos = Producto::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
-        Log::info('🏭 Productos cargados para edit():', ['cantidad' => $productosActivos->count(), 'producto_id' => $producto->id]);
+        // ✨ OPTIMIZACIÓN: No cargar todos los productos (puede haber cientos/miles)
+        // El frontend buscará dinámicamente via /api/app/productos/buscar
+        Log::info('🏭 Productos - Lazy loading habilitado via API', ['producto_id' => $producto->id]);
 
         return Inertia::render('productos/form', [
             'producto'                       => $payload,
-            'categorias'                     => Categoria::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
-            'marcas'                         => Marca::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']),  // ✅ Filtrado
+            'categorias'                     => [], // ✨ Vacío - búsqueda dinámica via /api/app/categorias-crud?q=
+            'marcas'                         => [], // ✨ Vacío - búsqueda dinámica via /api/app/marcas?q=
             'proveedores'                    => \App\Models\Proveedor::porEmpresa()->orderBy('nombre')->get(['id', 'nombre', 'razon_social']),  // ✅ Filtrado
             'unidades'                       => UnidadMedida::porEmpresa()->orderBy('nombre')->get(['id', 'codigo', 'nombre']),  // ✅ Filtrado
-            'tipos_precio'                   => TipoPrecio::porEmpresa()->activos()->ordenados()->get()->map(function ($tipo) {
-                return [
-                    'value'               => $tipo->id,
-                    'code'                => $tipo->codigo,
-                    'label'               => $tipo->nombre,
-                    'description'         => $tipo->descripcion,
-                    'color'               => $tipo->color,
-                    'es_ganancia'         => $tipo->es_ganancia,
-                    'es_precio_base'      => $tipo->es_precio_base,
-                    'icono'               => $tipo->getIcono(),
-                    'tooltip'             => $tipo->getTooltip(),
-                ];
-            })->toArray(),  // ✅ Filtrado
+            'tipos_precio'                   => TipoPrecio::getOptions(),  // ✅ Usa getOptions() que incluye porcentaje_ganancia
             'configuraciones_ganancias'      => \App\Models\ConfiguracionGlobal::configuracionesGanancias(),
             'almacenes'                      => $almacenesSelect,    // ✨ MEJORADO: Solo almacenes activos
             'sectores'                       => $sectoresPorAlmacen, // ✨ MEJORADO: Con descripción, stock limits e indicador de genérico
@@ -1000,7 +990,7 @@ class ProductoController extends Controller
             'permite_productos_combo'        => $empresa?->permite_productos_combo ?? false,  // ✅ NUEVO
             'permite_productos_adicionales'  => $empresa?->permite_productos_adicionales ?? false,  // ✅ NUEVO
             'permite_productos_produccion'   => $empresa?->permite_productos_produccion ?? false,  // ✅ NUEVO
-            'productos'                      => $productosActivos, // 🏭 NUEVO: Para ingredientes
+            'productos'                      => [], // ✨ Vacío - búsqueda dinámica via /api/app/productos/buscar
         ]);
     }
 
@@ -2936,7 +2926,7 @@ class ProductoController extends Controller
                 },
                 'precios'      => function ($q) {
                     $q->where('activo', true)
-                        ->select('id', 'producto_id', 'tipo_precio_id', 'nombre', 'precio', 'es_precio_base')
+                        ->select('id', 'producto_id', 'tipo_precio_id', 'nombre', 'precio', 'es_precio_base', 'unidad_medida_id')
                         ->with('tipoPrecio:id,nombre,codigo');
                 },
                 'stock'        => function ($q) {
