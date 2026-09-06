@@ -801,7 +801,9 @@ function Step2PreciosCodigos(props: Step2Props) {
                 const tipoId = Number(precio.tipo_precio_id);
                 const montoBase = Number(precio.monto);
 
-                if (!isNaN(montoBase) && montoBase > 0) {
+                // ✅ IMPORTANTE: Solo calcular precios de conversión para precios BASE (sin unidad_medida_id)
+                // Los precios que ya tienen unidad_medida_id son precios de conversión y NO deben dividirse
+                if (!precio.unidad_medida_id && !isNaN(montoBase) && montoBase > 0) {
                     // Para cada conversión, calcular el precio en la unidad destino
                     props.data.conversiones?.forEach((conv: any) => {
                         const montoDestino = montoBase / conv.factor_conversion;
