@@ -22,6 +22,7 @@ interface ProductoTableRowProps {
     comboItemsMap: Record<number, any[]>;
     setComboItemsMap: (value: any) => void;
     onUpdateDetail: (index: number, field: string, value: any) => void;
+    onUpdateDetailMultiple?: (index: number, updates: Record<string, any>) => void;
     onRemoveDetail: (index: number) => void;
     onManualTipoPrecioChange?: (index: number) => void;
     onAbrirModalCascada: (index: number, detalle: DetalleProducto) => void;
@@ -53,6 +54,7 @@ export default function ProductoTableRow({
     comboItemsMap,
     setComboItemsMap,
     onUpdateDetail,
+    onUpdateDetailMultiple,
     onRemoveDetail,
     onManualTipoPrecioChange,
     onAbrirModalCascada,
