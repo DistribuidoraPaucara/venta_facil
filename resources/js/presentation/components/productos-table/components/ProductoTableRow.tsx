@@ -504,7 +504,8 @@ export default function ProductoTableRow({
                                                 tipo_precio_id: precioSeleccionado.tipo_precio_id,
                                                 tipo_precio_nombre: precioSeleccionado.nombre || '',
                                                 precio_unitario: precioSeleccionado.precio || 0,
-                                                unidad_medida_id: precioSeleccionado.unidad_medida_id || null,
+                                                // ✅ IMPORTANTE: NO cambiar unidad_medida_id (es la unidad base del producto)
+                                                // Solo cambiar unidad_venta_id (la unidad actual de venta)
                                                 unidad_venta_id: precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id,
                                                 cantidad: cantidadConvertida,
                                                 unidad_medida_nombre: unidadNombreNueva,
