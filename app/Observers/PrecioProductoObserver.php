@@ -14,10 +14,23 @@ class PrecioProductoObserver
     public function updating(PrecioProducto $precioProducto): void
     {
         if ($precioProducto->isDirty('precio')) {
+            $valorAnterior = (float) $precioProducto->getOriginal('precio');
+            $valorNuevo = (float) $precioProducto->precio;
+
+            // Calcular porcentaje de cambio
+            $porcentajeCambio = 0;
+            if ($valorAnterior != 0) {
+                $porcentajeCambio = (($valorNuevo - $valorAnterior) / $valorAnterior) * 100;
+            } elseif ($valorNuevo != 0) {
+                // Si era 0 y ahora tiene valor, es un cambio del 100%
+                $porcentajeCambio = 100;
+            }
+
             HistorialPrecio::create([
                 'precio_producto_id' => $precioProducto->id,
-                'valor_anterior' => $precioProducto->getOriginal('precio'),
-                'valor_nuevo' => $precioProducto->precio,
+                'valor_anterior' => $valorAnterior,
+                'valor_nuevo' => $valorNuevo,
+                'porcentaje_cambio' => $porcentajeCambio,
                 'fecha_cambio' => now(),
                 'motivo' => $precioProducto->motivo_cambio ?? 'Actualización de precio',
                 'usuario' => Auth::user()?->name ?? 'sistema',
