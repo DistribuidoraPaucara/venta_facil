@@ -443,12 +443,24 @@ export default function ProductoTableRow({
                                         // ✅ IMPORTANTE: Limpiar editingField para que el input de precio muestre el nuevo valor
                                         setEditingField(null);
 
-                                        onUpdateDetail(index, 'tipo_precio_id', precioSeleccionado.tipo_precio_id);
-                                        onUpdateDetail(index, 'tipo_precio_nombre', precioSeleccionado.nombre || '');
-                                        onUpdateDetail(index, 'precio_unitario', precioSeleccionado.precio || 0);
-                                        onUpdateDetail(index, 'unidad_medida_id', precioSeleccionado.unidad_medida_id || null);
-                                        // ✅ IMPORTANTE: También actualizar unidad_venta_id para mantener coherencia
-                                        onUpdateDetail(index, 'unidad_venta_id', precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id);
+                                        // ✅ CRÍTICO: Usar updateDetailMultiple para hacer TODOS los cambios de una sola vez
+                                        // Esto evita estados inconsistentes donde unidad_venta_id ≠ precio_unitario
+                                        if (onUpdateDetailMultiple) {
+                                            onUpdateDetailMultiple(index, {
+                                                tipo_precio_id: precioSeleccionado.tipo_precio_id,
+                                                tipo_precio_nombre: precioSeleccionado.nombre || '',
+                                                precio_unitario: precioSeleccionado.precio || 0,
+                                                unidad_medida_id: precioSeleccionado.unidad_medida_id || null,
+                                                unidad_venta_id: precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id,
+                                            });
+                                        } else {
+                                            // Fallback si onUpdateDetailMultiple no está disponible
+                                            onUpdateDetail(index, 'tipo_precio_id', precioSeleccionado.tipo_precio_id);
+                                            onUpdateDetail(index, 'tipo_precio_nombre', precioSeleccionado.nombre || '');
+                                            onUpdateDetail(index, 'precio_unitario', precioSeleccionado.precio || 0);
+                                            onUpdateDetail(index, 'unidad_medida_id', precioSeleccionado.unidad_medida_id || null);
+                                            onUpdateDetail(index, 'unidad_venta_id', precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id);
+                                        }
                                     }
                                 }}
                                 className="font-small mt-1 rounded-lg border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
