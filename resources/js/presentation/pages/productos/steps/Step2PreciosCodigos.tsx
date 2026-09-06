@@ -144,6 +144,56 @@ function Step2PreciosCodigos(props: Step2Props) {
         setPreciosPorUnidad(estadoInicial);
     }, [props.data.precios, props.data.es_fraccionado, props.data.unidad_medida_id]);
 
+    // ✨ NUEVO: Recalcular automáticamente precios de conversión cuando cambia el precio base (edición)
+    useEffect(() => {
+        if (!props.data.es_fraccionado || !props.data.conversiones || props.data.conversiones.length === 0) {
+            return;
+        }
+
+        // Detectar cambios en precios base y recalcular automáticamente los de conversión
+        const actualizados: Precio[] = [...(props.data.precios || [])];
+        let huboCambios = false;
+
+        // Para cada precio base (unidad_medida_id = null/undefined)
+        actualizados.forEach((precio: Precio, idx: number) => {
+            if (!precio.unidad_medida_id && Number(precio.monto) > 0) {
+                const tipoId = Number(precio.tipo_precio_id);
+                const montoBase = Number(precio.monto);
+
+                // Recalcular para cada conversión
+                props.data.conversiones?.forEach((conv: any) => {
+                    const montoDestino = montoBase / conv.factor_conversion;
+
+                    // Buscar precio de conversión existente
+                    const indexDestino = actualizados.findIndex(
+                        (p: Precio) =>
+                            Number(p.tipo_precio_id) === tipoId &&
+                            Number(p.unidad_medida_id) === Number(conv.unidad_destino_id)
+                    );
+
+                    if (indexDestino >= 0) {
+                        const precioDestino = actualizados[indexDestino];
+                        // Solo recalcular si el valor es muy diferente (error de redondeo anterior)
+                        // Ej: si estaba en 0.01 y debería ser 0.008
+                        const diferencia = Math.abs(Number(precioDestino.monto) - montoDestino);
+                        if (diferencia > 0.00001) {
+                            actualizados[indexDestino] = {
+                                ...precioDestino,
+                                monto: parseFloat(montoDestino.toFixed(6)),
+                            };
+                            huboCambios = true;
+                        }
+                    }
+                });
+            }
+        });
+
+        if (huboCambios) {
+            console.log('🔄 Recalculando precios de conversión (edición)');
+            setPrecios(actualizados);
+        }
+    }, [props.data.precios, props.data.es_fraccionado, props.data.conversiones, setPrecios]);
+
     // ✨ Calcular precios automáticamente cuando cambia el precio base o el factor de conversión
     const calcularPreciosPorUnidad = useCallback((
         precioBase: number,
