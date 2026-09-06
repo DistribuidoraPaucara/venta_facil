@@ -494,11 +494,22 @@ export default function ProductoTableRow({
 
                                     // ✅ IMPORTANTE: Agregar unidad al nombre para productos fraccionados
                                     // Sino ambas opciones se llamarían igual (ej: "PRECIO DE VENTA")
-                                    const unidadNombre = precio.unidad_medida_id
-                                        ? (productoInfo?.conversiones?.find((c: any) => c.unidad_destino_id === precio.unidad_medida_id)?.unidad_destino?.nombre ||
-                                           productoInfo?.unidad?.nombre ||
-                                           'Unidad')
-                                        : (productoInfo?.unidad?.nombre || 'Unidad Base');
+                                    let unidadNombre = 'Unidad';
+
+                                    if (precio.unidad_medida_id) {
+                                        // Buscar en conversiones por unidad_destino_id
+                                        const conversion = productoInfo?.conversiones?.find(
+                                            (c: any) => c.unidad_destino_id === precio.unidad_medida_id,
+                                        );
+                                        if (conversion?.unidad_destino_nombre) {
+                                            unidadNombre = conversion.unidad_destino_nombre;
+                                        } else {
+                                            // Fallback: si es la unidad base (igual a unidad_medida_id del producto)
+                                            unidadNombre = productoInfo?.unidad?.nombre || 'Unidad';
+                                        }
+                                    } else {
+                                        unidadNombre = productoInfo?.unidad?.nombre || 'Unidad Base';
+                                    }
 
                                     const nombreConUnidad = detalle.es_fraccionado
                                         ? `${precio.nombre || `Tipo ${precio.tipo_precio_id}`} - ${unidadNombre}`
