@@ -459,10 +459,14 @@ export default function ProductoTableRow({
                                         const unidadBase = detalle.unidad_medida_id;
                                         const unidadNueva = precioSeleccionado.unidad_medida_id || unidadBase;
 
+                                        console.log(`🔀 [Conversion Check] unidadActual=${unidadActual}, unidadNueva=${unidadNueva}, unidadBase=${unidadBase}, es_fraccionado=${detalle.es_fraccionado}, tiene_conversiones=${!!detalle.conversiones}`);
+
                                         if (unidadActual !== unidadNueva && detalle.es_fraccionado && detalle.conversiones) {
                                             // ✅ IMPORTANTE: Buscar la conversión según HACIA DÓNDE vas
+                                            console.log(`✅ [Conversion] Entrando en rama de conversión`);
 
                                             if (unidadNueva === unidadBase) {
+                                                console.log(`↩️ [Conversion] Volviendo al base`);
                                                 // Volviendo a la unidad base → DIVIDIR por el factor
                                                 // Buscar la conversión DE la unidad actual AL base
                                                 const conversionActual = detalle.conversiones.find(
