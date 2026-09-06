@@ -743,10 +743,10 @@ export default function VentaForm() {
             return;
         }
 
-        // ✅ NUEVO: Determinar unidad_venta_id inicial - usar primera conversión si es fraccionado
+        // ✅ NUEVO: Determinar unidad_venta_id inicial - SIEMPRE usar la unidad base del producto
         const conversiones = (producto as any).conversiones || [];
         const esProductoFraccionado = (producto as any).es_fraccionado && conversiones.length > 0;
-        const unidadVentaInicial = esProductoFraccionado ? conversiones[0].unidad_destino_id : (producto as any).unidad_medida_id;
+        const unidadVentaInicial = (producto as any).unidad_medida_id; // ✅ CORREGIDO: Siempre usar unidad base, no conversión
 
         // ✅ MODIFICADO (2026-02-17): Usar tipo_precio_id que viene del backend PRIMERO
         // El backend devuelve tipo_precio_id_recomendado basado en el código VENTA
@@ -755,24 +755,23 @@ export default function VentaForm() {
 
         // ✅ NUEVO (2026-02-17): Obtener el precio específico del tipo_precio_recomendado ANTES de usarlo
         // En lugar de usar precio_venta genérico, buscar el precio específico del tipo_precio_id
-        const precioDelTipoPrecio = (producto as any).precios?.find((p: any) => p.tipo_precio_id === tipoPrecioIdRecomendado)?.precio;
+        // ✅ IMPORTANTE: Para productos fraccionados, buscar el precio de la UNIDAD BASE (unidad_medida_id), no de conversiones
+        const precioDelTipoPrecio = (producto as any).precios?.find((p: any) =>
+            p.tipo_precio_id === tipoPrecioIdRecomendado && !p.unidad_medida_id
+        )?.precio;
 
         // ✅ DEBUG: Loguear los IDs de precios disponibles para verificar coincidencias
         const preciosConIds =
             (producto as any).precios?.map((p: any) => ({
                 nombre: p.nombre,
                 tipo_precio_id: p.tipo_precio_id,
+                unidad_medida_id: p.unidad_medida_id,
             })) || [];
         // ✅ NUEVO (2026-02-17): Calcular precio según la unidad de venta inicial
         // Usar el precio específico del tipo_precio_recomendado, no el genérico precio_venta
+        // ✅ IMPORTANTE: Para productos fraccionados, buscar el precio de la unidad base (sin unidad_medida_id)
         const precioBase = precioDelTipoPrecio || producto.precio_venta || 0;
-        let precioUnitarioInicial = precioBase;
-        if (esProductoFraccionado && conversiones.length > 0) {
-            const conversion = conversiones[0];
-            if (conversion.factor_conversion > 0) {
-                precioUnitarioInicial = precioBase / conversion.factor_conversion;
-            }
-        }
+        const precioUnitarioInicial = precioBase; // ✅ CORREGIDO: No dividir, usar precio base directamente
 
         const newDetail: DetalleProducto = {
             producto_id: producto.id,
