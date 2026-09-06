@@ -31,7 +31,7 @@ class PrecioProducto extends Model
     protected function casts(): array
     {
         return [
-            'precio'              => 'decimal:2',
+            'precio'              => 'decimal:6', // ✅ Aumentado a 6 decimales para productos fraccionados
             'fecha_inicio'        => 'date',
             'fecha_fin'           => 'date',
             'activo'              => 'boolean',
