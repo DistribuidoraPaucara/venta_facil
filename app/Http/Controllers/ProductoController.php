@@ -3186,6 +3186,7 @@ class ProductoController extends Controller
                             'precio'         => (float) $p->precio,
                             'tipo_precio_id' => $p->tipo_precio_id,
                             'es_precio_base' => $p->es_precio_base,
+                            'unidad_medida_id' => $p->unidad_medida_id,
                             'tipo_precio'    => $p->tipoPrecio ? [
                                 'id'     => $p->tipoPrecio->id,
                                 'nombre' => $p->tipoPrecio->nombre,
