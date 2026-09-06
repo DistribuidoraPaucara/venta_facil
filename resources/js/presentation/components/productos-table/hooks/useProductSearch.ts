@@ -179,7 +179,8 @@ export function useProductSearch({
                 id: pr.id,
                 tipo_precio_id: pr.tipo_precio_id,
                 nombre: pr.nombre || pr.tipoPrecio?.nombre,
-                precio: pr.precio
+                precio: pr.precio,
+                unidad_medida_id: pr.unidad_medida_id, // ✅ IMPORTANTE para productos fraccionados
             })) || [],
             tipo_precio_id_recomendado: tipoPrecioSeleccionado || p.tipo_precio_id_recomendado,
             tipo_precio_nombre_recomendado: tipoPrecioUsado || p.tipo_precio_nombre_recomendado,
