@@ -345,57 +345,63 @@ export default function ProductoTableRow({
             {/* Precio Venta + Tipo Precio */}
             {tipo === 'venta' && (
                 <td className="font-small px-2 py-2 text-xs">
-                    <input
-                        type="text"
-                        inputMode="decimal"
-                        disabled={readOnly}
-                        value={
-                            editingField?.index === index && editingField?.field === 'precio_venta'
-                                ? editingField.value
-                                : formatearPrecioVenta(detalle.precio_unitario)
-                        }
-                        placeholder="0"
-                        onFocus={() => {
-                            setEditingField({
-                                index,
-                                field: 'precio_venta',
-                                value: formatearPrecioVenta(detalle.precio_unitario),
-                            });
-                        }}
-                        onChange={(e) => {
-                            const valor = e.target.value;
-                            setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
-                            // ✅ MEJORADO: Permitir decimales y validación más flexible
-                            if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
-                                const num = valor === '' ? 0 : parseFloat(valor);
-                                if (num >= 0) {
-                                    // ✅ NUEVO: Marcar como selección manual cuando se edita el precio
-                                    // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
-                                    if (onManualTipoPrecioChange) {
-                                        onManualTipoPrecioChange(detalle.producto_id);
-                                    }
-                                    onUpdateDetail(index, 'precio_unitario', num);
-                                }
-                            }
-                        }}
-                        onBlur={(e) => {
-                            const valor = e.target.value;
-                            // ✅ MEJORADO: Permitir decimales y validación más flexible
-                            if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
-                                const num = valor === '' ? 0 : parseFloat(valor);
-                                if (num >= 0) {
-                                    // ✅ NUEVO: Marcar como selección manual cuando se edita el precio
-                                    // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
-                                    if (onManualTipoPrecioChange) {
-                                        onManualTipoPrecioChange(detalle.producto_id);
-                                    }
-                                    onUpdateDetail(index, 'precio_unitario', num);
-                                }
-                            }
-                            setEditingField(null);
-                        }}
-                        className="font-small w-32 rounded-md border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                    />
+                    {(() => {
+                        const valorMostrado = editingField?.index === index && editingField?.field === 'precio_venta'
+                            ? editingField.value
+                            : formatearPrecioVenta(detalle.precio_unitario);
+                        console.log(`💰 [Input Precio] detalle.precio_unitario=${detalle.precio_unitario}, editingField=${editingField?.index === index && editingField?.field === 'precio_venta' ? 'SÍ' : 'NO'}, valorMostrado=${valorMostrado}`);
+                        return (
+                            <>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    disabled={readOnly}
+                                    value={valorMostrado}
+                                    placeholder="0"
+                                    onFocus={() => {
+                                        setEditingField({
+                                            index,
+                                            field: 'precio_venta',
+                                            value: formatearPrecioVenta(detalle.precio_unitario),
+                                        });
+                                    }}
+                                    onChange={(e) => {
+                                        const valor = e.target.value;
+                                        setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                        // ✅ MEJORADO: Permitir decimales y validación más flexible
+                                        if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                            const num = valor === '' ? 0 : parseFloat(valor);
+                                            if (num >= 0) {
+                                                // ✅ NUEVO: Marcar como selección manual cuando se edita el precio
+                                                // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
+                                                if (onManualTipoPrecioChange) {
+                                                    onManualTipoPrecioChange(detalle.producto_id);
+                                                }
+                                                onUpdateDetail(index, 'precio_unitario', num);
+                                            }
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        const valor = e.target.value;
+                                        // ✅ MEJORADO: Permitir decimales y validación más flexible
+                                        if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                            const num = valor === '' ? 0 : parseFloat(valor);
+                                            if (num >= 0) {
+                                                // ✅ NUEVO: Marcar como selección manual cuando se edita el precio
+                                                // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
+                                                if (onManualTipoPrecioChange) {
+                                                    onManualTipoPrecioChange(detalle.producto_id);
+                                                }
+                                                onUpdateDetail(index, 'precio_unitario', num);
+                                            }
+                                        }
+                                        setEditingField(null);
+                                    }}
+                                    className="font-small w-32 rounded-md border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                                />
+                            </>
+                        );
+                    })()}
                     <br />
 
                     {/* Tipo de Precio Selector */}
