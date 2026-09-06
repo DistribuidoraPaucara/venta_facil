@@ -491,13 +491,26 @@ export default function ProductoTableRow({
                                         minimumFractionDigits: precio.precio % 1 === 0 ? 0 : 2,
                                         maximumFractionDigits: 6,
                                     });
+
+                                    // ✅ IMPORTANTE: Agregar unidad al nombre para productos fraccionados
+                                    // Sino ambas opciones se llamarían igual (ej: "PRECIO DE VENTA")
+                                    const unidadNombre = precio.unidad_medida_id
+                                        ? (productoInfo?.conversiones?.find((c: any) => c.unidad_destino_id === precio.unidad_medida_id)?.unidad_destino?.nombre ||
+                                           productoInfo?.unidad?.nombre ||
+                                           'Unidad')
+                                        : (productoInfo?.unidad?.nombre || 'Unidad Base');
+
+                                    const nombreConUnidad = detalle.es_fraccionado
+                                        ? `${precio.nombre || `Tipo ${precio.tipo_precio_id}`} - ${unidadNombre}`
+                                        : precio.nombre || `Tipo ${precio.tipo_precio_id}`;
+
                                     return (
                                         <option
                                             className="font-small text-xs"
                                             key={precio.id || precio.tipo_precio_id}
                                             value={String(precio.tipo_precio_id)}
                                         >
-                                            {precio.nombre || `Tipo ${precio.tipo_precio_id}`} - {precioFormato}
+                                            {nombreConUnidad} - {precioFormato}
                                         </option>
                                     );
                                 })}
