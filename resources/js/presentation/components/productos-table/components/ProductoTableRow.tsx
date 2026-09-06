@@ -468,6 +468,17 @@ export default function ProductoTableRow({
                                             }
                                         }
 
+                                        // ✅ NUEVO: Obtener el nombre de la nueva unidad
+                                        let unidadNombreNueva = productoInfo?.unidad?.nombre || 'Unidad';
+                                        if (unidadNueva && unidadNueva !== detalle.unidad_medida_id) {
+                                            const conversionNueva = productoInfo?.conversiones?.find(
+                                                (c: any) => c.unidad_destino_id === unidadNueva,
+                                            );
+                                            if (conversionNueva?.unidad_destino_nombre) {
+                                                unidadNombreNueva = conversionNueva.unidad_destino_nombre;
+                                            }
+                                        }
+
                                         if (onUpdateDetailMultiple) {
                                             onUpdateDetailMultiple(index, {
                                                 tipo_precio_id: precioSeleccionado.tipo_precio_id,
@@ -476,6 +487,7 @@ export default function ProductoTableRow({
                                                 unidad_medida_id: precioSeleccionado.unidad_medida_id || null,
                                                 unidad_venta_id: precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id,
                                                 cantidad: cantidadConvertida,
+                                                unidad_medida_nombre: unidadNombreNueva,
                                             });
                                         } else {
                                             // Fallback si onUpdateDetailMultiple no está disponible
