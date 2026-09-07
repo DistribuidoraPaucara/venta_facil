@@ -288,6 +288,23 @@ export default function AjusteTabla() {
     const seleccionarProducto = useCallback(
         async (ajusteId: string, producto: any) => {
             try {
+                // ✅ Si es null, solo limpiar el producto (cambiar producto)
+                if (producto === null) {
+                    setAjustes((prevAjustes) =>
+                        prevAjustes.map((ajuste) => {
+                            if (ajuste.id !== ajusteId) return ajuste;
+                            return {
+                                ...ajuste,
+                                stock_producto_id: null,
+                                producto: undefined,
+                                cantidad_actual: 0,
+                                cantidad_nueva: 0,
+                            };
+                        }),
+                    );
+                    return;
+                }
+
                 // ✅ Si el producto NO existe en este almacén, crear automáticamente stock_producto
                 if (!producto.existe_en_almacen && producto.producto_id && almacenSeleccionado) {
                     console.log('📦 Creando stock_producto para producto nuevo:', {
