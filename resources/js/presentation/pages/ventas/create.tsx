@@ -720,20 +720,17 @@ export default function VentaForm() {
             setDetallesWithProducts(updatedDetalles);
 
             // Recalcular precios según rangos con la nueva cantidad
-            // ✅ COMENTADO: Deshabilitado temporalmente para evitar cambios automáticos de precio
-            // ✅ NO calcular si el cliente es GENERAL (no se deben aplicar rangos)
+            // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
             // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS)
-            if (clienteSeleccionado?.codigo_cliente !== 'GENERAL') {
-                precioRango.calcularCarritoDebounced(
-                    updatedDetalles
-                        .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
-                        .map((d) => ({
-                            producto_id: d.producto_id,
-                            cantidad: d.cantidad,
-                            tipo_precio_id: d.tipo_precio_id,
-                        })),
-                );
-            }
+            precioRango.calcularCarritoDebounced(
+                updatedDetalles
+                    .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
+                    .map((d) => ({
+                        producto_id: d.producto_id,
+                        cantidad: d.cantidad,
+                        tipo_precio_id: d.tipo_precio_id,
+                    })),
+            );
 
             calculateTotals(updatedDetalles);
             calculatePeso(updatedDetalles);
@@ -746,36 +743,49 @@ export default function VentaForm() {
         // ✅ NUEVO: Determinar unidad_venta_id inicial - SIEMPRE usar la unidad base del producto
         const conversiones = (producto as any).conversiones || [];
         const esProductoFraccionado = (producto as any).es_fraccionado && conversiones.length > 0;
-        const unidadVentaInicial = (producto as any).unidad_medida_id; // ✅ CORREGIDO: Siempre usar unidad base, no conversión
 
         // ✅ MODIFICADO (2026-02-17): Usar tipo_precio_id que viene del backend PRIMERO
         // El backend devuelve tipo_precio_id_recomendado basado en el código VENTA
         const tipoPrecioIdRecomendado = (producto as any).tipo_precio_id_recomendado || tipoPrecioLicoreriId;
         const tipoPrecioNombreRecomendado = (producto as any).tipo_precio_nombre_recomendado || 'LICORERIA';
 
-        // ✅ NUEVO (2026-02-17): Obtener el precio específico del tipo_precio_recomendado ANTES de usarlo
-        // En lugar de usar precio_venta genérico, buscar el precio específico del tipo_precio_id
-        // ✅ IMPORTANTE: Para productos fraccionados, buscar el precio de la UNIDAD BASE (unidad_medida_id), no de conversiones
-        const precioDelTipoPrecio = (producto as any).precios?.find((p: any) =>
-            p.tipo_precio_id === tipoPrecioIdRecomendado && !p.unidad_medida_id
-        )?.precio;
+        // ✅ CORREGIDO (2026-09-06): Buscar precio recomendado PRIORIZANDO:
+        // - Para productos fraccionados: la unidad DESTINO (la fraccionada)
+        // - Para productos normales: la unidad base
+        const unidadBaseProducto = (producto as any).unidad_medida_id;
 
-        // ✅ DEBUG: Loguear los IDs de precios disponibles para verificar coincidencias
-        const preciosConIds =
-            (producto as any).precios?.map((p: any) => ({
-                nombre: p.nombre,
-                tipo_precio_id: p.tipo_precio_id,
-                unidad_medida_id: p.unidad_medida_id,
-            })) || [];
-        // ✅ NUEVO (2026-02-17): Calcular precio según la unidad de venta inicial
-        // Usar el precio específico del tipo_precio_recomendado, no el genérico precio_venta
-        // ✅ IMPORTANTE: Para productos fraccionados, buscar el precio de la unidad base (sin unidad_medida_id)
-        const precioBase = precioDelTipoPrecio || producto.precio_venta || 0;
-        const precioUnitarioInicial = precioBase; // ✅ CORREGIDO: No dividir, usar precio base directamente
+        let unidadBuscada = unidadBaseProducto;
+
+        // Si es fraccionado, priorizar la unidad destino (la unidad fraccionada)
+        if (esProductoFraccionado && conversiones.length > 0) {
+            const conversionPrincipal = conversiones.find((c: any) => c.es_conversion_principal);
+            const conversion = conversionPrincipal || conversiones[0];
+            if (conversion?.unidad_destino_id) {
+                unidadBuscada = conversion.unidad_destino_id;
+            }
+        }
+
+        const precioRecomendado = (producto as any).precios?.find((p: any) =>
+            p.tipo_precio_id === tipoPrecioIdRecomendado &&
+            p.unidad_medida_id === unidadBuscada
+        ) || (producto as any).precios?.find((p: any) =>
+            p.tipo_precio_id === tipoPrecioIdRecomendado // Fallback: Cualquier precio del tipo recomendado
+        );
+
+        // ✅ NUEVO (2026-09-06): Determinar unidad_venta_id inicial basándose en el precio recomendado
+        // Si el precio recomendado tiene unidad_medida_id, usarla. Si no, usar unidad_medida_id del producto
+        const unidadVentaInicial = precioRecomendado?.unidad_medida_id || unidadBaseProducto;
+
+        // ✅ IMPORTANTE: Siempre iniciar con cantidad=1, sin conversión automática
+        // La conversión ocurre solo cuando el usuario cambia el tipo de precio manualmente
+        const cantidadInicial = 1;
+
+        // ✅ CORREGIDO (2026-09-06): Usar el precio del objeto encontrado, no buscar sin unidad
+        const precioUnitarioInicial = precioRecomendado?.precio || producto.precio_venta || 0;
 
         const newDetail: DetalleProducto = {
             producto_id: producto.id,
-            cantidad: 1,
+            cantidad: cantidadInicial, // ✅ CORREGIDO: Usar cantidad convertida según unidad inicial
             precio_unitario: precioUnitarioInicial,
             descuento: 0,
             subtotal: precioUnitarioInicial,
@@ -808,20 +818,17 @@ export default function VentaForm() {
         });
 
         // 🔑 NUEVO: Calcular precios según rangos
-        // ✅ COMENTADO: Deshabilitado temporalmente para evitar cambios automáticos de precio
-        // ✅ NO calcular si el cliente es GENERAL (no se deben aplicar rangos)
+        // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
         // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS/Precio Personalizado)
-        if (clienteSeleccionado?.codigo_cliente !== 'GENERAL') {
-            precioRango.calcularCarritoDebounced(
-                newDetalles
-                    .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
-                    .map((d) => ({
-                        producto_id: d.producto_id,
-                        cantidad: d.cantidad,
-                        tipo_precio_id: d.tipo_precio_id,
-                    })),
-            );
-        }
+        precioRango.calcularCarritoDebounced(
+            newDetalles
+                .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
+                .map((d) => ({
+                    producto_id: d.producto_id,
+                    cantidad: d.cantidad,
+                    tipo_precio_id: d.tipo_precio_id,
+                })),
+        );
 
         calculateTotals(newDetalles);
         calculatePeso(newDetalles);
@@ -970,20 +977,17 @@ export default function VentaForm() {
 
         if (field === 'cantidad' && !esUnidadOPrecioFraccionado) {
             console.log(`📊 [updateDetail] Recalculando rango para cantidad de producto ${updatedDetalles[index].producto_id}`);
-            // ✅ COMENTADO: Deshabilitado temporalmente para evitar cambios automáticos de precio
-            // ✅ NO calcular si el cliente es GENERAL (no se deben aplicar rangos)
+            // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
             // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS)
-            if (clienteSeleccionado?.codigo_cliente !== 'GENERAL') {
-                precioRango.calcularCarritoDebounced(
-                    updatedDetalles
-                        .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
-                        .map((d) => ({
-                            producto_id: d.producto_id,
-                            cantidad: d.cantidad,
-                            tipo_precio_id: d.tipo_precio_id,
-                        })),
-                );
-            }
+            precioRango.calcularCarritoDebounced(
+                updatedDetalles
+                    .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
+                    .map((d) => ({
+                        producto_id: d.producto_id,
+                        cantidad: d.cantidad,
+                        tipo_precio_id: d.tipo_precio_id,
+                    })),
+            );
         }
 
         calculateTotals(updatedDetalles);
@@ -1002,10 +1006,9 @@ export default function VentaForm() {
         });
 
         // 🔑 NUEVO: Recalcular rangos cuando se elimina un producto
-        // ✅ COMENTADO: Deshabilitado temporalmente para evitar cambios automáticos de precio
-        // ✅ NO calcular si el cliente es GENERAL (no se deben aplicar rangos)
+        // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
         // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS)
-        if (updatedDetalles.length > 0 && clienteSeleccionado?.codigo_cliente !== 'GENERAL') {
+        if (updatedDetalles.length > 0) {
             precioRango.calcularCarritoDebounced(
                 updatedDetalles
                     .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS

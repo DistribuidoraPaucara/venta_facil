@@ -1,4 +1,7 @@
-import { formatCurrency, formatCurrencyMinimalDecimals, formatCurrencyWith2Decimals } from '@/lib/utils';
+import { detectarYConvertirUnidad } from '@/infrastructure/helpers/conversion-automatica.helper';
+import { obtenerNombreConUnidad } from '@/infrastructure/helpers/nombre-dinamico-unidad.helper';
+import { NotificationService } from '@/infrastructure/services/notification.service';
+import { formatCurrency, formatCurrencyMinimalDecimals } from '@/lib/utils';
 import { Fragment } from 'react';
 import type { DetalleProducto } from '../types';
 import ComboExpandedRows from './ComboExpandedRows';
@@ -79,7 +82,7 @@ export default function ProductoTableRow({
     const content = (
         <tr
             key={detalle.producto_id}
-            className={`font-small text-xs hover:bg-gray-50 dark:hover:bg-zinc-800 ${
+            className={`hover:bg-gray-50 dark:hover:bg-zinc-800 ${
                 tipo === 'compra' && tieneDiferencia && esAumento
                     ? 'bg-amber-50 px-2 py-2 dark:bg-amber-950/10'
                     : tipo === 'compra' && tieneDiferencia && !esAumento
@@ -87,13 +90,46 @@ export default function ProductoTableRow({
                       : ''
             }`}
         >
-            {/* Producto Info */}
+            {/* Producto Nombre */}
             <td className="items-start px-2 py-2">
-                <div className="items-start text-xs font-bold text-gray-900 dark:text-white">{productoInfo?.nombre || 'Producto no encontrado'}</div>
-                <div className="mt-1 text-left text-xs text-gray-500 dark:text-gray-400">
-                    {productoInfo?.codigo_barras && productoInfo.codigo_barras !== productoInfo.sku && (
-                        <div>Cod Barras: {productoInfo.codigo_barras}</div>
-                    )}
+                {/* ✨ NUEVO (2026-09-06): Nombre dinámico según unidad de venta */}
+                {(() => {
+                    const unidadActualVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
+                    console.log(
+                        `🏷️ [obtenerNombreConUnidad] unidadVentaId=${unidadActualVenta}, unidadBaseId=${detalle.unidad_medida_id}, es_fraccionado=${detalle.es_fraccionado}`
+                    );
+
+                    const nombreDinamico =
+                        detalle.es_fraccionado && productoInfo?.conversiones
+                            ? obtenerNombreConUnidad(
+                                  productoInfo?.nombre || 'Producto no encontrado',
+                                  unidadActualVenta,
+                                  detalle.unidad_medida_id,
+                                  productoInfo?.conversiones, // ✅ CORREGIDO: usar conversiones del producto
+                              )
+                            : productoInfo?.nombre || 'Producto no encontrado';
+
+                    console.log(
+                        `🏷️ [obtenerNombreConUnidad RESULTADO] nombre final: "${nombreDinamico}"`
+                    );
+
+                    return (
+                        <div className="items-start text-sm font-bold text-gray-900  dark:text-white">
+                            {nombreDinamico}
+                        </div>
+                    );
+                })()}
+
+                <div className="text-left text-xs text-gray-500 dark:text-gray-400">
+                    {(() => {
+                        // ✅ Mostrar código de barras desde código_barras, codigos_barras o codigosBarra
+                        const codigoBarras = productoInfo?.codigo_barras ||
+                                            (productoInfo?.codigos_barras?.[0]) ||
+                                            (productoInfo?.codigosBarra?.[0]?.codigo);
+                        return codigoBarras && codigoBarras !== productoInfo?.sku ? (
+                            <div>#{codigoBarras}</div>
+                        ) : null;
+                    })()}
                     {(() => {
                         const tieneDataMedicamentos = (productoInfo as any)?.principio_activo || (productoInfo as any)?.uso_de_medicacion;
                         const mostrarMedicamentos = es_farmacia && tieneDataMedicamentos;
@@ -110,7 +146,7 @@ export default function ProductoTableRow({
             </td>
 
             {/* SKU */}
-            <td className="items-start px-2 py-2">
+            <td className="items-left px-2 py-2">
                 {productoInfo?.sku || productoInfo?.codigo ? (
                     <span className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                         {productoInfo.sku || productoInfo.codigo}
@@ -120,7 +156,7 @@ export default function ProductoTableRow({
                 )}
             </td>
             {/* Disponibilidad */}
-            <td className="w-20 items-start px-2 py-2 text-xs">
+            <td className="items-left px-2 py-2 text-xs">
                 {!proformaConvertida &&
                     (() => {
                         const stockDisponible =
@@ -128,11 +164,9 @@ export default function ProductoTableRow({
                             (productoInfo as any)?.stock_disponible ??
                             (productoInfo as any)?.stock ??
                             0;
-                        const stockReservado = (productoInfo as any)?.stock_reservado_calc ?? (productoInfo as any)?.stock_reservado ?? 0;
-                        const stockTotal = (productoInfo as any)?.stock_total_calc ?? (productoInfo as any)?.stock_total ?? 0;
                         return (
                             <div
-                                className={`flex flex-col rounded p-1 text-xs text-center ${
+                                className={`flex flex-col rounded p-1 text-center text-xs ${
                                     stockDisponible === 0
                                         ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200'
                                         : stockDisponible < 5
@@ -153,7 +187,7 @@ export default function ProductoTableRow({
             </td>
 
             {/* Cantidad */}
-            <td className="items-center px-2 py-2">
+            <td className="items-left px-2 py-2">
                 <div className="flex flex-col gap-1">
                     <input
                         type="text"
@@ -179,12 +213,235 @@ export default function ProductoTableRow({
                             }
                         }}
                         onBlur={() => {
+                            // ✨ NUEVO (2026-09-06): Detectar y convertir automáticamente si aplica
+                            if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
+                                const resultado = detectarYConvertirUnidad(
+                                    detalle.cantidad,
+                                    detalle.conversiones,
+                                    detalle.unidad_medida_id,
+                                    detalle.precio_unitario,
+                                );
+
+                                if (resultado.seConvirtio) {
+                                    console.log('✨ [CONVERSIÓN AUTOMÁTICA]', resultado);
+                                    // Actualizar cantidad, unidad y precio en una sola operación
+                                    if (onUpdateDetailMultiple) {
+                                        onUpdateDetailMultiple(index, {
+                                            cantidad: resultado.cantidadFinal,
+                                            unidad_venta_id: resultado.unidadFinal,
+                                            precio_unitario: resultado.precioFinal,
+                                        });
+                                    } else {
+                                        onUpdateDetail(index, 'cantidad', resultado.cantidadFinal);
+                                        onUpdateDetail(index, 'unidad_venta_id', resultado.unidadFinal);
+                                        onUpdateDetail(index, 'precio_unitario', resultado.precioFinal);
+                                    }
+                                    // Mostrar notificación
+                                    NotificationService.success(`✨ Conversión automática: ${resultado.mensajeConversion}`);
+                                }
+                            }
                             setEditingField(null);
                         }}
                         className="w-24 flex-col rounded-lg border border-gray-300 px-1 py-1 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
                     />
                     {/* ✨ NUEVO: Selector de unidades para productos fraccionados */}
                 </div>
+            </td>
+
+            {/* Unidad */}
+            <td className="items-left px-2 py-2">
+                {/* ✅ Solo mostrar unidad si NO es fraccionado (sin conversiones) */}
+                {!detalle.es_fraccionado && (
+                    <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
+                        {detalle.unidad_medida_nombre || productoInfo?.unidad_medida?.nombre || ''}
+                    </span>
+                )}
+                {/* Tipo de Precio Selector */}
+                {(() => {
+                    const precios = detalle.producto?.precios || [];
+                    const preciosVenta = precios.filter((p) => {
+                        const nombre = (p.nombre || '').toLowerCase();
+                        return !nombre.includes('costo') && !nombre.includes('cost');
+                    });
+
+                    // ✅ OPTIMIZADO: Si solo hay precio de venta, no mostrar leyenda
+                    if (preciosVenta.length <= 1) {
+                        return null; // No mostrar leyenda si solo hay un tipo de precio
+                    }
+
+                    // ✅ PRIORIDAD:
+                    // 1. Si usuario seleccionó algo explícitamente → mantenerlo
+                    // 2. Si tipo_precio_id === null → mostrar "OTROS"
+                    // 3. Si tiene tipo_precio_id → usarlo (del detalle del backend)
+                    // 4. Fallback: tipo_precio_id_recomendado o default
+                    // ✅ REFACTORIZADO (2026-07-03): Usar producto_id como clave en lugar de index
+                    // ✅ MEJORADO: Incluir unidad_medida_id en el valor para productos fraccionados
+                    const productoId = detalle.producto_id;
+                    // ✅ CRITICAL FIX: Usar unidad_venta_id (la unidad ACTUAL de venta), NO unidad_medida_id (que es siempre la base)
+                    const unidadActualDeVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
+
+                    let valorInicial = '';
+                    if (selectedTipoPrecio[productoId] !== undefined) {
+                        valorInicial = String(selectedTipoPrecio[productoId]); // Usuario seleccionó algo
+                    } else if (detalle.tipo_precio_id === null) {
+                        valorInicial = 'otros'; // Mostrar "OTROS" si es null
+                    } else if (detalle.tipo_precio_id) {
+                        // Para el valor inicial, incluir unidad_venta_id si es diferente a la base
+                        const debeMostrarUnidad = unidadActualDeVenta && unidadActualDeVenta !== detalle.unidad_medida_id;
+                        valorInicial = debeMostrarUnidad ? `${detalle.tipo_precio_id}_${unidadActualDeVenta}` : String(detalle.tipo_precio_id);
+                        console.log(
+                            `📋 [Select valorInicial] unidad_medida_id=${detalle.unidad_medida_id}, unidad_venta_id=${detalle.unidad_venta_id}, unidadActualDeVenta=${unidadActualDeVenta}, debeMostrarUnidad=${debeMostrarUnidad}, valorInicial=${valorInicial}`,
+                        );
+                    } else if (detalle.tipo_precio_id_recomendado) {
+                        valorInicial = String(detalle.tipo_precio_id_recomendado);
+                    } else if (default_tipo_precio_id) {
+                        valorInicial = String(default_tipo_precio_id);
+                    }
+
+                    return (
+                        <select
+                            disabled={readOnly}
+                            value={valorInicial}
+                            onChange={(e) => {
+                                const valorSeleccionado = e.target.value;
+
+                                // ✅ NUEVO: Manejar opción "OTROS"
+                                if (valorSeleccionado === 'otros') {
+                                    if (onManualTipoPrecioChange) {
+                                        // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
+                                        onManualTipoPrecioChange(detalle.producto_id);
+                                    }
+
+                                    setSelectedTipoPrecio((prev) => ({
+                                        ...prev,
+                                        [productoId]: 'otros',
+                                    }));
+
+                                    // Limpiar tipo_precio pero mantener el precio actual
+                                    onUpdateDetail(index, 'tipo_precio_id', null);
+                                    onUpdateDetail(index, 'tipo_precio_nombre', null);
+                                    return;
+                                }
+
+                                // ✅ IMPORTANTE: Para productos fraccionados, hay múltiples precios con el mismo tipo_precio_id
+                                // El valor es "tipo_precio_id_unidad_medida_id" para distinguir entre opciones
+                                const partes = valorSeleccionado.split('_');
+                                const tipoPrecioIdSeleccionado = parseInt(partes[0]);
+                                const unidadMedidaIdSeleccionada = partes[1] ? parseInt(partes[1]) : null;
+
+                                const precioSeleccionado = preciosVenta.find(
+                                    (p) =>
+                                        String(p.tipo_precio_id) === String(tipoPrecioIdSeleccionado) &&
+                                        (unidadMedidaIdSeleccionada === null || Number(p.unidad_medida_id) === unidadMedidaIdSeleccionada),
+                                );
+
+                                if (precioSeleccionado) {
+                                    if (onManualTipoPrecioChange) {
+                                        // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
+                                        onManualTipoPrecioChange(detalle.producto_id);
+                                    }
+
+                                    setSelectedTipoPrecio((prev) => ({
+                                        ...prev,
+                                        [productoId]: valorSeleccionado,
+                                    }));
+
+                                    // ✅ IMPORTANTE: Limpiar editingField para que el input de precio muestre el nuevo valor
+                                    setEditingField(null);
+
+                                    // ✅ CRÍTICO: Usar updateDetailMultiple para hacer TODOS los cambios de una sola vez
+                                    // Esto evita estados inconsistentes donde unidad_venta_id ≠ precio_unitario
+
+                                    // ✅ CORREGIDO (2026-09-06): La cantidad SIEMPRE es 1, sin conversión automática
+                                    // El usuario cambia la unidad/precio pero la cantidad se mantiene en 1
+                                    let cantidadConvertida = 1;
+
+                                    // ✅ NUEVO: Obtener el nombre de la nueva unidad
+                                    const unidadNueva = precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id;
+                                    let unidadNombreNueva = productoInfo?.unidad?.nombre || 'Unidad';
+                                    if (unidadNueva && unidadNueva !== detalle.unidad_medida_id) {
+                                        const conversionNueva = productoInfo?.conversiones?.find((c: any) => c.unidad_destino_id === unidadNueva);
+                                        // ✅ CORREGIDO: Usar nombre_cuando_se_vende_como primero, luego nombre de unidad_destino
+                                        if (conversionNueva?.nombre_cuando_se_vende_como) {
+                                            unidadNombreNueva = conversionNueva.nombre_cuando_se_vende_como;
+                                        } else if (conversionNueva?.unidad_destino?.nombre) {
+                                            unidadNombreNueva = conversionNueva.unidad_destino.nombre;
+                                        }
+                                    }
+
+                                    if (onUpdateDetailMultiple) {
+                                        onUpdateDetailMultiple(index, {
+                                            tipo_precio_id: precioSeleccionado.tipo_precio_id,
+                                            tipo_precio_nombre: precioSeleccionado.nombre || '',
+                                            precio_unitario: precioSeleccionado.precio || 0,
+                                            // ✅ IMPORTANTE: NO cambiar unidad_medida_id (es la unidad base del producto)
+                                            // Solo cambiar unidad_venta_id (la unidad actual de venta)
+                                            unidad_venta_id: precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id,
+                                            cantidad: cantidadConvertida,
+                                            unidad_medida_nombre: unidadNombreNueva,
+                                        });
+                                    } else {
+                                        // Fallback si onUpdateDetailMultiple no está disponible
+                                        onUpdateDetail(index, 'tipo_precio_id', precioSeleccionado.tipo_precio_id);
+                                        onUpdateDetail(index, 'tipo_precio_nombre', precioSeleccionado.nombre || '');
+                                        onUpdateDetail(index, 'precio_unitario', precioSeleccionado.precio || 0);
+                                        onUpdateDetail(index, 'unidad_medida_id', precioSeleccionado.unidad_medida_id || null);
+                                        onUpdateDetail(index, 'unidad_venta_id', precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id);
+                                    }
+                                }
+                            }}
+                            className="rounded-lg border border-gray-300 px-0.5 py-0.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white" // ✅ COMPACTO: Reducido padding, margen y tamaño de fuente
+                        >
+                            {!valorInicial && <option value="">Seleccionar tipo de precio</option>}
+                            {preciosVenta.map((precio) => {
+                                // ✅ Mostrar precio con hasta 6 decimales para productos fraccionados
+                                const precioFormato = (precio.precio || 0).toLocaleString('es-BO', {
+                                    style: 'currency',
+                                    currency: 'BOB',
+                                    minimumFractionDigits: precio.precio % 1 === 0 ? 0 : 2,
+                                    maximumFractionDigits: 6,
+                                });
+
+                                // ✅ IMPORTANTE: Agregar unidad al nombre para productos fraccionados
+                                // Sino ambas opciones se llamarían igual (ej: "PRECIO DE VENTA")
+                                let unidadNombre = 'Unidad';
+
+                                if (precio.unidad_medida_id) {
+                                    // Buscar en conversiones por unidad_destino_id
+                                    const conversion = productoInfo?.conversiones?.find((c: any) => c.unidad_destino_id === precio.unidad_medida_id);
+                                    if (conversion?.unidad_destino_nombre) {
+                                        unidadNombre = conversion.unidad_destino_nombre;
+                                    } else {
+                                        // Fallback: si es la unidad base (igual a unidad_medida_id del producto)
+                                        unidadNombre = productoInfo?.unidad?.nombre || 'Unidad';
+                                    }
+                                } else {
+                                    unidadNombre = productoInfo?.unidad?.nombre || 'Unidad Base';
+                                }
+
+                                const nombreConUnidad = detalle.es_fraccionado
+                                    ? `${precio.nombre || `Tipo ${precio.tipo_precio_id}`} - ${unidadNombre}`
+                                    : precio.nombre || `Tipo ${precio.tipo_precio_id}`;
+
+                                // ✅ IMPORTANTE: Value incluye tipo_precio_id y unidad_medida_id para poder distinguir
+                                // precios de la misma familia pero de diferentes unidades (Kg vs Gr)
+                                const optionValue = precio.unidad_medida_id
+                                    ? `${precio.tipo_precio_id}_${precio.unidad_medida_id}`
+                                    : String(precio.tipo_precio_id);
+
+                                return (
+                                    <option className="text-xs" key={precio.id || optionValue} value={optionValue}>
+                                        {nombreConUnidad} - {precioFormato}
+                                    </option>
+                                );
+                            })}
+                            {/* ✅ NUEVO: Opción OTROS para precios personalizados */}
+                            <option value="otros" className="text-xs">
+                                ➕ OTROS (Precio Personalizado)
+                            </option>
+                        </select>
+                    );
+                })()}
             </td>
 
             {/* Precio Unitario (Compra) */}
@@ -302,10 +559,13 @@ export default function ProductoTableRow({
             {tipo === 'venta' && (
                 <td className="font-small px-2 py-2 text-xs">
                     {(() => {
-                        const valorMostrado = editingField?.index === index && editingField?.field === 'precio_venta'
-                            ? editingField.value
-                            : formatearPrecioVenta(detalle.precio_unitario);
-                        console.log(`💰 [Input Precio] detalle.precio_unitario=${detalle.precio_unitario}, editingField=${editingField?.index === index && editingField?.field === 'precio_venta' ? 'SÍ' : 'NO'}, valorMostrado=${valorMostrado}`);
+                        const valorMostrado =
+                            editingField?.index === index && editingField?.field === 'precio_venta'
+                                ? editingField.value
+                                : formatearPrecioVenta(detalle.precio_unitario);
+                        console.log(
+                            `💰 [Input Precio] detalle.precio_unitario=${detalle.precio_unitario}, editingField=${editingField?.index === index && editingField?.field === 'precio_venta' ? 'SÍ' : 'NO'}, valorMostrado=${valorMostrado}`,
+                        );
                         return (
                             <>
                                 <input
@@ -358,234 +618,11 @@ export default function ProductoTableRow({
                             </>
                         );
                     })()}
-                    <br />
-
-                    {/* Tipo de Precio Selector */}
-                    {(() => {
-                        const precios = detalle.producto?.precios || [];
-                        const preciosVenta = precios.filter((p) => {
-                            const nombre = (p.nombre || '').toLowerCase();
-                            return !nombre.includes('costo') && !nombre.includes('cost');
-                        });
-
-                        // ✅ OPTIMIZADO: Si solo hay precio de venta, no mostrar leyenda
-                        if (preciosVenta.length <= 1) {
-                            return null; // No mostrar leyenda si solo hay un tipo de precio
-                        }
-
-                        // ✅ PRIORIDAD:
-                        // 1. Si usuario seleccionó algo explícitamente → mantenerlo
-                        // 2. Si tipo_precio_id === null → mostrar "OTROS"
-                        // 3. Si tiene tipo_precio_id → usarlo (del detalle del backend)
-                        // 4. Fallback: tipo_precio_id_recomendado o default
-                        // ✅ REFACTORIZADO (2026-07-03): Usar producto_id como clave en lugar de index
-                        // ✅ MEJORADO: Incluir unidad_medida_id en el valor para productos fraccionados
-                        const productoId = detalle.producto_id;
-                        // ✅ CRITICAL FIX: Usar unidad_venta_id (la unidad ACTUAL de venta), NO unidad_medida_id (que es siempre la base)
-                        const unidadActualDeVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
-
-                        let valorInicial = '';
-                        if (selectedTipoPrecio[productoId] !== undefined) {
-                            valorInicial = String(selectedTipoPrecio[productoId]); // Usuario seleccionó algo
-                        } else if (detalle.tipo_precio_id === null) {
-                            valorInicial = 'otros'; // Mostrar "OTROS" si es null
-                        } else if (detalle.tipo_precio_id) {
-                            // Para el valor inicial, incluir unidad_venta_id si es diferente a la base
-                            const debeMostrarUnidad = unidadActualDeVenta && unidadActualDeVenta !== detalle.unidad_medida_id;
-                            valorInicial = debeMostrarUnidad
-                                ? `${detalle.tipo_precio_id}_${unidadActualDeVenta}`
-                                : String(detalle.tipo_precio_id);
-                            console.log(`📋 [Select valorInicial] unidad_medida_id=${detalle.unidad_medida_id}, unidad_venta_id=${detalle.unidad_venta_id}, unidadActualDeVenta=${unidadActualDeVenta}, debeMostrarUnidad=${debeMostrarUnidad}, valorInicial=${valorInicial}`);
-                        } else if (detalle.tipo_precio_id_recomendado) {
-                            valorInicial = String(detalle.tipo_precio_id_recomendado);
-                        } else if (default_tipo_precio_id) {
-                            valorInicial = String(default_tipo_precio_id);
-                        }
-
-                        return (
-                            <select
-                                disabled={readOnly}
-                                value={valorInicial}
-                                onChange={(e) => {
-                                    const valorSeleccionado = e.target.value;
-
-                                    // ✅ NUEVO: Manejar opción "OTROS"
-                                    if (valorSeleccionado === 'otros') {
-                                        if (onManualTipoPrecioChange) {
-                                            // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
-                                            onManualTipoPrecioChange(detalle.producto_id);
-                                        }
-
-                                        setSelectedTipoPrecio((prev) => ({
-                                            ...prev,
-                                            [productoId]: 'otros',
-                                        }));
-
-                                        // Limpiar tipo_precio pero mantener el precio actual
-                                        onUpdateDetail(index, 'tipo_precio_id', null);
-                                        onUpdateDetail(index, 'tipo_precio_nombre', null);
-                                        return;
-                                    }
-
-                                    // ✅ IMPORTANTE: Para productos fraccionados, hay múltiples precios con el mismo tipo_precio_id
-                                    // El valor es "tipo_precio_id_unidad_medida_id" para distinguir entre opciones
-                                    const partes = valorSeleccionado.split('_');
-                                    const tipoPrecioIdSeleccionado = parseInt(partes[0]);
-                                    const unidadMedidaIdSeleccionada = partes[1] ? parseInt(partes[1]) : null;
-
-                                    const precioSeleccionado = preciosVenta.find(
-                                        (p) =>
-                                            String(p.tipo_precio_id) === String(tipoPrecioIdSeleccionado) &&
-                                            (unidadMedidaIdSeleccionada === null || Number(p.unidad_medida_id) === unidadMedidaIdSeleccionada),
-                                    );
-
-                                    if (precioSeleccionado) {
-                                        if (onManualTipoPrecioChange) {
-                                            // ✅ REFACTORIZADO (2026-07-03): Pasar producto_id en lugar de index
-                                            onManualTipoPrecioChange(detalle.producto_id);
-                                        }
-
-                                        setSelectedTipoPrecio((prev) => ({
-                                            ...prev,
-                                            [productoId]: valorSeleccionado,
-                                        }));
-
-                                        // ✅ IMPORTANTE: Limpiar editingField para que el input de precio muestre el nuevo valor
-                                        setEditingField(null);
-
-                                        // ✅ CRÍTICO: Usar updateDetailMultiple para hacer TODOS los cambios de una sola vez
-                                        // Esto evita estados inconsistentes donde unidad_venta_id ≠ precio_unitario
-
-                                        // ✅ NUEVO: Convertir cantidad si la unidad cambió
-                                        let cantidadConvertida = detalle.cantidad;
-                                        const unidadActual = detalle.unidad_medida_id || detalle.unidad_venta_id;
-                                        const unidadBase = detalle.unidad_medida_id;
-                                        const unidadNueva = precioSeleccionado.unidad_medida_id || unidadBase;
-
-                                        console.log(`🔀 [Conversion Check] unidadActual=${unidadActual}, unidadNueva=${unidadNueva}, unidadBase=${unidadBase}, es_fraccionado=${detalle.es_fraccionado}, tiene_conversiones=${!!detalle.conversiones}`);
-
-                                        if (unidadActual !== unidadNueva && detalle.es_fraccionado && detalle.conversiones) {
-                                            // ✅ IMPORTANTE: Buscar la conversión según HACIA DÓNDE vas
-                                            console.log(`✅ [Conversion] Entrando en rama de conversión`);
-
-                                            if (unidadNueva === unidadBase) {
-                                                console.log(`↩️ [Conversion] Volviendo al base`);
-                                                // Volviendo a la unidad base → DIVIDIR por el factor
-                                                // Buscar la conversión DE la unidad actual AL base
-                                                const conversionActual = detalle.conversiones.find(
-                                                    (c: any) => c.unidad_destino_id === unidadActual
-                                                );
-                                                if (conversionActual?.factor_conversion) {
-                                                    console.log(`🔄 [Conversion] Volviendo al base: ${detalle.cantidad} / ${conversionActual.factor_conversion} = ${detalle.cantidad / conversionActual.factor_conversion}`);
-                                                    cantidadConvertida = detalle.cantidad / conversionActual.factor_conversion;
-                                                }
-                                            } else {
-                                                // Yendo a una conversión → MULTIPLICAR por el factor
-                                                const conversionNueva = detalle.conversiones.find(
-                                                    (c: any) => c.unidad_destino_id === unidadNueva
-                                                );
-                                                if (conversionNueva?.factor_conversion) {
-                                                    console.log(`🔄 [Conversion] Yendo a conversión: ${detalle.cantidad} * ${conversionNueva.factor_conversion} = ${detalle.cantidad * conversionNueva.factor_conversion}`);
-                                                    cantidadConvertida = detalle.cantidad * conversionNueva.factor_conversion;
-                                                }
-                                            }
-                                        }
-
-                                        // ✅ NUEVO: Obtener el nombre de la nueva unidad
-                                        let unidadNombreNueva = productoInfo?.unidad?.nombre || 'Unidad';
-                                        if (unidadNueva && unidadNueva !== detalle.unidad_medida_id) {
-                                            const conversionNueva = productoInfo?.conversiones?.find(
-                                                (c: any) => c.unidad_destino_id === unidadNueva,
-                                            );
-                                            if (conversionNueva?.unidad_destino_nombre) {
-                                                unidadNombreNueva = conversionNueva.unidad_destino_nombre;
-                                            }
-                                        }
-
-                                        if (onUpdateDetailMultiple) {
-                                            onUpdateDetailMultiple(index, {
-                                                tipo_precio_id: precioSeleccionado.tipo_precio_id,
-                                                tipo_precio_nombre: precioSeleccionado.nombre || '',
-                                                precio_unitario: precioSeleccionado.precio || 0,
-                                                // ✅ IMPORTANTE: NO cambiar unidad_medida_id (es la unidad base del producto)
-                                                // Solo cambiar unidad_venta_id (la unidad actual de venta)
-                                                unidad_venta_id: precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id,
-                                                cantidad: cantidadConvertida,
-                                                unidad_medida_nombre: unidadNombreNueva,
-                                            });
-                                        } else {
-                                            // Fallback si onUpdateDetailMultiple no está disponible
-                                            onUpdateDetail(index, 'tipo_precio_id', precioSeleccionado.tipo_precio_id);
-                                            onUpdateDetail(index, 'tipo_precio_nombre', precioSeleccionado.nombre || '');
-                                            onUpdateDetail(index, 'precio_unitario', precioSeleccionado.precio || 0);
-                                            onUpdateDetail(index, 'unidad_medida_id', precioSeleccionado.unidad_medida_id || null);
-                                            onUpdateDetail(index, 'unidad_venta_id', precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id);
-                                        }
-                                    }
-                                }}
-                                className="font-small mt-1 rounded-lg border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                            >
-                                {!valorInicial && <option value="">Seleccionar tipo de precio</option>}
-                                {preciosVenta.map((precio) => {
-                                    // ✅ Mostrar precio con hasta 6 decimales para productos fraccionados
-                                    const precioFormato = (precio.precio || 0).toLocaleString('es-BO', {
-                                        style: 'currency',
-                                        currency: 'BOB',
-                                        minimumFractionDigits: precio.precio % 1 === 0 ? 0 : 2,
-                                        maximumFractionDigits: 6,
-                                    });
-
-                                    // ✅ IMPORTANTE: Agregar unidad al nombre para productos fraccionados
-                                    // Sino ambas opciones se llamarían igual (ej: "PRECIO DE VENTA")
-                                    let unidadNombre = 'Unidad';
-
-                                    if (precio.unidad_medida_id) {
-                                        // Buscar en conversiones por unidad_destino_id
-                                        const conversion = productoInfo?.conversiones?.find(
-                                            (c: any) => c.unidad_destino_id === precio.unidad_medida_id,
-                                        );
-                                        if (conversion?.unidad_destino_nombre) {
-                                            unidadNombre = conversion.unidad_destino_nombre;
-                                        } else {
-                                            // Fallback: si es la unidad base (igual a unidad_medida_id del producto)
-                                            unidadNombre = productoInfo?.unidad?.nombre || 'Unidad';
-                                        }
-                                    } else {
-                                        unidadNombre = productoInfo?.unidad?.nombre || 'Unidad Base';
-                                    }
-
-                                    const nombreConUnidad = detalle.es_fraccionado
-                                        ? `${precio.nombre || `Tipo ${precio.tipo_precio_id}`} - ${unidadNombre}`
-                                        : precio.nombre || `Tipo ${precio.tipo_precio_id}`;
-
-                                    // ✅ IMPORTANTE: Value incluye tipo_precio_id y unidad_medida_id para poder distinguir
-                                    // precios de la misma familia pero de diferentes unidades (Kg vs Gr)
-                                    const optionValue = precio.unidad_medida_id
-                                        ? `${precio.tipo_precio_id}_${precio.unidad_medida_id}`
-                                        : String(precio.tipo_precio_id);
-
-                                    return (
-                                        <option
-                                            className="font-small text-xs"
-                                            key={precio.id || optionValue}
-                                            value={optionValue}
-                                        >
-                                            {nombreConUnidad} - {precioFormato}
-                                        </option>
-                                    );
-                                })}
-                                {/* ✅ NUEVO: Opción OTROS para precios personalizados */}
-                                <option value="otros" className="font-small text-xs">
-                                    ➕ OTROS (Precio Personalizado)
-                                </option>
-                            </select>
-                        );
-                    })()}
                 </td>
             )}
 
             {/* Subtotal */}
-            <td className="items-start px-2 py-4 text-center">
+            <td className="items-left px-2 py-2">
                 <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrencyMinimalDecimals(detalle.subtotal)}</span>
             </td>
 
@@ -596,15 +633,10 @@ export default function ProductoTableRow({
                 </span>
             </td> */}
 
-            {/* Unidad */}
-            <td className="items-start px-2 py-2 text-center">
-                <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
-                    {detalle.unidad_medida_nombre || productoInfo?.unidad_medida?.nombre || '-'}
-                </span>
-            </td>
+            
 
             {/* Marca */}
-            <td className="items-start px-2 py-2 text-center">
+            <td className="items-left px-2 py-2">
                 <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
                     {typeof productoInfo?.marca === 'string' ? productoInfo.marca : productoInfo?.marca?.nombre || '-'}
                 </span>
