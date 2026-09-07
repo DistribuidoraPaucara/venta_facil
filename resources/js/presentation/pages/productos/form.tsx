@@ -82,7 +82,8 @@ export default function ProductoForm({
     // 🔐 Obtener permisos del usuario desde Inertia
     const { auth } = usePage().props as any;
     const userPermissions = auth?.user?.permissions || [];
-    const canEditStockQuantities = userPermissions.some((p: any) => p.name === 'stock-productos.editar-cantidad');
+    // ✅ MODIFICADO: Permitir siempre editar cantidades de almacenes (sin restricción de permisos)
+    const canEditStockQuantities = true;
 
     // 🔍 LOGS PARA DEBUG - Información completa del backend
     // console.log('='.repeat(60));
