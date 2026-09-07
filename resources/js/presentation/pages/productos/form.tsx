@@ -40,7 +40,7 @@ const initialProductoData: ProductoFormData = {
     permite_venta_sin_stock: false, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables en farmacias
     es_producto_adicional: false, // ✨ NUEVO - Indica si es un adicional
     puede_tener_producto_adicional: false, // ✨ NUEVO - Indica si puede tener adicionales
-    stock_minimo: 0,
+    stock_minimo: 3, // ✨ Valor por defecto: 3
     stock_maximo: 50,
     limite_venta: null, // ✨ NUEVO
     principio_activo: null, // ✨ NUEVO
@@ -245,7 +245,7 @@ export default function ProductoForm({
                   uso_de_medicacion: producto.uso_de_medicacion ?? null, // ✨ NUEVO
                   visible_app: producto.visible_app ?? true, // ✨ NUEVO - Visible en app
                   es_de_produccion: producto.es_de_produccion ?? false, // 🏭 NUEVO - Es producto de producción
-                  precios: producto.precios?.length ? producto.precios : initialProductoData.precios,
+                  precios: Array.isArray(producto.precios) && producto.precios.length > 0 ? producto.precios : initialProductoData.precios,
                   codigos: producto.codigos?.length ? producto.codigos : [{ codigo: '' }],
                   almacenes: producto.stock_almacenes?.length ? producto.stock_almacenes : [], // ✨ NUEVO
                   globalSectorId: undefined, // ✨ NUEVO: Sector global para aplicar a todos los lotes
@@ -427,6 +427,10 @@ export default function ProductoForm({
 
         // Precios (solo los válidos)
         preciosValidos.forEach((p: Precio, i: number) => {
+            // ✨ IMPORTANTE: Incluir ID si existe (para identificar si es crear o actualizar)
+            if (p.id) {
+                formData.append(`precios[${i}][id]`, String(p.id));
+            }
             formData.append(`precios[${i}][monto]`, String(p.monto));
             if (p.tipo_precio_id != null) {
                 formData.append(`precios[${i}][tipo_precio_id]`, String(p.tipo_precio_id));
@@ -538,6 +542,8 @@ export default function ProductoForm({
                 formData.append(`conversiones[${i}][unidad_base_id]`, String(conv.unidad_base_id));
                 formData.append(`conversiones[${i}][unidad_destino_id]`, String(conv.unidad_destino_id));
                 formData.append(`conversiones[${i}][factor_conversion]`, String(conv.factor_conversion));
+                // ✨ NUEVO (2026-09-06): Incluir nombre personalizado (SIEMPRE, aunque esté vacío)
+                formData.append(`conversiones[${i}][nombre_cuando_se_vende_como]`, conv.nombre_cuando_se_vende_como || '');
                 formData.append(`conversiones[${i}][activo]`, conv.activo ? '1' : '0');
                 formData.append(`conversiones[${i}][es_conversion_principal]`, conv.es_conversion_principal ? '1' : '0');
             });
@@ -660,7 +666,8 @@ export default function ProductoForm({
 
     // Agregar/Quitar un tipo de precio por checkbox
     const toggleTipoPrecio = (tipoId: number, checked: boolean) => {
-        const exists = (data.precios || []).some((p: Precio) => Number(p.tipo_precio_id) === Number(tipoId));
+        const preciosArray = Array.isArray(data.precios) ? data.precios : [];
+        const exists = preciosArray.some((p: Precio) => Number(p.tipo_precio_id) === Number(tipoId));
         if (checked && !exists) {
             const nuevosPrecios = [];
 
@@ -690,10 +697,10 @@ export default function ProductoForm({
                 } as Precio);
             }
 
-            setData('precios', [...data.precios, ...nuevosPrecios]);
+            setData('precios', [...(Array.isArray(data.precios) ? data.precios : []), ...nuevosPrecios]);
         } else if (!checked && exists) {
             // ✅ IMPORTANTE: Eliminar TODOS los precios de este tipo (todas las unidades)
-            const preciosFiltrados = (data.precios || []).filter((p: Precio) => Number(p.tipo_precio_id) !== Number(tipoId));
+            const preciosFiltrados = preciosArray.filter((p: Precio) => Number(p.tipo_precio_id) !== Number(tipoId));
             setData('precios', preciosFiltrados);
         }
     };
@@ -957,9 +964,9 @@ export default function ProductoForm({
                                 <div className="flex flex-wrap items-center gap-2">
                                     <TabsTrigger value="datos">Datos del producto</TabsTrigger>
                                     {permite_productos_fraccionados && data.es_fraccionado && (
-                                        <TabsTrigger value="conversiones">✨ Conversiones</TabsTrigger>
+                                        <TabsTrigger value="conversiones">✨ Fraccionamiento</TabsTrigger>
                                     )}
-                                    {/* {isEditing && <TabsTrigger value="precio-rango">Rango de Precios</TabsTrigger>} */}
+                                    <TabsTrigger value="precio-rango">💰 Rango de Precios</TabsTrigger>
                                     <TabsTrigger value="precios">Precios y códigos</TabsTrigger>
                                     {data.es_de_produccion && <TabsTrigger value="ingredientes">🏭 Ingredientes</TabsTrigger>}
                                     <TabsTrigger value="almacenes">Almacenes</TabsTrigger>
@@ -1000,22 +1007,24 @@ export default function ProductoForm({
                                         permite_productos_combo={permite_productos_combo}
                                         permite_productos_adicionales={permite_productos_adicionales}
                                         permite_productos_produccion={permite_productos_produccion}
+                                        marcaActual={(producto as any)?.marca} // ✨ NUEVO: Pasar marca actual
+                                        categoriaActual={(producto as any)?.categoria} // ✨ NUEVO: Pasar categoría actual
                                     />
                                 </TabsContent>
 
                                 <TabsContent value="precios" className="space-y-2">
                                     <Step2PreciosCodigos
                                         data={{
-                                            precios: data.precios,
+                                            precios: Array.isArray(data.precios) ? data.precios : [],
                                             codigos: data.codigos,
-                                            es_fraccionado: data.es_fraccionado, // ✨ NUEVO
-                                            unidad_medida_id: data.unidad_medida_id, // ✨ NUEVO
-                                            conversiones: data.conversiones, // ✨ NUEVO
+                                            es_fraccionado: data.es_fraccionado,
+                                            unidad_medida_id: data.unidad_medida_id,
+                                            conversiones: data.conversiones,
                                         }}
                                         errors={errors}
                                         tipos_precio={tipos_precio}
                                         porcentajeInteres={porcentajeInteres}
-                                        precioCosto={data.precios?.find((p: Precio) => Number(p.tipo_precio_id) === 1)?.monto ?? 0}
+                                        precioCosto={Array.isArray(data.precios) ? (data.precios.find((p: Precio) => Number(p.tipo_precio_id) === 1)?.monto ?? 0) : 0}
                                         isEditing={isEditing}
                                         addPrecio={() => {}}
                                         removePrecio={() => {}}
@@ -1029,7 +1038,7 @@ export default function ProductoForm({
                                         limpiarCodigo={limpiarCodigo}
                                         setCodigo={setCodigo}
                                         historial_precios={historial_precios}
-                                        unidades={unidades} // ✨ NUEVO
+                                        unidades={unidades}
                                     />
                                 </TabsContent>
 

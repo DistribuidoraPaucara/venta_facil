@@ -52,8 +52,18 @@ export interface Step2Props {
 }
 
 function Step2PreciosCodigos(props: Step2Props) {
+    // 🔴 PROTECCIÓN: Si estamos editando, NO hacer nada excepto mostrar la UI
+    // El usuario puede editar sin interferencias y guardar cuando haga click en "Guardar"
+    const isEditing = props.isEditing ?? false;
+
+    // 🔒 CONGELAR datos durante edición para evitar re-renders
+    const frozenDataRef = useRef(props.data);
+    if (isEditing) {
+        frozenDataRef.current = props.data;
+    }
+    const data = isEditing ? frozenDataRef.current : props.data;
+
     const {
-        data,
         errors,
         tipos_precio,
         setPrecio,
@@ -63,7 +73,6 @@ function Step2PreciosCodigos(props: Step2Props) {
         removeCodigo,
         limpiarCodigo,
         setCodigo,
-        isEditing,
     } = props;
 
     // IDs de tipo_precio con monto modificado manualmente por el usuario
@@ -115,7 +124,8 @@ function Step2PreciosCodigos(props: Step2Props) {
 
     // ✨ Inicializar preciosPorUnidad con los precios existentes (edición)
     useEffect(() => {
-        if (!props.data.precios || props.data.precios.length === 0) {
+        // 🔴 PROTECCIÓN: Verificar que precios sea un array
+        if (!Array.isArray(props.data.precios) || props.data.precios.length === 0) {
             return;
         }
 
@@ -146,12 +156,18 @@ function Step2PreciosCodigos(props: Step2Props) {
 
     // ✨ NUEVO: Recalcular automáticamente precios de conversión cuando cambia el precio base (edición)
     useEffect(() => {
+        // 🔴 COMPLETAMENTE DESACTIVADO DURANTE EDICIÓN
+        if (isEditing) {
+            console.log('⏭️ useEffect 1: Desactivado durante edición');
+            return;
+        }
+
         if (!props.data.es_fraccionado || !props.data.conversiones || props.data.conversiones.length === 0) {
             return;
         }
 
         // Detectar cambios en precios base y recalcular automáticamente los de conversión
-        const actualizados: Precio[] = [...(props.data.precios || [])];
+        const actualizados: Precio[] = [...(Array.isArray(props.data.precios) ? props.data.precios : [])];
         let huboCambios = false;
 
         // Para cada precio base (unidad_medida_id = null/undefined)
@@ -219,7 +235,7 @@ function Step2PreciosCodigos(props: Step2Props) {
         // console.log(`📦 Precio Unidad Base: ${precioBase} Bs × (1 + ${porcentajeGanancia}%) = ${precioUnidadBase.toFixed(2)} Bs`);
 
         // 1️⃣ PASO 1: Eliminar todos los precios de este tipo_precio_id (estrategia: eliminar y recrear)
-        const preciosOtrosTipos = (props.data.precios || []).filter(
+        const preciosOtrosTipos = (Array.isArray(props.data.precios) ? props.data.precios : []).filter(
             (p: Precio) => Number(p.tipo_precio_id) !== Number(tipoPrecioId)
         );
 
@@ -286,6 +302,7 @@ function Step2PreciosCodigos(props: Step2Props) {
             marca: '🔒 AHORA ES MANUAL - No se recalculará automáticamente',
         }); */
 
+        // 1️⃣ Actualizar estado de tracking (para saber que fue manual)
         setPreciosPorUnidad(prev => ({
             ...prev,
             [tipoPrecioId]: {
@@ -296,6 +313,39 @@ function Step2PreciosCodigos(props: Step2Props) {
                 },
             },
         }));
+
+        // 2️⃣ Actualizar precios para guardar en BD (SIN interferencia automática)
+        const updated = [...(Array.isArray(data.precios) ? data.precios : [])];
+
+        // Buscar el precio de conversión
+        const idxConversion = updated.findIndex(
+            (p: Precio) =>
+                Number(p.tipo_precio_id) === tipoPrecioId &&
+                Number(p.unidad_medida_id) === unidadId
+        );
+
+        if (idxConversion >= 0) {
+            // Actualizar monto existente
+            updated[idxConversion] = { ...updated[idxConversion], monto: nuevoMonto };
+        } else {
+            // Crear nuevo precio de conversión si no existe
+            const precioBase = updated.find((p: Precio) => Number(p.tipo_precio_id) === tipoPrecioId && !p.unidad_medida_id);
+            updated.push({
+                tipo_precio_id: tipoPrecioId,
+                monto: nuevoMonto,
+                unidad_medida_id: unidadId,
+                moneda: precioBase?.moneda || 'BOB',
+            } as Precio);
+        }
+
+        console.log(`💰 Precio de conversión actualizado manualmente:`, {
+            tipoPrecioId,
+            unidadId,
+            nuevoMonto,
+            preciosActualizados: updated.length
+        });
+
+        setPrecios(updated);
     };
 
     // ✨ Handler para cambio manual de porcentaje de ganancia
@@ -732,6 +782,12 @@ function Step2PreciosCodigos(props: Step2Props) {
 
     // Calcula y sincroniza automáticamente los montos de venta cuando cambia el costo o la selección de tipos de precio
     useEffect(() => {
+        // 🔴 COMPLETAMENTE DESACTIVADO DURANTE EDICIÓN
+        if (isEditing) {
+            console.log('⏭️ useEffect 2 (sincronización): Desactivado durante edición');
+            return;
+        }
+
         const costo = Number(props.precioCosto ?? 0);
         if (!Number.isFinite(costo) || costo < 0) {
             console.log('⏭️ Recalc precios: Costo inválido o negativo');
@@ -753,6 +809,9 @@ function Step2PreciosCodigos(props: Step2Props) {
             costoBases: costo,
             tiposDePrecios: tipos_precio.length,
             preciosActuales: data.precios?.length,
+            dataPreciosType: typeof data.precios,
+            dataPreciosIsArray: Array.isArray(data.precios),
+            dataPreciosContent: data.precios,
         });
 
         // Mapa rápido de porcentaje por tipo_precio_id
@@ -768,7 +827,15 @@ function Step2PreciosCodigos(props: Step2Props) {
         }
 
         // Construye un array actualizado en memoria para evitar condiciones de carrera por múltiples setPrecio
-        const originales = data.precios || [];
+        const originales = Array.isArray(data.precios) ? data.precios : [];
+
+        // 🔴 PROTECCIÓN: Si originales está vacío, probablemente sea un error de sincronización
+        // No sobrescribir con array vacío
+        if (originales.length === 0) {
+            console.log('⚠️ SINCRONIZACIÓN ABORTADA: precios está vacío');
+            return;
+        }
+
         let huboCambios = false;
         const actualizados: Precio[] = originales.map((p: Precio) => {
             const pct = pctById.get(Number(p.tipo_precio_id)) ?? 0;
@@ -815,20 +882,27 @@ function Step2PreciosCodigos(props: Step2Props) {
                                 Number(p.unidad_medida_id) === Number(conv.unidad_destino_id)
                         );
 
+                        // 🔒 IMPORTANTE: Respetar precios marcados como manual
+                        const esManual = preciosPorUnidad[tipoId]?.[conv.unidad_destino_id]?.manual;
+
                         if (indexDestino >= 0) {
-                            // Actualizar el monto
-                            actualizadosConUnidades[indexDestino] = {
-                                ...actualizadosConUnidades[indexDestino],
-                                monto: parseFloat(montoDestino.toFixed(6)),
-                            };
+                            // Solo actualizar si NO está marcado como manual
+                            if (!esManual) {
+                                actualizadosConUnidades[indexDestino] = {
+                                    ...actualizadosConUnidades[indexDestino],
+                                    monto: parseFloat(montoDestino.toFixed(6)),
+                                };
+                            }
                         } else {
-                            // Crear uno nuevo
-                            actualizadosConUnidades.push({
-                                tipo_precio_id: tipoId,
-                                monto: parseFloat(montoDestino.toFixed(6)),
-                                unidad_medida_id: conv.unidad_destino_id,
-                                moneda: precio.moneda || 'BOB',
-                            } as Precio);
+                            // Crear uno nuevo (solo si no está manual)
+                            if (!esManual) {
+                                actualizadosConUnidades.push({
+                                    tipo_precio_id: tipoId,
+                                    monto: parseFloat(montoDestino.toFixed(6)),
+                                    unidad_medida_id: conv.unidad_destino_id,
+                                    moneda: precio.moneda || 'BOB',
+                                } as Precio);
+                            }
                         }
                     });
                 }
@@ -876,13 +950,22 @@ function Step2PreciosCodigos(props: Step2Props) {
                             <tbody>
                                 {tipos_precio.map((tp: TipoPrecioOption) => {
                                     const currId = tpId(tp);
-                                    const checked = (data.precios || []).some((p: Precio) => Number(p.tipo_precio_id) === currId);
+                                    // 🔴 PROTECCIÓN: Asegurar que precios es un array
+                                    const preciosArray = Array.isArray(data.precios) ? data.precios : [];
+                                    const checked = preciosArray.some((p: Precio) => Number(p.tipo_precio_id) === currId);
                                     const pctRaw = (tp?.porcentaje_ganancia as unknown as number | string);
                                     const pctNum = pctRaw !== undefined && pctRaw !== null && pctRaw !== '' ? Number(pctRaw) : 0;
                                     const pct = Number.isFinite(pctNum) ? pctNum : 0;
-                                    const precioIdx = (data.precios || []).findIndex((p: Precio) => Number(p.tipo_precio_id) === currId);
-                                    const precioSel = precioIdx >= 0 ? (data.precios as Precio[])[precioIdx] : null;
                                     const hasUnits = props.data.es_fraccionado && props.data.conversiones && props.data.conversiones.length > 0;
+                                    // 🔵 Si es fraccionado, buscar el precio base (unidad_medida_id = unidad_base)
+                                    // Si no es fraccionado, buscar el primer precio
+                                    const precioIdx = hasUnits
+                                        ? preciosArray.findIndex((p: Precio) =>
+                                            Number(p.tipo_precio_id) === currId &&
+                                            (Number(p.unidad_medida_id) === Number(props.data.unidad_medida_id) || !p.unidad_medida_id)
+                                        )
+                                        : preciosArray.findIndex((p: Precio) => Number(p.tipo_precio_id) === currId);
+                                    const precioSel = precioIdx >= 0 ? preciosArray[precioIdx] : null;
 
                                     return (
                                         <React.Fragment key={currId}>
@@ -929,24 +1012,34 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                 <td className="px-2 py-2 text-xs text-left text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                                     <div className="flex items-center gap-2">
                                                         <span>{tpIcono(tp)} {tpNombre(tp)}</span>
-                                                        <span className="font-bold text-green-600 dark:text-green-400">{pct}%</span>
+                                                        {/* <span className="font-bold text-green-600 dark:text-green-400">{pct}%</span> */}
                                                         <div className="flex gap-1">
-                                                            {tp.es_precio_base && (
-                                                                <span className="inline-block text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full font-medium">
-                                                                    📊 Base
-                                                                </span>
-                                                            )}
-                                                            {tp.es_ganancia && (
+                                                            {hasUnits ? (
+                                                                // 🔵 Si es fraccionado, mostrar unidad base para TODOS los tipos
                                                                 <span className="inline-block text-xs bg-green-200 dark:bg-green-900 text-green-900 dark:text-green-100 px-2 py-0.5 rounded-full font-medium">
-                                                                    💰 Ganancia
+                                                                    📦 {props.unidades?.find(u => u.id === props.data.unidad_medida_id)?.codigo || 'Base'}
                                                                 </span>
+                                                            ) : (
+                                                                // 🟡 Si no es fraccionado, mostrar badges normales
+                                                                <>
+                                                                    {tp.es_precio_base && (
+                                                                        <span className="inline-block text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full font-medium">
+                                                                            📊 Base
+                                                                        </span>
+                                                                    )}
+                                                                    {tp.es_ganancia && (
+                                                                        <span className="inline-block text-xs bg-green-200 dark:bg-green-900 text-green-900 dark:text-green-100 px-2 py-0.5 rounded-full font-medium">
+                                                                            💰 Ganancia
+                                                                        </span>
+                                                                    )}
+                                                                </>
                                                             )}
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-2 py-2 text-center">
                                                     {checked ? (
-                                                        <div className="flex items-center justify-center gap-1">
+                                                        <div className="flex items-center justify-center gap-1 text-center">
                                                             <Input
                                                                 type="number"
                                                                 step="0.01"
@@ -999,7 +1092,7 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-2 py-2">
+                                                <td className="px-2 py-2 text-center">
                                                     {checked ? (
                                                         <Input
                                                             type="number"
@@ -1057,7 +1150,7 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                             pattern="\d+(\.\d{1,2})?"
                                                         />
                                                     ) : (
-                                                        <span className="text-muted-foreground">-</span>
+                                                        <span className="text-muted-foreground text-center">-</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -1080,56 +1173,40 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                                                                     Precios por unidad:
                                                                 </p>
-                                                                {/* <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const pct = porcentajesPorTipo[currId] ?? 0;
+                                                            </div>
 
-                                                                            console.log('🔄 BOTÓN RECALCULAR PRESIONADO', {
-                                                                                tipoPrecio: tpNombre(tp),
-                                                                                tipoPrecioId: currId,
-                                                                                precioCosto: props.precioCosto,
-                                                                                porcentajeGanancia: pct,
-                                                                                nota: pct === 0 ? '⚠️ PORCENTAJE CERO (0%)' : '',
-                                                                            });
-                                                                            calcularPreciosPorUnidad(props.precioCosto, currId, pct);
+                                                            {/* Base unit price - Only show if NOT fractioned */}
+                                                            {!props.data.es_fraccionado && (
+                                                                <div className="items-center gap-2 bg-white dark:bg-neutral-800 rounded border border-blue-200 dark:border-blue-700">
+                                                                    <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[70px] font-medium">
+                                                                        {props.unidades?.find(u => u.id === props.data.unidad_medida_id)?.codigo || 'Base'}:
+                                                                    </span>
+                                                                    <Input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        value={preciosPorUnidad[currId]?.[Number(props.data.unidad_medida_id)]?.monto || (precioSel?.monto === 0 ? '' : precioSel?.monto) || ''}
+                                                                        onChange={(e) => {
+                                                                            handlePrecioUnidadChange(currId, Number(props.data.unidad_medida_id), Number(e.target.value) || 0);
+                                                                            setPrecio(precioIdx, 'monto', e.target.value);
                                                                         }}
-                                                                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
-                                                                        title="Recalcular precios automáticamente"
-                                                                    >
-                                                                        🔄 Recalcular
-                                                                    </button> */}
-                                                            </div>
+                                                                        className="flex-1 text-xs h-7 font-mono"
+                                                                        placeholder="0.00"
+                                                                    />
+                                                                    <span className="text-xs text-gray-500 min-w-[30px]">Bs</span>
+                                                                </div>
+                                                            )}
 
-                                                            {/* Base unit price */}
-                                                            <div className="flex items-center gap-2 bg-white dark:bg-neutral-800 p-2 rounded border border-blue-200 dark:border-blue-700">
-                                                                <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[70px] font-medium">
-                                                                    {props.unidades?.find(u => u.id === props.data.unidad_medida_id)?.codigo || 'Base'}:
-                                                                </span>
-                                                                <Input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    value={preciosPorUnidad[currId]?.[Number(props.data.unidad_medida_id)]?.monto || (precioSel?.monto === 0 ? '' : precioSel?.monto) || ''}
-                                                                    onChange={(e) => {
-                                                                        handlePrecioUnidadChange(currId, Number(props.data.unidad_medida_id), Number(e.target.value) || 0);
-                                                                        setPrecio(precioIdx, 'monto', e.target.value);
-                                                                    }}
-                                                                    className="flex-1 text-xs h-7 font-mono"
-                                                                    placeholder="0.00"
-                                                                />
-                                                                <span className="text-xs text-gray-500 min-w-[30px]">Bs</span>
-                                                            </div>
-
-                                                            {/* Other unit prices in a grid */}
+                                                            {/* Prices in a grid - show only conversion units */}
                                                             {props.data.conversiones && props.data.conversiones.length > 0 && (
                                                                 <div className="grid grid-cols-2 gap-2">
+                                                                    {/* 🔹 Show only conversion units (base unit is shown in main input) */}
                                                                     {props.data.conversiones.map((conv: any, convIndex: number) => {
                                                                         const unidadDestino = props.unidades?.find(u => u.id === conv.unidad_destino_id);
                                                                         const esManual = preciosPorUnidad[currId]?.[conv.unidad_destino_id]?.manual;
                                                                         const monto = preciosPorUnidad[currId]?.[conv.unidad_destino_id]?.monto || 0;
 
                                                                         return (
-                                                                            <div key={`conv-${convIndex}-${conv.unidad_destino_id}`} className="flex items-center gap-2 bg-white dark:bg-neutral-800 p-2 rounded border border-blue-100 dark:border-blue-800">
+                                                                            <div key={`conv-${convIndex}-${conv.unidad_destino_id}`} className="flex py-1 px-1 items-center gap-2">
                                                                                 <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[50px] font-medium">
                                                                                     {unidadDestino?.codigo || `ID:${conv.unidad_destino_id}`}:
                                                                                 </span>
@@ -1140,10 +1217,10 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                                                     onChange={(e) => {
                                                                                         handlePrecioUnidadChange(currId, conv.unidad_destino_id, Number(e.target.value) || 0);
                                                                                     }}
-                                                                                    className="flex-1 text-xs h-7 font-mono"
+                                                                                    className="text-xs font-mono flex-1 h-7 border border-gray-300 dark:border-gray-600 rounded px-1"
                                                                                     placeholder="0.00"
                                                                                 />
-                                                                                <span className="text-xs text-gray-500 min-w-[25px]">Bs</span>
+                                                                                {/* <span className="text-xs text-gray-500 min-w-[25px]">Bs</span> */}
                                                                                 {!esManual && monto > 0 && (
                                                                                     <span className="text-xs text-blue-600 dark:text-blue-400 min-w-fit font-medium">
                                                                                         Auto ✓

@@ -40,15 +40,27 @@ class ProductoController extends Controller
     private static $tipoPrecioVentaCache = null;
 
     /**
-     * Obtiene el ID del tipo de precio de venta buscando por código 'VENTA'
+     * Obtiene el ID del tipo de precio de venta de la empresa del usuario
      * Se cachea para evitar N+1 queries
      */
     private function getTipoPrecioVentaId(): int
     {
         if (self::$tipoPrecioVentaCache === null) {
-            $tipoPrecio = TipoPrecio::where('codigo', 'VENTA')->first();
+            // ✨ NUEVO: Filtrar por empresa del usuario autenticado
+            $empresaId = auth()->user()?->empresa_id;
+            $tipoPrecio = TipoPrecio::where('codigo', 'VENTA')
+                ->where('empresa_id', $empresaId)
+                ->first();
+
             if (! $tipoPrecio) {
-                Log::error('❌ Tipo de precio VENTA no encontrado en la BD');
+                // ✨ Fallback: buscar sin filtro de empresa (para compatibilidad)
+                $tipoPrecio = TipoPrecio::where('codigo', 'VENTA')->first();
+            }
+
+            if (! $tipoPrecio) {
+                Log::error('❌ Tipo de precio VENTA no encontrado en la BD', [
+                    'empresa_id' => $empresaId,
+                ]);
                 throw new \Exception('Tipo de precio VENTA no encontrado en la base de datos');
             }
             self::$tipoPrecioVentaCache = $tipoPrecio->id;
@@ -618,6 +630,7 @@ class ProductoController extends Controller
                             'unidad_base_id'          => $conv['unidad_base_id'],
                             'unidad_destino_id'       => $conv['unidad_destino_id'],
                             'factor_conversion'       => $conv['factor_conversion'],
+                            'nombre_cuando_se_vende_como' => $conv['nombre_cuando_se_vende_como'] ?? null, // ✨ NUEVO (2026-09-06)
                             'activo'                  => $conv['activo'] ?? true,
                             'es_conversion_principal' => $conv['es_conversion_principal'] ?? false,
                         ]);
@@ -741,6 +754,8 @@ class ProductoController extends Controller
                 $q->where('activo', true)->orderBy('es_principal', 'desc');
             },
             'proveedor:id,nombre,razon_social',
+            'marca:id,nombre',      // ✨ NUEVO: Cargar marca del producto
+            'categoria:id,nombre',  // ✨ NUEVO: Cargar categoría del producto
         ]);
 
         // Adapt payload for frontend form structure
@@ -903,6 +918,7 @@ class ProductoController extends Controller
                     'unidad_base_id'          => $conv->unidad_base_id,
                     'unidad_destino_id'       => $conv->unidad_destino_id,
                     'factor_conversion'       => (float) $conv->factor_conversion,
+                    'nombre_cuando_se_vende_como' => $conv->nombre_cuando_se_vende_como, // ✨ NUEVO (2026-09-06)
                     'activo'                  => (bool) $conv->activo,
                     'es_conversion_principal' => (bool) $conv->es_conversion_principal,
                     'unidad_base'             => $conv->unidadBase ? [
@@ -985,10 +1001,25 @@ class ProductoController extends Controller
         // El frontend buscará dinámicamente via /api/app/productos/buscar
         Log::info('🏭 Productos - Lazy loading habilitado via API', ['producto_id' => $producto->id]);
 
+        // ✨ MEJORADO: Incluir marca y categoría del producto en el payload si existen
+        if ($producto->marca) {
+            $payload['marca'] = [
+                'id'     => $producto->marca->id,
+                'nombre' => $producto->marca->nombre,
+            ];
+        }
+
+        if ($producto->categoria) {
+            $payload['categoria'] = [
+                'id'     => $producto->categoria->id,
+                'nombre' => $producto->categoria->nombre,
+            ];
+        }
+
         return Inertia::render('productos/form', [
             'producto'                       => $payload,
-            'categorias'                     => [], // ✨ Vacío - búsqueda dinámica via /api/app/categorias-crud?q=
-            'marcas'                         => [], // ✨ Vacío - búsqueda dinámica via /api/app/marcas?q=
+            'categorias'                     => [], // ✨ Búsqueda dinámica via /api/app/categorias-crud?q= (la categoría actual está en producto.categoria)
+            'marcas'                         => [], // ✨ Búsqueda dinámica via /api/app/marcas?q= (la marca actual está en producto.marca)
             'proveedores'                    => \App\Models\Proveedor::porEmpresa()->orderBy('nombre')->get(['id', 'nombre', 'razon_social']),  // ✅ Filtrado
             'unidades'                       => UnidadMedida::porEmpresa()->orderBy('nombre')->get(['id', 'codigo', 'nombre']),  // ✅ Filtrado
             'tipos_precio'                   => TipoPrecio::getOptions(),  // ✅ Usa getOptions() que incluye porcentaje_ganancia
@@ -1198,6 +1229,7 @@ class ProductoController extends Controller
                             'unidad_base_id'          => $conv['unidad_base_id'],
                             'unidad_destino_id'       => $conv['unidad_destino_id'],
                             'factor_conversion'       => $conv['factor_conversion'],
+                            'nombre_cuando_se_vende_como' => $conv['nombre_cuando_se_vende_como'] ?? null, // ✨ NUEVO (2026-09-06)
                             'activo'                  => $conv['activo'] ?? true,
                             'es_conversion_principal' => $conv['es_conversion_principal'] ?? false,
                         ]);
@@ -1367,22 +1399,15 @@ class ProductoController extends Controller
                             // Restaurar si estaba soft-deleted, luego actualizar
                             $stockExistente->restore();
 
-                            // ✨ NUEVO: Verificar permiso para editar cantidades
-                            $canEditQuantities = auth()->user()?->hasPermissionTo('stock-productos.editar-cantidad');
-
                             $updateData = [
                                 'sector_id'           => $sectorId,
                                 'lote'                => $almacenData['lote'] ?? $stockExistente->lote,
                                 'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : $stockExistente->fecha_vencimiento,
                                 'fecha_actualizacion' => now(),
+                                'cantidad'            => $cantidadTotal,
+                                'cantidad_disponible' => $cantidadDisponible,
+                                'cantidad_reservada'  => $cantidadReservada,
                             ];
-
-                            // Solo actualizar cantidades si el usuario tiene permisos
-                            if ($canEditQuantities) {
-                                $updateData['cantidad']            = $cantidadTotal;
-                                $updateData['cantidad_disponible'] = $cantidadDisponible;
-                                $updateData['cantidad_reservada']  = $cantidadReservada;
-                            }
 
                             $stockExistente->update($updateData);
                         } else {
@@ -1393,20 +1418,8 @@ class ProductoController extends Controller
                                 'lote'        => $lote,
                             ]);
 
-                            // ✨ NUEVO: Solo crear si el usuario tiene permiso para editar cantidades
-                            $canEditQuantities = auth()->user()?->hasPermissionTo('stock-productos.editar-cantidad');
-
-                            if (! $canEditQuantities) {
-                                Log::warning('❌ Usuario intenta crear StockProducto sin permisos:', [
-                                    'user_id'     => auth()->id(),
-                                    'producto_id' => $producto->id,
-                                    'almacen_id'  => $almacenId,
-                                ]);
-                                continue; // Saltar si no tiene permiso
-                            }
-
                             // Crear nuevo StockProducto
-                            StockProducto::create([
+                            $nuevoStock = StockProducto::create([
                                 'producto_id'         => $producto->id,
                                 'almacen_id'          => $almacenId,
                                 'sector_id'           => $sectorId,
@@ -1417,8 +1430,23 @@ class ProductoController extends Controller
                                 'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : null,
                                 'fecha_actualizacion' => now(),
                             ]);
+
+                            Log::info('✅ StockProducto CREADO EXITOSAMENTE:', [
+                                'stock_id'            => $nuevoStock->id,
+                                'producto_id'         => $nuevoStock->producto_id,
+                                'almacen_id'          => $nuevoStock->almacen_id,
+                                'sector_id'           => $nuevoStock->sector_id,
+                                'cantidad'            => $nuevoStock->cantidad,
+                                'lote'                => $nuevoStock->lote,
+                                'fecha_vencimiento'   => $nuevoStock->fecha_vencimiento,
+                            ]);
                         }
                     }
+
+                    Log::info('✅ PROCESAMIENTO DE ALMACENES COMPLETADO:', [
+                        'producto_id'     => $producto->id,
+                        'almacenes_procesados' => count($data['almacenes']),
+                    ]);
                 }
 
                 // 🏭 NUEVO: Actualizar receta e ingredientes si es_de_produccion = true
@@ -1973,7 +2001,7 @@ class ProductoController extends Controller
                 },
                 'codigosBarra:id,producto_id,codigo,tipo,es_principal,activo',
                 'stock' => function ($stockQuery) {
-                    $stockQuery->select('id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad', 'cantidad_disponible')
+                    $stockQuery->select('id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad', 'cantidad_disponible', 'lote', 'fecha_vencimiento')
                         ->with([
                             'almacen:id,nombre',
                             'sector:id,nombre,almacen_id'
@@ -2289,6 +2317,8 @@ class ProductoController extends Controller
                 'sector_id'           => $s->sector_id,
                 'cantidad'            => (int) $s->cantidad,
                 'cantidad_disponible' => (int) $s->cantidad_disponible,
+                'lote'                => $s->lote,                              // ✨ NUEVO
+                'fecha_vencimiento'   => $s->fecha_vencimiento?->format('Y-m-d'), // ✨ NUEVO
                 'almacen'             => $s->almacen ? ['id' => $s->almacen->id, 'nombre' => $s->almacen->nombre] : null,
                 'sector'              => $s->sector ? ['id' => $s->sector->id, 'nombre' => $s->sector->nombre] : null,
             ])->toArray(),
@@ -2322,6 +2352,13 @@ class ProductoController extends Controller
             'codigos_barra'               => ['nullable', 'string', 'max:255'],  // Legacy
             'codigos'                     => ['nullable', 'array'],              // 🔥 NUEVO: Array de códigos (Flutter)
             'codigos.*'                   => ['string', 'max:255'],
+            'almacenes'                   => ['nullable', 'array'],              // ✨ NUEVO: Almacenes con stock
+            'almacenes.*.almacen_id'      => ['required_with:almacenes', 'integer', 'exists:almacenes,id'],
+            'almacenes.*.sector_id'       => ['nullable', 'integer', 'exists:sectores,id'],
+            'almacenes.*.stock'           => ['required_with:almacenes', 'integer', 'min:0'],
+            'almacenes.*.cantidad_disponible' => ['nullable', 'integer', 'min:0'],
+            'almacenes.*.lote'            => ['nullable', 'string'],
+            'almacenes.*.fecha_vencimiento' => ['nullable', 'date'],
         ]);
 
         try {
@@ -2354,11 +2391,25 @@ class ProductoController extends Controller
 
                 // Crear precio base (siempre, incluso si es 0)
                 if (isset($data['precio_venta']) && $data['precio_venta'] !== null) {
+                    // ✨ NUEVO: Obtener tipo de precio VENTA de la EMPRESA del usuario
+                    $tipoPrecioVenta = TipoPrecio::porEmpresa($data['empresa_id'])
+                        ->where('codigo', 'VENTA')
+                        ->first();
+
+                    $tipoPrecioId = $tipoPrecioVenta?->id ?? 2;
+
+                    Log::info('💰 [storeApi] Tipo de precio VENTA:', [
+                        'empresa_id' => $data['empresa_id'],
+                        'tipo_precio_id' => $tipoPrecioId,
+                        'encontrado' => $tipoPrecioVenta ? 'SÍ' : 'NO (usando fallback 2)',
+                    ]);
+
                     PrecioProducto::create([
                         'producto_id'    => $producto->id,
-                        'tipo_precio_id' => TipoPrecio::porCodigo('VENTA')?->id ?? 2,
+                        'tipo_precio_id' => $tipoPrecioId,
                         'precio'         => $data['precio_venta'] ?? 0,
                         'activo'         => true,
+                        'empresa_id'     => $data['empresa_id'],
                     ]);
                 }
 
@@ -2402,6 +2453,46 @@ class ProductoController extends Controller
                     ]);
                 }
 
+                // ✨ NUEVO: Procesar almacenes/stocks si se proporcionan
+                if (! empty($data['almacenes']) && is_array($data['almacenes'])) {
+                    Log::info('📦 CREAR API PRODUCTO - Almacenes recibidos del frontend:', [
+                        'producto_id'     => $producto->id,
+                        'almacenes_count' => count($data['almacenes']),
+                    ]);
+
+                    foreach ($data['almacenes'] as $almacenData) {
+                        if (empty($almacenData['almacen_id'])) {
+                            continue;
+                        }
+
+                        $almacenId = (int) $almacenData['almacen_id'];
+                        $sectorId  = ! empty($almacenData['sector_id']) ? (int) $almacenData['sector_id'] : null;
+                        $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
+                        $cantidadDisponible = (int) ($almacenData['cantidad_disponible'] ?? $cantidadTotal);
+                        $cantidadReservada  = (int) ($almacenData['cantidad_reservada'] ?? 0);
+
+                        StockProducto::create([
+                            'producto_id'         => $producto->id,
+                            'almacen_id'          => $almacenId,
+                            'sector_id'           => $sectorId,
+                            'cantidad'            => $cantidadTotal,
+                            'cantidad_disponible' => $cantidadDisponible,
+                            'cantidad_reservada'  => $cantidadReservada,
+                            'lote'                => $almacenData['lote'] ?? null,
+                            'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : null,
+                            'fecha_actualizacion' => now(),
+                        ]);
+
+                        Log::info('✅ StockProducto CREADO en storeApi:', [
+                            'producto_id' => $producto->id,
+                            'almacen_id'  => $almacenId,
+                            'sector_id'   => $sectorId,
+                            'cantidad'    => $cantidadTotal,
+                            'lote'        => $almacenData['lote'] ?? null,
+                        ]);
+                    }
+                }
+
                 return $producto;
             });
 
@@ -2409,7 +2500,7 @@ class ProductoController extends Controller
                 'success' => true,
                 'status'  => 201,
                 'message' => 'Producto creado exitosamente',
-                'data'    => $producto->load(['categoria', 'marca', 'proveedor', 'unidad', 'codigosBarra']),
+                'data'    => $producto->load(['categoria', 'marca', 'proveedor', 'unidad', 'codigosBarra', 'stock']),
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -2470,6 +2561,14 @@ class ProductoController extends Controller
             'codigos'                     => ['nullable', 'array'],              // 🔥 NUEVO: Array de códigos
             'codigos.*'                   => ['string', 'max:255'],
             'codigos_vacío_intencional'   => ['nullable', 'boolean'],            // 🔥 NUEVO: Marcador para eliminar
+            'almacenes'                   => ['nullable', 'array'],              // ✨ NUEVO: Almacenes con stock
+            'almacenes.*.id'              => ['nullable', 'integer', 'exists:stock_productos,id'],  // ✨ NUEVO: ID del stock existente (para actualizar)
+            'almacenes.*.almacen_id'      => ['required_with:almacenes', 'integer', 'exists:almacenes,id'],
+            'almacenes.*.sector_id'       => ['nullable', 'integer', 'exists:sectores,id'],
+            'almacenes.*.stock'           => ['required_with:almacenes', 'integer', 'min:0'],
+            'almacenes.*.cantidad_disponible' => ['nullable', 'integer', 'min:0'],
+            'almacenes.*.lote'            => ['nullable', 'string'],
+            'almacenes.*.fecha_vencimiento' => ['nullable', 'date'],
         ]);
 
         try {
@@ -2482,7 +2581,16 @@ class ProductoController extends Controller
             // ✅ Actualizar precio_venta en precios_producto si se proporciona
             if (isset($data['precio_venta'])) {
                 $precioVenta = $data['precio_venta'] ?? 0;
-                $tipoPrecioVenta = TipoPrecio::porCodigo('VENTA');
+                // ✨ NUEVO: Filtrar por empresa del usuario autenticado
+                $empresaId = auth()->user()?->empresa_id;
+                $tipoPrecioVenta = TipoPrecio::where('codigo', 'VENTA')
+                    ->where('empresa_id', $empresaId)
+                    ->first();
+
+                if (! $tipoPrecioVenta) {
+                    // Fallback: buscar sin filtro de empresa
+                    $tipoPrecioVenta = TipoPrecio::porCodigo('VENTA');
+                }
 
                 if ($tipoPrecioVenta) {
                     PrecioProducto::where('producto_id', $producto->id)
@@ -2569,6 +2677,140 @@ class ProductoController extends Controller
                         'activo'       => true,
                     ]);
                 }
+            }
+
+            // ✨ NUEVO: Procesar almacenes/stocks si se proporcionan
+            if (! empty($data['almacenes']) && is_array($data['almacenes'])) {
+                Log::info('📦 UPDATE API PRODUCTO - Almacenes recibidos del frontend:', [
+                    'producto_id'     => $producto->id,
+                    'almacenes_count' => count($data['almacenes']),
+                ]);
+
+                // Obtener IDs de almacenes en el nuevo array para identificar cuáles se eliminaron
+                $nuevosAlmacenIds = array_filter(array_map(function ($a) {
+                    return ! empty($a['almacen_id']) ? (int) $a['almacen_id'] : null;
+                }, $data['almacenes']));
+
+                // Soft delete almacenes que no están en el nuevo array
+                StockProducto::where('producto_id', $producto->id)
+                    ->whereNotIn('almacen_id', $nuevosAlmacenIds)
+                    ->delete(); // SoftDelete
+
+                // Crear o actualizar StockProducto para cada almacén en el array
+                foreach ($data['almacenes'] as $almacenData) {
+                    if (empty($almacenData['almacen_id'])) {
+                        continue; // Saltar almacenes sin ID
+                    }
+
+                    $almacenId = (int) $almacenData['almacen_id'];
+                    $sectorId  = ! empty($almacenData['sector_id']) ? (int) $almacenData['sector_id'] : null;
+
+                    // Convertir stock a números
+                    $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
+                    $cantidadDisponible = (int) ($almacenData['cantidad_disponible'] ?? $cantidadTotal);
+                    $cantidadReservada  = (int) ($almacenData['cantidad_reservada'] ?? 0);
+
+                    // Validar que cantidad_total >= (disponible + reservada)
+                    $suma = $cantidadDisponible + $cantidadReservada;
+                    if ($suma > $cantidadTotal) {
+                        Log::warning('StockProducto: Invariante roto en actualización', [
+                            'producto_id'         => $producto->id,
+                            'almacen_id'          => $almacenId,
+                            'cantidad_total'      => $cantidadTotal,
+                            'cantidad_disponible' => $cantidadDisponible,
+                            'cantidad_reservada'  => $cantidadReservada,
+                        ]);
+                        // Ajustar disponible para cumplir invariante
+                        $cantidadDisponible = $cantidadTotal - $cantidadReservada;
+                    }
+
+                    $lote                = $almacenData['lote'] ?? '';
+                    $stockIdFromFrontend = $almacenData['id'] ?? null;
+
+                    Log::info('🔍 DEBUG updateApi - Buscando stock:', [
+                        'stock_id_from_frontend' => $stockIdFromFrontend,
+                        'stock_id_type' => gettype($stockIdFromFrontend),
+                        'almacen_id' => $almacenId,
+                        'sector_id' => $sectorId,
+                        'lote' => $lote,
+                        'all_almacen_data' => $almacenData,
+                    ]);
+
+                    // Buscar StockProducto existente
+                    if ($stockIdFromFrontend) {
+                        $stockExistente = StockProducto::withTrashed()->find($stockIdFromFrontend);
+                        Log::info('🔍 DEBUG updateApi - Búsqueda por ID:', [
+                            'id_buscado' => $stockIdFromFrontend,
+                            'encontrado' => $stockExistente ? 'SÍ (id: ' . $stockExistente->id . ')' : 'NO',
+                            'resultado' => $stockExistente ? 'Éxito' : 'No existe',
+                        ]);
+                    } else {
+                        Log::info('🔍 DEBUG updateApi - Sin ID, buscando por combinación');
+                        $stockExistente = StockProducto::withTrashed()
+                            ->where('producto_id', $producto->id)
+                            ->where('almacen_id', $almacenId)
+                            ->where('sector_id', $sectorId)
+                            ->where('lote', $lote)
+                            ->first();
+                    }
+
+                    if ($stockExistente) {
+                        Log::info('✅ StockProducto encontrado - ACTUALIZANDO:', [
+                            'stock_id'          => $stockExistente->id,
+                            'anterior_cantidad' => $stockExistente->cantidad,
+                            'nueva_cantidad'    => $cantidadTotal,
+                        ]);
+                        // Restaurar si estaba soft-deleted, luego actualizar
+                        $stockExistente->restore();
+
+                        $updateData = [
+                            'sector_id'           => $sectorId,
+                            'lote'                => $almacenData['lote'] ?? $stockExistente->lote,
+                            'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : $stockExistente->fecha_vencimiento,
+                            'fecha_actualizacion' => now(),
+                            'cantidad'            => $cantidadTotal,
+                            'cantidad_disponible' => $cantidadDisponible,
+                            'cantidad_reservada'  => $cantidadReservada,
+                        ];
+
+                        $stockExistente->update($updateData);
+                    } else {
+                        Log::info('➕ StockProducto NO encontrado - CREANDO:', [
+                            'producto_id' => $producto->id,
+                            'almacen_id'  => $almacenId,
+                            'sector_id'   => $sectorId,
+                            'lote'        => $lote,
+                        ]);
+
+                        // Crear nuevo StockProducto
+                        $nuevoStock = StockProducto::create([
+                            'producto_id'         => $producto->id,
+                            'almacen_id'          => $almacenId,
+                            'sector_id'           => $sectorId,
+                            'cantidad'            => $cantidadTotal,
+                            'cantidad_disponible' => $cantidadDisponible,
+                            'cantidad_reservada'  => $cantidadReservada,
+                            'lote'                => $almacenData['lote'] ?? null,
+                            'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : null,
+                            'fecha_actualizacion' => now(),
+                        ]);
+
+                        Log::info('✅ StockProducto CREADO EXITOSAMENTE:', [
+                            'stock_id'            => $nuevoStock->id,
+                            'producto_id'         => $nuevoStock->producto_id,
+                            'almacen_id'          => $nuevoStock->almacen_id,
+                            'sector_id'           => $nuevoStock->sector_id,
+                            'cantidad'            => $nuevoStock->cantidad,
+                            'lote'                => $nuevoStock->lote,
+                            'fecha_vencimiento'   => $nuevoStock->fecha_vencimiento,
+                        ]);
+                    }
+                }
+
+                Log::info('✅ PROCESAMIENTO DE ALMACENES COMPLETADO:', [
+                    'producto_id'     => $producto->id,
+                    'almacenes_procesados' => count($data['almacenes']),
+                ]);
             }
 
             // ✅ Cargar relaciones necesarias incluyendo stock
@@ -2934,7 +3176,7 @@ class ProductoController extends Controller
                 'unidad:id,nombre,codigo',
                 'conversiones' => function ($q) {
                     $q->where('activo', true)
-                        ->select('id', 'producto_id', 'unidad_base_id', 'unidad_destino_id', 'factor_conversion', 'activo', 'es_conversion_principal')
+                        ->select('id', 'producto_id', 'unidad_base_id', 'unidad_destino_id', 'factor_conversion', 'nombre_cuando_se_vende_como', 'activo', 'es_conversion_principal') // ✅ CORREGIDO: Agregar nombre_cuando_se_vende_como
                         ->with('unidadDestino:id,nombre,codigo');
                 },
                 'precios'      => function ($q) {
@@ -3258,10 +3500,19 @@ class ProductoController extends Controller
                     'conversiones'                   => $producto->conversiones
                         ->where('activo', true)
                         ->map(fn($c) => [
+                            'id'                      => $c->id,
+                            'unidad_base_id'          => $c->unidad_base_id,
                             'unidad_destino_id'       => $c->unidad_destino_id,
-                            'unidad_destino_nombre'   => $c->unidadDestino?->nombre ?? null,
                             'factor_conversion'       => (float) $c->factor_conversion,
+                            'nombre_cuando_se_vende_como' => $c->nombre_cuando_se_vende_como, // ✅ AGREGADO
+                            'unidad_destino_nombre'   => $c->unidadDestino?->nombre ?? null,
+                            'unidad_destino'          => $c->unidadDestino ? [ // ✅ AGREGADO: objeto completo
+                                'id'     => $c->unidadDestino->id,
+                                'nombre' => $c->unidadDestino->nombre,
+                                'codigo' => $c->unidadDestino->codigo,
+                            ] : null,
                             'es_conversion_principal' => (bool) $c->es_conversion_principal,
+                            'activo'                  => (bool) $c->activo,
                         ])
                         ->values()
                         ->all(),

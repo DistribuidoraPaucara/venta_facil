@@ -32,6 +32,7 @@ interface FormConversion {
     unidad_base_id: number | string;
     unidad_destino_id: number | string;
     factor_conversion: number | string;
+    nombre_cuando_se_vende_como?: string; // ✨ NUEVO (2026-09-06): Nombre personalizado
     activo: boolean;
     es_conversion_principal: boolean;
 }
@@ -40,6 +41,7 @@ const initialFormConversion: FormConversion = {
     unidad_base_id: '',
     unidad_destino_id: '',
     factor_conversion: '',
+    nombre_cuando_se_vende_como: '', // ✨ NUEVO
     activo: true,
     es_conversion_principal: false,
 };
@@ -173,6 +175,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
             unidad_base_id: Number(unidadBase?.id),
             unidad_destino_id: Number(formConversion.unidad_destino_id),
             factor_conversion: Number(formConversion.factor_conversion),
+            nombre_cuando_se_vende_como: formConversion.nombre_cuando_se_vende_como || undefined, // ✨ NUEVO (2026-09-06)
             activo: formConversion.activo,
             es_conversion_principal: formConversion.es_conversion_principal,
         };
@@ -350,6 +353,27 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                             {loadingConversiones && <div className="mt-3 text-xs text-muted-foreground italic">Cargando conversiones comunes...</div>}
                         </div>
 
+                        {/* ✨ NUEVO (2026-09-06): Nombre cuando se vende en esta unidad */}
+                        <div className="space-y-2">
+                            <Label>Nombre cuando se vende en esta unidad (Opcional)</Label>
+                            <Input
+                                type="text"
+                                value={formConversion.nombre_cuando_se_vende_como || ''}
+                                onChange={(e) => {
+                                    setFormConversion((prev) => ({
+                                        ...prev,
+                                        nombre_cuando_se_vende_como: e.target.value,
+                                    }));
+                                }}
+                                placeholder="Ej: Coca Cola 2Lts (para mostrar en venta por unidad)"
+                                className="text-base"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Si dejas vacío, se genera automáticamente. Ej: Si el producto es &quot;Paquete de Coca Cola 6x1&quot;,
+                                se mostrará como &quot;Coca Cola 2Lts&quot; cuando se venda por unidad.
+                            </p>
+                        </div>
+
                         {/* Conversión Principal */}
                         <div className="flex items-end space-y-2">
                             <div className="flex flex-1 items-center gap-3 rounded-lg border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-2 transition-shadow hover:shadow-md dark:border-blue-700 dark:from-blue-950/30 dark:to-indigo-950/30">
@@ -393,6 +417,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     <th className="px-4 py-2 text-left">Unidad Base</th>
                                     <th className="px-4 py-2 text-left">Factor</th>
                                     <th className="px-4 py-2 text-left">Unidad Destino</th>
+                                    <th className="px-4 py-2 text-left">📦 Nombre en Venta</th>
                                     <th className="px-4 py-2 text-center">Activo</th>
                                     <th className="px-4 py-2 text-center">Principal</th>
                                     <th className="px-4 py-2 text-center">Acciones</th>
@@ -412,6 +437,16 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                             </span>
                                         </td>
                                         <td className="px-4 py-2">{getUnitLabel(conv.unidad_destino_id)}</td>
+                                        {/* ✨ NUEVO (2026-09-06): Mostrar nombre personalizado */}
+                                        <td className="px-4 py-2 text-xs">
+                                            {conv.nombre_cuando_se_vende_como ? (
+                                                <span className="inline-block rounded bg-blue-100 px-2 py-1 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                    {conv.nombre_cuando_se_vende_como}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground italic">Automático</span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-2 text-center">{conv.activo ? '✅' : '❌'}</td>
                                         <td className="px-4 py-2 text-center">{conv.es_conversion_principal ? '⭐' : ''}</td>
                                         <td className="space-x-1 px-4 py-2 text-center">

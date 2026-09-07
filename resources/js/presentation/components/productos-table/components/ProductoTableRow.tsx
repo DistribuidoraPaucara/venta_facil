@@ -76,6 +76,9 @@ export default function ProductoTableRow({
         unidad_medida_id: detalle.unidad_medida_id,
         unidad_venta_id: detalle.unidad_venta_id,
     });
+    console.log(
+        `🔍 [ProductoTableRow] selectedTipoPrecio para producto ${detalle.producto_id}: ${selectedTipoPrecio[detalle.producto_id]} (completo: ${JSON.stringify(selectedTipoPrecio)})`
+    );
     const esCombo = productoInfo && productoInfo.es_combo;
     const precioCosto = detalle.precio_costo || productoInfo?.precio_costo || 0;
 
@@ -251,11 +254,11 @@ export default function ProductoTableRow({
             {/* Unidad */}
             <td className="items-left px-2 py-2">
                 {/* ✅ Solo mostrar unidad si NO es fraccionado (sin conversiones) */}
-                {!detalle.es_fraccionado && (
+                {/* {!detalle.es_fraccionado && (
                     <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
                         {detalle.unidad_medida_nombre || productoInfo?.unidad_medida?.nombre || ''}
                     </span>
-                )}
+                )} */}
                 {/* Tipo de Precio Selector */}
                 {(() => {
                     const precios = detalle.producto?.precios || [];
@@ -282,7 +285,17 @@ export default function ProductoTableRow({
 
                     let valorInicial = '';
                     if (selectedTipoPrecio[productoId] !== undefined) {
-                        valorInicial = String(selectedTipoPrecio[productoId]); // Usuario seleccionó algo
+                        // ✅ CORREGIDO (2026-09-07): Incluir unidad_medida_id en el valor si es necesario para que coincida con optionValue
+                        const tipoPrecioSeleccionado = selectedTipoPrecio[productoId];
+                        // Buscar el precio correspondiente para obtener su unidad_medida_id
+                        const precioSeleccionado = preciosVenta.find(
+                            (p: any) => String(p.tipo_precio_id) === String(tipoPrecioSeleccionado)
+                        );
+                        if (precioSeleccionado?.unidad_medida_id) {
+                            valorInicial = `${tipoPrecioSeleccionado}_${precioSeleccionado.unidad_medida_id}`;
+                        } else {
+                            valorInicial = String(tipoPrecioSeleccionado);
+                        }
                     } else if (detalle.tipo_precio_id === null) {
                         valorInicial = 'otros'; // Mostrar "OTROS" si es null
                     } else if (detalle.tipo_precio_id) {

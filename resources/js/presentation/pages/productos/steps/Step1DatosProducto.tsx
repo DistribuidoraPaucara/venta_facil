@@ -6,7 +6,7 @@ import InputSearch from '@/presentation/components/ui/input-search';
 import { Label } from '@/presentation/components/ui/label';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Option {
     value: number | string;
@@ -58,6 +58,8 @@ export interface Step1Props {
     permite_productos_combo?: boolean; // ✅ NUEVO: Control de empresa
     permite_productos_adicionales?: boolean; // ✅ NUEVO: Control de empresa
     permite_productos_produccion?: boolean; // ✅ NUEVO: Control de empresa
+    marcaActual?: { id: number; nombre: string } | null; // ✨ NUEVO: Marca actual del producto
+    categoriaActual?: { id: number; nombre: string } | null; // ✨ NUEVO: Categoría actual del producto
 }
 
 function Step1DatosProducto({
@@ -79,6 +81,8 @@ function Step1DatosProducto({
     permite_productos_combo, // ✅ NUEVO: Control de empresa
     permite_productos_adicionales, // ✅ NUEVO: Control de empresa
     permite_productos_produccion, // ✅ NUEVO: Control de empresa
+    marcaActual, // ✨ NUEVO: Marca actual del producto
+    categoriaActual, // ✨ NUEVO: Categoría actual del producto
 }: Step1Props) {
     // Estados para controlar la búsqueda de proveedores
     const [lastSearchQuery, setLastSearchQuery] = useState<string>('');
@@ -88,6 +92,11 @@ function Step1DatosProducto({
     const [lastProductSearchQuery, setLastProductSearchQuery] = useState<string>('');
     const [productSearchResultsFound, setProductSearchResultsFound] = useState<boolean>(false);
     const [productosCacheMap, setProductosCacheMap] = useState<{ [key: number]: any }>({});
+
+    // ✨ NUEVO: Estados para marcas y categorías seleccionadas (dinámico)
+    const [marcaSeleccionada, setMarcaSeleccionada] = useState<{ id: number; nombre: string } | null>(marcaActual ?? null);
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<{ id: number; nombre: string } | null>(categoriaActual ?? null);
+
 
     // ✨ Función de búsqueda para productos - Busca en la API
     const searchProductos = async (query: string) => {
@@ -456,10 +465,22 @@ function Step1DatosProducto({
                         value={data.categoria_id ?? ''}
                         options={categoriasOptions}
                         onSearch={onCategoriasSearch || (async () => [])}
-                        onChange={(value) => setData('categoria_id', value ? Number(value) : null)}
+                        onChange={(value) => {
+                            setData('categoria_id', value ? Number(value) : null);
+                            // ✨ Actualizar categoría seleccionada con el valor y buscar el nombre
+                            if (value) {
+                                const categoriaSeleccionadaTemp = categoriasOptions.find(c => c.value === value);
+                                if (categoriaSeleccionadaTemp) {
+                                    setCategoriaSeleccionada({ id: Number(value), nombre: categoriaSeleccionadaTemp.label });
+                                }
+                            } else {
+                                setCategoriaSeleccionada(null);
+                            }
+                        }}
                         error={errors.categoria_id}
                         placeholder="Busca una categoría..."
                         emptyText="No se encontró la categoría"
+                        displayValue={categoriaSeleccionada?.nombre}  // ✨ Mostrar categoría seleccionada (dinámica)
                     />
                 </div>
                 <div className="space-y-1">
@@ -482,10 +503,22 @@ function Step1DatosProducto({
                         value={data.marca_id ?? ''}
                         options={marcasOptions}
                         onSearch={onMarcasSearch || (async () => [])}
-                        onChange={(value) => setData('marca_id', value ? Number(value) : null)}
+                        onChange={(value) => {
+                            setData('marca_id', value ? Number(value) : null);
+                            // ✨ Actualizar marca seleccionada con el valor y buscar el nombre
+                            if (value) {
+                                const marcaSeleccionadaTemp = marcasOptions.find(m => m.value === value);
+                                if (marcaSeleccionadaTemp) {
+                                    setMarcaSeleccionada({ id: Number(value), nombre: marcaSeleccionadaTemp.label });
+                                }
+                            } else {
+                                setMarcaSeleccionada(null);
+                            }
+                        }}
                         error={errors.marca_id}
                         placeholder="Busca una marca..."
                         emptyText="No se encontró la marca"
+                        displayValue={marcaSeleccionada?.nombre}  // ✨ Mostrar marca seleccionada (dinámica)
                     />
                 </div>
                 <div className="space-y-1">

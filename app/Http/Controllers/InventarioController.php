@@ -3721,6 +3721,8 @@ class InventarioController extends Controller
             $almacenId = (int) $request->input('almacen_id');
             $sectorId = (int) $request->input('sector_id', null);
             $cantidad = (int) $request->input('cantidad', 0);
+            $lote = $request->input('lote');                    // ✨ NUEVO
+            $fechaVencimiento = $request->input('fecha_vencimiento'); // ✨ NUEVO
 
             if (!$productoId || !$almacenId) {
                 return response()->json([
@@ -3734,6 +3736,8 @@ class InventarioController extends Controller
                 'almacen_id' => $almacenId,
                 'sector_id' => $sectorId,
                 'cantidad' => $cantidad,
+                'lote' => $lote,                    // ✨ NUEVO
+                'fecha_vencimiento' => $fechaVencimiento, // ✨ NUEVO
             ]);
 
             // Validar que existan producto y almacén
@@ -3756,6 +3760,8 @@ class InventarioController extends Controller
                 $stock->update([
                     'cantidad' => $cantidad,
                     'cantidad_disponible' => $cantidad,
+                    'lote' => $lote ?? $stock->lote,                    // ✨ NUEVO
+                    'fecha_vencimiento' => $fechaVencimiento ?? $stock->fecha_vencimiento, // ✨ NUEVO
                 ]);
 
                 // Recargar con relaciones
@@ -3783,10 +3789,11 @@ class InventarioController extends Controller
             $nuevoStock = StockProducto::create([
                 'producto_id' => $productoId,
                 'almacen_id' => $almacenId,
+                'sector_id' => $sectorId,
                 'cantidad' => $cantidad,
                 'cantidad_disponible' => $cantidad,
-                'lote' => null,
-                'fecha_vencimiento' => null,
+                'lote' => $lote,                    // ✨ NUEVO
+                'fecha_vencimiento' => $fechaVencimiento, // ✨ NUEVO
             ]);
 
             // Cargar relaciones

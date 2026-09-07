@@ -86,6 +86,7 @@ class PrecioRangoCarritoService {
 
             console.log('📤 Enviando solicitud a /api/carrito/calcular:', JSON.stringify({ items: itemsValidos }, null, 2));
 
+            // ✅ DESCOMENTADO (2026-09-07): Solicitud a API de cálculo de carrito con rangos de precios
             const response = await fetch('/api/carrito/calcular', {
                 method: 'POST',
                 headers: {
@@ -98,6 +99,7 @@ class PrecioRangoCarritoService {
                 }),
             });
 
+            // ✅ Procesamiento de respuesta del API
             const data = await response.json();
 
             if (!response.ok) {

@@ -14,6 +14,7 @@ class ConversionUnidadProducto extends Model
         'unidad_base_id',
         'unidad_destino_id',
         'factor_conversion',
+        'nombre_cuando_se_vende_como', // ✨ NUEVO (2026-09-06): Nombre personalizado
         'activo',
         'es_conversion_principal',
     ];

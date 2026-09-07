@@ -277,6 +277,35 @@ export default function ProductosTable({
         if (huboCambios && onDetallesActualizados) {
             onDetallesActualizados(detallesActualizados);
         }
+
+        // ✅ NUEVO (2026-09-07): Actualizar selectedTipoPrecio cuando el carrito calcula rangos
+        // Esto sincroniza el select con el tipo de precio que el backend eligió según la cantidad
+        if (carritoCalculado?.detalles && Array.isArray(carritoCalculado.detalles)) {
+            const nuevosTipoPrecio = { ...selectedTipoPrecio };
+            let huboActualizacionSelect = false;
+
+            carritoCalculado.detalles.forEach((detalle: any) => {
+                if (detalle.tipo_precio_id && detalle.producto_id) {
+                    const tipoPrecioActual = selectedTipoPrecio[detalle.producto_id];
+                    const nuevoTipoPrecio = String(detalle.tipo_precio_id);
+
+                    // Solo actualizar si cambió
+                    if (tipoPrecioActual !== nuevoTipoPrecio) {
+                        nuevosTipoPrecio[detalle.producto_id] = nuevoTipoPrecio;
+                        huboActualizacionSelect = true;
+                        console.log(
+                            `🔄 [Actualizar Select] Producto ${detalle.producto_id}: tipo_precio cambia de "${tipoPrecioActual}" a "${nuevoTipoPrecio}"`
+                        );
+                    }
+                }
+            });
+
+            // Actualizar estado solo si hubo cambios
+            if (huboActualizacionSelect) {
+                setSelectedTipoPrecio(nuevosTipoPrecio);
+                console.log('✅ [Actualizar Select] Estado selectedTipoPrecio sincronizado con rangos');
+            }
+        }
     }, [carritoCalculado, detalles, manuallySelectedTipoPrecio, onDetallesActualizados]);
 
     // ✅ Handlers para modal de cascada
@@ -468,8 +497,9 @@ export default function ProductosTable({
                             <tr>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Producto</th>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">SKU</th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disponible</th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disponible</th>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Cantidad</th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Un.</th>
                                 {tipo === 'compra' && (
                                     <>
                                         <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
@@ -486,12 +516,11 @@ export default function ProductosTable({
                                         Precio Unitario
                                     </th>
                                 )}
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Subtotal</th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Subtotal</th>
                                 {/* <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
                                     Cat.
                                 </th> */}
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Un.</th>
-                                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Marca</th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Marca</th>
                                 <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">-</th>
                             </tr>
                         </thead>

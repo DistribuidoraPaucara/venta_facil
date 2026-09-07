@@ -160,6 +160,7 @@ class UpdateProductoRequest extends FormRequest
             'conversiones.*.unidad_base_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id'],
             'conversiones.*.unidad_destino_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id', 'different:conversiones.*.unidad_base_id'],
             'conversiones.*.factor_conversion' => ['required_with:conversiones', 'numeric', 'gt:0'],
+            'conversiones.*.nombre_cuando_se_vende_como' => ['nullable', 'string', 'max:255'], // ✨ NUEVO (2026-09-06)
             'conversiones.*.activo'    => ['nullable', 'boolean'],
             'conversiones.*.es_conversion_principal' => ['nullable', 'boolean'],
 
