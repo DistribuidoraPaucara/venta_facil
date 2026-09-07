@@ -2,6 +2,7 @@ import { Breadcrumbs } from '@/presentation/components/breadcrumbs';
 import { SidebarTrigger } from '@/presentation/components/ui/sidebar';
 import ProformaNotificationPanel from '@/presentation/components/proforma-notification-panel';
 import { CajaStatusIndicator } from '@/presentation/components/caja-status-indicator';
+import { Link } from '@inertiajs/react';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     return (
@@ -12,6 +13,15 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             </div>
             {/* ✅ Indicadores en el lado derecho */}
             <div className="ml-auto flex items-center gap-3">
+                {/* ✅ Botón rápido para crear venta */}
+                <Link
+                    href="/ventas/create"
+                    className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+                    title="Crear nueva venta"
+                >
+                    <span className="text-sm text-white">💵</span>
+                    <span className="hidden sm:inline">Venta</span>
+                </Link>
                 {/* ✅ Indicador de estado de caja */}
                 <CajaStatusIndicator />
                 {/* ✅ Panel de notificaciones de proformas */}
