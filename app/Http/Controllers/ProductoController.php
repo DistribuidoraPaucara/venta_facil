@@ -2287,7 +2287,7 @@ class ProductoController extends Controller
             'proveedor'           => $producto->proveedor,
             'unidad'              => $producto->unidad,
             'precios'             => $producto->precios,
-            'codigos_barra'       => $segundoCodigoBarra, // String simple del segundo código
+            'codigosBarra'        => $producto->codigosBarra, // Relación completa (array de objetos)
             'imagenes'            => $producto->imagenes,
 
             // Para mostrar al cliente
