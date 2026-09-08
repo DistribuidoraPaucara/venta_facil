@@ -95,20 +95,23 @@ export default function ProductoTableRow({
         >
             {/* Producto Nombre */}
             <td className="items-start px-2 py-2">
-                {/* ✨ NUEVO (2026-09-06): Nombre dinámico según unidad de venta */}
+                {/* ✨ MEJORADO (2026-09-07): Nombre dinámico según unidad de venta con nombre personalizado */}
                 {(() => {
                     const unidadActualVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
+                    // ✅ Usar conversiones del detalle (pueden venir de diferentes fuentes)
+                    const conversiones = detalle.conversiones || productoInfo?.conversiones;
+
                     console.log(
-                        `🏷️ [obtenerNombreConUnidad] unidadVentaId=${unidadActualVenta}, unidadBaseId=${detalle.unidad_medida_id}, es_fraccionado=${detalle.es_fraccionado}`
+                        `🏷️ [obtenerNombreConUnidad] unidadVentaId=${unidadActualVenta}, unidadBaseId=${detalle.unidad_medida_id}, es_fraccionado=${detalle.es_fraccionado}, conversiones=${conversiones?.length || 0}`
                     );
 
                     const nombreDinamico =
-                        detalle.es_fraccionado && productoInfo?.conversiones
+                        detalle.es_fraccionado && conversiones && conversiones.length > 0
                             ? obtenerNombreConUnidad(
                                   productoInfo?.nombre || 'Producto no encontrado',
                                   unidadActualVenta,
                                   detalle.unidad_medida_id,
-                                  productoInfo?.conversiones, // ✅ CORREGIDO: usar conversiones del producto
+                                  conversiones,
                               )
                             : productoInfo?.nombre || 'Producto no encontrado';
 
@@ -117,7 +120,13 @@ export default function ProductoTableRow({
                     );
 
                     return (
-                        <div className="items-start text-sm font-bold text-gray-900  dark:text-white">
+                        <div className="items-start text-sm font-bold text-gray-900 dark:text-white">
+                            {/* ✅ Mostrar nombre personalizado con icono 📦 si es fraccionado */}
+                            {detalle.es_fraccionado && (
+                                <span className="mr-1 text-base" title="Producto fraccionado">
+                                    📦
+                                </span>
+                            )}
                             {nombreDinamico}
                         </div>
                     );
