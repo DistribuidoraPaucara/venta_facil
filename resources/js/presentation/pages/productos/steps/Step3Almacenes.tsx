@@ -6,7 +6,7 @@ import { Label } from '@/presentation/components/ui/label';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/presentation/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Option {
     value: number | string;
@@ -95,6 +95,36 @@ export default function Step3Almacenes({
     const initialSectorId = data.globalSectorId || (data.almacenes || []).find((a: StockAlmacen) => a.sector_id)?.sector_id;
     const [globalSectorId, setGlobalSectorId] = useState<number | undefined>(initialSectorId);
     const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(true);
+
+    // ✨ NUEVO (2026-09-08): Agregar sector genérico a las opciones si está en los almacenes
+    // El sector genérico (20) se asigna automáticamente pero no viene en el API
+    useEffect(() => {
+        if (initialSectorId && initialSectorId === 20) {
+            const sectoresFlat = Object.values(sectoresOptions).flat();
+            const tieneGenerico = sectoresFlat.some((o) => o.value === 20 || o.value === '20');
+
+            if (!tieneGenerico) {
+                // Encontrar los sectores del primer almacén con stock
+                const primerAlmacenConStock = (data.almacenes || [])[0];
+                if (primerAlmacenConStock?.almacen_id) {
+                    setSectoresOptions((prev) => ({
+                        ...prev,
+                        [primerAlmacenConStock.almacen_id]: [
+                            {
+                                value: 20,
+                                label: 'General',
+                                descripcion: 'Sector genérico automático - Productos sin clasificación específica',
+                                es_generico: true,
+                                stock_minimo: 0,
+                                stock_maximo: 999999,
+                            },
+                            ...(prev[primerAlmacenConStock.almacen_id] || []),
+                        ],
+                    }));
+                }
+            }
+        }
+    }, [initialSectorId, data.almacenes, sectoresOptions]);
 
     // Cargar sectores cuando se selecciona un almacén
     const handleAlmacenChange = async (i: number, almacenId: number | string) => {
