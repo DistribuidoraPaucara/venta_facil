@@ -514,7 +514,6 @@ export default function ProductoTableRow({
             {/* Precio Unitario (Compra) */}
             {tipo === 'compra' && (
                 <>
-                    {/* ✅ COMENTADO (2026-09-08): Columna de Precio Unitario editable removida
                     <td className="px-2 py-4">
                         <input
                             type="text"
@@ -593,7 +592,6 @@ export default function ProductoTableRow({
                             </div>
                         )}
                     </td>
-                    */}
 
                     {/* Lote */}
                     <td className="px-2 py-4">
