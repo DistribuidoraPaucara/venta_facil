@@ -1116,7 +1116,11 @@ export default function ProductoForm({
 
                                 <TabsContent value="almacenes" className="space-y-6">
                                     <Step3Almacenes
-                                        data={{ almacenes: data.almacenes || [] }}
+                                        data={{
+                                            almacenes: data.almacenes || [],
+                                            conversiones: data.conversiones || [], // ✨ NUEVO: Pasar conversiones
+                                            es_fraccionado: data.es_fraccionado || false, // ✨ NUEVO: Pasar estado de fraccionamiento
+                                        }}
                                         setData={setData}
                                         almacenesOptions={almacenes.map((a) => ({
                                             value: String(a.id),

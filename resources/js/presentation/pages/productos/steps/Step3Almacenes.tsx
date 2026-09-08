@@ -14,7 +14,7 @@ interface Option {
 }
 
 export interface Step3Props {
-    data: { almacenes: StockAlmacen[]; globalSectorId?: number }; // ✨ NUEVO: Incluir globalSectorId en data
+    data: { almacenes: StockAlmacen[]; globalSectorId?: number; conversiones?: any[]; es_fraccionado?: boolean }; // ✨ NUEVO: Incluir conversiones y es_fraccionado
     setData: (key: string, value: any) => void; // ✨ NUEVO: Para actualizar estado atomicamente
     almacenesOptions: Option[];
     sectores?: Record<number | string, Option[]>; // ✨ NUEVO: Sectores pre-cargados del backend
@@ -30,6 +30,25 @@ function todayISO(): string {
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// ✨ NUEVO: Calcular equivalentes en diferentes unidades de conversión
+function calcularEquivalentes(cantidad: number, conversiones: any[] = []) {
+    if (!conversiones || conversiones.length === 0 || cantidad === 0) {
+        return [];
+    }
+
+    return conversiones
+        .filter((conv) => conv.activo)
+        .map((conv) => {
+            const equivalente = cantidad / conv.factor_conversion;
+            return {
+                unidad: conv.unidad_destino?.nombre || conv.nombre_cuando_se_vende_como || 'Unidad',
+                codigo: conv.unidad_destino?.codigo || '',
+                cantidad: equivalente,
+                nombre_venta: conv.nombre_cuando_se_vende_como,
+            };
+        });
 }
 
 /**
@@ -473,6 +492,30 @@ export default function Step3Almacenes({
                                                     />
                                                 </div>
                                             </div>
+
+                                            {/* ✨ NUEVO: Mostrar equivalentes en conversiones si está fraccionado */}
+                                            {data.es_fraccionado && data.conversiones && data.conversiones.length > 0 && totalStock > 0 && (
+                                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                                        📊 Equivalentes en conversiones:
+                                                    </div>
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                        {calcularEquivalentes(totalStock, data.conversiones).map((eq, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                className="p-2 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded border border-purple-200 dark:border-purple-700"
+                                                            >
+                                                                <div className="text-xs font-medium text-purple-900 dark:text-purple-200">
+                                                                    {eq.nombre_venta || eq.unidad}
+                                                                </div>
+                                                                <div className="text-sm font-bold text-purple-700 dark:text-purple-300">
+                                                                    {eq.cantidad.toFixed(2)} {eq.codigo}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </>
                                     );
                                 })()}
