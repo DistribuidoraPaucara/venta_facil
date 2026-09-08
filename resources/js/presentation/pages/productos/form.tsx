@@ -883,6 +883,25 @@ export default function ProductoForm({
         return totales;
     };
 
+    // ✨ NUEVO: Calcular equivalentes totales en diferentes unidades de conversión
+    const calcularEquivalentesTotales = () => {
+        const totales = calcularTotalesAlmacenes();
+        const cantidadTotal = totales.cantidad;
+
+        if (!data.conversiones || data.conversiones.length === 0 || cantidadTotal === 0) {
+            return [];
+        }
+
+        return (data.conversiones || [])
+            .filter((conv: any) => conv.activo)
+            .map((conv: any) => ({
+                unidad: conv.unidad_destino?.nombre || conv.nombre_cuando_se_vende_como || 'Unidad',
+                codigo: conv.unidad_destino?.codigo || '',
+                cantidad: cantidadTotal * conv.factor_conversion,
+                nombre_venta: conv.nombre_cuando_se_vende_como,
+            }));
+    };
+
     const setPerfil = (file: File | undefined) => {
         setPerfilState(file ? { file } : undefined);
     };
@@ -1182,6 +1201,30 @@ export default function ProductoForm({
                         </div>
                     )}
                 </div>
+
+                {/* ✨ NUEVO: Mostrar equivalentes de conversión si está fraccionado */}
+                {data.es_fraccionado && data.conversiones && data.conversiones.length > 0 && calcularTotalesAlmacenes().cantidad > 0 && (
+                    <div className="mt-4 p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-purple-200 dark:border-purple-700">
+                        <div className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-3">
+                            📊 Stock Total en Diferentes Unidades
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {calcularEquivalentesTotales().map((eq, idx) => (
+                                <div
+                                    key={idx}
+                                    className="p-3 bg-white dark:bg-slate-800 rounded border border-purple-200 dark:border-purple-700 shadow-sm"
+                                >
+                                    <div className="text-xs font-medium text-purple-900 dark:text-purple-200 truncate">
+                                        {eq.nombre_venta || eq.unidad}
+                                    </div>
+                                    <div className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-1">
+                                        {Math.round(eq.cantidad)} {eq.codigo}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="mt-2 flex w-full items-end justify-end gap-2 border-t border-t-border p-2">
                     <Button asChild variant="outline" disabled={processing}>
