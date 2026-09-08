@@ -184,14 +184,24 @@ export default function ProductoTableRow({
                         // ✨ NUEVO: Convertir stock a la unidad de venta si está fraccionado
                         if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
                             const unidadVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
-                            const conversion = detalle.conversiones.find((c: any) => c.unidad_destino_id === unidadVenta && c.activo);
+                            const unidadBase = detalle.unidad_medida_id;
 
-                            if (conversion) {
-                                stockDisponible = stockDisponible * conversion.factor_conversion;
-                                unidadDisplay = conversion.unidad_destino?.codigo || conversion.unidad_destino?.nombre || '';
-                                console.log(
-                                    `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible} ${unidadDisplay}`
-                                );
+                            // ✅ CASO 1: Si vende por la unidad base (no hay conversión)
+                            if (unidadVenta === unidadBase) {
+                                // Usar la unidad base directamente
+                                unidadDisplay = productoInfo?.unidad?.codigo || 'UN';
+                                console.log(`📊 [Stock Sin Convertir] Producto: ${productoInfo?.nombre}, Vende por unidad base, Stock: ${stockDisponible} ${unidadDisplay}`);
+                            } else {
+                                // ✅ CASO 2: Si vende por una unidad de conversión
+                                const conversion = detalle.conversiones.find((c: any) => c.unidad_destino_id === unidadVenta && c.activo);
+
+                                if (conversion) {
+                                    stockDisponible = stockDisponible * conversion.factor_conversion;
+                                    unidadDisplay = conversion.unidad_destino?.codigo || conversion.unidad_destino?.nombre || '';
+                                    console.log(
+                                        `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible} ${unidadDisplay}`
+                                    );
+                                }
                             }
                         }
 
