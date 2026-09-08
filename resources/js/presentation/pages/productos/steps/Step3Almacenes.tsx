@@ -505,11 +505,11 @@ export default function Step3Almacenes({
                                                                 key={idx}
                                                                 className="p-2 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded border border-purple-200 dark:border-purple-700"
                                                             >
-                                                                <div className="text-xs font-medium text-purple-900 dark:text-purple-200">
+                                                                <div className="text-xs font-medium text-purple-900 dark:text-purple-200 truncate">
                                                                     {eq.nombre_venta || eq.unidad}
                                                                 </div>
                                                                 <div className="text-sm font-bold text-purple-700 dark:text-purple-300">
-                                                                    {eq.cantidad.toFixed(2)} {eq.codigo}
+                                                                    {Math.round(eq.cantidad)} {eq.codigo}
                                                                 </div>
                                                             </div>
                                                         ))}
