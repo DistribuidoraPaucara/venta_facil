@@ -179,6 +179,7 @@ export default function ProductoTableRow({
                             (productoInfo as any)?.stock_disponible ??
                             (productoInfo as any)?.stock ??
                             0;
+                        let unidadDisplay = '';
 
                         // ✨ NUEVO: Convertir stock a la unidad de venta si está fraccionado
                         if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
@@ -187,8 +188,9 @@ export default function ProductoTableRow({
 
                             if (conversion) {
                                 stockDisponible = stockDisponible * conversion.factor_conversion;
+                                unidadDisplay = conversion.unidad_destino?.codigo || conversion.unidad_destino?.nombre || '';
                                 console.log(
-                                    `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible}`
+                                    `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible} ${unidadDisplay}`
                                 );
                             }
                         }
@@ -205,7 +207,9 @@ export default function ProductoTableRow({
                             >
                                 {/* Disp. {stockDisponible} | Res. {stockReservado} | Total {stockTotal} */}
                                 {/* disponible */}
-                                <p>{Math.round(stockDisponible)}</p>
+                                <p className="font-semibold">
+                                    {Math.round(stockDisponible)} {unidadDisplay}
+                                </p>
                                 {/* Reservado */}
                                 {/* <p>Res.: {stockReservado}</p> */}
                                 {/* Total */}
