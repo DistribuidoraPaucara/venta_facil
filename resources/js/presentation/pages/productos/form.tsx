@@ -7,8 +7,8 @@ import { Button } from '@/presentation/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/presentation/components/ui/tabs';
 import { useEntitySelect } from '@/presentation/hooks/use-search-select';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { useCallback, useEffect, useState } from 'react';
 import Step1DatosProducto from './steps/Step1DatosProducto';
 import Step2PreciosCodigos from './steps/Step2PreciosCodigos';
 import Step3Almacenes, { validarYAjustarAlmacenes } from './steps/Step3Almacenes'; // ✨ NUEVO: Almacenes y sectores
@@ -675,9 +675,7 @@ export default function ProductoForm({
 
                     // Buscar si ya existe un precio para este tipo_precio_id y unidad_destino_id
                     const indexDestino = next.findIndex(
-                        (p: Precio) =>
-                            Number(p.tipo_precio_id) === tipoId &&
-                            Number(p.unidad_medida_id) === Number(conv.unidad_destino_id)
+                        (p: Precio) => Number(p.tipo_precio_id) === tipoId && Number(p.unidad_medida_id) === Number(conv.unidad_destino_id),
                     );
 
                     if (indexDestino >= 0) {
@@ -1015,6 +1013,27 @@ export default function ProductoForm({
                                         </div>
                                     </div>
                                 </div>
+                                {/* ✨ NUEVO: Mostrar equivalentes de conversión si está fraccionado */}
+                                {data.es_fraccionado &&
+                                    data.conversiones &&
+                                    data.conversiones.length > 0 &&
+                                    calcularTotalesAlmacenes().cantidad > 0 && (
+                                        <div className="p-2 items-center">
+                                            {/* <div className="text-sm font-semibold text-purple-900 dark:text-purple-200">📊 Stock Total en Diferentes Unidades</div> */}
+                                            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 items-center mt-2">
+                                                {calcularEquivalentesTotales().map((eq, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="rounded border border-purple-200 bg-white p-3 shadow-sm dark:border-purple-700 dark:bg-slate-800"
+                                                    >
+                                                        <div className="text-xs font-medium text-purple-900 dark:text-purple-200">
+                                                            {eq.nombre_venta || eq.unidad} - {Math.round(eq.cantidad)} {eq.codigo}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                             </div>
                         );
                     })()}
@@ -1029,7 +1048,7 @@ export default function ProductoForm({
                                     {permite_productos_fraccionados && data.es_fraccionado && (
                                         <TabsTrigger value="conversiones">✨ Fraccionamiento</TabsTrigger>
                                     )}
-                                    <TabsTrigger value="precio-rango">💰 Rango de Precios</TabsTrigger>
+                                    {/* <TabsTrigger value="precio-rango">💰 Rango de Precios</TabsTrigger> */}
                                     <TabsTrigger value="precios">Precios y códigos</TabsTrigger>
                                     {data.es_de_produccion && <TabsTrigger value="ingredientes">🏭 Ingredientes</TabsTrigger>}
                                     <TabsTrigger value="almacenes">Almacenes</TabsTrigger>
@@ -1039,13 +1058,13 @@ export default function ProductoForm({
                                 {/* 🎨 Botón para toggliar panel de imágenes */}
                                 <Button
                                     type="button"
-                                    variant={showImages ? "default" : "outline"}
+                                    variant={showImages ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => setShowImages(!showImages)}
                                     className="ml-auto"
-                                    title={showImages ? "Ocultar imágenes" : "Mostrar imágenes"}
+                                    title={showImages ? 'Ocultar imágenes' : 'Mostrar imágenes'}
                                 >
-                                    {showImages ? "📸 Ocultar Imagen" : "📸 Mostrar Imagen"}
+                                    {showImages ? '📸 Ocultar Imagen' : '📸 Mostrar Imagen'}
                                 </Button>
                             </TabsList>
 
@@ -1087,7 +1106,11 @@ export default function ProductoForm({
                                         errors={errors}
                                         tipos_precio={tipos_precio}
                                         porcentajeInteres={porcentajeInteres}
-                                        precioCosto={Array.isArray(data.precios) ? (data.precios.find((p: Precio) => Number(p.tipo_precio_id) === 1)?.monto ?? 0) : 0}
+                                        precioCosto={
+                                            Array.isArray(data.precios)
+                                                ? (data.precios.find((p: Precio) => Number(p.tipo_precio_id) === 1)?.monto ?? 0)
+                                                : 0
+                                        }
                                         isEditing={isEditing}
                                         addPrecio={() => {}}
                                         removePrecio={() => {}}
@@ -1201,30 +1224,6 @@ export default function ProductoForm({
                         </div>
                     )}
                 </div>
-
-                {/* ✨ NUEVO: Mostrar equivalentes de conversión si está fraccionado */}
-                {data.es_fraccionado && data.conversiones && data.conversiones.length > 0 && calcularTotalesAlmacenes().cantidad > 0 && (
-                    <div className="mt-4 p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-purple-200 dark:border-purple-700">
-                        <div className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-3">
-                            📊 Stock Total en Diferentes Unidades
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {calcularEquivalentesTotales().map((eq, idx) => (
-                                <div
-                                    key={idx}
-                                    className="p-3 bg-white dark:bg-slate-800 rounded border border-purple-200 dark:border-purple-700 shadow-sm"
-                                >
-                                    <div className="text-xs font-medium text-purple-900 dark:text-purple-200 truncate">
-                                        {eq.nombre_venta || eq.unidad}
-                                    </div>
-                                    <div className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-1">
-                                        {Math.round(eq.cantidad)} {eq.codigo}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 <div className="mt-2 flex w-full items-end justify-end gap-2 border-t border-t-border p-2">
                     <Button asChild variant="outline" disabled={processing}>

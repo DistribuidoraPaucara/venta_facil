@@ -174,11 +174,25 @@ export default function ProductoTableRow({
             <td className="items-left px-2 py-2 text-xs">
                 {!proformaConvertida &&
                     (() => {
-                        const stockDisponible =
+                        let stockDisponible =
                             (productoInfo as any)?.stock_disponible_calc ??
                             (productoInfo as any)?.stock_disponible ??
                             (productoInfo as any)?.stock ??
                             0;
+
+                        // ✨ NUEVO: Convertir stock a la unidad de venta si está fraccionado
+                        if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
+                            const unidadVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
+                            const conversion = detalle.conversiones.find((c: any) => c.unidad_destino_id === unidadVenta && c.activo);
+
+                            if (conversion) {
+                                stockDisponible = stockDisponible * conversion.factor_conversion;
+                                console.log(
+                                    `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible}`
+                                );
+                            }
+                        }
+
                         return (
                             <div
                                 className={`flex flex-col rounded p-1 text-center text-xs ${
@@ -191,7 +205,7 @@ export default function ProductoTableRow({
                             >
                                 {/* Disp. {stockDisponible} | Res. {stockReservado} | Total {stockTotal} */}
                                 {/* disponible */}
-                                <p>{stockDisponible}</p>
+                                <p>{Math.round(stockDisponible)}</p>
                                 {/* Reservado */}
                                 {/* <p>Res.: {stockReservado}</p> */}
                                 {/* Total */}
