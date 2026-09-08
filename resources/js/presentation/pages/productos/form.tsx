@@ -387,6 +387,48 @@ export default function ProductoForm({
             }
         }
 
+        // ✨ NUEVA VALIDACIÓN: Productos fraccionados deben tener conversiones
+        if (data.es_fraccionado) {
+            const conversiones = (data.conversiones || []) as any[];
+
+            if (conversiones.length === 0) {
+                NotificationService.error('❌ Los productos fraccionados deben tener al menos una conversión de unidades configurada');
+                setActiveTab('conversiones');
+                return;
+            }
+
+            // ✨ Validar que haya exactamente una conversión principal
+            const conversionesPrincipales = conversiones.filter((c) => c.es_conversion_principal);
+            if (conversionesPrincipales.length === 0) {
+                NotificationService.error('❌ Debe marcar una conversión como principal (predeterminada)');
+                setActiveTab('conversiones');
+                return;
+            }
+
+            if (conversionesPrincipales.length > 1) {
+                NotificationService.error('❌ Solo puede haber una conversión principal. Actualmente hay ' + conversionesPrincipales.length);
+                setActiveTab('conversiones');
+                return;
+            }
+
+            // ✨ Validar que todas las conversiones tengan la misma unidad_base_id y que sea igual a data.unidad_medida_id
+            const unidadesBase = new Set(conversiones.map((c) => c.unidad_base_id));
+            if (unidadesBase.size > 1) {
+                NotificationService.error('❌ Todas las conversiones deben usar la misma unidad base');
+                setActiveTab('conversiones');
+                return;
+            }
+
+            const unidadBaseConversion = Array.from(unidadesBase)[0];
+            if (unidadBaseConversion !== Number(data.unidad_medida_id)) {
+                NotificationService.error(
+                    '❌ La unidad base de las conversiones no coincide con la unidad de medida del producto. Ambas deben ser la misma.',
+                );
+                setActiveTab('conversiones');
+                return;
+            }
+        }
+
         const formData = new FormData();
 
         // Campos básicos

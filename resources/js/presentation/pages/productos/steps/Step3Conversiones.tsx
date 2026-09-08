@@ -171,6 +171,12 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
             return;
         }
 
+        // ✨ NUEVA VALIDACIÓN: Si esta es la PRIMERA conversión, DEBE ser principal
+        if (editingIndex === null && conversiones.length === 0 && !formConversion.es_conversion_principal) {
+            setValidationError('La primera conversión DEBE marcarse como principal (conversión por defecto)');
+            return;
+        }
+
         const newConversion: ConversionUnidad = {
             unidad_base_id: Number(unidadBase?.id),
             unidad_destino_id: Number(formConversion.unidad_destino_id),
@@ -237,6 +243,10 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
         return unit ? `${unit.label} (${unit.description})` : `ID: ${unitId}`;
     };
 
+    // ✨ NUEVA VALIDACIÓN: Verificar que unidad_base_id coincida con data.unidad_medida_id
+    const unitMismatch = conversiones.length > 0 &&
+        conversiones.some((c: any) => c.unidad_base_id !== Number(data.unidad_medida_id));
+
     if (!data.es_fraccionado) {
         return (
             <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-slate-700 dark:bg-slate-900/50">
@@ -259,6 +269,63 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
 
     return (
         <div className="space-y-6">
+            {/* ✨ ALERTA: Mismatch entre unidad_base y unidad_medida_id */}
+            {unitMismatch && (
+                <div className="rounded border-2 border-red-400 bg-red-50 p-4 dark:border-red-600 dark:bg-red-950/30">
+                    <div className="flex gap-3">
+                        <div className="text-2xl">⚠️</div>
+                        <div>
+                            <p className="font-bold text-red-900 dark:text-red-200">
+                                Error de configuración: Unidad base no coincide
+                            </p>
+                            <p className="mt-2 text-sm text-red-800 dark:text-red-300">
+                                Las conversiones actuales usan una unidad base diferente a la del producto.
+                                <strong className="block mt-1">
+                                    Acción: Cambiar unidad_medida_id del producto a {unidadBase?.nombre}
+                                    ({unidadBase?.codigo}), o eliminar todas las conversiones y crear nuevas.
+                                </strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ✨ WARNING: Sin conversiones cuando es_fraccionado = true */}
+            {data.es_fraccionado && conversiones.length === 0 && (
+                <div className="rounded border-2 border-yellow-400 bg-yellow-50 p-4 dark:border-yellow-600 dark:bg-yellow-950/30">
+                    <div className="flex gap-3">
+                        <div className="text-2xl">⚠️</div>
+                        <div>
+                            <p className="font-bold text-yellow-900 dark:text-yellow-200">
+                                Producto fraccionado sin conversiones
+                            </p>
+                            <p className="mt-2 text-sm text-yellow-800 dark:text-yellow-300">
+                                Este producto está marcado como fraccionado, pero no tiene conversiones de unidades configuradas.
+                                Debes agregar al menos una conversión para poder venderlo en diferentes unidades.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ✨ WARNING: Sin conversión principal */}
+            {data.es_fraccionado && conversiones.length > 0 && !conversiones.some((c: any) => c.es_conversion_principal) && (
+                <div className="rounded border-2 border-orange-400 bg-orange-50 p-4 dark:border-orange-600 dark:bg-orange-950/30">
+                    <div className="flex gap-3">
+                        <div className="text-2xl">⚡</div>
+                        <div>
+                            <p className="font-bold text-orange-900 dark:text-orange-200">
+                                Sin conversión principal definida
+                            </p>
+                            <p className="mt-2 text-sm text-orange-800 dark:text-orange-300">
+                                Debe haber exactamente una conversión marcada como principal.
+                                Edita una de las conversiones y márcala como predeterminada.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Sección de Información */}
             {/* Título con ayuda emergente */}
             <div className="mb-4 flex items-center gap-2">
@@ -388,6 +455,29 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                         ⭐ Usar como conversión predeterminada
                                     </Label>
                                     <p className="text-xs text-blue-700 dark:text-blue-300">Se aplicará automáticamente en operaciones de venta</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ✨ NUEVO: Control de Activo */}
+                        <div className="flex items-end space-y-2">
+                            <div className="flex flex-1 items-center gap-3 rounded-lg border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-2 transition-shadow hover:shadow-md dark:border-green-700 dark:from-green-950/30 dark:to-emerald-950/30">
+                                <Checkbox
+                                    id="activo"
+                                    checked={formConversion.activo}
+                                    onCheckedChange={(checked) =>
+                                        setFormConversion((prev) => ({
+                                            ...prev,
+                                            activo: Boolean(checked),
+                                        }))
+                                    }
+                                    className="h-5 w-5"
+                                />
+                                <div className="flex flex-1 flex-col gap-1">
+                                    <Label htmlFor="activo" className="cursor-pointer text-sm font-bold text-green-900 dark:text-green-100">
+                                        ✅ Conversión Activa
+                                    </Label>
+                                    <p className="text-xs text-green-700 dark:text-green-300">Disponible para vender en esta unidad</p>
                                 </div>
                             </div>
                         </div>

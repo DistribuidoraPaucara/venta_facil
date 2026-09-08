@@ -251,14 +251,15 @@ class StoreProductoRequest extends FormRequest
             'conversiones.array'                       => 'Las conversiones deben ser un arreglo.',
             'conversiones.*.unidad_base_id.required_with' => 'La unidad base es obligatoria en cada conversión.',
             'conversiones.*.unidad_base_id.integer'    => 'La unidad base debe ser un ID numérico.',
-            'conversiones.*.unidad_base_id.exists'     => 'La unidad base seleccionada no existe.',
+            'conversiones.*.unidad_base_id.exists'     => 'La unidad base seleccionada no existe. Verifica que sea una unidad válida.',
             'conversiones.*.unidad_destino_id.required_with' => 'La unidad destino es obligatoria en cada conversión.',
             'conversiones.*.unidad_destino_id.integer' => 'La unidad destino debe ser un ID numérico.',
-            'conversiones.*.unidad_destino_id.exists'  => 'La unidad destino seleccionada no existe.',
-            'conversiones.*.unidad_destino_id.different' => 'La unidad destino no puede ser igual a la unidad base.',
+            'conversiones.*.unidad_destino_id.exists'  => 'La unidad destino seleccionada no existe. Verifica que sea una unidad válida.',
+            'conversiones.*.unidad_destino_id.different' => '❌ La unidad destino no puede ser igual a la unidad base. Deben ser unidades diferentes.',
             'conversiones.*.factor_conversion.required_with' => 'El factor de conversión es obligatorio en cada conversión.',
-            'conversiones.*.factor_conversion.numeric' => 'El factor de conversión debe ser un número.',
-            'conversiones.*.factor_conversion.gt'      => 'El factor de conversión debe ser mayor que 0.',
+            'conversiones.*.factor_conversion.numeric' => 'El factor de conversión debe ser un número (ej: 20, 6, 100).',
+            'conversiones.*.factor_conversion.gt'      => '❌ El factor de conversión debe ser mayor que 0.',
+            'conversiones.*.nombre_cuando_se_vende_como' => 'El nombre personalizado no debe exceder 255 caracteres.',
             'conversiones.*.activo.boolean'            => 'El estado activo debe ser verdadero o falso.',
             'conversiones.*.es_conversion_principal.boolean' => 'El estado de conversión principal debe ser verdadero o falso.',
 
@@ -522,16 +523,18 @@ class StoreProductoRequest extends FormRequest
 
     /**
      * Validar conversiones de unidad para productos fraccionados
+     * 🔥 MEJORADO (2026-09-07): Validaciones completas para conversiones multinivel
      */
     private function validarConversiones(Validator $validator): void
     {
         $esFraccionado = $this->boolean('es_fraccionado');
         $conversiones = $this->input('conversiones', []);
+        $unidadProducto = $this->input('unidad_medida_id');
 
         // Si es fraccionado, debe tener al menos 1 conversión
         if ($esFraccionado && empty($conversiones)) {
             $validator->errors()->add('conversiones',
-                'Un producto fraccionado debe tener al menos una conversión de unidad.'
+                '❌ Un producto fraccionado debe tener al menos una conversión de unidad.'
             );
             return;
         }
@@ -540,8 +543,70 @@ class StoreProductoRequest extends FormRequest
             return;
         }
 
+        // 🔥 NUEVO: Validar que TODAS las conversiones usen la MISMA unidad base
+        // Esto es crítico para productos como cigarrillos: 1 UNIDAD = 20 CAJETILLAS = 200 PAQUETES
+        $basesIds = [];
+        foreach ($conversiones as $conversion) {
+            if (is_array($conversion) && !empty($conversion['unidad_base_id'])) {
+                $basesIds[] = (int) $conversion['unidad_base_id'];
+            }
+        }
+
+        $basesUnicas = array_unique($basesIds);
+
+        if (count($basesUnicas) > 1) {
+            $validator->errors()->add('conversiones',
+                '❌ Todas las conversiones deben usar la MISMA unidad base. ' .
+                'Ejemplo para cigarrillos: todas deben ser UNIDAD → CAJETILLA, UNIDAD → PAQUETE. ' .
+                'No mezcles CAJA → CAJETILLA con UNIDAD → PAQUETE.'
+            );
+            return;
+        }
+
+        // 🔥 NUEVO: Validar que la unidad base sea la misma que la unidad_medida_id del producto
+        if ($unidadProducto && !empty($basesIds)) {
+            $baseProducto = reset($basesIds);
+            $unidadProductoInt = (int) $unidadProducto;
+
+            if ($baseProducto !== $unidadProductoInt) {
+                $validator->errors()->add('conversiones',
+                    "❌ La unidad base de las conversiones ({$baseProducto}) debe ser la unidad de medida del producto ({$unidadProductoInt}). " .
+                    'Verifica que hayas seleccionado la unidad base correcta en Paso 1.'
+                );
+                return;
+            }
+        }
+
+        // 🔥 NUEVO: Validar que no haya duplicados (mismo par unidad_base → unidad_destino)
+        $pares = [];
+        foreach ($conversiones as $index => $conversion) {
+            if (!is_array($conversion)) {
+                continue;
+            }
+
+            $baseId = $conversion['unidad_base_id'] ?? null;
+            $destinoId = $conversion['unidad_destino_id'] ?? null;
+
+            if (!$baseId || !$destinoId) {
+                continue;
+            }
+
+            $par = "{$baseId}-{$destinoId}";
+
+            if (in_array($par, $pares)) {
+                $validator->errors()->add("conversiones.{$index}",
+                    "❌ No pueden existir dos conversiones con el mismo par de unidades. " .
+                    "Ya existe una conversión de unidad_base={$baseId} a unidad_destino={$destinoId}."
+                );
+                continue; // No return aquí, permite ver todos los duplicados
+            }
+
+            $pares[] = $par;
+        }
+
         // Validar que solo haya 1 conversión principal
         $principalesCount = 0;
+        $indicePrincipal = null;
 
         foreach ($conversiones as $index => $conversion) {
             if (!is_array($conversion)) {
@@ -550,12 +615,22 @@ class StoreProductoRequest extends FormRequest
 
             if (!empty($conversion['es_conversion_principal'])) {
                 $principalesCount++;
+                if ($indicePrincipal === null) {
+                    $indicePrincipal = $index;
+                }
             }
         }
 
         if ($principalesCount > 1) {
             $validator->errors()->add('conversiones',
-                'Solo puede existir una conversión principal.'
+                "❌ Solo puede existir una conversión principal. Tienes {$principalesCount} conversiones marcadas como principales."
+            );
+        }
+
+        // 🔥 NUEVO: Advertencia si no hay conversión principal
+        if ($esFraccionado && $principalesCount === 0) {
+            $validator->errors()->add('conversiones',
+                '⚠️ Se recomienda marcar una conversión como principal (la que se usará por defecto en ventas).'
             );
         }
     }

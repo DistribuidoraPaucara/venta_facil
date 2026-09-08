@@ -523,7 +523,9 @@ function Step1DatosProducto({
                 </div>
                 <div className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-medium">Unidad de medida</label>
+                        <label className="text-sm font-medium">
+                            Unidad de medida {data.es_fraccionado && <span className="text-yellow-600 dark:text-yellow-400">🔒</span>}
+                        </label>
                         <a
                             href="/unidades/create"
                             target="_blank"
@@ -535,6 +537,11 @@ function Step1DatosProducto({
                             <span>Crear</span>
                         </a>
                     </div>
+                    {data.es_fraccionado && (
+                        <div className="rounded border border-yellow-300 bg-yellow-50 p-2 text-xs text-yellow-800 dark:border-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300">
+                            ℹ️ La unidad de medida está bloqueada para productos fraccionados. Todas las conversiones deben usar esta misma unidad como base.
+                        </div>
+                    )}
                     <SearchSelect
                         id="unidad_medida_id"
                         label=""
@@ -543,6 +550,7 @@ function Step1DatosProducto({
                         options={unidadesOptions}
                         onChange={(value) => setData('unidad_medida_id', value ? Number(value) : null)}
                         error={errors.unidad_medida_id}
+                        disabled={data.es_fraccionado}
                         allowClear={true}
                         emptyText="No se encontraron unidades"
                         searchPlaceholder="Buscar unidades..."
