@@ -249,7 +249,8 @@ export default function ProductoForm({
                   precios: Array.isArray(producto.precios) && producto.precios.length > 0 ? producto.precios : initialProductoData.precios,
                   codigos: producto.codigos?.length ? producto.codigos : [{ codigo: '' }],
                   almacenes: producto.stock_almacenes?.length ? producto.stock_almacenes : [], // ✨ NUEVO
-                  globalSectorId: undefined, // ✨ NUEVO: Sector global para aplicar a todos los lotes
+                  // ✨ CORREGIDO (2026-09-08): Inicializar globalSectorId desde el primer almacén con sector
+                  globalSectorId: producto.stock_almacenes?.find((a: any) => a.sector_id)?.sector_id,
                   conversiones: producto.conversiones?.length ? producto.conversiones : [], // ✨ NUEVO
               }
             : getInitialData(),
