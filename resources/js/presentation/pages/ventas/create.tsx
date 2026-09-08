@@ -1991,55 +1991,88 @@ export default function VentaForm() {
                             </div>
                         </div>
 
-                        {/* ✅ NUEVO: Resumen completo de la transacción */}
-                        <div>
+                        {/* ✅ MEJORADO (2026-09-07): Resumen completo de la transacción con cálculo automático de cambio */}
+                        <div className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-zinc-900/30">
+                            {/* Descuento */}
                             {data.descuento > 0 && (
                                 <>
-                                    <div>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-700 dark:text-gray-300">Subtotal:</span>
-                                            <span className="text-right font-medium text-gray-900 dark:text-white">
-                                                {formatCurrencyMinimalDecimals(data.subtotal)}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-700 dark:text-gray-300">Descuento:</span>
-                                            <span className="text-right font-medium text-red-600 dark:text-red-400">
-                                                -{formatCurrencyMinimalDecimals(data.descuento)}
-                                            </span>
-                                        </div>
+                                    <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                                        <span>Subtotal:</span>
+                                        <span className="font-medium">
+                                            {formatCurrencyMinimalDecimals(data.subtotal)}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-red-600 dark:text-red-400">Descuento:</span>
+                                        <span className="font-medium text-red-600 dark:text-red-400">
+                                            -{formatCurrencyMinimalDecimals(data.descuento)}
+                                        </span>
                                     </div>
                                 </>
                             )}
 
-                            <div className="flex items-center justify-between pt-1 text-lg font-bold">
-                                <span className="text-gray-900 dark:text-white">Total:</span>
-                                <span className="text-right text-gray-900 dark:text-white">{formatCurrencyMinimalDecimals(data.total)}</span>
+                            {/* Total (Siempre visible) */}
+                            <div className="flex items-center justify-between border-t border-gray-200 py-2 dark:border-zinc-700">
+                                <span className="text-sm font-bold text-gray-900 dark:text-white">Total a Pagar:</span>
+                                <span className="text-xl font-bold text-gray-900 dark:text-white">
+                                    {formatCurrencyMinimalDecimals(data.total)}
+                                </span>
                             </div>
 
-                            {data.monto_pagado_inicial > 0 && (
-                                <>
-                                    <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-sm dark:border-zinc-700">
-                                        <span className="text-gray-700 dark:text-gray-300">Monto Pagado:</span>
-                                        <span className="text-right font-medium text-gray-900 dark:text-white">
-                                            {formatCurrencyMinimalDecimals(data.monto_pagado_inicial)}
-                                        </span>
-                                    </div>
+                            {/* Monto Pagado y Cambio */}
+                            {(() => {
+                                const montoPagado = Number(data.monto_pagado_inicial) || 0;
+                                const diferencia = montoPagado - data.total;
+                                const tieneDeuda = montoPagado < data.total && montoPagado > 0;
+                                const tieneCambio = diferencia > 0;
+                                const esPagoExacto = Math.abs(diferencia) < 0.01;
 
-                                    <div
-                                        className={`flex items-center justify-between text-sm font-medium ${
-                                            data.monto_pagado_inicial - data.total < 0
-                                                ? 'text-red-600 dark:text-red-400'
-                                                : 'text-green-600 dark:text-green-400'
-                                        }`}
-                                    >
-                                        <span>Cambio:</span>
-                                        <span className="text-right">
-                                            {formatCurrencyMinimalDecimals(Math.max(0, data.monto_pagado_inicial - data.total))}
-                                        </span>
-                                    </div>
-                                </>
-                            )}
+                                if (montoPagado === 0) {
+                                    return (
+                                        <div className="flex items-center justify-between pt-2 text-xs text-gray-500 dark:text-gray-400">
+                                            <span>Monto Pagado:</span>
+                                            <span className="font-medium">Bs. 0.00</span>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <>
+                                        {/* Monto Pagado */}
+                                        <div className="flex items-center justify-between text-sm dark:text-gray-300">
+                                            <span className="text-gray-700 dark:text-gray-300">Monto Pagado:</span>
+                                            <span className="font-medium text-gray-900 dark:text-white">
+                                                {formatCurrencyMinimalDecimals(montoPagado)}
+                                            </span>
+                                        </div>
+
+                                        {/* Cambio / Deuda / Pago Exacto */}
+                                        <div
+                                            className={`flex items-center justify-between rounded p-2 text-sm font-bold ${
+                                                tieneDeuda
+                                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                                    : esPagoExacto
+                                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                            }`}
+                                        >
+                                            <span className="flex items-center gap-1">
+                                                {tieneDeuda && '⚠️'}
+                                                {esPagoExacto && '✅'}
+                                                {tieneCambio && '💵'}
+                                                {tieneDeuda ? 'Falta:' : esPagoExacto ? 'Pago Exacto' : 'Cambio:'}
+                                            </span>
+                                            <span className="text-right">
+                                                {tieneDeuda
+                                                    ? formatCurrencyMinimalDecimals(Math.abs(diferencia))
+                                                    : esPagoExacto
+                                                      ? 'Bs. 0.00'
+                                                      : formatCurrencyMinimalDecimals(diferencia)}
+                                            </span>
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
                 )}
