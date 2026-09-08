@@ -912,6 +912,31 @@ export default function VentaForm() {
         const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
         updatedDetalles[index] = { ...updatedDetalles[index], [field]: numericValue };
 
+        // ✨ NUEVO (2026-09-08): Cuando cambia unidad_venta_id, buscar precio correcto automáticamente
+        if (field === 'unidad_venta_id') {
+            const productoInfo = updatedDetalles[index].producto as any;
+            const nuevaUnidadVentaId = numericValue;
+
+            // Buscar el precio que corresponde a esta unidad de venta
+            let precioEncontrado: number | null = null;
+
+            if (productoInfo?.precios && Array.isArray(productoInfo.precios)) {
+                const precioPorUnidad = productoInfo.precios.find(
+                    (p: any) => p.unidad_medida_id === nuevaUnidadVentaId && p.activo
+                );
+                precioEncontrado = precioPorUnidad ? Number(precioPorUnidad.precio) : null;
+            }
+
+            if (precioEncontrado !== null) {
+                console.log(`💰 [updateDetail] Precio encontrado para unidad ${nuevaUnidadVentaId}: ${precioEncontrado}`);
+                // Usar updateDetailUnidadConPrecio para actualizar ambos campos correctamente
+                updateDetailUnidadConPrecio(index, nuevaUnidadVentaId, precioEncontrado);
+                return; // Salir temprano, updateDetailUnidadConPrecio maneja todo
+            } else {
+                console.warn(`⚠️ [updateDetail] No se encontró precio para unidad ${nuevaUnidadVentaId}`);
+            }
+        }
+
         // Recalcular subtotal del detalle
         if (field === 'cantidad' || field === 'precio_unitario' || field === 'descuento') {
             const cantidad = field === 'cantidad' ? numericValue : updatedDetalles[index].cantidad;
