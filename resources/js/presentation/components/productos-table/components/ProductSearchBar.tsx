@@ -167,11 +167,11 @@ export default function ProductSearchBar({
                             onBlur={() => setIsFocused(false)}
                             autoComplete="off"
                             disabled={readOnly}
-                            className={`w-full px-2 py-1 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed ${productSearch ? 'pt-3' : ''}`}
+                            className={`w-full px-2 py-1 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-zinc-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed ${productSearch ? 'pt-3' : ''}`}
                             placeholder=""
                         />
                         <label className={`absolute left-3 transition-all duration-200 pointer-events-none ${productSearch || isFocused
-                            ? 'top-[-20px] text-xs font-medium text-blue-600 dark:text-blue-400'
+                            ? 'top-[-20px] text-xs font-medium text-green-600 dark:text-green-400'
                             : 'top-1/2 -translate-y-1/2 text-xs text-gray-600 dark:text-gray-400'
                             }`}>
                             Buscar productos
