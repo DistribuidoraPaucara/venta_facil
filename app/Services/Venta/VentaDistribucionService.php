@@ -316,7 +316,7 @@ class VentaDistribucionService
                         // ✅ NUEVO: Usar MovimientoStockService que valida y actualiza atomicamente
                         $movimientoRegistrado = $movimientoStockService->registrarMovimientoYActualizar(
                             stockProductoId: $stock->id,
-                            cantidad: -(int)$cantidadTomar,  // Negativo: salida
+                            cantidad: -(float)$cantidadTomar,  // Negativo: salida (mantener decimales para conversiones)
                             tipo: MovimientoInventario::TIPO_SALIDA_VENTA,
                             referencia_tipo: 'venta',
                             referencia_id: $ventaId ?? 0,  // ✅ CORREGIDO (2026-06-29): Usar venta_id real
