@@ -1394,6 +1394,8 @@ class ProductoController extends Controller
                         if ($stockExistente) {
                             Log::info('✅ StockProducto encontrado - ACTUALIZANDO:', [
                                 'stock_id'          => $stockExistente->id,
+                                'sector_anterior'   => $stockExistente->sector_id,
+                                'sector_nuevo'      => $sectorId,
                                 'anterior_cantidad' => $stockExistente->cantidad,
                                 'nueva_cantidad'    => $cantidadTotal,
                             ]);
@@ -1410,7 +1412,12 @@ class ProductoController extends Controller
                                 'cantidad_reservada'  => $cantidadReservada,
                             ];
 
+                            Log::debug('🔄 Datos a actualizar en StockProducto:', $updateData);
                             $stockExistente->update($updateData);
+                            Log::info('✅ StockProducto actualizado exitosamente:', [
+                                'stock_id' => $stockExistente->id,
+                                'sector_actualizado' => $stockExistente->fresh()->sector_id,
+                            ]);
                         } else {
                             Log::info('➕ StockProducto NO encontrado - CREANDO:', [
                                 'producto_id' => $producto->id,
