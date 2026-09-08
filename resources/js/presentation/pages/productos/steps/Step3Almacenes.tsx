@@ -41,7 +41,9 @@ function calcularEquivalentes(cantidad: number, conversiones: any[] = []) {
     return conversiones
         .filter((conv) => conv.activo)
         .map((conv) => {
-            const equivalente = cantidad / conv.factor_conversion;
+            // ✅ CORRECCIÓN: Multiplicar por factor_conversion, no dividir
+            // Si 1 PAQUETE = 200 UNIDADES (factor 200), entonces 27 PAQUETES = 27 × 200 UNIDADES
+            const equivalente = cantidad * conv.factor_conversion;
             return {
                 unidad: conv.unidad_destino?.nombre || conv.nombre_cuando_se_vende_como || 'Unidad',
                 codigo: conv.unidad_destino?.codigo || '',
