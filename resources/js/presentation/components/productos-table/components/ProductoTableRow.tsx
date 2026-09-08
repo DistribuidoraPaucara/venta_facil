@@ -1,7 +1,5 @@
-import { detectarYConvertirUnidad } from '@/infrastructure/helpers/conversion-automatica.helper';
 import { obtenerNombreConUnidad } from '@/infrastructure/helpers/nombre-dinamico-unidad.helper';
 import { validarStockDisponible } from '@/infrastructure/helpers/validar-stock-conversion.helper';
-import { NotificationService } from '@/infrastructure/services/notification.service';
 import { formatCurrency, formatCurrencyMinimalDecimals } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import type { DetalleProducto } from '../types';
@@ -283,33 +281,6 @@ export default function ProductoTableRow({
                             }
                         }}
                         onBlur={() => {
-                            // ✨ NUEVO (2026-09-06): Detectar y convertir automáticamente si aplica
-                            if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
-                                const resultado = detectarYConvertirUnidad(
-                                    detalle.cantidad,
-                                    detalle.conversiones,
-                                    detalle.unidad_medida_id,
-                                    detalle.precio_unitario,
-                                );
-
-                                if (resultado.seConvirtio) {
-                                    console.log('✨ [CONVERSIÓN AUTOMÁTICA]', resultado);
-                                    // Actualizar cantidad, unidad y precio en una sola operación
-                                    if (onUpdateDetailMultiple) {
-                                        onUpdateDetailMultiple(index, {
-                                            cantidad: resultado.cantidadFinal,
-                                            unidad_venta_id: resultado.unidadFinal,
-                                            precio_unitario: resultado.precioFinal,
-                                        });
-                                    } else {
-                                        onUpdateDetail(index, 'cantidad', resultado.cantidadFinal);
-                                        onUpdateDetail(index, 'unidad_venta_id', resultado.unidadFinal);
-                                        onUpdateDetail(index, 'precio_unitario', resultado.precioFinal);
-                                    }
-                                    // Mostrar notificación
-                                    NotificationService.success(`✨ Conversión automática: ${resultado.mensajeConversion}`);
-                                }
-                            }
                             setEditingField(null);
                             setValidacionError(null);
                         }}
