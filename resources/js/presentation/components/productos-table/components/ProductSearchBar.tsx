@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatCurrencyWith2Decimals } from '@/lib/utils';
 import BarcodeScannerModal from './BarcodeScannerModal';
 import type { Producto } from '@/domain/entities/ventas';
@@ -31,6 +31,7 @@ export default function ProductSearchBar({
     const [scannerError, setScannerError] = useState<string | null>(null);
     const [showSuggestions, setShowSuggestions] = useState(true);
     const [loadingInyectables, setLoadingInyectables] = useState(false); // ✅ NUEVO (2026-05-08)
+    const inputSearchRef = useRef<HTMLInputElement>(null); // ✅ NUEVO: Ref para el input de búsqueda
 
     const {
         productSearch,
@@ -104,6 +105,10 @@ export default function ProductSearchBar({
     const handleSelectProducto = (producto: Producto) => {
         handleAgregarProductoYLimpiar(producto);
         setShowSuggestions(false);
+        // ✅ NUEVO (2026-09-08): Volver el foco al input de búsqueda para agregar otro producto
+        setTimeout(() => {
+            inputSearchRef.current?.focus();
+        }, 0);
     };
 
     // ✅ NUEVO (2026-05-08): Cargar productos inyectables directamente
@@ -148,6 +153,7 @@ export default function ProductSearchBar({
                 <div className="flex gap-2">
                     <div className="flex-1 relative">
                         <input
+                            ref={inputSearchRef}
                             type="text"
                             value={productSearch}
                             onChange={(e) => setProductSearch(e.target.value)}
