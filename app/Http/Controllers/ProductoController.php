@@ -1372,19 +1372,20 @@ class ProductoController extends Controller
                                 'deleted_at' => $stockExistente?->deleted_at,
                             ]);
                         } else {
-                            // Si no viene ID, buscar por la combinación completa de constraint
+                            // Si no viene ID, buscar SOLO por producto, almacén y lote (NO por sector)
+                            // Esto permite actualizar el sector de lotes existentes sin crear duplicados
                             $stockExistente = StockProducto::withTrashed()
                                 ->where('producto_id', $producto->id)
                                 ->where('almacen_id', $almacenId)
-                                ->where('sector_id', $sectorId)
                                 ->where('lote', $lote)
                                 ->first();
-                            Log::info('✅ Búsqueda por combinación:', [
+                            Log::info('✅ Búsqueda por combinación (sin sector):', [
                                 'encontrado'    => $stockExistente ? 'SÍ' : 'NO',
+                                'sector_anterior' => $stockExistente?->sector_id,
+                                'sector_nuevo' => $sectorId,
                                 'coincidencias' => StockProducto::withTrashed()
                                     ->where('producto_id', $producto->id)
                                     ->where('almacen_id', $almacenId)
-                                    ->where('sector_id', $sectorId)
                                     ->where('lote', $lote)
                                     ->count(),
                             ]);
