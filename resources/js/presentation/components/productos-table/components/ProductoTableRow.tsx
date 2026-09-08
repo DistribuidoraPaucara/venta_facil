@@ -1,8 +1,9 @@
 import { detectarYConvertirUnidad } from '@/infrastructure/helpers/conversion-automatica.helper';
 import { obtenerNombreConUnidad } from '@/infrastructure/helpers/nombre-dinamico-unidad.helper';
+import { validarStockDisponible } from '@/infrastructure/helpers/validar-stock-conversion.helper';
 import { NotificationService } from '@/infrastructure/services/notification.service';
 import { formatCurrency, formatCurrencyMinimalDecimals } from '@/lib/utils';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import type { DetalleProducto } from '../types';
 import ComboExpandedRows from './ComboExpandedRows';
 
@@ -70,6 +71,8 @@ export default function ProductoTableRow({
     proformaConvertida = false,
 }: ProductoTableRowProps) {
     const productoInfo = detalle.producto as any;
+    const [validacionError, setValidacionError] = useState<string | null>(null);
+
     console.log('ProductoTableRow - productoInfo:', productoInfo);
     console.log('📊 [ProductoTableRow] Detalle cantidad:', {
         cantidad: detalle.cantidad,
@@ -220,6 +223,33 @@ export default function ProductoTableRow({
                             if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
                                 const num = valor === '' ? 0 : parseFloat(valor);
                                 if (num >= 0) {
+                                    // ✅ NUEVO (2026-09-07): Validar stock considerando conversiones
+                                    if (detalle.es_fraccionado && (detalle.conversiones?.length || 0) > 0) {
+                                        const stockBase =
+                                            (productoInfo as any)?.stock_disponible_calc ??
+                                            (productoInfo as any)?.stock_disponible ??
+                                            (productoInfo as any)?.stock ??
+                                            0;
+
+                                        const validacion = validarStockDisponible(
+                                            num,
+                                            stockBase,
+                                            detalle.unidad_venta_id || detalle.unidad_medida_id,
+                                            detalle.unidad_medida_id,
+                                            detalle.conversiones,
+                                            productoInfo?.nombre
+                                        );
+
+                                        if (!validacion.esValido) {
+                                            setValidacionError(validacion.mensaje);
+                                            console.warn(`⚠️ [STOCK VALIDATION] ${validacion.mensaje}`);
+                                            // NO actualizar si excede el stock
+                                            return;
+                                        } else {
+                                            setValidacionError(null);
+                                        }
+                                    }
+
                                     onUpdateDetail(index, 'cantidad', num);
                                 }
                             }
@@ -253,10 +283,20 @@ export default function ProductoTableRow({
                                 }
                             }
                             setEditingField(null);
+                            setValidacionError(null);
                         }}
-                        className="w-24 flex-col rounded-lg border border-gray-300 px-1 py-1 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                        className={`w-24 flex-col rounded-lg border px-1 py-1 text-sm focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
+                            validacionError
+                                ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500 dark:border-red-600 dark:bg-red-950/30'
+                                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-zinc-600'
+                        }`}
                     />
-                    {/* ✨ NUEVO: Selector de unidades para productos fraccionados */}
+                    {/* ✅ NUEVO (2026-09-07): Mostrar error de validación de stock */}
+                    {validacionError && (
+                        <div className="text-xs text-red-600 dark:text-red-400">
+                            ⚠️ {validacionError}
+                        </div>
+                    )}
                 </div>
             </td>
 
