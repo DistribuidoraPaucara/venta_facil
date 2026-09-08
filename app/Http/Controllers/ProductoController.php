@@ -878,13 +878,12 @@ class ProductoController extends Controller
             'precios'           => $precios,
             'codigos'           => $codigos,                    // Array de códigos de barra con metadata
                                                                 // mapear stock por almacén para el frontend (con información enriquecida del sector)
-            'stock_almacenes'   => StockProducto::withTrashed() // ✨ NUEVO: Incluir soft-deleted para obtener todos los registros
-                ->where('producto_id', $producto->id)
+            'stock_almacenes'   => StockProducto::where('producto_id', $producto->id) // ✅ CORREGIDO: Solo registros NO eliminados
                 ->with([
                     'almacen:id,nombre,ubicacion_fisica',
                     'sector:id,nombre,descripcion,es_generico,stock_minimo,stock_maximo',
                 ])
-                ->get(['id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad', 'cantidad_disponible', 'cantidad_reservada', 'lote', 'fecha_vencimiento', 'deleted_at'])
+                ->get(['id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad', 'cantidad_disponible', 'cantidad_reservada', 'lote', 'fecha_vencimiento'])
                 ->map(function ($s) {
                     return [
                         'id'                       => (int) $s->id, // ✨ ASEGURADO: ID numérico de StockProducto
