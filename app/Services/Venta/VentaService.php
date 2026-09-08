@@ -343,6 +343,7 @@ class VentaService
                     'subtotal'           => $subtotal,
                     'tipo_precio_id'     => $detalle['tipo_precio_id'] ?? null,    // ✅ NUEVO: Tipo de precio seleccionado
                     'tipo_precio_nombre' => $detalle['tipo_precio_nombre'] ?? null, // ✅ NUEVO: Nombre del tipo de precio
+                    'unidad_medida_id'   => $detalle['unidad_venta_id'] ?? null,   // ✅ CORREGIDO (2026-09-07): Guardar unidad de venta en detalles
                     'combo_items_seleccionados' => $comboItemsSeleccionados ? array_map(function($item) {
                         return [
                             'combo_item_id' => $item['combo_item_id'] ?? null,
