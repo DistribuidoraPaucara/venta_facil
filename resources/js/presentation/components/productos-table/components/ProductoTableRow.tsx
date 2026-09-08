@@ -78,7 +78,7 @@ export default function ProductoTableRow({
         unidad_venta_id: detalle.unidad_venta_id,
     });
     console.log(
-        `🔍 [ProductoTableRow] selectedTipoPrecio para producto ${detalle.producto_id}: ${selectedTipoPrecio[detalle.producto_id]} (completo: ${JSON.stringify(selectedTipoPrecio)})`
+        `🔍 [ProductoTableRow] selectedTipoPrecio para producto ${detalle.producto_id}: ${selectedTipoPrecio[detalle.producto_id]} (completo: ${JSON.stringify(selectedTipoPrecio)})`,
     );
     const esCombo = productoInfo && productoInfo.es_combo;
     const precioCosto = detalle.precio_costo || productoInfo?.precio_costo || 0;
@@ -103,7 +103,7 @@ export default function ProductoTableRow({
                     const conversiones = detalle.conversiones || productoInfo?.conversiones;
 
                     console.log(
-                        `🏷️ [obtenerNombreConUnidad] unidadVentaId=${unidadActualVenta}, unidadBaseId=${detalle.unidad_medida_id}, es_fraccionado=${detalle.es_fraccionado}, conversiones=${conversiones?.length || 0}`
+                        `🏷️ [obtenerNombreConUnidad] unidadVentaId=${unidadActualVenta}, unidadBaseId=${detalle.unidad_medida_id}, es_fraccionado=${detalle.es_fraccionado}, conversiones=${conversiones?.length || 0}`,
                     );
 
                     const nombreDinamico =
@@ -116,9 +116,7 @@ export default function ProductoTableRow({
                               )
                             : productoInfo?.nombre || 'Producto no encontrado';
 
-                    console.log(
-                        `🏷️ [obtenerNombreConUnidad RESULTADO] nombre final: "${nombreDinamico}"`
-                    );
+                    console.log(`🏷️ [obtenerNombreConUnidad RESULTADO] nombre final: "${nombreDinamico}"`);
 
                     return (
                         <div className="items-start text-sm font-bold text-gray-900 dark:text-white">
@@ -136,11 +134,20 @@ export default function ProductoTableRow({
                 <div className="text-left text-xs text-gray-500 dark:text-gray-400">
                     {(() => {
                         // ✅ Mostrar código de barras desde código_barras, codigos_barras o codigosBarra
-                        const codigoBarras = productoInfo?.codigo_barras ||
-                                            (productoInfo?.codigos_barras?.[0]) ||
-                                            (productoInfo?.codigosBarra?.[0]?.codigo);
+                        const codigoBarras =
+                            productoInfo?.codigo_barras || productoInfo?.codigos_barras?.[0] || productoInfo?.codigosBarra?.[0]?.codigo;
                         return codigoBarras && codigoBarras !== productoInfo?.sku ? (
-                            <div>#{codigoBarras}</div>
+                            <div>
+                                #{codigoBarras} {' '}
+                                {productoInfo?.sku || productoInfo?.codigo && (
+                                    <span className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                        {productoInfo.sku || productoInfo.codigo}
+                                    </span>
+                                )} { ' '}
+                                <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
+                                    {typeof productoInfo?.marca === 'string' ? productoInfo.marca : productoInfo?.marca?.nombre || ''}
+                                </span>                                 
+                            </div>
                         ) : null;
                     })()}
                     {(() => {
@@ -159,7 +166,7 @@ export default function ProductoTableRow({
             </td>
 
             {/* SKU */}
-            <td className="items-left px-2 py-2">
+            {/* <td className="items-left px-2 py-2">
                 {productoInfo?.sku || productoInfo?.codigo ? (
                     <span className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                         {productoInfo.sku || productoInfo.codigo}
@@ -167,7 +174,7 @@ export default function ProductoTableRow({
                 ) : (
                     <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
                 )}
-            </td>
+            </td> */}
             {/* Disponibilidad */}
             <td className="items-left px-2 py-2 text-xs">
                 {!proformaConvertida &&
@@ -188,7 +195,9 @@ export default function ProductoTableRow({
                             if (unidadVenta === unidadBase) {
                                 // Usar la unidad base directamente
                                 unidadDisplay = productoInfo?.unidad?.codigo || 'UN';
-                                console.log(`📊 [Stock Sin Convertir] Producto: ${productoInfo?.nombre}, Vende por unidad base, Stock: ${stockDisponible} ${unidadDisplay}`);
+                                console.log(
+                                    `📊 [Stock Sin Convertir] Producto: ${productoInfo?.nombre}, Vende por unidad base, Stock: ${stockDisponible} ${unidadDisplay}`,
+                                );
                             } else {
                                 // ✅ CASO 2: Si vende por una unidad de conversión
                                 const conversion = detalle.conversiones.find((c: any) => c.unidad_destino_id === unidadVenta && c.activo);
@@ -197,10 +206,13 @@ export default function ProductoTableRow({
                                     stockDisponible = stockDisponible * conversion.factor_conversion;
                                     unidadDisplay = conversion.unidad_destino?.codigo || conversion.unidad_destino?.nombre || '';
                                     console.log(
-                                        `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible} ${unidadDisplay}`
+                                        `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible} ${unidadDisplay}`,
                                     );
                                 }
                             }
+                        } else {
+                            // ✅ CASO 3: Producto NO fraccionado - mostrar código de unidad base
+                            unidadDisplay = productoInfo?.unidad?.codigo || 'UN';
                         }
 
                         return (
@@ -263,7 +275,7 @@ export default function ProductoTableRow({
                                             detalle.unidad_venta_id || detalle.unidad_medida_id,
                                             detalle.unidad_medida_id,
                                             detalle.conversiones,
-                                            productoInfo?.nombre
+                                            productoInfo?.nombre,
                                         );
 
                                         if (!validacion.esValido) {
@@ -291,11 +303,7 @@ export default function ProductoTableRow({
                         }`}
                     />
                     {/* ✅ NUEVO (2026-09-07): Mostrar error de validación de stock */}
-                    {validacionError && (
-                        <div className="text-xs text-red-600 dark:text-red-400">
-                            ⚠️ {validacionError}
-                        </div>
-                    )}
+                    {validacionError && <div className="text-xs text-red-600 dark:text-red-400">⚠️ {validacionError}</div>}
                 </div>
             </td>
 
@@ -336,9 +344,7 @@ export default function ProductoTableRow({
                         // ✅ CORREGIDO (2026-09-07): Incluir unidad_medida_id en el valor si es necesario para que coincida con optionValue
                         const tipoPrecioSeleccionado = selectedTipoPrecio[productoId];
                         // Buscar el precio correspondiente para obtener su unidad_medida_id
-                        const precioSeleccionado = preciosVenta.find(
-                            (p: any) => String(p.tipo_precio_id) === String(tipoPrecioSeleccionado)
-                        );
+                        const precioSeleccionado = preciosVenta.find((p: any) => String(p.tipo_precio_id) === String(tipoPrecioSeleccionado));
                         if (precioSeleccionado?.unidad_medida_id) {
                             valorInicial = `${tipoPrecioSeleccionado}_${precioSeleccionado.unidad_medida_id}`;
                         } else {
@@ -694,14 +700,12 @@ export default function ProductoTableRow({
                 </span>
             </td> */}
 
-            
-
             {/* Marca */}
-            <td className="items-left px-2 py-2">
+            {/* <td className="items-left px-2 py-2">
                 <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
                     {typeof productoInfo?.marca === 'string' ? productoInfo.marca : productoInfo?.marca?.nombre || '-'}
                 </span>
-            </td>
+            </td> */}
 
             {/* Acciones */}
             <td className="items-start px-2 py-4 text-center">
