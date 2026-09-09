@@ -68,11 +68,43 @@ export function useProductSearch({
         let tipoPrecioUsado = 'precio_base';
         let tipoPrecioSeleccionado = null;
 
-        // ✅ MODO COMPRA: Usar precio de costo directamente
+        // ✅ MODO COMPRA: Buscar precio de costo que coincida con unidad base (PAQUETE)
         if (tipo === 'compra') {
-            precioVenta = p.precio_costo || 0;
-            tipoPrecioUsado = 'Precio Costo';
-            console.log(`💵 [transformarProductoAPI] MODO COMPRA - ${p.nombre}: Precio Costo = ${precioVenta}`);
+            // ✅ NUEVO: Para compras, buscar en el array de precios el que coincida con tipo_precio_id_recomendado
+            // y con la unidad_medida_id del producto (PAQUETE)
+            if (p.precios && Array.isArray(p.precios) && p.precios.length > 0) {
+                // Buscar el precio de COSTO que coincida con la unidad base del producto
+                const precioCosto = p.precios.find((pr: any) =>
+                    pr.tipo_precio_id === p.tipo_precio_id_recomendado &&
+                    pr.unidad_medida_id === p.unidad_medida_id
+                );
+
+                if (precioCosto) {
+                    precioVenta = precioCosto.precio || 0;
+                    tipoPrecioUsado = precioCosto.nombre || 'Precio Costo';
+                    tipoPrecioSeleccionado = precioCosto.tipo_precio_id;
+                    console.log(`💵 [transformarProductoAPI] MODO COMPRA - ${p.nombre}: Precio Costo (${p.unidad_medida_nombre}) = ${precioVenta}`);
+                } else {
+                    // Fallback: si no encuentra con unidad base, usar el primer precio de COSTO
+                    const precioFallback = p.precios.find((pr: any) =>
+                        pr.tipo_precio_id === p.tipo_precio_id_recomendado
+                    );
+                    if (precioFallback) {
+                        precioVenta = precioFallback.precio || 0;
+                        tipoPrecioUsado = precioFallback.nombre || 'Precio Costo';
+                        tipoPrecioSeleccionado = precioFallback.tipo_precio_id;
+                        console.log(`💵 [transformarProductoAPI] MODO COMPRA (FALLBACK) - ${p.nombre}: Precio Costo = ${precioVenta}`);
+                    } else {
+                        precioVenta = p.precio_costo || 0;
+                        tipoPrecioUsado = 'Precio Costo';
+                        console.log(`💵 [transformarProductoAPI] MODO COMPRA (PRECIO_COSTO) - ${p.nombre}: Precio Costo = ${precioVenta}`);
+                    }
+                }
+            } else {
+                precioVenta = p.precio_costo || 0;
+                tipoPrecioUsado = 'Precio Costo';
+                console.log(`💵 [transformarProductoAPI] MODO COMPRA - ${p.nombre}: Precio Costo = ${precioVenta}`);
+            }
         }
         // ✅ MODO VENTA: Seleccionar según cliente (LICORERIA vs VENTA)
         else if (tipo === 'venta') {
