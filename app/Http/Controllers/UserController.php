@@ -143,7 +143,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'          => ['required', 'string', 'max:255'],
             'usernick'      => ['required', 'string', 'max:255', Rule::unique('users')->ignore($usuario->id)],
-            'email'         => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($usuario->id)],
+            'email'         => ['nullable', 'string', 'email', 'max:255', Rule::unique('users')->ignore($usuario->id)],
             'password'      => ['nullable', 'string', 'min:8', 'confirmed'],
             'roles'         => ['array'],
             'roles.*'       => ['exists:roles,id'],
@@ -151,11 +151,16 @@ class UserController extends Controller
             'permissions.*' => ['exists:permissions,id'],
         ]);
 
-        $usuario->update([
+        $updateData = [
             'name'     => $validated['name'],
             'usernick' => $validated['usernick'],
-            'email'    => $validated['email'],
-        ]);
+        ];
+
+        if (! empty($validated['email'])) {
+            $updateData['email'] = $validated['email'];
+        }
+
+        $usuario->update($updateData);
 
         // Actualizar contraseña solo si se proporciona
         if (! empty($validated['password'])) {

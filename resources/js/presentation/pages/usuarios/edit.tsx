@@ -7,7 +7,7 @@ import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 import InputError from '@/presentation/components/input-error'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Search } from 'lucide-react'
 import { type BreadcrumbItem } from '@/types'
 
 interface User {
@@ -51,6 +51,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ]
 
 export default function Edit({ user, roles, userRoles, permissions, userPermissions }: PageProps) {
+    const [searchTerm, setSearchTerm] = React.useState('')
+
     const { data, setData, put, processing, errors } = useForm({
         name: user.name || '',
         usernick: user.usernick || '',
@@ -98,6 +100,25 @@ export default function Edit({ user, roles, userRoles, permissions, userPermissi
         });
         return new Set<number>(ids);
     }, [user.roles]);
+
+    // filtrar permisos según el término de búsqueda
+    const filteredPermissions = React.useMemo(() => {
+        if (!searchTerm.trim()) return permissions;
+
+        const lowerSearch = searchTerm.toLowerCase();
+        const filtered: Record<string, { id: number; name: string; description?: string }[]> = {};
+
+        Object.entries(permissions).forEach(([group, perms]) => {
+            const filteredPerms = (perms as { id: number; name: string }[]).filter(perm =>
+                perm.name.toLowerCase().includes(lowerSearch)
+            );
+            if (filteredPerms.length > 0) {
+                filtered[group] = filteredPerms;
+            }
+        });
+
+        return filtered;
+    }, [permissions, searchTerm]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -166,7 +187,6 @@ export default function Edit({ user, roles, userRoles, permissions, userPermissi
                                             value={data.email}
                                             onChange={(e) => setData('email', e.target.value)}
                                             placeholder="Ingrese el correo electrónico"
-                                            required
                                         />
                                         <InputError message={errors.email} />
                                     </div>
@@ -222,8 +242,23 @@ export default function Edit({ user, roles, userRoles, permissions, userPermissi
 
                                 <div className="space-y-2">
                                     <Label>Permisos directos</Label>
+                                    <div className="relative mb-4">
+                                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                                        <Input
+                                            type="text"
+                                            placeholder="Buscar permisos..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="pl-10"
+                                        />
+                                    </div>
+                                    {Object.keys(filteredPermissions).length === 0 && searchTerm.trim() !== '' ? (
+                                        <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                                            No se encontraron permisos que coincidan con "{searchTerm}"
+                                        </div>
+                                    ) : null}
                                     <div className="space-y-4">
-                                        {Object.entries(permissions).map(([group, perms]) => {
+                                        {Object.entries(filteredPermissions).map(([group, perms]) => {
                                             const permsList = perms as { id: number; name: string }[];
                                             return (
                                                 <div key={group}>
