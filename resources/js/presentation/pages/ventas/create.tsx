@@ -124,24 +124,6 @@ export default function VentaForm() {
         [tiposPagoSeguro],
     );
 
-    // ✅ NUEVO: Filtrar tipos de pago disponibles basados en capacidad de crédito del cliente
-    const tiposPagoDisponibles: SelectOption[] = useMemo(() => {
-        if (!data.cliente_id) {
-            return tiposPagoOptions; // Si no hay cliente, mostrar todos los tipos de pago
-        }
-        const clienteActual = clientesSeguro.find((c) => c.id === data.cliente_id);
-        const puedeUsarCredito = clienteActual?.puede_tener_credito || false;
-        return tiposPagoOptions.filter((option) => {
-            const tipoPago = tiposPagoSeguro.find((t) => t.id === option.value);
-            // Si es CREDITO, solo mostrar si el cliente puede tener crédito
-            if (tipoPago?.codigo === 'CREDITO') {
-                return puedeUsarCredito;
-            }
-            // Los demás tipos de pago siempre están disponibles
-            return true;
-        });
-    }, [tiposPagoOptions, tiposPagoSeguro, data.cliente_id, clientesSeguro]);
-
     const [detallesWithProducts, setDetallesWithProducts] = useState<DetalleProducto[]>([]);
     const [stockValido, setStockValido] = useState(true);
 
@@ -310,6 +292,24 @@ export default function VentaForm() {
         // ✅ NUEVO: Entrega (para asignar venta a una entrega existente)
         entrega_id: (venta?.entrega_id ? Number(venta.entrega_id) : null) as number | null,
     });
+
+    // ✅ NUEVO: Filtrar tipos de pago disponibles basados en capacidad de crédito del cliente
+    const tiposPagoDisponibles: SelectOption[] = useMemo(() => {
+        if (!data.cliente_id) {
+            return tiposPagoOptions; // Si no hay cliente, mostrar todos los tipos de pago
+        }
+        const clienteActual = clientesSeguro.find((c) => c.id === data.cliente_id);
+        const puedeUsarCredito = clienteActual?.puede_tener_credito || false;
+        return tiposPagoOptions.filter((option) => {
+            const tipoPago = tiposPagoSeguro.find((t) => t.id === option.value);
+            // Si es CREDITO, solo mostrar si el cliente puede tener crédito
+            if (tipoPago?.codigo === 'CREDITO') {
+                return puedeUsarCredito;
+            }
+            // Los demás tipos de pago siempre están disponibles
+            return true;
+        });
+    }, [tiposPagoOptions, tiposPagoSeguro, data.cliente_id, clientesSeguro]);
 
     // ✅ NUEVO (2026-04-21): Estado para múltiples pagos por venta
     interface Pago {
