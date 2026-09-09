@@ -139,6 +139,27 @@ const ProductCard: React.FC<{
                     {((p as any).stock_disponible_calc ?? 0)}
                   </span>
                 </div>
+                {/* ✅ NUEVO: Mostrar si es fraccionado y su unidad */}
+                <div className="space-y-1">
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wide">Fraccionado</span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold ${p.es_fraccionado
+                      ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
+                      : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'
+                      }`}>
+                      <span>{p.es_fraccionado ? '✂️' : '📦'}</span>
+                      <span>{p.es_fraccionado ? 'Sí' : 'No'}</span>
+                    </span>
+                  </div>
+                  {p.es_fraccionado && (
+                    <div>
+                      <span className="block text-[10px] uppercase tracking-wide">Unidad Venta</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
+                        {(p as any).unidad_venta?.nombre || (p as any).unidad_venta?.codigo || '—'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -472,6 +493,40 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
           <span>{value ? 'Visible' : 'Oculto'}</span>
         </span>
       )
+    },
+    // ✅ NUEVO: Columna para mostrar si es fraccionado
+    {
+      key: 'es_fraccionado',
+      label: 'Fraccionado',
+      type: 'custom',
+      sortable: true,
+      render: (value, entity) => (
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-sm border transition-colors ${value
+          ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700'
+          : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700'
+          }`}>
+          <span className="text-lg">{value ? '✂️' : '📦'}</span>
+          <span>{value ? 'Sí' : 'No'}</span>
+        </span>
+      )
+    },
+    // ✅ NUEVO: Columna para mostrar la unidad de venta
+    {
+      key: 'unidad_venta',
+      label: 'Unidad Venta',
+      type: 'custom',
+      sortable: false,
+      render: (value, entity) => {
+        // Acceder a la unidad desde la relación si existe
+        const unidad = (entity as any).unidad_venta || (entity as any).unidad;
+        const nombreUnidad = unidad?.nombre || unidad?.codigo || '—';
+
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200 font-semibold text-xs border border-purple-200 dark:border-purple-700">
+            {nombreUnidad}
+          </span>
+        );
+      }
     },
     /* {
       key: 'historial_precios',
