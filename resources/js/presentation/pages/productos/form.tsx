@@ -1180,6 +1180,7 @@ export default function ProductoForm({
                                             almacenes: data.almacenes || [],
                                             conversiones: data.conversiones || [], // ✨ NUEVO: Pasar conversiones
                                             es_fraccionado: data.es_fraccionado || false, // ✨ NUEVO: Pasar estado de fraccionamiento
+                                            stock_limites: data.stock_limites || {}, // ✨ NUEVO: Pasar límites de stock desde el backend
                                         }}
                                         setData={setData}
                                         almacenesOptions={almacenes.map((a) => ({
