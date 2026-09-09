@@ -108,11 +108,11 @@ const ProductCard: React.FC<{
                 {(p as any).codigosBarra?.[0]?.codigo || p.codigo_barras}
               </span>
             )}
-            {/* Mostrar marca y unidad */}
-            {(p.marca?.nombre || (p as any).unidad?.nombre) && (
+            {/* Mostrar marca y unidad (solo si hay marca) */}
+            {p.marca?.nombre && (
               <span className="bg-secondary px-1.5 py-0.5 rounded">
-                {p.marca?.nombre && <span>{p.marca.nombre}</span>}
-                {p.marca?.nombre && (p as any).unidad?.nombre && <span className="mx-1">·</span>}
+                <span>{p.marca.nombre}</span>
+                {(p as any).unidad?.nombre && <span className="mx-1">·</span>}
                 {(p as any).unidad?.nombre && <span>{(p as any).unidad.nombre}</span>}
               </span>
             )}
