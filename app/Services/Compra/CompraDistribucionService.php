@@ -235,31 +235,20 @@ class CompraDistribucionService
                     ->where('almacen_id', $almacenId)
                     ->sum('cantidad_reservada');
 
-                // ✅ CORREGIDO (2026-03-28): Pasar totales GENERALES correctos
-                // Los detallesLotes solo contienen los lotes procesados en ESTA compra
-                // Pero necesitamos los totales generales del producto (incluyendo otros lotes no procesados)
+                // ✅ FIJO (2026-09-09): NO pasar totales_previos cuando hay detallesLotes
+                // El servicio debe calcular los totales desde los detalles de lotes
+                // Pasar totales acumulados causaba inconsistencia: cantidad_anterior(0) ≠ disponible_anterior(10)
                 $movimiento = $this->movimientoService->registrarMovimientoAgrupado(
                     producto_id: $productoId,
                     almacen_id: $almacenId,
                     tipo: MovimientoInventario::TIPO_ENTRADA_COMPRA,
-                    referencia_tipo: 'compra',  // ✅ CORREGIDO (2026-04-05): Parámetro requerido
+                    referencia_tipo: 'compra',
                     cantidad: $cantidadTotalAñadida,  // Positivo para entrada
                     numero_documento: $numeroCompra,
                     detallesLotes: $detallesLotes,
                     opciones: [
-                        // 'referencia_tipo' => 'compra',  // ← Movido a parámetro directo
                         'referencia_id' => null,
-                        // ✅ Pasar totales GENERALES obtenidos antes (línea 99-109)
-                        'totales_previos' => [
-                            'cantidad_total_anterior' => $cantidadTotalAnterior_acumulada,
-                            'cantidad_disponible_anterior' => $cantidadDisponibleAnterior_acumulada,
-                            'cantidad_reservada_anterior' => $cantidadReservadaAnterior_acumulada,
-                        ],
-                        'totales_posteriores' => [
-                            'cantidad_total_posterior' => $cantidadTotalPosterior_acumulada,
-                            'cantidad_disponible_posterior' => $cantidadDisponiblePosterior_acumulada,
-                            'cantidad_reservada_posterior' => $cantidadReservadaPosterior_acumulada,
-                        ]
+                        // ✅ REMOVIDO: No pasar totales_previos aquí - los detallesLotes contienen los valores correctos
                     ]
                 );
 
@@ -416,28 +405,18 @@ class CompraDistribucionService
                         ->sum('cantidad_reservada');
 
                     // Crear movimiento de reversión agrupado
+                    // ✅ FIJO (2026-09-09): NO pasar totales_previos - usar valores de detallesLotes
                     $movimientoReversion = $this->movimientoService->registrarMovimientoAgrupado(
                         producto_id: $productoId,
                         almacen_id: $almacenId,
                         tipo: MovimientoInventario::TIPO_SALIDA_AJUSTE,
-                        referencia_tipo: 'compra_reversion',  // ✅ CORREGIDO (2026-04-05): Parámetro requerido
+                        referencia_tipo: 'compra_reversion',
                         cantidad: -$cantidadTotalARevertir,  // Negativo para salida/reversión
                         numero_documento: $numeroCompra . '-REV',
                         detallesLotes: $detallesLotes,
                         opciones: [
-                            // 'referencia_tipo' => 'compra_reversion',  // ← Movido a parámetro directo
                             'referencia_id' => null,
-                            // ✅ CORREGIDO (2026-04-05): Pasar totales del PRODUCTO COMPLETO
-                            'totales_previos' => [
-                                'cantidad_total_anterior' => $totalProductoAntes,
-                                'cantidad_disponible_anterior' => $totalDisponibleAntes,
-                                'cantidad_reservada_anterior' => $totalReservadoAntes,
-                            ],
-                            'totales_posteriores' => [
-                                'cantidad_total_posterior' => $totalProductoDespues,
-                                'cantidad_disponible_posterior' => $totalDisponibleDespues,
-                                'cantidad_reservada_posterior' => $totalReservadoDespues,
-                            ],
+                            // ✅ REMOVIDO: No pasar totales_previos - los detallesLotes contienen valores correctos
                         ]
                     );
 
