@@ -252,6 +252,7 @@ export default function ProductoForm({
                   // ✨ CORREGIDO (2026-09-08): Inicializar globalSectorId desde el primer almacén con sector
                   globalSectorId: producto.stock_almacenes?.find((a: any) => a.sector_id)?.sector_id,
                   conversiones: producto.conversiones?.length ? producto.conversiones : [], // ✨ NUEVO
+                  stock_limites: producto.stock_limites || {}, // ✨ NUEVO: Incluir límites de stock desde el backend
               }
             : getInitialData(),
     );
