@@ -35,6 +35,16 @@ export default function StockYProductos({
     const [stockFiltradoApi, setStockFiltradoApi] = useState<StockPorAlmacen[]>(stockPorAlmacen);
     const [cargando, setCargando] = useState(false);
 
+    // ✅ NUEVO (2026-09-09): Estado de paginación
+    const [paginacion, setPaginacion] = useState({
+        current_page: 1,
+        per_page: 50,
+        total: 0,
+        last_page: 1,
+        from: 0,
+        to: 0,
+    });
+
     // Estado para filas expandidas (mostrar conversiones)
     const [expandedRows, setExpandedRows] = useState<Set<number | string>>(new Set());
 
@@ -60,7 +70,15 @@ export default function StockYProductos({
         return Array.from(almacenesMap.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
     }, [stockPorAlmacen]);
 
-    // Llamar al API cuando cambien los filtros
+    // ✅ NUEVO (2026-09-09): Reset paginación cuando cambien filtros
+    useEffect(() => {
+        setPaginacion((prev) => ({
+            ...prev,
+            current_page: 1,
+        }));
+    }, [filtros]);
+
+    // Llamar al API cuando cambien los filtros o paginación
     useEffect(() => {
         const obtenerStockFiltrado = async () => {
             try {
@@ -72,6 +90,9 @@ export default function StockYProductos({
                 params.append('rango_stock', filtros.rangoStock);
                 params.append('ordenamiento', filtros.ordenamiento);
                 if (filtros.soloConStock) params.append('solo_con_stock', 'true');
+                // ✅ NUEVO (2026-09-09): Agregar parámetros de paginación
+                params.append('page', paginacion.current_page.toString());
+                params.append('per_page', paginacion.per_page.toString());
 
                 const response = await fetch(`/api/inventario/stock-filtrado?${params.toString()}`);
 
@@ -83,6 +104,15 @@ export default function StockYProductos({
 
                 if (json.success) {
                     setStockFiltradoApi(json.data);
+                    // ✅ NUEVO (2026-09-09): Actualizar metadatos de paginación
+                    setPaginacion({
+                        current_page: json.current_page || 1,
+                        per_page: json.per_page || 50,
+                        total: json.total || 0,
+                        last_page: json.last_page || 1,
+                        from: json.from || 0,
+                        to: json.to || 0,
+                    });
                 } else {
                     console.error('Error en respuesta API:', json.message);
                     setStockFiltradoApi([]);
@@ -97,7 +127,7 @@ export default function StockYProductos({
 
         // Ejecutar inmediatamente (sin debounce) ya que la búsqueda requiere Enter o Botón
         obtenerStockFiltrado();
-    }, [filtros]);
+    }, [filtros, paginacion.current_page, paginacion.per_page]);
 
     // Alias para mantener el nombre stockFiltrado en el resto del código
     const stockFiltrado = stockFiltradoApi;
@@ -201,7 +231,8 @@ export default function StockYProductos({
                         </div>
                         <div className="flex flex-col items-end gap-3">
                             <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                {stockFiltrado.length} de {stockPorAlmacen.length} registros
+                                {/* ✅ NUEVO (2026-09-09): Mostrar información de paginación */}
+                                {paginacion.total > 0 ? `${paginacion.from} - ${paginacion.to} de ${paginacion.total}` : '0 registros'}
                             </p>
                             <ImprimirStockButton
                                 stock={stockFiltrado}
@@ -532,10 +563,76 @@ export default function StockYProductos({
                         </table>
                     </div>
                 )}
+
+                {/* ✅ NUEVO (2026-09-09): Controles de Paginación */}
+                {paginacion.total > 0 && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            {/* Selector de items por página */}
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="per_page" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Mostrar:
+                                </label>
+                                <select
+                                    id="per_page"
+                                    value={paginacion.per_page}
+                                    onChange={(e) => {
+                                        setPaginacion((prev) => ({
+                                            ...prev,
+                                            per_page: parseInt(e.target.value),
+                                            current_page: 1, // Reset a primera página
+                                        }));
+                                    }}
+                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-600 dark:text-white"
+                                >
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                    <option value={250}>250</option>
+                                </select>
+                            </div>
+
+                            {/* Botones de navegación */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() =>
+                                        setPaginacion((prev) => ({
+                                            ...prev,
+                                            current_page: Math.max(1, prev.current_page - 1),
+                                        }))
+                                    }
+                                    disabled={paginacion.current_page === 1 || cargando}
+                                    className="px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                >
+                                    ← Anterior
+                                </button>
+
+                                {/* Indicador de página */}
+                                <div className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Página <span className="font-semibold">{paginacion.current_page}</span> de{' '}
+                                    <span className="font-semibold">{paginacion.last_page}</span>
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setPaginacion((prev) => ({
+                                            ...prev,
+                                            current_page: Math.min(prev.last_page, prev.current_page + 1),
+                                        }))
+                                    }
+                                    disabled={paginacion.current_page === paginacion.last_page || cargando}
+                                    className="px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                >
+                                    Siguiente →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Productos Más Movidos */}
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg">
+            {/* <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                         Productos Más Movidos (Este Mes)
@@ -585,7 +682,7 @@ export default function StockYProductos({
                         </table>
                     </div>
                 )}
-            </div>
+            </div> */}
 
             {/* Diálogo de Confirmación para Eliminar Lote */}
             {loteParaEliminar && (

@@ -3187,6 +3187,8 @@ class InventarioController extends Controller
             $rangoStock    = (string) $request->string('rango_stock', 'todos');
             $ordenamiento  = (string) $request->string('ordenamiento', 'cantidad-desc');
             $soloConStock  = (bool) $request->boolean('solo_con_stock', false);
+            $page          = (int) $request->integer('page', 1);
+            $perPage       = (int) $request->integer('per_page', 50);
 
             // Definir rangos de stock
             $rangos = [
@@ -3408,10 +3410,21 @@ class InventarioController extends Controller
                 return $item;
             }, $stockProductos);
 
+            // ✅ NUEVO (2026-09-09): Aplicar paginación
+            $totalRegistros = count($stockProductos);
+            $totalPaginas = ceil($totalRegistros / $perPage);
+            $offset = ($page - 1) * $perPage;
+            $stockPaginado = array_slice($stockProductos, $offset, $perPage);
+
             return response()->json([
                 'success' => true,
-                'data'    => $stockProductos,
-                'total'   => count($stockProductos),
+                'data'    => $stockPaginado,
+                'total'   => $totalRegistros,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => $totalPaginas,
+                'from' => $totalRegistros > 0 ? $offset + 1 : 0,
+                'to' => min($offset + $perPage, $totalRegistros),
             ]);
 
         } catch (\Exception $e) {
