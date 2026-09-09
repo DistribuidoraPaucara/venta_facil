@@ -135,7 +135,7 @@ export default function Step3Almacenes({
     const [sectoresOptions, setSectoresOptions] = useState<Record<number | string, Option[]>>(sectores || {});
     const [setLoadingSectores] = useState<Record<number | string, boolean>>({});
 
-    const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(true);
+    const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(false);
 
     // ✨ Estado local para stock_limites (separado de data)
     const [stockLimites, setStockLimites] = useState<Record<number | string, any>>(data.stock_limites || {});
@@ -231,7 +231,7 @@ export default function Step3Almacenes({
                                 onClick={() => setExpandedAlmacenes(!expandedAlmacenes)}
                                 className="flex items-center gap-2 text-sm font-medium hover:text-blue-600 transition-colors"
                             >
-                                {expandedAlmacenes ? '▼' : '▶'} Gestión de Almacenes y Lotes ({(data.almacenes || []).length})
+                                {expandedAlmacenes ? '▼' : '▶'} Gestión de Almacenes por Lotes ({(data.almacenes || []).length})
                             </button>
                             <Button type="button" size="sm" onClick={() => addAlmacen()} variant="outline" aria-label="Agregar almacén">
                                 📦Añadir almacén
@@ -268,6 +268,30 @@ export default function Step3Almacenes({
                                             allowClear={true}
                                         />
                                     </div>
+                                    {/* Sector */}
+                                    {/* <div>
+                                        <div className="flex items-center gap-1 mb-1">
+                                            <Label className="text-xs font-semibold text-foreground">Sector</Label>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                        <HelpCircle size={12} />
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">
+                                                    Ubicación física dentro del almacén donde se guarda el lote
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                        <SearchSelect
+                                            id={`sector-select-${i}`}
+                                            placeholder="Seleccionar sector"
+                                            value={a.sector_id ? String(a.sector_id) : ''}
+                                            options={sectoresOptions[a.almacen_id] || []}
+                                            onChange={(value) => setAlmacen(i, 'sector_id', value ? Number(value) : undefined)}
+                                            allowClear={true}
+                                        />
+                                    </div> */}
 
                                     {/* Lote */}
                                     <div>
@@ -324,98 +348,6 @@ export default function Step3Almacenes({
                                             onChange={(e) => setAlmacen(i, 'fecha_vencimiento', e.target.value)}
                                             disabled={!a.fecha_vencimiento}
                                             className="h-9 text-xs w-full dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 disabled:opacity-50 disabled:dark:bg-zinc-900"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Fila 1.5: Sector + Stock Límites (Mínimo, Máximo) */}
-                                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
-                                    {/* Sector */}
-                                    <div>
-                                        <div className="flex items-center gap-1 mb-1">
-                                            <Label className="text-xs font-semibold text-foreground">Sector</Label>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                        <HelpCircle size={12} />
-                                                    </button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">
-                                                    Ubicación física dentro del almacén donde se guarda el lote
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <SearchSelect
-                                            id={`sector-select-${i}`}
-                                            placeholder="Seleccionar sector"
-                                            value={a.sector_id ? String(a.sector_id) : ''}
-                                            options={sectoresOptions[a.almacen_id] || []}
-                                            onChange={(value) => setAlmacen(i, 'sector_id', value ? Number(value) : undefined)}
-                                            allowClear={true}
-                                        />
-                                    </div>
-
-                                    {/* Stock Mínimo */}
-                                    <div>
-                                        <div className="flex items-center gap-1 mb-1">
-                                            <Label className="text-xs font-semibold text-foreground">Stock Mín.</Label>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                        <HelpCircle size={12} />
-                                                    </button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">
-                                                    Cantidad mínima requerida para reposición
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <Input
-                                            type="number"
-                                            inputMode="decimal"
-                                            step="0.01"
-                                            value={a.stock_minimo || ''}
-                                            onChange={(e) => {
-                                                setAlmacen(
-                                                    i,
-                                                    'stock_minimo',
-                                                    e.target.value === '' ? undefined : Number(e.target.value),
-                                                );
-                                            }}
-                                            className="h-9 text-xs w-full border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
-                                            aria-label={`Stock mínimo ${i + 1}`}
-                                        />
-                                    </div>
-
-                                    {/* Stock Máximo */}
-                                    <div>
-                                        <div className="flex items-center gap-1 mb-1">
-                                            <Label className="text-xs font-semibold text-foreground">Stock Máx.</Label>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                        <HelpCircle size={12} />
-                                                    </button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">
-                                                    Cantidad máxima permitida en el almacén
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <Input
-                                            type="number"
-                                            inputMode="decimal"
-                                            step="0.01"
-                                            value={a.stock_maximo || ''}
-                                            onChange={(e) => {
-                                                setAlmacen(
-                                                    i,
-                                                    'stock_maximo',
-                                                    e.target.value === '' ? undefined : Number(e.target.value),
-                                                );
-                                            }}
-                                            className="h-9 text-xs w-full border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
-                                            aria-label={`Stock máximo ${i + 1}`}
                                         />
                                     </div>
                                 </div>
@@ -592,9 +524,12 @@ export default function Step3Almacenes({
                                 </tr>
                             </thead>
                             <tbody>
-                                {almacenesOptions.map((almacen) => {
-                                    // Obtener los límites del almacén actual
-                                    const almacenLimites = stockLimites[almacen.value] || {};
+                                {/* ✨ FILTRO: Solo mostrar almacenes que tienen registros en stock_productos */}
+                                {almacenesOptions
+                                    .filter((opt) => (data.almacenes || []).some((a) => String(a.almacen_id) === String(opt.value)))
+                                    .map((almacen) => {
+                                        // Obtener los límites del almacén actual
+                                        const almacenLimites = stockLimites[almacen.value] || {};
 
                                     return (
                                         <tr key={almacen.value} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
