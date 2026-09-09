@@ -771,6 +771,10 @@ class VentaController extends Controller
                 ]);
             }
 
+            // ✅ ACTUALIZADO: Recargar la venta con pagos y recrear el DTO antes de retornar
+            $ventaCreada->refresh();
+            $ventaDTO = \App\DTOs\Venta\VentaResponseDTO::fromModel($ventaCreada);
+
             // 3.5 Imprimir ticket en impresora térmica
             try {
                 $venta = Venta::with(['cliente', 'detalles', 'tipoPago'])->findOrFail($ventaDTO->id);
