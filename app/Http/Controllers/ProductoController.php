@@ -3335,10 +3335,14 @@ class ProductoController extends Controller
                 $tipoPrecioIdRecomendado     = null;
                 $tipoPrecioNombreRecomendado = null;
 
-                // ✅ NUEVO (2026-02-17): Determinar qué tipo de precio buscar según cliente_id
-                // Si cliente_id = 32 (CLIENTE GENERAL) → buscar LICORERIA
-                // Si otro cliente → buscar VENTA
-                $tipoPrecioPrincipal = ($clienteId == 32) ? 'LICORERIA' : 'VENTA';
+                // ✅ NUEVO (2026-02-17): Determinar qué tipo de precio buscar según cliente_id y tipo de documento
+                // Para COMPRAS: buscar 'COSTO'
+                // Para VENTAS: Si cliente_id = 32 (CLIENTE GENERAL) → buscar LICORERIA, Si otro cliente → buscar VENTA
+                if ($tipo === 'compra') {
+                    $tipoPrecioPrincipal = 'COSTO';  // ✅ NUEVO: Para compras, buscar tipo de precio COSTO
+                } else {
+                    $tipoPrecioPrincipal = ($clienteId == 32) ? 'LICORERIA' : 'VENTA';
+                }
 
                 // Estrategia 1: Buscar por tipoPrecio->codigo === $tipoPrecioPrincipal
                 foreach ($producto->precios as $precio) {
