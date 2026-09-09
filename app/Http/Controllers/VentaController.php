@@ -760,9 +760,9 @@ class VentaController extends Controller
                     ]);
 
                     if ($cajaAbierta) {
-                        Log::debug('✅ [VentaController::store] Caja abierta encontrada, buscando tipo operación SALIDA');
+                        Log::debug('✅ [VentaController::store] Caja abierta encontrada, buscando tipo operación VUELTO');
 
-                        $tipoOperacionSalida = \App\Models\TipoOperacionCaja::where('codigo', 'SALIDA')->first();
+                        $tipoOperacionSalida = \App\Models\TipoOperacionCaja::where('codigo', 'VUELTO')->first();
 
                         Log::debug('🔍 [VentaController::store] Resultado búsqueda tipo operación SALIDA', [
                             'encontrada' => $tipoOperacionSalida ? 'SI' : 'NO',
