@@ -112,40 +112,8 @@ export default function Step3Almacenes({
     const [sectoresOptions, setSectoresOptions] = useState<Record<number | string, Option[]>>(sectores || {});
     const [setLoadingSectores] = useState<Record<number | string, boolean>>({});
 
-    // ✨ NUEVO: Pre-llenar globalSectorId desde data.globalSectorId o del primer almacén
-    const initialSectorId = data.globalSectorId || (data.almacenes || []).find((a: StockAlmacen) => a.sector_id)?.sector_id;
-    const [globalSectorId, setGlobalSectorId] = useState<number | undefined>(initialSectorId);
     const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(true);
 
-    // ✨ NUEVO (2026-09-08): Agregar sector genérico a las opciones si está en los almacenes
-    // El sector genérico (20) se asigna automáticamente pero no viene en el API
-    useEffect(() => {
-        if (initialSectorId && initialSectorId === 20) {
-            const sectoresFlat = Object.values(sectoresOptions).flat();
-            const tieneGenerico = sectoresFlat.some((o) => o.value === 20 || o.value === '20');
-
-            if (!tieneGenerico) {
-                // Encontrar los sectores del primer almacén con stock
-                const primerAlmacenConStock = (data.almacenes || [])[0];
-                if (primerAlmacenConStock?.almacen_id) {
-                    setSectoresOptions((prev) => ({
-                        ...prev,
-                        [primerAlmacenConStock.almacen_id]: [
-                            {
-                                value: 20,
-                                label: 'General',
-                                descripcion: 'Sector genérico automático - Productos sin clasificación específica',
-                                es_generico: true,
-                                stock_minimo: 0,
-                                stock_maximo: 999999,
-                            },
-                            ...(prev[primerAlmacenConStock.almacen_id] || []),
-                        ],
-                    }));
-                }
-            }
-        }
-    }, [initialSectorId, data.almacenes, sectoresOptions]);
 
     // Cargar sectores cuando se selecciona un almacén
     const handleAlmacenChange = async (i: number, almacenId: number | string) => {
@@ -214,57 +182,9 @@ export default function Step3Almacenes({
     };
 
     return (
-        <div className="mt-2">            
+        <div className="mt-2">
             <div className="w-full items-center justify-between gap-2 mt-4 space-y-6">
-                {/* SECCIÓN 1: SECTOR GLOBAL */}
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950/30">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Label className="block text-sm font-medium">🏢 Asignar Sector</Label>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button type="button" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                    <HelpCircle size={16} />
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                Asigna un sector a todos los lotes del producto. Se aplicará cuando guardes el formulario.
-                            </TooltipContent>
-                        </Tooltip>
-                    </div>
-
-                    <div className="space-y-3">
-                        <div>
-                            {/* <div className="flex items-center gap-1 mb-2">
-                                <Label className="block text-xs font-semibold text-foreground">Sector *</Label>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <button type="button" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                            <HelpCircle size={14} />
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        Ubicación física dentro del almacén donde se guardan los lotes
-                                    </TooltipContent>
-                                </Tooltip>
-                            </div> */}
-                            <SearchSelect
-                                id="sector-global"
-                                placeholder="Seleccione un sector"
-                                value={globalSectorId ? String(globalSectorId) : ''}
-                                options={Object.values(sectoresOptions).flat()}
-                                onChange={(value) => {
-                                    const sectorId = value ? Number(value) : undefined;
-                                    setGlobalSectorId(sectorId);
-                                    // ✅ IMPORTANTE: Propagar al estado del formulario principal
-                                    setData('globalSectorId', sectorId);
-                                }}
-                                allowClear={true}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* SECCIÓN 2: ALMACENES Y STOCK (LOTES) */}
+                {/* SECCIÓN: ALMACENES Y STOCK (LOTES) */}
                 <div className="space-y-4 mt-2">
                     <div>
                         <div className="flex items-center justify-between">
