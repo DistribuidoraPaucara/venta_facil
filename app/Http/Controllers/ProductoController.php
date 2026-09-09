@@ -3356,10 +3356,21 @@ class ProductoController extends Controller
 
                 // Estrategia 2: Si no encontró por código, buscar por nombre que contenga el tipo principal (case-insensitive)
                 if (! $tipoPrecioIdRecomendado) {
-                    $buscarEnNombre = ($clienteId == 32) ? 'LICORERIA' : 'VENTA';
+                    // ✅ ACTUALIZADO: Considerar $tipo para determinar qué buscar en nombre
+                    if ($tipo === 'compra') {
+                        $buscarEnNombre = 'COSTO';
+                    } else {
+                        $buscarEnNombre = ($clienteId == 32) ? 'LICORERIA' : 'VENTA';
+                    }
+
                     foreach ($producto->precios as $precio) {
                         $nombre = strtoupper($precio->nombre ?? '');
-                        if (strpos($nombre, $buscarEnNombre) !== false && strpos($nombre, 'COSTO') === false) {
+                        // ✅ Para compra, buscar COSTO; para venta, buscar LICORERIA o VENTA
+                        $buscarCondicion = ($tipo === 'compra')
+                            ? strpos($nombre, $buscarEnNombre) !== false
+                            : (strpos($nombre, $buscarEnNombre) !== false && strpos($nombre, 'COSTO') === false);
+
+                        if ($buscarCondicion) {
                             $tipoPrecioIdRecomendado = $precio->tipo_precio_id;
                             // ✅ CONSISTENCIA: Usar tipo_precio.nombre si está disponible
                             $tipoPrecioNombreRecomendado = $precio->tipoPrecio ? $precio->tipoPrecio->nombre : $precio->nombre;
@@ -3368,10 +3379,11 @@ class ProductoController extends Controller
                     }
                 }
 
-                // ✅ NUEVO: Estrategia 3 - Fallback a VENTA si no encontró el principal
+                // ✅ NUEVO: Estrategia 3 - Fallback según tipo de documento
                 if (! $tipoPrecioIdRecomendado) {
+                    $tipoFallback = ($tipo === 'compra') ? 'COSTO' : 'VENTA';
                     foreach ($producto->precios as $precio) {
-                        if ($precio->tipoPrecio && $precio->tipoPrecio->codigo === 'VENTA') {
+                        if ($precio->tipoPrecio && $precio->tipoPrecio->codigo === $tipoFallback) {
                             $tipoPrecioIdRecomendado     = $precio->tipo_precio_id;
                             $tipoPrecioNombreRecomendado = $precio->tipoPrecio->nombre;
                             break;
