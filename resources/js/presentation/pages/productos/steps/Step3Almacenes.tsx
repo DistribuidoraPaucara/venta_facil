@@ -101,8 +101,9 @@ export function validarYAjustarAlmacenes(almacenes: any[], stockLimites?: Record
 
         return {
             ...almacen,
-            // ✨ NUEVO: Incluir stock_limites si existen
+            // ✨ NUEVO: Incluir stock_limites (sector_id, stock_minimo, stock_maximo) si existen
             ...(stockLimites?.[almacen.almacen_id] && {
+                sector_id: stockLimites[almacen.almacen_id].sector_id ?? almacen.sector_id,
                 stock_minimo: stockLimites[almacen.almacen_id].stock_minimo,
                 stock_maximo: stockLimites[almacen.almacen_id].stock_maximo,
             }),

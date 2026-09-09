@@ -577,19 +577,20 @@ export default function ProductoForm({
                 if (almacen.fecha_vencimiento) {
                     formData.append(`almacenes[${i}][fecha_vencimiento]`, almacen.fecha_vencimiento);
                 }
-                // ✨ NUEVO: Incluir stock_minimo y stock_maximo (agregados por validarYAjustarAlmacenes)
+                // ✨ NUEVO: Incluir stock_minimo, stock_maximo y sector_id (agregados por validarYAjustarAlmacenes)
                 console.log(`📦 Almacén ${i} - Valores de límites:`, {
+                    sector_id: almacen.sector_id,
                     stock_minimo: almacen.stock_minimo,
                     stock_maximo: almacen.stock_maximo,
-                    tiene_minimo: almacen.stock_minimo !== undefined && almacen.stock_minimo !== null,
-                    tiene_maximo: almacen.stock_maximo !== undefined && almacen.stock_maximo !== null,
                 });
+                // Agregar sector_id si cambió desde la tabla de límites
+                if (almacen.sector_id !== undefined && almacen.sector_id !== null) {
+                    formData.append(`almacenes[${i}][sector_id]`, String(almacen.sector_id));
+                }
                 if (almacen.stock_minimo !== undefined && almacen.stock_minimo !== null) {
-                    console.log(`✅ Agregando stock_minimo: ${almacen.stock_minimo}`);
                     formData.append(`almacenes[${i}][stock_minimo]`, String(almacen.stock_minimo));
                 }
                 if (almacen.stock_maximo !== undefined && almacen.stock_maximo !== null) {
-                    console.log(`✅ Agregando stock_maximo: ${almacen.stock_maximo}`);
                     formData.append(`almacenes[${i}][stock_maximo]`, String(almacen.stock_maximo));
                 }
             });
