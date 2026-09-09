@@ -1318,21 +1318,9 @@ export default function CompraForm() {
               const precioCompra = Number(producto.precio_compra) || 0; // ✅ Cast a number
               const precioCosto = Number(producto.precio_costo) || 0; // ✅ Cast a number
 
-              // ✅ NUEVO: Determinar unidad de compra (conversión principal para fraccionados)
-              const conversiones = (producto as any).conversiones || [];
-              const esProductoFraccionado = (producto as any).es_fraccionado && conversiones.length > 0;
-              const unidadBaseProducto = (producto as any).unidad_medida_id;
-
-              let unidadVentaInicial = unidadBaseProducto;
-
-              // En compras, si es fraccionado, usar la unidad destino de la conversión principal (PAQUETE)
-              if (esProductoFraccionado) {
-                const conversionPrincipal = conversiones.find((c: any) => c.es_conversion_principal);
-                const conversion = conversionPrincipal || conversiones[0];
-                if (conversion?.unidad_destino_id) {
-                  unidadVentaInicial = conversion.unidad_destino_id;
-                }
-              }
+              // ✅ NUEVO: Para COMPRAS, siempre usar la unidad base (PAQUETE)
+              // No usar conversiones de venta (conversión_principal)
+              const unidadVentaInicial = (producto as any).unidad_medida_id;
 
               const newDetalle: DetalleForm = {
                 producto_id: producto.id,
