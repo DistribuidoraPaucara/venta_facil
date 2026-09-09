@@ -532,8 +532,9 @@ export default function Step3Almacenes({
                                 {almacenesOptions
                                     .filter((opt) => (data.almacenes || []).some((a) => String(a.almacen_id) === String(opt.value)))
                                     .map((almacen) => {
-                                        // Obtener los límites del almacén actual
-                                        const almacenLimites = stockLimites[almacen.value] || {};
+                                        // ✨ IMPORTANTE: Usar data.stock_limites como fallback si stockLimites aún no se inicializó
+                                        const limites = stockLimites[almacen.value] || (data as any).stock_limites?.[almacen.value] || {};
+                                        const almacenLimites = limites;
 
                                     return (
                                         <tr key={almacen.value} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
