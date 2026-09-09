@@ -67,9 +67,9 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
   const [unidadesReposicion, setUnidadesReposicion] = useState<Record<number, 'base' | 'conversion'>>({});
 
   const agregarProducto = (productoId: number) => {
-    const cantidad = cantidadesPorProducto[productoId] || 0;
-    if (cantidad <= 0) {
-      alert('Ingresa una cantidad válida');
+    const cantidad = cantidadesPorProducto[productoId];
+    if (!cantidad || cantidad <= 0) {
+      alert('Ingresa una cantidad válida antes de agregar');
       return;
     }
 
