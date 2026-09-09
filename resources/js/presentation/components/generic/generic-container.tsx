@@ -63,7 +63,7 @@ export default function GenericContainer<T extends BaseEntity, F extends BaseFor
             );
         }
         return (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {entities.data.map((entity) => (
                     <div key={entity.id}>{config.cardRenderer!(entity, { onEdit: navigateToEdit, onDelete: handleDelete }, extraData)}</div>
                 ))}
@@ -183,7 +183,7 @@ export default function GenericContainer<T extends BaseEntity, F extends BaseFor
                         {viewMode === 'cards' && <div>{renderCards()}</div>}
 
                         {isLoading && (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                                 {Array.from({ length: 8 }).map((_, i) => (
                                     <div key={i} className="space-y-3 rounded-xl border border-border p-3">
                                         <Skeleton className="h-32 w-full rounded-md" />
