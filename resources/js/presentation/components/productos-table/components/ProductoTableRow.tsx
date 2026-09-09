@@ -261,8 +261,9 @@ export default function ProductoTableRow({
                             if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
                                 const num = valor === '' ? 0 : parseFloat(valor);
                                 if (num >= 0) {
-                                    // ✅ NUEVO (2026-09-07): Validar stock considerando conversiones
-                                    if (detalle.es_fraccionado && (detalle.conversiones?.length || 0) > 0) {
+                                    // ✅ FIJO (2026-09-09): Validar stock solo en modo VENTA, no en COMPRA
+                                    // En COMPRA, no validamos stock porque la compra AUMENTA el stock
+                                    if (tipo === 'venta' && detalle.es_fraccionado && (detalle.conversiones?.length || 0) > 0) {
                                         const stockBase =
                                             (productoInfo as any)?.stock_disponible_calc ??
                                             (productoInfo as any)?.stock_disponible ??
