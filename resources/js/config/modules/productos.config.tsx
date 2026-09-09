@@ -134,8 +134,8 @@ const ProductCard: React.FC<{
             )}
             {/* Mostrar código de barras principal */}
             {((p as any).codigosBarra?.[0]?.codigo || p.codigo_barras) && (
-              <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 px-1.5 py-0.5 rounded font-mono font-semibold text-[9px]">
-                {(p as any).codigosBarra?.[0]?.codigo || p.codigo_barras}
+              <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 px-1.5 py-0.5 rounded font-mono font-semibold text-[12px]">
+                #{(p as any).codigosBarra?.[0]?.codigo || p.codigo_barras}
               </span>
             )}
             {/* Mostrar marca y unidad (solo si hay marca) */}
@@ -209,40 +209,9 @@ const ProductCard: React.FC<{
             )}
           </div>
 
-          {/* Desktop: Botones de acciones visibles */}
+          {/* Menú popup con 3 puntos - En desktop y mobile */}
           {(puedeEditar || puedeEliminar) && (
-            <div className="hidden md:flex flex-col gap-1">
-              <a
-                href={`/codigos-barra?producto_id=${p.id}`}
-                className="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded p-1.5 text-xs font-medium transition-colors"
-                title="Ver códigos de barras"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              </a>
-              {puedeEditar && (
-                <button
-                  onClick={() => onEdit(p)}
-                  className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded p-1.5 text-xs font-medium transition-colors"
-                  title="Editar producto"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                </button>
-              )}
-              {puedeEliminar && (
-                <button
-                  onClick={() => onDelete(p)}
-                  className="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded p-1.5 text-xs font-medium transition-colors"
-                  title="Eliminar producto"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Mobile: Menú popup con 3 puntos - Solo si tiene permisos */}
-          {(puedeEditar || puedeEliminar) && (
-            <div className="md:hidden relative">
+            <div className="relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="inline-flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white rounded p-1.5 text-xs font-medium"
