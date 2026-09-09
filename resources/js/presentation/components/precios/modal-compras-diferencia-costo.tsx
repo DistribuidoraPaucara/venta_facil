@@ -290,7 +290,7 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
                     {/* Content */}
                     <div className="p-6 max-h-full overflow-y-auto space-y-6">
                         {/* ✅ NUEVO: Tabla expandible de precios por unidad */}
-                        {preciosCompletos && preciosCompletos.length > 0 && (
+                        {(preciosCompletos || producto?.precios) && (preciosCompletos || producto?.precios)?.length > 0 && (
                             <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
                                 <button
                                     onClick={() => setTablaExpandida(!tablaExpandida)}
@@ -301,7 +301,7 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
                                         <span className="font-medium text-gray-900 dark:text-slate-50">Precios por Unidad</span>
                                     </div>
                                     <span className="text-xs text-gray-600 dark:text-gray-400">
-                                        {preciosCompletos.length} precios registrados
+                                        {(preciosCompletos || producto?.precios)?.length || 0} precios registrados
                                     </span>
                                 </button>
 
@@ -316,24 +316,28 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                                                {preciosCompletos.map((precio, idx) => (
+                                                {(preciosCompletos || producto?.precios || []).map((precio: any, idx: number) => (
                                                     <tr key={`${precio.id}-${idx}`} className="hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
                                                         <td className="px-4 py-2 text-gray-900 dark:text-slate-200">
-                                                            <span className="inline-flex items-center gap-1">
-                                                                {precio.unidad_medida?.nombre || 'N/A'}
+                                                            <span className="inline-flex items-center gap-1 font-medium">
+                                                                {precio.unidad_medida?.nombre ||
+                                                                 (precio as any).unidad_nombre ||
+                                                                 'N/A'}
                                                             </span>
                                                         </td>
                                                         <td className="px-4 py-2">
                                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                                precio.tipo_precio?.codigo === 'COSTO'
+                                                                (precio.tipo_precio?.codigo === 'COSTO' || (precio as any).tipo_codigo === 'COSTO')
                                                                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
                                                                     : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
                                                             }`}>
-                                                                {precio.tipo_precio?.nombre || 'N/A'}
+                                                                {precio.tipo_precio?.nombre ||
+                                                                 (precio as any).nombre ||
+                                                                 'N/A'}
                                                             </span>
                                                         </td>
                                                         <td className="px-4 py-2 text-right font-semibold text-gray-900 dark:text-slate-50">
-                                                            {formatCurrency(precio.precio || 0)}
+                                                            {formatCurrency((precio as any).precio || 0)}
                                                         </td>
                                                     </tr>
                                                 ))}
