@@ -147,9 +147,9 @@ const ProductCard: React.FC<{
                   </div>
                 </div>
 
-                {/* Fila 2: Fraccionado y Unidad (solo si es fraccionado) */}
-                {p.es_fraccionado && (
-                  <div className="flex gap-2">
+                {/* Fila 2: Fraccionado (solo si es fraccionado) y Unidad (siempre) */}
+                <div className="flex gap-2">
+                  {p.es_fraccionado && (
                     <div className="flex-1">
                       <span className="block text-[10px] uppercase tracking-wide">Fraccionado</span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200">
@@ -157,14 +157,14 @@ const ProductCard: React.FC<{
                         <span>Sí</span>
                       </span>
                     </div>
-                    <div className="flex-1">
-                      <span className="block text-[10px] uppercase tracking-wide">Unidad</span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
-                        {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
-                      </span>
-                    </div>
+                  )}
+                  <div className={p.es_fraccionado ? 'flex-1' : 'w-full'}>
+                    <span className="block text-[10px] uppercase tracking-wide">Unidad</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
+                      {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
+                    </span>
                   </div>
-                )}
+                </div>
               </>
             )}
           </div>
