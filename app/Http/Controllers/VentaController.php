@@ -733,17 +733,51 @@ class VentaController extends Controller
                 $totalVenta = $ventaCreada->total;
                 $cambio = $totalPagado - $totalVenta;
 
+                Log::debug('🔍 [VentaController::store] Verificando cambio', [
+                    'venta_id'     => $ventaCreada->id,
+                    'venta_numero' => $ventaCreada->numero,
+                    'totalPagado'  => $totalPagado,
+                    'totalVenta'   => $totalVenta,
+                    'cambio'       => $cambio,
+                    'cambio > 0.01' => $cambio > 0.01,
+                ]);
+
                 if ($cambio > 0.01) {
+                    Log::debug('✅ [VentaController::store] Cambio detectado, buscando caja abierta', [
+                        'user_id'  => auth()->id(),
+                        'cambio'   => $cambio,
+                    ]);
+
                     $cajaAbierta = \App\Models\AperturaCaja::where('user_id', auth()->id())
                         ->whereDoesntHave('cierre')
                         ->latest('fecha')
                         ->first();
 
+                    Log::debug('🔍 [VentaController::store] Resultado búsqueda caja abierta', [
+                        'encontrada'   => $cajaAbierta ? 'SI' : 'NO',
+                        'apertura_id'  => $cajaAbierta?->id,
+                        'caja_id'      => $cajaAbierta?->caja_id,
+                    ]);
+
                     if ($cajaAbierta) {
+                        Log::debug('✅ [VentaController::store] Caja abierta encontrada, buscando tipo operación SALIDA');
+
                         $tipoOperacionSalida = \App\Models\TipoOperacionCaja::where('codigo', 'SALIDA')->first();
 
+                        Log::debug('🔍 [VentaController::store] Resultado búsqueda tipo operación SALIDA', [
+                            'encontrada' => $tipoOperacionSalida ? 'SI' : 'NO',
+                            'tipo_operacion_id' => $tipoOperacionSalida?->id,
+                        ]);
+
                         if ($tipoOperacionSalida) {
-                            \App\Models\MovimientoCaja::create([
+                            Log::debug('✅ [VentaController::store] Creando movimiento de cambio', [
+                                'apertura_caja_id' => $cajaAbierta->id,
+                                'caja_id'          => $cajaAbierta->caja_id,
+                                'monto'            => -$cambio,
+                                'numero_documento' => $ventaCreada->numero,
+                            ]);
+
+                            $movimiento = \App\Models\MovimientoCaja::create([
                                 'apertura_caja_id' => $cajaAbierta->id,
                                 'caja_id'          => $cajaAbierta->caja_id,
                                 'user_id'          => auth()->id(),
@@ -755,19 +789,36 @@ class VentaController extends Controller
                                 'observaciones'    => "Cambio venta #{$ventaCreada->numero}",
                             ]);
 
-                            Log::info('💵 [VentaController::store] Movimiento de SALIDA por cambio registrado', [
-                                'venta_id'      => $ventaCreada->id,
-                                'venta_numero'  => $ventaCreada->numero,
-                                'monto_cambio'  => $cambio,
-                                'caja_id'       => $cajaAbierta->caja_id,
+                            Log::info('💵 [VentaController::store] Movimiento de SALIDA por cambio registrado EXITOSAMENTE', [
+                                'movimiento_id'   => $movimiento->id,
+                                'venta_id'        => $ventaCreada->id,
+                                'venta_numero'    => $ventaCreada->numero,
+                                'monto_cambio'    => $cambio,
+                                'caja_id'         => $cajaAbierta->caja_id,
+                            ]);
+                        } else {
+                            Log::warning('⚠️ [VentaController::store] Tipo operación SALIDA no encontrado', [
+                                'venta_id'   => $ventaCreada->id,
+                                'cambio'     => $cambio,
                             ]);
                         }
+                    } else {
+                        Log::warning('⚠️ [VentaController::store] No hay caja abierta para el usuario', [
+                            'user_id'  => auth()->id(),
+                            'venta_id' => $ventaCreada->id,
+                            'cambio'   => $cambio,
+                        ]);
                     }
+                } else {
+                    Log::debug('ℹ️ [VentaController::store] Sin cambio (cambio <= 0.01)', [
+                        'cambio' => $cambio,
+                    ]);
                 }
             } catch (\Exception $e) {
-                Log::error('⚠️ Error registrando movimiento de cambio', [
-                    'venta_id' => $ventaCreada->id,
-                    'error'    => $e->getMessage(),
+                Log::error('⚠️ EXCEPCIÓN registrando movimiento de cambio', [
+                    'venta_id'    => $ventaCreada->id,
+                    'error'       => $e->getMessage(),
+                    'trace'       => $e->getTraceAsString(),
                 ]);
             }
 
