@@ -139,6 +139,14 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
     }
   };
 
+  const formatearNumero = (num: number | undefined) => {
+    if (num === undefined || num === null) return '0';
+    // Si es entero, muestra sin decimales
+    if (Number.isInteger(num)) return num.toString();
+    // Si tiene decimales, muestra solo los necesarios (máximo 2)
+    return parseFloat(num.toFixed(2)).toString();
+  };
+
   return (
     <>
       <Head title="Nueva Reposición" />
@@ -241,10 +249,11 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                 <table className="w-full text-sm">
                   <thead className="border-b">
                     <tr>
+                      <th className="text-left py-3 px-4">ID</th>
                       <th className="text-left py-3 px-4">Producto</th>
                       <th className="text-left py-3 px-4">SKU</th>
+                      <th className="text-center py-3 px-4">Mínimo Req.</th>
                       <th className="text-center py-3 px-4">Stock Sala</th>
-                      <th className="text-center py-3 px-4">Mínimo</th>
                       <th className="text-center py-3 px-4">Stock Principal</th>
                       <th className="text-center py-3 px-4">Estado</th>
                       <th className="text-center py-3 px-4">Unidad Reposición</th>
@@ -269,12 +278,13 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                               : ''
                           } ${yaAgregado ? 'opacity-60' : ''}`}
                         >
+                          <td className="py-3 px-4">#{producto.id}</td>
                           <td className="py-3 px-4">{producto.nombre}</td>
                           <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{producto.sku}</td>
-                          <td className="py-3 px-4 text-center font-medium">{producto.stock_actual ?? 0}</td>
-                          <td className="py-3 px-4 text-center">{producto.stock_minimo_requerido ?? 0}</td>
+                          <td className="py-3 px-4 text-center">{formatearNumero(producto.stock_minimo_requerido)}</td>
+                          <td className="py-3 px-4 text-center font-medium">{formatearNumero(producto.stock_actual)}</td>
                           <td className="py-3 px-4 text-center font-semibold text-green-600 dark:text-green-400">
-                            {producto.stock_principal ?? 0}
+                            {formatearNumero(producto.stock_principal)}
                           </td>
                           <td className="py-3 px-4 text-center">
                             {isCritico ? (
