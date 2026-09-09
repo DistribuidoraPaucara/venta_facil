@@ -1,5 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import { route } from '@/infrastructure/routing/routes';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
@@ -43,7 +44,7 @@ interface Props {
   almacenes: Almacen[];
 }
 
-export default function ReposicionesEdit({ reposicion, almacenes }: Props) {
+function ReposicionesEdit({ reposicion, almacenes }: Props) {
   const { data, setData, put, errors, processing } = useForm({
     almacen_origen_id: reposicion.almacen_origen_id.toString(),
     almacen_destino_id: reposicion.almacen_destino_id.toString(),
@@ -113,7 +114,7 @@ export default function ReposicionesEdit({ reposicion, almacenes }: Props) {
   return (
     <>
       <Head title={`Editar ${reposicion.numero}`} />
-      <div className="container mx-auto py-6">
+      <div className="py-6">
         <div className="flex items-center gap-3 mb-6">
           <Link href={route('reposiciones.show', reposicion.id)}>
             <Button variant="outline" size="sm">
@@ -313,3 +314,7 @@ export default function ReposicionesEdit({ reposicion, almacenes }: Props) {
     </>
   );
 }
+
+ReposicionesEdit.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default ReposicionesEdit;

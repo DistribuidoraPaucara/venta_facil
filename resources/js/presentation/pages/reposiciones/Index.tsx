@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { route } from '@/infrastructure/routing/routes';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Badge } from '@/presentation/components/ui/badge';
@@ -20,7 +21,7 @@ interface Props {
   reposiciones: Pagination<Reposicion>;
 }
 
-export default function ReposicionesIndex({ reposiciones }: Props) {
+function ReposicionesIndex({ reposiciones }: Props) {
   const getEstadoBadge = (estado: string) => {
     const variants: Record<string, { bg: string; text: string }> = {
       BORRADOR: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -40,7 +41,7 @@ export default function ReposicionesIndex({ reposiciones }: Props) {
   return (
     <>
       <Head title="Reposiciones" />
-      <div className="container mx-auto py-6">
+      <div className="py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Reposiciones</h1>
@@ -121,3 +122,7 @@ export default function ReposicionesIndex({ reposiciones }: Props) {
     </>
   );
 }
+
+ReposicionesIndex.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default ReposicionesIndex;

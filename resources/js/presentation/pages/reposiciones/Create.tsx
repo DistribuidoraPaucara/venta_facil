@@ -1,5 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import { route } from '@/infrastructure/routing/routes';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
@@ -30,7 +31,7 @@ interface Detalle {
   cantidad_solicitada: number;
 }
 
-export default function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
+function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
   const { data, setData, post, errors, processing } = useForm({
     almacen_origen_id: '',
     almacen_destino_id: '',
@@ -89,7 +90,7 @@ export default function ReposicionesCreate({ almacenes, productosStockBajo }: Pr
   return (
     <>
       <Head title="Nueva Reposición" />
-      <div className="container mx-auto py-6">
+      <div className="py-6">
         <div className="flex items-center gap-3 mb-6">
           <Link href={route('reposiciones.index')}>
             <Button variant="outline" size="sm">
@@ -293,3 +294,7 @@ export default function ReposicionesCreate({ almacenes, productosStockBajo }: Pr
     </>
   );
 }
+
+ReposicionesCreate.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default ReposicionesCreate;

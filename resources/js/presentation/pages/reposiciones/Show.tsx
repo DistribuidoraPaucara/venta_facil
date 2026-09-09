@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { route } from '@/infrastructure/routing/routes';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Badge } from '@/presentation/components/ui/badge';
@@ -35,7 +36,7 @@ interface Props {
   reposicion: Reposicion;
 }
 
-export default function ReposicionesShow({ reposicion }: Props) {
+function ReposicionesShow({ reposicion }: Props) {
   const getEstadoBadge = (estado: string) => {
     const variants: Record<string, { bg: string; text: string }> = {
       BORRADOR: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -67,7 +68,7 @@ export default function ReposicionesShow({ reposicion }: Props) {
   return (
     <>
       <Head title={`Reposición ${reposicion.numero}`} />
-      <div className="container mx-auto py-6">
+      <div className="py-6">
         <div className="flex items-center gap-3 mb-6">
           <Link href={route('reposiciones.index')}>
             <Button variant="outline" size="sm">
@@ -259,3 +260,7 @@ export default function ReposicionesShow({ reposicion }: Props) {
     </>
   );
 }
+
+ReposicionesShow.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default ReposicionesShow;
