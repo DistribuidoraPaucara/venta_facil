@@ -525,7 +525,7 @@ export default function ProductoForm({
             }
 
             // 🔄 Validar y ajustar almacenes antes de enviar
-            const { validos, ajustes } = validarYAjustarAlmacenes(almacenesConSector);
+            const { validos, ajustes } = validarYAjustarAlmacenes(almacenesConSector, (data as any).stock_limites);
 
             // 📢 Si hay ajustes, notificar al usuario
             if (ajustes.size > 0) {
@@ -572,6 +572,13 @@ export default function ProductoForm({
                 }
                 if (almacen.fecha_vencimiento) {
                     formData.append(`almacenes[${i}][fecha_vencimiento]`, almacen.fecha_vencimiento);
+                }
+                // ✨ NUEVO: Incluir stock_minimo y stock_maximo (agregados por validarYAjustarAlmacenes)
+                if (almacen.stock_minimo !== undefined && almacen.stock_minimo !== null) {
+                    formData.append(`almacenes[${i}][stock_minimo]`, String(almacen.stock_minimo));
+                }
+                if (almacen.stock_maximo !== undefined && almacen.stock_maximo !== null) {
+                    formData.append(`almacenes[${i}][stock_maximo]`, String(almacen.stock_maximo));
                 }
             });
 

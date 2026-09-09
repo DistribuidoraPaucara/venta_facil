@@ -58,7 +58,7 @@ function calcularEquivalentes(cantidad: number, conversiones: any[] = []) {
  * Asegura que: total >= (disponible + reservada)
  * Si no cumple, ajusta disponible = total - reservada
  */
-export function validarYAjustarAlmacenes(almacenes: any[]): { validos: any[]; ajustes: Map<number, any> } {
+export function validarYAjustarAlmacenes(almacenes: any[], stockLimites?: Record<number | string, any>): { validos: any[]; ajustes: Map<number, any> } {
     const ajustes = new Map<number, any>();
 
     const almacenesAjustados = (almacenes || []).map((almacen, idx) => {
@@ -81,10 +81,22 @@ export function validarYAjustarAlmacenes(almacenes: any[]): { validos: any[]; aj
             return {
                 ...almacen,
                 cantidad_disponible: disponibleAjustado,
+                // ✨ NUEVO: Incluir stock_limites si existen
+                ...(stockLimites?.[almacen.almacen_id] && {
+                    stock_minimo: stockLimites[almacen.almacen_id].stock_minimo,
+                    stock_maximo: stockLimites[almacen.almacen_id].stock_maximo,
+                }),
             };
         }
 
-        return almacen;
+        return {
+            ...almacen,
+            // ✨ NUEVO: Incluir stock_limites si existen
+            ...(stockLimites?.[almacen.almacen_id] && {
+                stock_minimo: stockLimites[almacen.almacen_id].stock_minimo,
+                stock_maximo: stockLimites[almacen.almacen_id].stock_maximo,
+            }),
+        };
     });
 
     return { validos: almacenesAjustados, ajustes };
