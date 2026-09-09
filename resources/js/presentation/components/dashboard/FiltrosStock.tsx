@@ -95,80 +95,10 @@ export default function FiltrosStock({ almacenes, onFiltrosChange }: FiltrosStoc
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-
-                {/* Filtro por Almacén */}
+            {/* ✅ NUEVO (2026-09-09): Reorganizar layout con búsqueda en fila completa */}
+            <div className="space-y-4">
+                {/* Búsqueda por Producto - ANCHO COMPLETO */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Almacén
-                    </label>
-                    <select
-                        value={filtros.almacenId}
-                        onChange={(e) => handleFiltroChange({ almacenId: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    >
-                        <option value="">Todos los almacenes</option>
-                        {almacenes.map((almacen) => (
-                            <option key={almacen.id} value={String(almacen.id)}>
-                                {almacen.nombre}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Rango de Stock */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Rango de Stock
-                    </label>
-                    <select
-                        value={filtros.rangoStock}
-                        onChange={(e) => handleFiltroChange({ rangoStock: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    >
-                        {Object.entries(RANGOS_STOCK).map(([key, value]) => (
-                            <option key={key} value={key}>
-                                {value.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Ordenamiento */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Ordenar por
-                    </label>
-                    <select
-                        value={filtros.ordenamiento}
-                        onChange={(e) => handleFiltroChange({ ordenamiento: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    >
-                        <option value="cantidad-desc">Cantidad (Mayor a Menor)</option>
-                        <option value="cantidad-asc">Cantidad (Menor a Mayor)</option>
-                        <option value="producto">Producto (A-Z)</option>
-                        <option value="almacen">Almacén (A-Z)</option>
-                    </select>
-                </div>
-
-                {/* Toggle: Solo con Stock */}
-                <div className="flex items-end">
-                    <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition flex-1">
-                        <input
-                            type="checkbox"
-                            checked={filtros.soloConStock}
-                            onChange={(e) => handleFiltroChange({ soloConStock: e.target.checked })}
-                            className="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                        />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                            Solo con stock
-                        </span>
-                    </label>
-                </div>
-
-                {/* Búsqueda por Producto */}
-                <div className="lg:col-span-2 flex flex-col">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Buscar Producto (ID, SKU o Nombre)
                     </label>
@@ -179,14 +109,86 @@ export default function FiltrosStock({ almacenes, onFiltrosChange }: FiltrosStoc
                             value={busquedaLocal}
                             onChange={(e) => setBusquedaLocal(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-base"
                         />
                         <button
                             onClick={aplicarBusqueda}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition whitespace-nowrap"
+                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition whitespace-nowrap"
                         >
-                            Buscar
+                            🔍 Buscar
                         </button>
+                    </div>
+                </div>
+
+                {/* Filtros restantes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Filtro por Almacén */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Almacén
+                        </label>
+                        <select
+                            value={filtros.almacenId}
+                            onChange={(e) => handleFiltroChange({ almacenId: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        >
+                            <option value="">Todos los almacenes</option>
+                            {almacenes.map((almacen) => (
+                                <option key={almacen.id} value={String(almacen.id)}>
+                                    {almacen.nombre}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Rango de Stock */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Rango de Stock
+                        </label>
+                        <select
+                            value={filtros.rangoStock}
+                            onChange={(e) => handleFiltroChange({ rangoStock: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        >
+                            {Object.entries(RANGOS_STOCK).map(([key, value]) => (
+                                <option key={key} value={key}>
+                                    {value.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Ordenamiento */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Ordenar por
+                        </label>
+                        <select
+                            value={filtros.ordenamiento}
+                            onChange={(e) => handleFiltroChange({ ordenamiento: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        >
+                            <option value="cantidad-desc">Cantidad (Mayor a Menor)</option>
+                            <option value="cantidad-asc">Cantidad (Menor a Mayor)</option>
+                            <option value="producto">Producto (A-Z)</option>
+                            <option value="almacen">Almacén (A-Z)</option>
+                        </select>
+                    </div>
+
+                    {/* Toggle: Solo con Stock */}
+                    <div className="flex items-end">
+                        <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition flex-1">
+                            <input
+                                type="checkbox"
+                                checked={filtros.soloConStock}
+                                onChange={(e) => handleFiltroChange({ soloConStock: e.target.checked })}
+                                className="w-5 h-5 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                Solo con stock
+                            </span>
+                        </label>
                     </div>
                 </div>
             </div>
