@@ -15,7 +15,7 @@ class ReposicionController extends Controller
 {
     public function index()
     {
-        $this->authorize('view', Reposicion::class);
+        $this->authorize('viewAny', Reposicion::class);
 
         $reposiciones = Reposicion::with(['empresa', 'almacenOrigen', 'almacenDestino', 'usuario'])
             ->where('empresa_id', auth()->user()->empresa_id)
