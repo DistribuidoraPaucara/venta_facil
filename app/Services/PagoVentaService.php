@@ -142,10 +142,10 @@ class PagoVentaService
                 $detallesPago[] = $detallePago;
             }
 
-            // ✅ ACTUALIZADO (2026-05-04): monto_pagado = total de la venta (dinero real que entra)
-            // El vuelto se resta en el listener como movimiento VUELTO
+            // ✅ ACTUALIZADO (2026-05-04): monto_pagado = monto original que pagó el cliente
+            // Esto permite registrar cambio/vuelto en VentaController
             $venta->update([
-                'monto_pagado' => $venta->total,  // Dinero real que entra por la venta
+                'monto_pagado' => $totalPagos,  // Monto original que pagó (puede ser > total si hay vuelto)
                 'monto_pendiente' => 0,  // No hay pendiente si pagó (igual o más que el total)
             ]);
 
