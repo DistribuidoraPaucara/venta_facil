@@ -532,9 +532,12 @@ export default function Step3Almacenes({
                                 {almacenesOptions
                                     .filter((opt) => (data.almacenes || []).some((a) => String(a.almacen_id) === String(opt.value)))
                                     .map((almacen) => {
-                                        // ✨ IMPORTANTE: Usar data.stock_limites como fallback si stockLimites aún no se inicializó
-                                        const limites = stockLimites[almacen.value] || (data as any).stock_limites?.[almacen.value] || {};
+                                        // ✨ IMPORTANTE: Normalizar la clave - backend puede devolver "4" o 4
+                                        const limitesBackend = (data as any).stock_limites || {};
+                                        const key = almacen.value;
+                                        const limites = stockLimites[key] || limitesBackend[key] || limitesBackend[Number(key)] || {};
                                         const almacenLimites = limites;
+                                        console.log(`📋 Almacén ${key}:`, { stockLimites: stockLimites[key], limitesBackend: limitesBackend[key], final: limites });
 
                                     return (
                                         <tr key={almacen.value} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
