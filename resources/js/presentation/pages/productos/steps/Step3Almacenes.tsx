@@ -114,6 +114,13 @@ export default function Step3Almacenes({
 
     const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(true);
 
+    // ✨ Inicializar stock_limites si no viene del backend
+    useEffect(() => {
+        if (!data.stock_limites) {
+            setData('stock_limites', {});
+        }
+    }, []);
+
 
     // Cargar sectores cuando se selecciona un almacén
     const handleAlmacenChange = async (i: number, almacenId: number | string) => {
