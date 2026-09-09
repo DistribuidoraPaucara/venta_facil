@@ -295,21 +295,26 @@ export default function VentaForm() {
 
     // ✅ NUEVO: Filtrar tipos de pago disponibles basados en capacidad de crédito del cliente
     const tiposPagoDisponibles: SelectOption[] = useMemo(() => {
-        if (!data.cliente_id) {
+        // Usar clienteSeleccionado que tiene los datos completos del cliente
+        if (!clienteSeleccionado) {
             return tiposPagoOptions; // Si no hay cliente, mostrar todos los tipos de pago
         }
-        const clienteActual = clientesSeguro.find((c) => c.id === data.cliente_id);
-        const puedeUsarCredito = clienteActual?.puede_tener_credito || false;
-        return tiposPagoOptions.filter((option) => {
+        const puedeUsarCredito = clienteSeleccionado?.puede_tener_credito || false;
+        console.log('💳 [tiposPagoDisponibles] Cliente seleccionado:', clienteSeleccionado.nombre, 'puede_tener_credito:', puedeUsarCredito);
+
+        const disponibles = tiposPagoOptions.filter((option) => {
             const tipoPago = tiposPagoSeguro.find((t) => t.id === option.value);
             // Si es CREDITO, solo mostrar si el cliente puede tener crédito
             if (tipoPago?.codigo === 'CREDITO') {
+                console.log('💳 [tiposPagoDisponibles] Evaluando CREDITO - puedeUsarCredito:', puedeUsarCredito, 'Resultado:', puedeUsarCredito);
                 return puedeUsarCredito;
             }
             // Los demás tipos de pago siempre están disponibles
             return true;
         });
-    }, [tiposPagoOptions, tiposPagoSeguro, data.cliente_id, clientesSeguro]);
+        console.log('💳 [tiposPagoDisponibles] Tipos de pago disponibles:', disponibles.map(d => d.label));
+        return disponibles;
+    }, [tiposPagoOptions, tiposPagoSeguro, clienteSeleccionado]);
 
     // ✅ NUEVO (2026-04-21): Estado para múltiples pagos por venta
     interface Pago {
