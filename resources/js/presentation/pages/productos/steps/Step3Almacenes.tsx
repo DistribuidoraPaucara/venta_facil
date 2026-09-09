@@ -138,18 +138,22 @@ export default function Step3Almacenes({
     const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(false);
 
     // ✨ Estado local para stock_limites (separado de data)
-    const [stockLimites, setStockLimites] = useState<Record<number | string, any>>(data.stock_limites || {});
+    const [stockLimites, setStockLimites] = useState<Record<number | string, any>>({});
 
-    // ✨ Sincronizar stockLimites con data cuando cambia data.stock_limites
+    // ✨ Inicializar stockLimites SOLO UNA VEZ cuando data.stock_limites llega del backend
     useEffect(() => {
-        if (data.stock_limites) {
+        if (data.stock_limites && Object.keys(stockLimites).length === 0) {
+            console.log('📋 Inicializando stockLimites desde backend:', data.stock_limites);
             setStockLimites(data.stock_limites);
         }
     }, [data.stock_limites]);
 
-    // ✨ Sincronizar data con stockLimites cuando cambia stockLimites
+    // ✨ Sincronizar data con stockLimites cuando cambia stockLimites (DESPUÉS de inicializar)
     useEffect(() => {
-        setData('stock_limites', stockLimites);
+        if (Object.keys(stockLimites).length > 0) {
+            console.log('💾 Sincronizando stockLimites hacia data:', stockLimites);
+            setData('stock_limites', stockLimites);
+        }
     }, [stockLimites]);
 
 
