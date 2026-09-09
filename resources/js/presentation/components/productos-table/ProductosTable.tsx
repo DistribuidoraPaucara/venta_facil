@@ -335,7 +335,8 @@ export default function ProductosTable({
         setModalCascadaState({
             isOpen: true,
             productoId: typeof detalle.producto_id === 'string' ? parseInt(detalle.producto_id) : detalle.producto_id,
-            precioActual: detalle.precio_costo || null,
+            // ✅ FIJO: Usar precio_unitario que contiene el precio de compra correcto (90 PAQUETE)
+            precioActual: detalle.precio_unitario || null,
             precioCostoNuevo: detalle.precio_unitario || null,
             detalleIndex: index,
             productoData: detalle.producto || { id: detalle.producto_id, nombre: 'Producto' },
