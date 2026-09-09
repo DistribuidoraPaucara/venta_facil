@@ -133,31 +133,38 @@ const ProductCard: React.FC<{
               </div>
             ) : (
               <>
-                <div>
-                  <span className="block text-[10px] uppercase tracking-wide">Stock Disponible</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${((p as any).stock_disponible_calc ?? 0) === 0 ? 'bg-red-100 text-red-700' : ((p as any).stock_disponible_calc ?? 0) < (p.stock_minimo ?? 0) ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                    {((p as any).stock_disponible_calc ?? 0)}
-                  </span>
-                </div>
-                {/* ✅ NUEVO: Mostrar si es fraccionado y su unidad */}
-                <div className="space-y-1">
-                  <div>
-                    <span className="block text-[10px] uppercase tracking-wide">Fraccionado</span>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold ${p.es_fraccionado
-                      ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200'
-                      : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200'
-                      }`}>
-                      <span>{p.es_fraccionado ? '✂️' : '📦'}</span>
-                      <span>{p.es_fraccionado ? 'Sí' : 'No'}</span>
+                {/* Fila 1: Stock y Venta */}
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <span className="block text-[10px] uppercase tracking-wide">Stock</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${((p as any).stock_disponible_calc ?? 0) === 0 ? 'bg-red-100 text-red-700' : ((p as any).stock_disponible_calc ?? 0) < (p.stock_minimo ?? 0) ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {((p as any).stock_disponible_calc ?? 0)}
                     </span>
                   </div>
-                  <div>
-                    <span className="block text-[10px] uppercase tracking-wide">Unidad Medida</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
-                      {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
-                    </span>
+                  <div className="flex-1">
+                    <span className="block text-[10px] uppercase tracking-wide text-green-600 dark:text-green-400 font-semibold">Venta</span>
+                    <span className="font-bold text-xs text-green-700 dark:text-green-200">{currency(precioVenta)}</span>
                   </div>
                 </div>
+
+                {/* Fila 2: Fraccionado y Unidad (solo si es fraccionado) */}
+                {p.es_fraccionado && (
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <span className="block text-[10px] uppercase tracking-wide">Fraccionado</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200">
+                        <span>✂️</span>
+                        <span>Sí</span>
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <span className="block text-[10px] uppercase tracking-wide">Unidad</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
+                        {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
