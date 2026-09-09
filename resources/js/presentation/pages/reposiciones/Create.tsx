@@ -139,12 +139,14 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
     }
   };
 
-  const formatearNumero = (num: number | undefined) => {
-    if (num === undefined || num === null) return '0';
+  const formatearNumero = (num: number | string | undefined) => {
+    if (num === undefined || num === null || num === '') return '0';
+    const n = typeof num === 'string' ? parseFloat(num) : num;
+    if (isNaN(n)) return '0';
     // Si es entero, muestra sin decimales
-    if (Number.isInteger(num)) return num.toString();
+    if (Number.isInteger(n)) return n.toString();
     // Si tiene decimales, muestra solo los necesarios (máximo 2)
-    return parseFloat(num.toFixed(2)).toString();
+    return parseFloat(n.toFixed(2)).toString();
   };
 
   return (
