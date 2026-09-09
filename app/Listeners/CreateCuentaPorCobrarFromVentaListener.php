@@ -35,13 +35,13 @@ class CreateCuentaPorCobrarFromVentaListener
                 'tipo_pago' => $venta->tipoPago?->codigo,
             ]);
 
-            // Solo crear cuenta por cobrar si el tipo de pago es crédito
-            if (!$venta->tipoPago || !$venta->tipoPago->es_credito) {
+            // Solo crear cuenta por cobrar si el tipo de pago es CREDITO
+            if (!$venta->tipoPago || $venta->tipoPago->codigo !== 'CREDITO') {
                 Log::info('ℹ️ Venta no es a crédito, omitiendo creación de cuenta por cobrar', [
                     'venta_id' => $venta->id,
                     'tipo_pago_id' => $venta->tipo_pago_id,
-                    'tipo_pago' => $venta->tipoPago?->codigo,
-                    'es_credito' => $venta->tipoPago?->es_credito,
+                    'tipo_pago_codigo' => $venta->tipoPago?->codigo,
+                    'es_credito' => $venta->tipoPago?->codigo === 'CREDITO',
                 ]);
                 return;
             }
