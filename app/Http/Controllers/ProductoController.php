@@ -1462,6 +1462,8 @@ class ProductoController extends Controller
                             ]);
 
                             // ✨ NUEVO: Actualizar los límites de stock en stock_limites
+                            // ✨ IMPORTANTE: Usar $sectorId (del frontend) no $stockExistente->sector_id
+                            // Esto permite actualizar si el sector cambió, y elimina registros duplicados
                             $stockMinimo = isset($almacenData['stock_minimo']) ? (int) $almacenData['stock_minimo'] : 0;
                             $stockMaximo = isset($almacenData['stock_maximo']) ? (int) $almacenData['stock_maximo'] : 999999;
 
@@ -1470,13 +1472,21 @@ class ProductoController extends Controller
                                     [
                                         'producto_id'  => $producto->id,
                                         'almacen_id'   => $almacenId,
-                                        'sector_id'    => $stockExistente->sector_id,
+                                        'sector_id'    => $sectorId ?? $stockExistente->sector_id, // Usar nuevo sector del frontend, fallback al anterior
                                     ],
                                     [
                                         'stock_minimo' => $stockMinimo,
                                         'stock_maximo' => $stockMaximo,
                                     ]
                                 );
+
+                                // ✨ LIMPIEZA: Si el sector cambió, eliminar registro antiguo
+                                if ($sectorId && $sectorId !== $stockExistente->sector_id) {
+                                    StockLimite::where('producto_id', $producto->id)
+                                        ->where('almacen_id', $almacenId)
+                                        ->where('sector_id', $stockExistente->sector_id)
+                                        ->delete();
+                                }
                             }
                         } else {
                             Log::info('➕ StockProducto NO encontrado - CREANDO:', [
