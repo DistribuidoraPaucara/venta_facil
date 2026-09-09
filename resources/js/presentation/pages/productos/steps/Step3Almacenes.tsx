@@ -114,12 +114,20 @@ export default function Step3Almacenes({
 
     const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(true);
 
-    // ✨ Inicializar stock_limites si no viene del backend
+    // ✨ Estado local para stock_limites (separado de data)
+    const [stockLimites, setStockLimites] = useState<Record<number | string, any>>(data.stock_limites || {});
+
+    // ✨ Sincronizar stockLimites con data cuando cambia data.stock_limites
     useEffect(() => {
-        if (!data.stock_limites) {
-            setData('stock_limites', {});
+        if (data.stock_limites) {
+            setStockLimites(data.stock_limites);
         }
-    }, []);
+    }, [data.stock_limites]);
+
+    // ✨ Sincronizar data con stockLimites cuando cambia stockLimites
+    useEffect(() => {
+        setData('stock_limites', stockLimites);
+    }, [stockLimites]);
 
 
     // Cargar sectores cuando se selecciona un almacén
@@ -563,7 +571,6 @@ export default function Step3Almacenes({
                             <tbody>
                                 {almacenesOptions.map((almacen) => {
                                     // Obtener los límites del almacén actual
-                                    const stockLimites = data.stock_limites || {};
                                     const almacenLimites = stockLimites[almacen.value] || {};
 
                                     return (
@@ -576,12 +583,12 @@ export default function Step3Almacenes({
                                                     value={almacenLimites.sector_id ? String(almacenLimites.sector_id) : ''}
                                                     options={sectoresOptions[almacen.value] || []}
                                                     onChange={(value) => {
-                                                        const newLimites = { ...data.stock_limites };
+                                                        const newLimites = { ...stockLimites };
                                                         if (!newLimites[almacen.value]) {
                                                             newLimites[almacen.value] = {};
                                                         }
                                                         newLimites[almacen.value].sector_id = value ? Number(value) : undefined;
-                                                        setData('stock_limites', newLimites);
+                                                        setStockLimites(newLimites);
                                                     }}
                                                     allowClear={true}
                                                 />
@@ -593,12 +600,12 @@ export default function Step3Almacenes({
                                                     step="0.01"
                                                     value={almacenLimites.stock_minimo || ''}
                                                     onChange={(e) => {
-                                                        const newLimites = { ...data.stock_limites };
+                                                        const newLimites = { ...stockLimites };
                                                         newLimites[almacen.value] = {
                                                             ...almacenLimites,
                                                             stock_minimo: e.target.value === '' ? undefined : Number(e.target.value),
                                                         };
-                                                        setData('stock_limites', newLimites);
+                                                        setStockLimites(newLimites);
                                                     }}
                                                     className="h-8 text-xs border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
                                                 />
@@ -610,12 +617,12 @@ export default function Step3Almacenes({
                                                     step="0.01"
                                                     value={almacenLimites.stock_maximo || ''}
                                                     onChange={(e) => {
-                                                        const newLimites = { ...data.stock_limites };
+                                                        const newLimites = { ...stockLimites };
                                                         newLimites[almacen.value] = {
                                                             ...almacenLimites,
                                                             stock_maximo: e.target.value === '' ? undefined : Number(e.target.value),
                                                         };
-                                                        setData('stock_limites', newLimites);
+                                                        setStockLimites(newLimites);
                                                     }}
                                                     className="h-8 text-xs border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
                                                 />
