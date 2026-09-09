@@ -153,9 +153,9 @@ const ProductCard: React.FC<{
                   </div>
                   {p.es_fraccionado && (
                     <div>
-                      <span className="block text-[10px] uppercase tracking-wide">Unidad Venta</span>
+                      <span className="block text-[10px] uppercase tracking-wide">Unidad Medida</span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
-                        {(p as any).unidad_venta?.nombre || (p as any).unidad_venta?.codigo || '—'}
+                        {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
                       </span>
                     </div>
                   )}
@@ -510,15 +510,15 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
         </span>
       )
     },
-    // ✅ NUEVO: Columna para mostrar la unidad de venta
+    // ✅ NUEVO: Columna para mostrar la unidad de medida
     {
-      key: 'unidad_venta',
-      label: 'Unidad Venta',
+      key: 'unidad',
+      label: 'Unidad Medida',
       type: 'custom',
       sortable: false,
       render: (value, entity) => {
         // Acceder a la unidad desde la relación si existe
-        const unidad = (entity as any).unidad_venta || (entity as any).unidad;
+        const unidad = (entity as any).unidad;
         const nombreUnidad = unidad?.nombre || unidad?.codigo || '—';
 
         return (
