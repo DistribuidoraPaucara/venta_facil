@@ -1420,6 +1420,15 @@ export default function VentaForm() {
                 setMontoTransferencia(''); // Limpiar monto transferencia
                 setPagos([]);
 
+                // ✅ NUEVO: Seleccionar automáticamente cliente GENERAL después de limpiar
+                const clienteGeneral = clientesSeguro.find((c: Cliente) => c.codigo_cliente === 'GENERAL');
+                if (clienteGeneral) {
+                    setData('cliente_id', clienteGeneral.id);
+                    setClienteValue(clienteGeneral.id);
+                    setClienteDisplay(clienteGeneral.nombre + (clienteGeneral.nit ? ` (${clienteGeneral.nit})` : ''));
+                    setClienteSeleccionado(clienteGeneral);
+                }
+
                 // ✅ NUEVO (2026-07-16): Detectar si hay prestables y abrir pantalla de préstamo
                 (async () => {
                     try {
