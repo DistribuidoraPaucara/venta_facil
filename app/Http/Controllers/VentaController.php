@@ -727,6 +727,50 @@ class VentaController extends Controller
                 ]);
             }
 
+            // ✅ NUEVO: Registrar movimiento de cambio si hay vuelto
+            try {
+                $totalPagado = $ventaCreada->monto_pagado ?? 0;
+                $totalVenta = $ventaCreada->total;
+                $cambio = $totalPagado - $totalVenta;
+
+                if ($cambio > 0.01) {
+                    $cajaAbierta = \App\Models\AperturaCaja::where('user_id', auth()->id())
+                        ->whereDoesntHave('cierre')
+                        ->latest('fecha')
+                        ->first();
+
+                    if ($cajaAbierta) {
+                        $tipoOperacionSalida = \App\Models\TipoOperacionCaja::where('codigo', 'SALIDA')->first();
+
+                        if ($tipoOperacionSalida) {
+                            \App\Models\MovimientoCaja::create([
+                                'apertura_caja_id' => $cajaAbierta->id,
+                                'caja_id'          => $cajaAbierta->caja_id,
+                                'user_id'          => auth()->id(),
+                                'tipo_operacion_id' => $tipoOperacionSalida->id,
+                                'tipo_pago_id'     => $ventaCreada->tipo_pago_id,
+                                'monto'            => -$cambio, // Negativo para SALIDA
+                                'fecha'            => now(),
+                                'numero_documento' => $ventaCreada->numero,
+                                'observaciones'    => "Cambio venta #{$ventaCreada->numero}",
+                            ]);
+
+                            Log::info('💵 [VentaController::store] Movimiento de SALIDA por cambio registrado', [
+                                'venta_id'      => $ventaCreada->id,
+                                'venta_numero'  => $ventaCreada->numero,
+                                'monto_cambio'  => $cambio,
+                                'caja_id'       => $cajaAbierta->caja_id,
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('⚠️ Error registrando movimiento de cambio', [
+                    'venta_id' => $ventaCreada->id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+
             // 3.5 Imprimir ticket en impresora térmica
             try {
                 $venta = Venta::with(['cliente', 'detalles', 'tipoPago'])->findOrFail($ventaDTO->id);
