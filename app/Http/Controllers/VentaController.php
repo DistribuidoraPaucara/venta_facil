@@ -728,6 +728,7 @@ class VentaController extends Controller
             }
 
             // ✅ NUEVO: Registrar movimiento de cambio si hay vuelto
+            // El vuelto SIEMPRE se registra como EFECTIVO, sin importar cómo se pagó
             try {
                 $totalPagado = $ventaCreada->monto_pagado ?? 0;
                 $totalVenta = $ventaCreada->total;
@@ -741,14 +742,16 @@ class VentaController extends Controller
 
                     if ($cajaAbierta) {
                         $tipoOperacionSalida = \App\Models\TipoOperacionCaja::where('codigo', 'VUELTO')->first();
+                        // ✅ El vuelto siempre es en EFECTIVO
+                        $tipoPagoEfectivo = \App\Models\TipoPago::where('codigo', 'EFECTIVO')->first();
 
-                        if ($tipoOperacionSalida) {
+                        if ($tipoOperacionSalida && $tipoPagoEfectivo) {
                             $movimiento = \App\Models\MovimientoCaja::create([
                                 'apertura_caja_id' => $cajaAbierta->id,
                                 'caja_id'          => $cajaAbierta->caja_id,
                                 'user_id'          => auth()->id(),
                                 'tipo_operacion_id' => $tipoOperacionSalida->id,
-                                'tipo_pago_id'     => $ventaCreada->tipo_pago_id,
+                                'tipo_pago_id'     => $tipoPagoEfectivo->id,  // ✅ EFECTIVO siempre
                                 'monto'            => -$cambio, // Negativo para SALIDA
                                 'fecha'            => now(),
                                 'numero_documento' => $ventaCreada->numero,
@@ -759,11 +762,7 @@ class VentaController extends Controller
                                 'movimiento_id'   => $movimiento->id,
                                 'venta_numero'    => $ventaCreada->numero,
                                 'monto_cambio'    => $cambio,
-                            ]);
-                        } else {
-                            Log::warning('⚠️ Tipo operación VUELTO no encontrado', [
-                                'venta_id' => $ventaCreada->id,
-                                'cambio'   => $cambio,
+                                'tipo_pago'       => 'EFECTIVO',
                             ]);
                         }
                     }
