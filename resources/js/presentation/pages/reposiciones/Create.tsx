@@ -255,11 +255,11 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                       <th className="text-left py-3 px-4">Producto</th>
                       <th className="text-left py-3 px-4">SKU</th>
                       <th className="text-center py-3 px-4">Mínimo Req.</th>
-                      <th className="text-center py-3 px-4">Stock Sala</th>
-                      <th className="text-center py-3 px-4">Stock Principal</th>
-                      <th className="text-center py-3 px-4">Estado</th>
+                      <th className="text-center py-3 px-4">Stock en Sala</th>
+                      <th className="text-center py-3 px-4">Stock en Dep.</th>
                       <th className="text-center py-3 px-4">Unidad Reposición</th>
                       <th className="text-right py-3 px-4">Cantidad a Reponer</th>
+                      <th className="text-center py-3 px-4">Estado</th>
                       <th className="text-center py-3 px-4">Acción</th>
                     </tr>
                   </thead>
@@ -288,21 +288,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                           <td className="py-3 px-4 text-center font-semibold text-green-600 dark:text-green-400">
                             {formatearNumero(producto.stock_principal)}
                           </td>
-                          <td className="py-3 px-4 text-center">
-                            {isCritico ? (
-                              <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold text-xs">
-                                <AlertCircle size={14} />
-                                CRÍTICO
-                              </span>
-                            ) : isAdvertencia ? (
-                              <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400 font-semibold text-xs">
-                                <AlertTriangle size={14} />
-                                ALERTA
-                              </span>
-                            ) : (
-                              <span className="text-green-600 dark:text-green-400 font-semibold text-xs">OK</span>
-                            )}
-                          </td>
+                          
                           <td className="py-3 px-4 text-center">
                             {producto.es_fraccionado && producto.conversiones && producto.conversiones.length > 0 ? (
                               <select
@@ -337,20 +323,51 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                             )}
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <input
-                              type="number"
-                              min="1"
-                              placeholder="Cantidad"
-                              value={cantidadesPorProducto[producto.id] ?? ''}
-                              onChange={(e) =>
-                                setCantidadesPorProducto({
-                                  ...cantidadesPorProducto,
-                                  [producto.id]: Number(e.target.value) || 0,
-                                })
-                              }
-                              disabled={yaAgregado}
-                              className="w-24 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right disabled:opacity-50"
-                            />
+                            {yaAgregado ? (
+                              // Mostrar cantidad agregada si ya está en detalles
+                              <input
+                                type="number"
+                                min="1"
+                                value={data.detalles.find((d) => d.producto_id === producto.id)?.cantidad_solicitada ?? 0}
+                                onChange={(e) => {
+                                  const idx = data.detalles.findIndex((d) => d.producto_id === producto.id);
+                                  if (idx >= 0) {
+                                    actualizarCantidad(idx, Number(e.target.value));
+                                  }
+                                }}
+                                className="w-24 border border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right font-semibold"
+                              />
+                            ) : (
+                              // Input para cantidad antes de agregar
+                              <input
+                                type="number"
+                                min="1"
+                                placeholder="Cantidad"
+                                value={cantidadesPorProducto[producto.id] ?? ''}
+                                onChange={(e) =>
+                                  setCantidadesPorProducto({
+                                    ...cantidadesPorProducto,
+                                    [producto.id]: Number(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-24 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right"
+                              />
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {isCritico ? (
+                              <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold text-xs">
+                                <AlertCircle size={14} />
+                                CRÍTICO
+                              </span>
+                            ) : isAdvertencia ? (
+                              <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400 font-semibold text-xs">
+                                <AlertTriangle size={14} />
+                                ALERTA
+                              </span>
+                            ) : (
+                              <span className="text-green-600 dark:text-green-400 font-semibold text-xs">OK</span>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-center">
                             {yaAgregado ? (
@@ -381,80 +398,13 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
           </Card>
         </div>
 
-        {/* Tabla de detalles */}
+        {/* Indicador de productos agregados */}
         {data.detalles.length > 0 && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Productos a Reabastecer ({data.detalles.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b">
-                    <tr>
-                      <th className="text-left py-3 px-4">Producto</th>
-                      <th className="text-left py-3 px-4">SKU</th>
-                      <th className="text-center py-3 px-4">Stock Actual</th>
-                      <th className="text-center py-3 px-4">Mínimo</th>
-                      <th className="text-center py-3 px-4">Estado</th>
-                      <th className="text-right py-3 px-4">Cantidad</th>
-                      <th className="text-center py-3 px-4">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.detalles.map((detalle, index) => {
-                      const producto = productosStockBajo.find((p) => p.id === detalle.producto_id);
-                      const isCritico = (producto?.stock_actual ?? 0) < (producto?.stock_minimo_requerido ?? 0);
-                      const isAdvertencia = (producto?.stock_actual ?? 0) <= (producto?.umbral_advertencia ?? 0);
-                      return (
-                        <tr key={index} className={`border-b ${isCritico ? 'bg-red-50 dark:bg-red-950' : isAdvertencia ? 'bg-yellow-50 dark:bg-yellow-950' : ''}`}>
-                          <td className="py-3 px-4">{producto?.nombre}</td>
-                          <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{producto?.sku}</td>
-                          <td className="py-3 px-4 text-center font-medium">{producto?.stock_actual ?? 0}</td>
-                          <td className="py-3 px-4 text-center">{producto?.stock_minimo_requerido ?? 0}</td>
-                          <td className="py-3 px-4 text-center">
-                            {isCritico ? (
-                              <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold text-xs">
-                                <AlertCircle size={14} />
-                                CRÍTICO
-                              </span>
-                            ) : isAdvertencia ? (
-                              <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400 font-semibold text-xs">
-                                <AlertTriangle size={14} />
-                                ALERTA
-                              </span>
-                            ) : (
-                              <span className="text-green-600 dark:text-green-400 font-semibold text-xs">OK</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <input
-                              type="number"
-                              min="1"
-                              value={detalle.cantidad_solicitada}
-                              onChange={(e) =>
-                                actualizarCantidad(index, Number(e.target.value))
-                              }
-                              className="w-20 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right"
-                            />
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => quitarProducto(index)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+              ✅ {data.detalles.length} producto(s) seleccionado(s) para reabastecer
+            </p>
+          </div>
         )}
       </div>
     </>
