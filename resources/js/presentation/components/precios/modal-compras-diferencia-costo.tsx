@@ -51,6 +51,7 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
     const [motivoActualizacion, setMotivoActualizacion] = useState('Cambio de costo en compra');
     const [inputsEditando, setInputsEditando] = useState<Record<number, { precio?: string; ganancia?: string }>>({});
     const [preciosCompletos, setPreciosCompletos] = useState<PrecioProductoDTO[] | null>(null);
+    const [tablaExpandida, setTablaExpandida] = useState(true); // ✅ NUEVO: Control expansión tabla de precios
 
     // ✅ CARGAR precios del backend cuando el modal se abre
     useEffect(() => {
@@ -252,7 +253,7 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
 
             {/* Modal */}
             <div className="flex min-h-screen items-center justify-center p-4">
-                <div className="relative w-full max-w-3xl bg-white dark:bg-slate-900 rounded-lg shadow-xl dark:shadow-slate-900/50 border border-gray-200 dark:border-slate-700 overflow-hidden">
+                <div className="relative w-full bg-white dark:bg-slate-900 rounded-lg shadow-xl dark:shadow-slate-900/50 border border-gray-200 dark:border-slate-700 overflow-hidden">
                     {/* Header */}
                     <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-b border-blue-200 dark:border-blue-800/50 px-6 py-4">
                         <div className="flex items-center justify-between">
@@ -287,7 +288,62 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 max-h-96 overflow-y-auto">
+                    <div className="p-6 max-h-full overflow-y-auto space-y-6">
+                        {/* ✅ NUEVO: Tabla expandible de precios por unidad */}
+                        {preciosCompletos && preciosCompletos.length > 0 && (
+                            <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                                <button
+                                    onClick={() => setTablaExpandida(!tablaExpandida)}
+                                    className="w-full px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 hover:from-slate-100 hover:to-slate-200 dark:hover:from-slate-700 dark:hover:to-slate-600 flex items-center justify-between transition-colors border-b border-gray-200 dark:border-slate-700"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xl">{tablaExpandida ? '▼' : '▶'}</span>
+                                        <span className="font-medium text-gray-900 dark:text-slate-50">Precios por Unidad</span>
+                                    </div>
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                                        {preciosCompletos.length} precios registrados
+                                    </span>
+                                </button>
+
+                                {tablaExpandida && (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-slate-300">Unidad</th>
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-slate-300">Tipo Precio</th>
+                                                    <th className="px-4 py-2 text-right font-medium text-gray-700 dark:text-slate-300">Precio</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                                                {preciosCompletos.map((precio, idx) => (
+                                                    <tr key={`${precio.id}-${idx}`} className="hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                        <td className="px-4 py-2 text-gray-900 dark:text-slate-200">
+                                                            <span className="inline-flex items-center gap-1">
+                                                                {precio.unidad_medida?.nombre || 'N/A'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                                precio.tipo_precio?.codigo === 'COSTO'
+                                                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+                                                                    : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                                                            }`}>
+                                                                {precio.tipo_precio?.nombre || 'N/A'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right font-semibold text-gray-900 dark:text-slate-50">
+                                                            {formatCurrency(precio.precio || 0)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {cargandoPreciosApi || preciosPropuestos.length === 0 ? (
                             <div className="py-8 text-center">
                                 <div className="mb-4 text-4xl">⏳</div>
