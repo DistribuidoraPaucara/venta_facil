@@ -566,14 +566,14 @@ export default function Step3Almacenes({
                                                 <SearchSelect
                                                     id={`sector-limit-${almacen.value}`}
                                                     placeholder="Seleccionar"
-                                                    value={almacenLimites.sector_id?.toString() || ''}
+                                                    value={almacenLimites.sector_id || ''}
                                                     options={sectoresOptions[almacen.value] || []}
                                                     onChange={(value) => {
                                                         const newLimites = { ...data.stock_limites };
                                                         if (!newLimites[almacen.value]) {
                                                             newLimites[almacen.value] = {};
                                                         }
-                                                        newLimites[almacen.value].sector_id = value ? parseInt(value, 10) : undefined;
+                                                        newLimites[almacen.value].sector_id = value ? (typeof value === 'string' ? parseInt(value, 10) : value) : undefined;
                                                         setData('stock_limites', newLimites);
                                                     }}
                                                     allowClear={true}
