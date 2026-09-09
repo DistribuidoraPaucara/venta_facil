@@ -180,6 +180,8 @@ class StoreProductoRequest extends FormRequest
             'almacenes.*.cantidad_reservada' => ['nullable', 'numeric', 'min:0'],
             'almacenes.*.lote'         => ['nullable', 'string', 'max:255'],
             'almacenes.*.fecha_vencimiento' => ['nullable', 'date'],
+            'almacenes.*.stock_minimo' => ['nullable', 'integer', 'min:0'], // ✨ NUEVO: Límite mínimo por almacén
+            'almacenes.*.stock_maximo' => ['nullable', 'integer', 'min:0'], // ✨ NUEVO: Límite máximo por almacén
 
             'activo'                   => ['nullable', 'boolean'],
         ];
