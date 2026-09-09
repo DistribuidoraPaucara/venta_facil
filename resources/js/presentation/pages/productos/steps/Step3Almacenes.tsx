@@ -538,42 +538,35 @@ export default function Step3Almacenes({
                     </div>
                 </div>
 
-                {/* SECCIÓN 3: CONFIGURAR LÍMITES DE STOCK POR ALMACÉN (SEPARADA) */}
-                <div className="space-y-4 mt-6">
-                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950/30">
-                        <h3 className="text-sm font-bold text-purple-900 dark:text-purple-200 mb-4">
-                            ⚙️ Configurar Límites de Stock por Almacén
-                        </h3>
-                        <div className="space-y-4">
-                            {almacenesOptions.map((almacen) => {
-                                // Buscar si ya existe configuración para este almacén
-                                const configExistente = data.almacenes?.find(a => a.almacen_id === almacen.value);
+                {/* SECCIÓN 3: CONFIGURAR LÍMITES DE STOCK POR ALMACÉN (TABLA) */}
+                <div className="mt-6 rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950/30">
+                    <h3 className="text-sm font-bold text-purple-900 dark:text-purple-200 mb-4">
+                        ⚙️ Configurar Límites de Stock por Almacén
+                    </h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="border-b bg-purple-100 dark:bg-purple-900/40">
+                                <tr>
+                                    <th className="px-4 py-2 text-left font-semibold">Almacén</th>
+                                    <th className="px-4 py-2 text-left font-semibold">Sector</th>
+                                    <th className="px-4 py-2 text-left font-semibold">Stock Mín.</th>
+                                    <th className="px-4 py-2 text-left font-semibold">Stock Máx.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {almacenesOptions.map((almacen) => {
+                                    const configExistente = data.almacenes?.find(a => a.almacen_id === almacen.value);
 
-                                return (
-                                    <div key={almacen.value} className="bg-white dark:bg-slate-900 p-3 rounded border border-purple-200 dark:border-purple-800">
-                                        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
-                                            {/* Almacén + Sector */}
-                                            <div>
-                                                <div className="flex items-center gap-1 mb-1">
-                                                    <Label className="text-xs font-semibold text-foreground">{almacen.label}</Label>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                                <HelpCircle size={12} />
-                                                            </button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top">
-                                                            Selecciona el sector para este almacén
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </div>
+                                    return (
+                                        <tr key={almacen.value} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
+                                            <td className="px-4 py-3 font-medium">{almacen.label}</td>
+                                            <td className="px-4 py-3">
                                                 <SearchSelect
                                                     id={`sector-limit-${almacen.value}`}
-                                                    placeholder="Seleccionar sector"
+                                                    placeholder="Seleccionar"
                                                     value={configExistente?.sector_id ? String(configExistente.sector_id) : ''}
                                                     options={sectoresOptions[almacen.value] || []}
                                                     onChange={(value) => {
-                                                        // Actualizar o crear la configuración para este almacén
                                                         const newAlmacenes = [...(data.almacenes || [])];
                                                         const idx = newAlmacenes.findIndex(a => a.almacen_id === almacen.value);
 
@@ -589,23 +582,8 @@ export default function Step3Almacenes({
                                                     }}
                                                     allowClear={true}
                                                 />
-                                            </div>
-
-                                            {/* Stock Mínimo */}
-                                            <div>
-                                                <div className="flex items-center gap-1 mb-1">
-                                                    <Label className="text-xs font-semibold text-foreground">Mín.</Label>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                                <HelpCircle size={12} />
-                                                            </button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top">
-                                                            Stock mínimo para reposición
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
                                                 <Input
                                                     type="number"
                                                     inputMode="decimal"
@@ -620,25 +598,10 @@ export default function Step3Almacenes({
                                                             setData('almacenes', newAlmacenes);
                                                         }
                                                     }}
-                                                    className="h-9 text-xs border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
+                                                    className="h-8 text-xs border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
                                                 />
-                                            </div>
-
-                                            {/* Stock Máximo */}
-                                            <div>
-                                                <div className="flex items-center gap-1 mb-1">
-                                                    <Label className="text-xs font-semibold text-foreground">Máx.</Label>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                                <HelpCircle size={12} />
-                                                            </button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top">
-                                                            Stock máximo permitido
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
                                                 <Input
                                                     type="number"
                                                     inputMode="decimal"
@@ -653,14 +616,14 @@ export default function Step3Almacenes({
                                                             setData('almacenes', newAlmacenes);
                                                         }
                                                     }}
-                                                    className="h-9 text-xs border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
+                                                    className="h-8 text-xs border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
                                                 />
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
