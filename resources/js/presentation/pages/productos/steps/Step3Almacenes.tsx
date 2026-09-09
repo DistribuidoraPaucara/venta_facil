@@ -555,7 +555,9 @@ export default function Step3Almacenes({
                             </thead>
                             <tbody>
                                 {almacenesOptions.map((almacen) => {
-                                    const configExistente = data.almacenes?.find(a => a.almacen_id === almacen.value);
+                                    // Obtener los límites del almacén actual
+                                    const stockLimites = data.stock_limites || {};
+                                    const almacenLimites = stockLimites[almacen.value] || {};
 
                                     return (
                                         <tr key={almacen.value} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
@@ -564,21 +566,15 @@ export default function Step3Almacenes({
                                                 <SearchSelect
                                                     id={`sector-limit-${almacen.value}`}
                                                     placeholder="Seleccionar"
-                                                    value={configExistente?.sector_id ? String(configExistente.sector_id) : ''}
+                                                    value={almacenLimites.sector_id ? String(almacenLimites.sector_id) : ''}
                                                     options={sectoresOptions[almacen.value] || []}
                                                     onChange={(value) => {
-                                                        const newAlmacenes = [...(data.almacenes || [])];
-                                                        const idx = newAlmacenes.findIndex(a => a.almacen_id === almacen.value);
-
-                                                        if (idx >= 0) {
-                                                            newAlmacenes[idx].sector_id = value ? Number(value) : undefined;
-                                                        } else {
-                                                            newAlmacenes.push({
-                                                                almacen_id: Number(almacen.value),
-                                                                sector_id: value ? Number(value) : undefined,
-                                                            });
-                                                        }
-                                                        setData('almacenes', newAlmacenes);
+                                                        const newLimites = { ...data.stock_limites, };
+                                                        newLimites[almacen.value] = {
+                                                            ...almacenLimites,
+                                                            sector_id: value ? Number(value) : undefined,
+                                                        };
+                                                        setData('stock_limites', newLimites);
                                                     }}
                                                     allowClear={true}
                                                 />
@@ -588,15 +584,14 @@ export default function Step3Almacenes({
                                                     type="number"
                                                     inputMode="decimal"
                                                     step="0.01"
-                                                    value={configExistente?.stock_minimo || ''}
+                                                    value={almacenLimites.stock_minimo || ''}
                                                     onChange={(e) => {
-                                                        const newAlmacenes = [...(data.almacenes || [])];
-                                                        const idx = newAlmacenes.findIndex(a => a.almacen_id === almacen.value);
-
-                                                        if (idx >= 0) {
-                                                            newAlmacenes[idx].stock_minimo = e.target.value === '' ? undefined : Number(e.target.value);
-                                                            setData('almacenes', newAlmacenes);
-                                                        }
+                                                        const newLimites = { ...data.stock_limites };
+                                                        newLimites[almacen.value] = {
+                                                            ...almacenLimites,
+                                                            stock_minimo: e.target.value === '' ? undefined : Number(e.target.value),
+                                                        };
+                                                        setData('stock_limites', newLimites);
                                                     }}
                                                     className="h-8 text-xs border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
                                                 />
@@ -606,15 +601,14 @@ export default function Step3Almacenes({
                                                     type="number"
                                                     inputMode="decimal"
                                                     step="0.01"
-                                                    value={configExistente?.stock_maximo || ''}
+                                                    value={almacenLimites.stock_maximo || ''}
                                                     onChange={(e) => {
-                                                        const newAlmacenes = [...(data.almacenes || [])];
-                                                        const idx = newAlmacenes.findIndex(a => a.almacen_id === almacen.value);
-
-                                                        if (idx >= 0) {
-                                                            newAlmacenes[idx].stock_maximo = e.target.value === '' ? undefined : Number(e.target.value);
-                                                            setData('almacenes', newAlmacenes);
-                                                        }
+                                                        const newLimites = { ...data.stock_limites };
+                                                        newLimites[almacen.value] = {
+                                                            ...almacenLimites,
+                                                            stock_maximo: e.target.value === '' ? undefined : Number(e.target.value),
+                                                        };
+                                                        setData('stock_limites', newLimites);
                                                     }}
                                                     className="h-8 text-xs border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
                                                 />
