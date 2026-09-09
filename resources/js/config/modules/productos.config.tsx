@@ -151,14 +151,12 @@ const ProductCard: React.FC<{
                       <span>{p.es_fraccionado ? 'Sí' : 'No'}</span>
                     </span>
                   </div>
-                  {p.es_fraccionado && (
-                    <div>
-                      <span className="block text-[10px] uppercase tracking-wide">Unidad Medida</span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
-                        {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
-                      </span>
-                    </div>
-                  )}
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wide">Unidad Medida</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
+                      {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
+                    </span>
+                  </div>
                 </div>
               </>
             )}
