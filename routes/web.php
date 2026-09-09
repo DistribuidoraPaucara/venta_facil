@@ -432,7 +432,7 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         ->name('cuentas-por-cobrar.registrar-pago');
 
     Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/registrar-pagos', [\App\Http\Controllers\CuentaPorCobrarController::class, 'registrarPagos'])
-        ->middleware('permission:ventas.payments|ventas.manage')
+        ->middleware('permission:ventas.cuentas-por-cobrar')
         ->name('cuentas-por-cobrar.registrar-pagos'); // ✅ NUEVO: Múltiples pagos
 
     Route::post('ventas/cuentas-por-cobrar/{cuentaPorCobrar}/anular-pago/{pago}', [\App\Http\Controllers\CuentaPorCobrarController::class, 'anularPago'])
