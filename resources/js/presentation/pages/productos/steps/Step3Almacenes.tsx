@@ -14,7 +14,7 @@ interface Option {
 }
 
 export interface Step3Props {
-    data: { almacenes: StockAlmacen[]; globalSectorId?: number; conversiones?: any[]; es_fraccionado?: boolean }; // ✨ NUEVO: Incluir conversiones y es_fraccionado
+    data: { almacenes: StockAlmacen[]; globalSectorId?: number; conversiones?: any[]; es_fraccionado?: boolean; stock_limites?: Record<number | string, any> }; // ✨ NUEVO: Incluir conversiones, es_fraccionado y stock_limites
     setData: (key: string, value: any) => void; // ✨ NUEVO: Para actualizar estado atomicamente
     almacenesOptions: Option[];
     sectores?: Record<number | string, Option[]>; // ✨ NUEVO: Sectores pre-cargados del backend
