@@ -262,6 +262,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                       <th className="text-center py-3 px-4">Unidad Reposición</th>
                       <th className="text-right py-3 px-4">Cantidad a Reponer</th>
                       <th className="text-center py-3 px-4">Stock Final Sala</th>
+                      <th className="text-center py-3 px-4">Stock Final Dep.</th>
                       <th className="text-center py-3 px-4">Estado</th>
                       <th className="text-center py-3 px-4">Acción</th>
                     </tr>
@@ -367,6 +368,19 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                             ) : (
                               <span className="text-gray-400 dark:text-gray-500">-</span>
                             )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {(() => {
+                              const cantidadActual = yaAgregado ? cantidadAgregada : (cantidadesPorProducto[producto.id] ?? 0);
+                              const stockFinal = Number(producto.stock_principal ?? 0) - cantidadActual;
+                              return cantidadActual > 0 ? (
+                                <span className={`font-semibold ${stockFinal >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  {formatearNumero(stockFinal)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500">-</span>
+                              );
+                            })()}
                           </td>
                           <td className="py-3 px-4 text-center">
                             {isCritico ? (
