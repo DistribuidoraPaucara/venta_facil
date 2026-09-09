@@ -322,10 +322,19 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
 
                                 <td className="px-2 py-4 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <div className="font-mono text-xs">
-                                        <div className="font-semibold">{formatCurrency(Number(compra.total), compra.moneda?.simbolo)}</div>
+                                        {/* ✅ NUEVO (2026-09-09): Mostrar solo decimales necesarios */}
+                                        <div className="font-semibold">
+                                            {(compra.moneda?.simbolo || '')} {Number(compra.total).toLocaleString('es-ES', {
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 2,
+                                            })}
+                                        </div>
                                         {compra.descuento > 0 && (
                                             <div className="text-xs text-gray-500">
-                                                Desc: {formatCurrency(Number(compra.descuento), compra.moneda?.simbolo)}
+                                                Desc: {(compra.moneda?.simbolo || '')} {Number(compra.descuento).toLocaleString('es-ES', {
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 2,
+                                                })}
                                             </div>
                                         )}
                                     </div>
