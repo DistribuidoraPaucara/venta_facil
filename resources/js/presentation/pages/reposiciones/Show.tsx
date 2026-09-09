@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { route } from '@/infrastructure/routing/routes';
 import { Button } from '@/presentation/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Badge } from '@/presentation/components/ui/badge';
