@@ -983,15 +983,15 @@ export default function ProductoForm({
             breadcrumbs={[
                 { title: 'Dashboard', href: productosService.indexUrl() },
                 { title: 'Productos', href: productosService.indexUrl() },
-                { title: isEditing ? `Editar: ${producto.nombre} - (${producto.sku})` : 'Nuevo', href: '#' },
+                { title: isEditing ? `${producto.nombre} - (${producto.sku})` : 'Nuevo', href: '#' },
             ]}
         >
-            <Head title={isEditing ? `Editar: ${producto.sku}` : 'Nuevo producto'} />
+            <Head title={isEditing ? `${producto.nombre}` : 'Nuevo producto'} />
 
             <div className="px-2 py-1">
                 <div className="flex flex-wrap items-center justify-between p-2">
                     <div>
-                        <div className="text-bold text-xl">{isEditing ? `Editar: ${producto.nombre}` : 'Nuevo'}</div>
+                        <div className="text-bold text-xl">{isEditing ? `${producto.nombre}` : 'Nuevo'}</div>
                         <p className="mt-1 text-sm text-muted-foreground">
                             {isEditing ? 'Modifica los datos del producto' : 'Agrega un nuevo producto al inventario'}
                         </p>

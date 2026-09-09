@@ -247,7 +247,7 @@ export default function Step3Almacenes({
                             <div className="text-sm text-muted-foreground">No hay entradas. Añada al menos un almacén si desea controlar stock.</div>
                         )}
                         {expandedAlmacenes && (data.almacenes || []).map((a: StockAlmacen, i: number) => (
-                            <div key={i} className="mt-4 p-3 border rounded-lg bg-slate-50 dark:bg-slate-900/30 space-y-3 md:space-y-2">
+                            <div key={i} className="p-1 border rounded-lg bg-slate-50 dark:bg-slate-900/30 space-y-3 md:space-y-2">
                                 {/* Fila 1: Almacén (full width en mobile, 40% en desktop) */}
                                 <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
                                     <div>
@@ -514,13 +514,13 @@ export default function Step3Almacenes({
                 </div>
 
                 {/* SECCIÓN 3: CONFIGURAR LÍMITES DE STOCK POR ALMACÉN (TABLA) */}
-                <div className="mt-6 rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950/30">
+                <div className="rounded-lg border p-2">
                     <h3 className="text-sm font-bold text-purple-900 dark:text-purple-200 mb-4">
                         ⚙️ Configurar Límites de Stock por Almacén
                     </h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="border-b bg-purple-100 dark:bg-purple-900/40">
+                            <thead className="border-b bg-base-100 dark:bg-base-900/40">
                                 <tr>
                                     <th className="px-4 py-2 text-left font-semibold">Almacén</th>
                                     <th className="px-4 py-2 text-left font-semibold">Sector</th>

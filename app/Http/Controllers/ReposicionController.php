@@ -35,23 +35,31 @@ class ReposicionController extends Controller
         $empresa = auth()->user()->empresa;
         $almacenes = Almacen::where('empresa_id', $empresa->id)->get();
 
-        $almacenDefecto = auth()->user()->almacen_id ?? $almacenes->first()?->id;
+        // Encontrar almacén principal y sala de ventas por nombre
+        $almacenPrincipal = $almacenes->first(fn($a) =>
+            stripos($a->nombre, 'principal') !== false
+        );
+        $almacenDestino = $almacenes->first(fn($a) =>
+            stripos($a->nombre, 'sala') !== false || stripos($a->nombre, 'venta') !== false
+        );
 
-        // Obtener productos con stock bajo usando los nuevos límites por sector
+        $almacenDefecto = $almacenDestino?->id;
+
+        // Obtener productos cercanos al límite mínimo usando los nuevos límites por sector
         $productosStockBajo = collect();
 
-        if ($almacenDefecto) {
+        if ($almacenDefecto && $almacenPrincipal) {
             // Obtener todos los límites de stock definidos para este almacén
             $limites = StockLimite::where('almacen_id', $almacenDefecto)
-                ->with(['producto', 'producto.unidad'])
+                ->with(['producto', 'producto.unidad', 'producto.conversiones' => fn($q) => $q->where('activo', true)])
                 ->get()
                 ->groupBy('producto_id');
 
-            // Para cada producto con límites definidos, verificar si está bajo mínimo
+            // Para cada producto con límites definidos, verificar si está cerca del mínimo
             foreach ($limites as $productoId => $limitesProducto) {
                 $producto = $limitesProducto->first()->producto;
 
-                // Sumar cantidad disponible de TODOS los lotes en este almacén
+                // Sumar cantidad disponible de TODOS los lotes en almacén destino
                 $totalDisponible = DB::table('stock_productos')
                     ->where('producto_id', $productoId)
                     ->where('almacen_id', $almacenDefecto)
@@ -60,10 +68,21 @@ class ReposicionController extends Controller
                 // Obtener el límite mínimo más bajo para este producto
                 $stockMinimoRequerido = $limitesProducto->min('stock_minimo');
 
-                // Si el stock total está bajo el mínimo, incluir en reposición
-                if ($totalDisponible < $stockMinimoRequerido) {
+                // Calcular threshold de advertencia (20% por encima del mínimo)
+                $umbralAdvertencia = $stockMinimoRequerido * 1.2;
+
+                // Verificar stock disponible en almacén principal
+                $stockPrincipal = DB::table('stock_productos')
+                    ->where('producto_id', $productoId)
+                    ->where('almacen_id', $almacenPrincipal->id)
+                    ->sum('cantidad_disponible');
+
+                // Si el stock está cerca del mínimo Y hay stock en principal, incluir en reposición
+                if ($totalDisponible <= $umbralAdvertencia && $stockPrincipal > 0) {
                     $producto->stock_actual = $totalDisponible;
                     $producto->stock_minimo_requerido = $stockMinimoRequerido;
+                    $producto->umbral_advertencia = $umbralAdvertencia;
+                    $producto->stock_principal = $stockPrincipal;
                     $productosStockBajo->push($producto);
                 }
             }

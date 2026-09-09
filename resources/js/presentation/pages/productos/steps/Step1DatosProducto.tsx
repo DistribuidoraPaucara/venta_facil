@@ -568,7 +568,7 @@ function Step1DatosProducto({
                 </div>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="space-y-1">
+                {/* <div className="space-y-1">
                     <div className="relative">
                         <label
                             htmlFor="peso"
@@ -591,13 +591,13 @@ function Step1DatosProducto({
                         />
                     </div>
                     {errors.peso && <div className="mt-1 text-sm text-red-500">⚠️ {errors.peso}</div>}
-                </div>
+                </div> */}
                 {/* 🆕 Campo activo oculto - el valor por defecto (true) se establece en form.tsx */}
                 <div className="hidden">
                     <Checkbox id="activo" checked={!!data.activo} onCheckedChange={(v) => setData('activo', !!v)} />
                     <Label htmlFor="activo">Activo</Label>
                 </div>
-                <div className="space-y-1">
+                {/* <div className="space-y-1">
                     <div className="relative">
                         <label
                             htmlFor="descripcion"
@@ -618,9 +618,9 @@ function Step1DatosProducto({
                         />
                     </div>
                     {errors.descripcion && <div className="mt-1 text-sm text-red-500">⚠️ {errors.descripcion}</div>}
-                </div>
+                </div> */}
             </div>
-            <div className="mt-2 border-t border-blue-200 p-2">
+            {/* <div className="mt-2 border-t border-blue-200 p-2">
                 <div className="flex items-start gap-2">
                     <svg
                         className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
@@ -740,7 +740,7 @@ function Step1DatosProducto({
                         {errors.limite_venta && <div className="mt-1 text-sm text-red-500">⚠️ {errors.limite_venta}</div>}
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             <div className="border-t border-gray-200 pt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 {/* ✨ NUEVA SECCIÓN: Productos Fraccionados */}
@@ -813,7 +813,7 @@ function Step1DatosProducto({
                 )}
 
                 {/* ✨ NUEVA SECCIÓN: Visibilidad en App */}
-                <FeatureToggle
+                {/* <FeatureToggle
                     id="visible_app"
                     checked={!!data.visible_app}
                     onCheckedChange={(v) => setData('visible_app', !!v)}
@@ -826,7 +826,7 @@ function Step1DatosProducto({
                     }
                     hint="Desactiva esta opción si quieres ocultarlo de los clientes en la app"
                     colorScheme="green"
-                />
+                /> */}
 
                 {/* 🏭 Producto de Producción (controlado por empresa) */}
                 {permite_productos_produccion && (
