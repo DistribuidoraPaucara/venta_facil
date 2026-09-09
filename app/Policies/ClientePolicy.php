@@ -27,7 +27,10 @@ class ClientePolicy
     }
 
     /**
-     * ✅ ACTUALIZADO: Super Admin y Admin pueden hacer cualquier gestión sobre clientes
+     * ✅ ACTUALIZADO: Verificar acceso basado en roles O permisos heredados
+     * - Super Admin: acceso total
+     * - Admin: acceso total
+     * - Cualquier rol con permisos heredados clientes.create/manage: acceso permitido
      */
     public function before(User $user, string $ability): ?bool
     {
@@ -39,6 +42,15 @@ class ClientePolicy
         // ✅ Admin (cualquier variante): acceso total a cualquier gestión de clientes
         if ($user->hasRole(['Admin', 'admin'])) {
             return true;
+        }
+
+        // ✅ NUEVO: Verificar permisos heredados (incluso si el rol no es admin)
+        // Si el usuario tiene clientes.create o clientes.manage (heredados del rol),
+        // permitir acceso sin necesidad de tener un rol administrativo específico
+        if ($ability === 'create') {
+            if ($user->hasPermissionTo('clientes.create') || $user->hasPermissionTo('clientes.manage')) {
+                return true;
+            }
         }
 
         return null;
@@ -96,17 +108,17 @@ class ClientePolicy
 
     /**
      * ✅ Crear cliente
-     * Super-Admin, Admin y Preventista pueden crear
+     * - Cualquier usuario con permiso clientes.create o clientes.manage puede crear
+     * - Super-Admin y Admin son autorizados en before()
      */
     public function create(User $user): bool
     {
-        // ✅ Preventista (cualquier variante) con permiso
-        if ($user->hasRole(['Preventista', 'preventista'])) {
-            return $user->hasPermissionTo('clientes.create') ||
-                   $user->hasPermissionTo('clientes.manage');
+        // ✅ Verificar permisos heredados (cualquier rol puede crear si tiene el permiso)
+        if ($user->hasPermissionTo('clientes.create') ||
+            $user->hasPermissionTo('clientes.manage')) {
+            return true;
         }
 
-        // Super-Admin y Admin son autorizados en before()
         return false;
     }
 
