@@ -34,13 +34,19 @@ class ReposicionController extends Controller
         $empresa = auth()->user()->empresa;
         $almacenes = Almacen::where('empresa_id', $empresa->id)->get();
 
+        $almacenDefecto = auth()->user()->almacen_id ?? $almacenes->first()?->id;
+
         // Obtener productos con stock bajo
-        $productosStockBajo = Producto::whereHas('stock', function ($query) use ($empresa) {
-            $query->where('almacen_id', auth()->user()->almacen_id ?? $empresa->almacenes()->first()->id)
-                  ->whereColumn('cantidad_disponible', '<', 'productos.stock_minimo');
+        $productosStockBajo = Producto::whereHas('stock', function ($query) use ($almacenDefecto) {
+            if ($almacenDefecto) {
+                $query->where('almacen_id', $almacenDefecto)
+                      ->whereColumn('cantidad_disponible', '<', 'productos.stock_minimo');
+            }
         })
-        ->with(['unidad', 'stock' => function ($query) {
-            $query->where('almacen_id', auth()->user()->almacen_id ?? auth()->user()->empresa->almacenes()->first()->id);
+        ->with(['unidad', 'stock' => function ($query) use ($almacenDefecto) {
+            if ($almacenDefecto) {
+                $query->where('almacen_id', $almacenDefecto);
+            }
         }])
         ->where('empresa_id', $empresa->id)
         ->get();
