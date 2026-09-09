@@ -32,6 +32,11 @@ interface DetalleForm {
   lote: string;
   fecha_vencimiento: string;
   precio_costo?: number; // ✅ NUEVO: Precio de costo registrado
+  unidad_medida_id?: number; // ✅ NUEVO: ID de unidad base
+  unidad_medida_nombre?: string; // ✅ NUEVO: Nombre de unidad base
+  unidad_venta_id?: number; // ✅ NUEVO: ID de unidad de compra (conversión principal)
+  es_fraccionado?: boolean; // ✅ NUEVO: Indica si producto es fraccionado
+  conversiones?: any[]; // ✅ NUEVO: Conversiones del producto
   producto?: { // ✅ NUEVO: Información completa del producto
     id: number | string;
     nombre: string;
@@ -1312,6 +1317,23 @@ export default function CompraForm() {
               // Adaptar la función para agregar producto
               const precioCompra = Number(producto.precio_compra) || 0; // ✅ Cast a number
               const precioCosto = Number(producto.precio_costo) || 0; // ✅ Cast a number
+
+              // ✅ NUEVO: Determinar unidad de compra (conversión principal para fraccionados)
+              const conversiones = (producto as any).conversiones || [];
+              const esProductoFraccionado = (producto as any).es_fraccionado && conversiones.length > 0;
+              const unidadBaseProducto = (producto as any).unidad_medida_id;
+
+              let unidadVentaInicial = unidadBaseProducto;
+
+              // En compras, si es fraccionado, usar la unidad destino de la conversión principal (PAQUETE)
+              if (esProductoFraccionado) {
+                const conversionPrincipal = conversiones.find((c: any) => c.es_conversion_principal);
+                const conversion = conversionPrincipal || conversiones[0];
+                if (conversion?.unidad_destino_id) {
+                  unidadVentaInicial = conversion.unidad_destino_id;
+                }
+              }
+
               const newDetalle: DetalleForm = {
                 producto_id: producto.id,
                 cantidad: 1,
@@ -1325,6 +1347,7 @@ export default function CompraForm() {
                 unidad_medida_nombre: producto.unidad_medida_nombre, // ✨ NUEVO: Nombre de unidad para referencia
                 es_fraccionado: producto.es_fraccionado || false, // ✨ NUEVO: Indicador de producto fraccionado
                 conversiones: producto.conversiones || [], // ✨ NUEVO: Conversiones para calcular precio/unidad como referencia
+                unidad_venta_id: unidadVentaInicial, // ✅ NUEVO: Usar unidad de compra (PAQUETE para fraccionados)
                 producto: { // ✅ NUEVO: Guardar objeto completo del producto con stock
                   id: producto.id,
                   nombre: producto.nombre,
