@@ -198,7 +198,8 @@ export function useProductSearch({
             codigo_barras: p.codigo_barras,
             precio_venta: precioVenta,
             precio_costo: p.precio_costo || 0,
-            precio_compra: p.precio_costo || 0,
+            // ✅ FIJO: En modo COMPRA usar precioVenta calculado (90 PAQUETE), en modo VENTA usar precio_costo
+            precio_compra: tipo === 'compra' ? precioVenta : (p.precio_costo || 0),
             stock: stockDisponible,
             stock_disponible_calc: stockDisponible,
             stock_total_calc: p.stock_total || 0,
