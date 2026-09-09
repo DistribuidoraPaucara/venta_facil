@@ -51,7 +51,7 @@ class ReposicionController extends Controller
         if ($almacenDefecto && $almacenPrincipal) {
             // Obtener todos los límites de stock definidos para este almacén
             $limites = StockLimite::where('almacen_id', $almacenDefecto)
-                ->with(['producto', 'producto.unidad', 'producto.conversiones' => fn($q) => $q->where('activo', true)])
+                ->with(['producto', 'producto.unidad', 'producto.conversiones' => fn($q) => $q->where('activo', true), 'sector'])
                 ->get()
                 ->groupBy('producto_id');
 
@@ -83,6 +83,10 @@ class ReposicionController extends Controller
                     $producto->stock_minimo_requerido = $stockMinimoRequerido;
                     $producto->umbral_advertencia = $umbralAdvertencia;
                     $producto->stock_principal = $stockPrincipal;
+
+                    // Obtener sector desde stock_limites
+                    $sector = $limitesProducto->first()->sector;
+                    $producto->sector = $sector;
 
                     // Obtener stock máximo para calcular cantidad sugerida
                     $stockMaximoRequerido = $limitesProducto->max('stock_maximo');

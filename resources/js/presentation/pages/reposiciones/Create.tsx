@@ -23,6 +23,11 @@ interface Conversion {
   unidadDestino?: { nombre: string };
 }
 
+interface Sector {
+  id: number;
+  nombre: string;
+}
+
 interface Producto {
   id: number;
   nombre: string;
@@ -35,6 +40,7 @@ interface Producto {
   umbral_advertencia?: number;
   stock_principal?: number;
   cantidad_sugerida?: number;
+  sector?: Sector;
   es_fraccionado?: boolean;
   conversiones?: Conversion[];
 }
@@ -258,6 +264,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                       <th className="text-left py-3 px-4">ID</th>
                       <th className="text-left py-3 px-4">Producto</th>
                       <th className="text-left py-3 px-4">SKU</th>
+                      <th className="text-center py-3 px-4">Sector</th>
                       <th className="text-center py-3 px-4">Mín/Máx Sala</th>
                       <th className="text-center py-3 px-4">Stock en Sala</th>
                       <th className="text-center py-3 px-4">Stock en Dep.</th>
@@ -291,6 +298,9 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                           <td className="py-3 px-4">#{producto.id}</td>
                           <td className="py-3 px-4">{producto.nombre}</td>
                           <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{producto.sku}</td>
+                          <td className="py-3 px-4 text-center text-sm font-medium text-purple-600 dark:text-purple-400">
+                            {producto.sector?.nombre || '-'}
+                          </td>
                           <td className="py-3 px-4 text-center text-sm">
                             <div>{formatearNumero(producto.stock_minimo_requerido)}</div>
                             <div className="text-gray-500 dark:text-gray-400">{formatearNumero(producto.stock_maximo_requerido)}</div>
