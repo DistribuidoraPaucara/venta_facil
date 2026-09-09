@@ -525,7 +525,10 @@ export default function ProductoForm({
             }
 
             // 🔄 Validar y ajustar almacenes antes de enviar
+            console.log('📋 STOCK_LIMITES ANTES DE VALIDAR:', (data as any).stock_limites);
+            console.log('📋 ALMACENES ANTES DE VALIDAR:', almacenesConSector);
             const { validos, ajustes } = validarYAjustarAlmacenes(almacenesConSector, (data as any).stock_limites);
+            console.log('✅ ALMACENES DESPUÉS DE VALIDAR:', validos);
 
             // 📢 Si hay ajustes, notificar al usuario
             if (ajustes.size > 0) {

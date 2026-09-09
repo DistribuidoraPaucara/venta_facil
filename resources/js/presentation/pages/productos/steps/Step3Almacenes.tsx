@@ -61,7 +61,17 @@ function calcularEquivalentes(cantidad: number, conversiones: any[] = []) {
 export function validarYAjustarAlmacenes(almacenes: any[], stockLimites?: Record<number | string, any>): { validos: any[]; ajustes: Map<number, any> } {
     const ajustes = new Map<number, any>();
 
+    console.log('🔍 DENTRO DE validarYAjustarAlmacenes:');
+    console.log('  stockLimites recibido:', stockLimites);
+    console.log('  almacenes recibido:', almacenes);
+
     const almacenesAjustados = (almacenes || []).map((almacen, idx) => {
+        console.log(`  [${idx}] Procesando almacén:`, {
+            id: almacen.id,
+            almacen_id: almacen.almacen_id,
+            tiene_limites: stockLimites?.[almacen.almacen_id] ? 'SÍ' : 'NO',
+            limites: stockLimites?.[almacen.almacen_id],
+        });
         const total = Number(almacen.cantidad ?? almacen.stock ?? 0);
         const disponible = Number(almacen.cantidad_disponible ?? 0);
         const reservada = Number(almacen.cantidad_reservada ?? 0);
@@ -99,6 +109,7 @@ export function validarYAjustarAlmacenes(almacenes: any[], stockLimites?: Record
         };
     });
 
+    console.log('✅ RESULTADO DE validarYAjustarAlmacenes:', almacenesAjustados);
     return { validos: almacenesAjustados, ajustes };
 }
 
