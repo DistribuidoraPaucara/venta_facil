@@ -1043,6 +1043,21 @@ class ProductoController extends Controller
             ];
         }
 
+        // ✨ NUEVO: Cargar stock_limites por almacén para Section 3
+        $stockLimites = StockLimite::where('producto_id', $producto->id)
+            ->get(['almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo'])
+            ->keyBy('almacen_id')
+            ->map(function ($limites) {
+                return [
+                    'sector_id'    => $limites->sector_id,
+                    'stock_minimo' => (int) $limites->stock_minimo,
+                    'stock_maximo' => (int) $limites->stock_maximo,
+                ];
+            })
+            ->toArray();
+
+        $payload['stock_limites'] = $stockLimites;
+
         return Inertia::render('productos/form', [
             'producto'                       => $payload,
             'categorias'                     => [], // ✨ Búsqueda dinámica via /api/app/categorias-crud?q= (la categoría actual está en producto.categoria)
