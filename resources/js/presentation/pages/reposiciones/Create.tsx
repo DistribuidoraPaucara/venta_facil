@@ -269,6 +269,8 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                       const isCritico = (producto.stock_actual ?? 0) < (producto.stock_minimo_requerido ?? 0);
                       const isAdvertencia = (producto.stock_actual ?? 0) <= (producto.umbral_advertencia ?? 0);
                       const yaAgregado = data.detalles.some((d) => d.producto_id === producto.id);
+                      const detalleAgregado = data.detalles.find((d) => d.producto_id === producto.id);
+                      const cantidadAgregada = detalleAgregado?.cantidad_solicitada ?? 0;
 
                       return (
                         <tr
@@ -329,7 +331,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                               <input
                                 type="number"
                                 min="1"
-                                value={data.detalles.find((d) => d.producto_id === producto.id)?.cantidad_solicitada ?? 0}
+                                value={cantidadAgregada}
                                 onChange={(e) => {
                                   const idx = data.detalles.findIndex((d) => d.producto_id === producto.id);
                                   if (idx >= 0) {
@@ -358,7 +360,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                           <td className="py-3 px-4 text-center">
                             {yaAgregado ? (
                               <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                {formatearNumero((producto.stock_actual ?? 0) + (data.detalles.find((d) => d.producto_id === producto.id)?.cantidad_solicitada ?? 0))}
+                                {formatearNumero((producto.stock_actual ?? 0) + cantidadAgregada)}
                               </span>
                             ) : (
                               <span className="text-gray-400 dark:text-gray-500">-</span>
