@@ -365,7 +365,7 @@ export default function ProductoTableRow({
                                 {esAumento ? '↑' : '↓'} {formatCurrency(Math.abs(detalle.precio_unitario - precioCosto))}
                             </div>
                         )}
-                        {detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0 && (
+                        {/* {detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0 && (
                             <div>
                                 {(() => {
                                     const unidadActual = detalle.unidad_venta_id || detalle.unidad_medida_id;
@@ -393,7 +393,7 @@ export default function ProductoTableRow({
                                     return <div className="text-sm text-gray-500 dark:text-gray-400">N/A</div>;
                                 })()}
                             </div>
-                        )}
+                        )} */}
                     </td>
 
                     {/* Lote */}

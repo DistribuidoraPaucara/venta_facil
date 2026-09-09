@@ -73,7 +73,7 @@ export function useProductSearch({
             // ✅ NUEVO: Para compras, buscar en el array de precios el que coincida con tipo_precio_id_recomendado
             // y con la unidad_medida_id del producto (PAQUETE)
             if (p.precios && Array.isArray(p.precios) && p.precios.length > 0) {
-                // Buscar el precio de COSTO que coincida con la unidad base del producto
+                // Estrategia 1: Buscar por tipo_precio_id recomendado + unidad base
                 const precioCosto = p.precios.find((pr: any) =>
                     pr.tipo_precio_id === p.tipo_precio_id_recomendado &&
                     pr.unidad_medida_id === p.unidad_medida_id
@@ -83,21 +83,24 @@ export function useProductSearch({
                     precioVenta = precioCosto.precio || 0;
                     tipoPrecioUsado = precioCosto.nombre || 'Precio Costo';
                     tipoPrecioSeleccionado = precioCosto.tipo_precio_id;
-                    console.log(`💵 [transformarProductoAPI] MODO COMPRA - ${p.nombre}: Precio Costo (${p.unidad_medida_nombre}) = ${precioVenta}`);
+                    console.log(`💵 [transformarProductoAPI] MODO COMPRA (Estrategia 1) - ${p.nombre}: Precio Costo (${p.unidad_medida_nombre}) = ${precioVenta}`);
                 } else {
-                    // Fallback: si no encuentra con unidad base, usar el primer precio de COSTO
-                    const precioFallback = p.precios.find((pr: any) =>
-                        pr.tipo_precio_id === p.tipo_precio_id_recomendado
+                    // Estrategia 2: Si no hay tipo_precio_id_recomendado, buscar COSTO (9) + unidad base
+                    const precioCostoExplicito = p.precios.find((pr: any) =>
+                        pr.tipo_precio_id === 9 &&
+                        pr.unidad_medida_id === p.unidad_medida_id
                     );
-                    if (precioFallback) {
-                        precioVenta = precioFallback.precio || 0;
-                        tipoPrecioUsado = precioFallback.nombre || 'Precio Costo';
-                        tipoPrecioSeleccionado = precioFallback.tipo_precio_id;
-                        console.log(`💵 [transformarProductoAPI] MODO COMPRA (FALLBACK) - ${p.nombre}: Precio Costo = ${precioVenta}`);
+
+                    if (precioCostoExplicito) {
+                        precioVenta = precioCostoExplicito.precio || 0;
+                        tipoPrecioUsado = precioCostoExplicito.nombre || 'Precio Costo';
+                        tipoPrecioSeleccionado = precioCostoExplicito.tipo_precio_id;
+                        console.log(`💵 [transformarProductoAPI] MODO COMPRA (Estrategia 2) - ${p.nombre}: Precio Costo Explícito (${p.unidad_medida_nombre}) = ${precioVenta}`);
                     } else {
+                        // Estrategia 3: Último fallback, usar precio_costo
                         precioVenta = p.precio_costo || 0;
                         tipoPrecioUsado = 'Precio Costo';
-                        console.log(`💵 [transformarProductoAPI] MODO COMPRA (PRECIO_COSTO) - ${p.nombre}: Precio Costo = ${precioVenta}`);
+                        console.log(`💵 [transformarProductoAPI] MODO COMPRA (Estrategia 3) - ${p.nombre}: Precio Costo Fallback = ${precioVenta}`);
                     }
                 }
             } else {
