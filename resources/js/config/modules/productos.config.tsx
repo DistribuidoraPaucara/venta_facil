@@ -55,6 +55,33 @@ const ProductCard: React.FC<{
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { can } = useAuth(); // ✅ Obtener permisos
 
+  // ✅ Generar iniciales y color gradiente
+  const getInitials = (nombre: string) => {
+    return nombre
+      .split(' ')
+      .slice(0, 2)
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const getGradientColor = (nombre: string) => {
+    const colors = [
+      'from-blue-400 to-blue-600',
+      'from-purple-400 to-purple-600',
+      'from-pink-400 to-pink-600',
+      'from-red-400 to-red-600',
+      'from-orange-400 to-orange-600',
+      'from-amber-400 to-amber-600',
+      'from-green-400 to-green-600',
+      'from-teal-400 to-teal-600',
+      'from-cyan-400 to-cyan-600',
+      'from-indigo-400 to-indigo-600',
+    ];
+    const hash = nombre.charCodeAt(0) + nombre.charCodeAt(nombre.length - 1);
+    return colors[hash % colors.length];
+  };
+
   return (
     <div className="group relative flex flex-col border border-border bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <button
@@ -70,7 +97,10 @@ const ProductCard: React.FC<{
         {p.perfil?.url ? (
           <img src={p.perfil.url} alt={p.nombre} loading="lazy" className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
         ) : (
-          <div className="text-muted-foreground text-xs italic">Sin imagen - Click para editar</div>
+          <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${getGradientColor(p.nombre)} gap-2`}>
+            <span className="text-4xl font-bold text-white drop-shadow-lg">{getInitials(p.nombre)}</span>
+            <span className="text-[11px] font-semibold text-white/80 px-2 text-center line-clamp-1">{p.nombre}</span>
+          </div>
         )}
       </button>
       <span className="absolute top-2 left-2 bg-blue-600/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">#{p.id}</span>
