@@ -1341,6 +1341,8 @@ export default function CompraForm() {
                   nombre: producto.nombre,
                   codigo: producto.codigo,
                   codigo_barras: producto.codigo_barras,
+                  codigosBarra: (producto as any).codigosBarra || [],  // ✅ NUEVO: Incluir códigos de barra para mostrar en tabla
+                  codigos_barras: (producto as any).codigos_barras || [],  // ✅ NUEVO: Array de strings de códigos
                   precio_costo: precioCosto,
                   es_fraccionado: producto.es_fraccionado || false,
                   // ✅ CORREGIDO: Incluir stock para mostrar disponibilidad
