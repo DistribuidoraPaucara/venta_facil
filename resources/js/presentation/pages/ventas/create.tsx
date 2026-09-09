@@ -124,6 +124,24 @@ export default function VentaForm() {
         [tiposPagoSeguro],
     );
 
+    // ✅ NUEVO: Filtrar tipos de pago disponibles basados en capacidad de crédito del cliente
+    const tiposPagoDisponibles: SelectOption[] = useMemo(() => {
+        if (!data.cliente_id) {
+            return tiposPagoOptions; // Si no hay cliente, mostrar todos los tipos de pago
+        }
+        const clienteActual = clientesSeguro.find((c) => c.id === data.cliente_id);
+        const puedeUsarCredito = clienteActual?.puede_tener_credito || false;
+        return tiposPagoOptions.filter((option) => {
+            const tipoPago = tiposPagoSeguro.find((t) => t.id === option.value);
+            // Si es CREDITO, solo mostrar si el cliente puede tener crédito
+            if (tipoPago?.codigo === 'CREDITO') {
+                return puedeUsarCredito;
+            }
+            // Los demás tipos de pago siempre están disponibles
+            return true;
+        });
+    }, [tiposPagoOptions, tiposPagoSeguro, data.cliente_id, clientesSeguro]);
+
     const [detallesWithProducts, setDetallesWithProducts] = useState<DetalleProducto[]>([]);
     const [stockValido, setStockValido] = useState(true);
 
@@ -1674,19 +1692,33 @@ export default function VentaForm() {
                             )}
                         </div>
 
-                        {/* <div>
-                            <SearchSelect
-                                label="Tipo de Pago"
-                                placeholder="Seleccionar tipo de pago"
-                                value={data.tipo_pago_id || ''}
-                                options={tiposPagoOptions}
-                                onChange={(value) => setData('tipo_pago_id', value ? Number(value) : 0)}
-                                required
-                                error={errors.tipo_pago_id}
-                                searchPlaceholder="Buscar tipo de pago..."
-                                emptyText="No se encontraron tipos de pago"
-                            />
-                        </div> */}
+                        {/* ✅ NUEVO: Selector de tipo de pago con validación de crédito */}
+                        {clienteSeleccionado && (
+                            <div>
+                                <SearchSelect
+                                    label="Tipo de Pago"
+                                    placeholder="Seleccionar tipo de pago"
+                                    value={data.tipo_pago_id || ''}
+                                    options={tiposPagoDisponibles}
+                                    onChange={(value) => setData('tipo_pago_id', value ? Number(value) : 0)}
+                                    required
+                                    error={errors.tipo_pago_id}
+                                    searchPlaceholder="Buscar tipo de pago..."
+                                    emptyText="No se encontraron tipos de pago"
+                                />
+                                {/* Mostrar advertencia si el cliente no puede usar crédito y se intentó seleccionar */}
+                                {!clienteSeleccionado?.puede_tener_credito && data.tipo_pago_id === tiposPagoSeguro.find((t) => t.codigo === 'CREDITO')?.id && (
+                                    <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+                                        ⚠️ Este cliente no tiene habilitado crédito. Selecciona otro tipo de pago.
+                                    </p>
+                                )}
+                                {clienteSeleccionado?.puede_tener_credito && (
+                                    <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+                                        ✓ Este cliente puede usar crédito
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* ✅ REFACTORIZADO (2026-07-03): Toggle Switch elegante en lugar de dos botones */}
                         {logistica_envios && (
