@@ -133,18 +133,12 @@ const ProductCard: React.FC<{
               </div>
             ) : (
               <>
-                {/* Fila 1: Stock y Venta */}
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <span className="block text-[10px] uppercase tracking-wide">Stock</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${((p as any).stock_disponible_calc ?? 0) === 0 ? 'bg-red-100 text-red-700' : ((p as any).stock_disponible_calc ?? 0) < (p.stock_minimo ?? 0) ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {((p as any).stock_disponible_calc ?? 0)}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <span className="block text-[10px] uppercase tracking-wide text-green-600 dark:text-green-400 font-semibold">Venta</span>
-                    <span className="font-bold text-xs text-green-700 dark:text-green-200">{currency(precioVenta)}</span>
-                  </div>
+                {/* Fila 1: Stock */}
+                <div>
+                  <span className="block text-[10px] uppercase tracking-wide">Stock</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${((p as any).stock_disponible_calc ?? 0) === 0 ? 'bg-red-100 text-red-700' : ((p as any).stock_disponible_calc ?? 0) < (p.stock_minimo ?? 0) ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    {((p as any).stock_disponible_calc ?? 0)}
+                  </span>
                 </div>
 
                 {/* Fila 2: Fraccionado (solo si es fraccionado) y Unidad (siempre) */}
@@ -699,9 +693,11 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
     const precioCosto = preciosArray.find((pr: any) =>
       pr.nombre?.toLowerCase().includes('costo') || pr.tipo_precio_id === 1
     )?.monto || 0;
+    // ✅ Buscar precio de venta: nombre contiene "venta" O sea el primer precio que NO es costo
     const precioVenta = preciosArray.find((pr: any) =>
-      pr.nombre?.toLowerCase().includes('venta') && !pr.nombre?.toLowerCase().includes('costo') || pr.tipo_precio_id === 5
-    )?.monto || 0;
+      pr.nombre?.toLowerCase().includes('venta') ||
+      (!pr.nombre?.toLowerCase().includes('costo') && pr.tipo_precio_id !== 1)
+    )?.monto || preciosArray[0]?.monto || 0;
 
     // ✅ Usar el componente ProductCard con permisos
     const puedeEditar = (extraData as any)?.puedeEditar ?? true;
