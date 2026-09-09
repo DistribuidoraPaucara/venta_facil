@@ -6,6 +6,7 @@ use App\Models\Reposicion;
 use App\Models\ReposicionDetalle;
 use App\Models\Almacen;
 use App\Models\Producto;
+use App\Models\StockLimite;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -36,24 +37,41 @@ class ReposicionController extends Controller
 
         $almacenDefecto = auth()->user()->almacen_id ?? $almacenes->first()?->id;
 
-        // Obtener productos con stock bajo
-        $productosStockBajo = Producto::whereHas('stock', function ($query) use ($almacenDefecto) {
-            if ($almacenDefecto) {
-                $query->where('almacen_id', $almacenDefecto)
-                      ->whereColumn('cantidad_disponible', '<', 'productos.stock_minimo');
+        // Obtener productos con stock bajo usando los nuevos límites por sector
+        $productosStockBajo = collect();
+
+        if ($almacenDefecto) {
+            // Obtener todos los límites de stock definidos para este almacén
+            $limites = StockLimite::where('almacen_id', $almacenDefecto)
+                ->with(['producto', 'producto.unidad'])
+                ->get()
+                ->groupBy('producto_id');
+
+            // Para cada producto con límites definidos, verificar si está bajo mínimo
+            foreach ($limites as $productoId => $limitesProducto) {
+                $producto = $limitesProducto->first()->producto;
+
+                // Sumar cantidad disponible de TODOS los lotes en este almacén
+                $totalDisponible = DB::table('stock_productos')
+                    ->where('producto_id', $productoId)
+                    ->where('almacen_id', $almacenDefecto)
+                    ->sum('cantidad_disponible');
+
+                // Obtener el límite mínimo más bajo para este producto
+                $stockMinimoRequerido = $limitesProducto->min('stock_minimo');
+
+                // Si el stock total está bajo el mínimo, incluir en reposición
+                if ($totalDisponible < $stockMinimoRequerido) {
+                    $producto->stock_actual = $totalDisponible;
+                    $producto->stock_minimo_requerido = $stockMinimoRequerido;
+                    $productosStockBajo->push($producto);
+                }
             }
-        })
-        ->with(['unidad', 'stock' => function ($query) use ($almacenDefecto) {
-            if ($almacenDefecto) {
-                $query->where('almacen_id', $almacenDefecto);
-            }
-        }])
-        ->where('empresa_id', $empresa->id)
-        ->get();
+        }
 
         return Inertia::render('Reposiciones/Create', [
             'almacenes' => $almacenes,
-            'productosStockBajo' => $productosStockBajo,
+            'productosStockBajo' => $productosStockBajo->values(),
         ]);
     }
 
