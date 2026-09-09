@@ -143,7 +143,7 @@ function ReposicionesEdit({ reposicion, almacenes }: Props) {
                       <select
                         value={data.almacen_origen_id}
                         onChange={(e) => setData('almacen_origen_id', e.target.value)}
-                        className="w-full border rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg px-3 py-2"
                       >
                         <option value="">Seleccionar...</option>
                         {almacenes.map((a) => (
@@ -162,7 +162,7 @@ function ReposicionesEdit({ reposicion, almacenes }: Props) {
                       <select
                         value={data.almacen_destino_id}
                         onChange={(e) => setData('almacen_destino_id', e.target.value)}
-                        className="w-full border rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg px-3 py-2"
                       >
                         <option value="">Seleccionar...</option>
                         {almacenes.map((a) => (
@@ -214,7 +214,7 @@ function ReposicionesEdit({ reposicion, almacenes }: Props) {
                   <select
                     value={selectedProducto || ''}
                     onChange={(e) => setSelectedProducto(Number(e.target.value) || null)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="">Seleccionar...</option>
                     {productosDisponibles.map((p) => (
@@ -289,7 +289,7 @@ function ReposicionesEdit({ reposicion, almacenes }: Props) {
                               onChange={(e) =>
                                 actualizarCantidad(index, Number(e.target.value))
                               }
-                              className="w-20 border rounded px-2 py-1 text-right"
+                              className="w-20 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right"
                             />
                           </td>
                           <td className="py-3 px-4 text-center">

@@ -41,7 +41,7 @@ function ReposicionesIndex({ reposiciones }: Props) {
   return (
     <>
       <Head title="Reposiciones" />
-      <div className="py-6">
+      <div className="py-6 px-3">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Reposiciones</h1>
