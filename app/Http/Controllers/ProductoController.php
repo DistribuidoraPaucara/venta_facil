@@ -1682,6 +1682,7 @@ class ProductoController extends Controller
                     ->with('tipoPrecio:id,nombre,codigo');
             },
             'stock.almacen:id,nombre',
+            'unidad:id,codigo,nombre',
             // ✅ NUEVO: Cargar combos con productos relacionados
             'comboItems' => fn($query) => $query->with('producto:id,nombre,sku,descripcion'),
             // 'comboGrupos' => fn($query) => $query->with('items.producto:id,nombre,sku,descripcion'),
@@ -2007,6 +2008,7 @@ class ProductoController extends Controller
                         ->with('tipoPrecio:id,nombre,codigo');
                 },
                 'codigosBarra:id,producto_id,codigo,tipo,es_principal,activo',
+                'unidad:id,codigo,nombre',
                 'stock' => function ($stockQuery) {
                     $stockQuery->select('id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad', 'cantidad_disponible', 'lote', 'fecha_vencimiento')
                         ->with([
