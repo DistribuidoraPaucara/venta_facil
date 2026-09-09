@@ -1360,7 +1360,10 @@ export default function CompraForm() {
                   // ✅ NUEVO: Agregar marca, unidad y precios para mostrar en tabla
                   marca: (producto as any).marca || null,
                   unidad: (producto as any).unidad || null,
-                  precios: (producto as any).precios || []
+                  precios: (producto as any).precios || [],
+                  // ✅ NUEVO: Agregar tipo_precio_id_recomendado para búsqueda correcta en useProductSearch
+                  tipo_precio_id_recomendado: (producto as any).tipo_precio_id_recomendado || undefined,
+                  tipo_precio_nombre_recomendado: (producto as any).tipo_precio_nombre_recomendado || undefined
                 }
               };
               // ✅ NUEVO: Agregar producto al PRINCIPIO de la lista (no al final)
