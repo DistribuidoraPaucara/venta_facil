@@ -83,6 +83,15 @@ class ReposicionController extends Controller
                     $producto->stock_minimo_requerido = $stockMinimoRequerido;
                     $producto->umbral_advertencia = $umbralAdvertencia;
                     $producto->stock_principal = $stockPrincipal;
+
+                    // Obtener stock máximo para calcular cantidad sugerida
+                    $stockMaximoRequerido = $limitesProducto->max('stock_maximo');
+                    $producto->stock_maximo_requerido = $stockMaximoRequerido;
+
+                    // Cantidad sugerida: llenar hasta el máximo
+                    $cantidad_sugerida = max(0, $stockMaximoRequerido - $totalDisponible);
+                    $producto->cantidad_sugerida = $cantidad_sugerida;
+
                     $productosStockBajo->push($producto);
                 }
             }

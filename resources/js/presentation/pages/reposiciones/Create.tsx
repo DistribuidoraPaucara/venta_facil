@@ -31,8 +31,10 @@ interface Producto {
   stock?: { cantidad_disponible: number };
   stock_actual?: number;
   stock_minimo_requerido?: number;
+  stock_maximo_requerido?: number;
   umbral_advertencia?: number;
   stock_principal?: number;
+  cantidad_sugerida?: number;
   es_fraccionado?: boolean;
   conversiones?: Conversion[];
 }
@@ -256,7 +258,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                       <th className="text-left py-3 px-4">ID</th>
                       <th className="text-left py-3 px-4">Producto</th>
                       <th className="text-left py-3 px-4">SKU</th>
-                      <th className="text-center py-3 px-4">Mínimo Req.</th>
+                      <th className="text-center py-3 px-4">Mín/Máx Sala</th>
                       <th className="text-center py-3 px-4">Stock en Sala</th>
                       <th className="text-center py-3 px-4">Stock en Dep.</th>
                       <th className="text-center py-3 px-4">Unidad Reposición</th>
@@ -289,7 +291,10 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                           <td className="py-3 px-4">#{producto.id}</td>
                           <td className="py-3 px-4">{producto.nombre}</td>
                           <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{producto.sku}</td>
-                          <td className="py-3 px-4 text-center">{formatearNumero(producto.stock_minimo_requerido)}</td>
+                          <td className="py-3 px-4 text-center text-sm">
+                            <div>{formatearNumero(producto.stock_minimo_requerido)}</div>
+                            <div className="text-gray-500 dark:text-gray-400">{formatearNumero(producto.stock_maximo_requerido)}</div>
+                          </td>
                           <td className="py-3 px-4 text-center font-medium">{formatearNumero(producto.stock_actual)}</td>
                           <td className="py-3 px-4 text-center font-semibold text-green-600 dark:text-green-400">
                             {formatearNumero(producto.stock_principal)}
@@ -345,19 +350,36 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                               />
                             ) : (
                               // Input para cantidad antes de agregar
-                              <input
-                                type="number"
-                                min="1"
-                                placeholder="Cantidad"
-                                value={cantidadesPorProducto[producto.id] ?? ''}
-                                onChange={(e) =>
-                                  setCantidadesPorProducto({
-                                    ...cantidadesPorProducto,
-                                    [producto.id]: Number(e.target.value) || 0,
-                                  })
-                                }
-                                className="w-24 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right"
-                              />
+                              <div className="flex gap-1 items-center">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  placeholder="Cantidad"
+                                  value={cantidadesPorProducto[producto.id] ?? ''}
+                                  onChange={(e) =>
+                                    setCantidadesPorProducto({
+                                      ...cantidadesPorProducto,
+                                      [producto.id]: Number(e.target.value) || 0,
+                                    })
+                                  }
+                                  className="w-24 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right"
+                                />
+                                {producto.cantidad_sugerida ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setCantidadesPorProducto({
+                                        ...cantidadesPorProducto,
+                                        [producto.id]: producto.cantidad_sugerida!,
+                                      })
+                                    }
+                                    title={`Sugerencia: ${formatearNumero(producto.cantidad_sugerida)}`}
+                                    className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
+                                  >
+                                    ⚡
+                                  </button>
+                                ) : null}
+                              </div>
                             )}
                           </td>
                           <td className="py-3 px-4 text-center">

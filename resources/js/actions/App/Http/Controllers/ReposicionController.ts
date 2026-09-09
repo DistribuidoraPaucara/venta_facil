@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ReposicionController::index
  * @see app/Http/Controllers/ReposicionController.php:17
@@ -750,16 +750,6 @@ destroy.delete = (args: { reposicion: number | { id: number } } | [reposicion: n
         })
     
     destroy.form = destroyForm
-const reposiciones = {
-    index,
-create,
-store,
-show,
-edit,
-update,
-enviar,
-recibir,
-destroy,
-}
+const ReposicionController = { index, create, store, show, edit, update, enviar, recibir, destroy }
 
-export default reposiciones
+export default ReposicionController
