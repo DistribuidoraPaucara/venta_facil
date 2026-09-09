@@ -3,11 +3,10 @@ import { ComprasService } from '@/infrastructure/services/compras.service';
 import { formatCurrency } from '@/lib/utils';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { Link } from '@inertiajs/react';
-import { AlertCircle, ChevronDown, ChevronUp, Edit, Eye, Printer } from 'lucide-react';
-import { useState } from 'react';
+import { AlertCircle, ChevronDown, ChevronUp, Edit, Eye, MoreVertical, Printer, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import AnularCompraModal from './AnularCompraModal';
-import EliminarCompraDialog from './eliminar-compra-dialog';
 
 // Importar tipos del domain
 import type { Compra, EstadoDocumento } from '@/domain/entities/compras';
@@ -20,6 +19,112 @@ interface Props {
     sortBy?: string;
     sortDir?: string;
     className?: string;
+}
+
+// ✅ NUEVO (2026-09-09): Componente de dropdown de acciones
+interface AccionesDropdownProps {
+    compra: Compra;
+    can: (permission: string) => boolean;
+    onPrimir: () => void;
+    onAnular: () => void;
+    isAnulando: boolean;
+}
+
+function AccionesCompraDropdown({ compra, can, onPrimir, onAnular, isAnulando }: AccionesDropdownProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative inline-block text-left" ref={menuRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="inline-flex items-center rounded p-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                title="Más acciones"
+            >
+                <MoreVertical className="h-5 w-5" />
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 z-10 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    <div className="py-1">
+                        {/* Ver Detalle */}
+                        {can('compras.show') && (
+                            <Link
+                                href={`/compras/${compra.id}`}
+                                onClick={() => setIsOpen(false)}
+                                className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                            >
+                                <Eye className="h-4 w-4" />
+                                Ver detalle
+                            </Link>
+                        )}
+
+                        {/* Imprimir */}
+                        {can('compras.show') && (
+                            <button
+                                onClick={() => {
+                                    onPrimir();
+                                    setIsOpen(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                            >
+                                <Printer className="h-4 w-4" />
+                                Imprimir
+                            </button>
+                        )}
+
+                        {/* Editar */}
+                        {can('compras.update') && (
+                            <Link
+                                href={`/compras/${compra.id}/edit`}
+                                onClick={() => setIsOpen(false)}
+                                className="flex items-center gap-3 px-4 py-2 text-sm text-amber-600 transition-colors hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                            >
+                                <Edit className="h-4 w-4" />
+                                Editar
+                            </Link>
+                        )}
+
+                        {/* Anular */}
+                        {can('compras.update') && compra.estado_documento?.codigo === 'APROBADO' && (
+                            <button
+                                onClick={() => {
+                                    onAnular();
+                                    setIsOpen(false);
+                                }}
+                                disabled={isAnulando}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                            >
+                                <AlertCircle className="h-4 w-4" />
+                                Anular
+                            </button>
+                        )}
+
+                        {/* Eliminar */}
+                        {can('compras.delete') && (
+                            <button
+                                className="w-full border-t border-gray-200 flex items-center gap-3 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:border-gray-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                Eliminar
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 
 const getEstadoColor = (estado?: EstadoDocumento) => {
@@ -172,9 +277,10 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                     <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
                             <SortableHeader field="id">FOLIO</SortableHeader>
-                            <SortableHeader field="numero">Número</SortableHeader>
+                            {/* <SortableHeader field="numero">Número</SortableHeader> */}
                             <SortableHeader field="estadoDocumento">Estado</SortableHeader>
                             <SortableHeader field="proveedor">Proveedor</SortableHeader>
+                            <SortableHeader field="proveedor">Creador</SortableHeader>
                             <SortableHeader field="total">Total</SortableHeader>
                             <SortableHeader field="created_at">Fecha</SortableHeader>
                             <th className="px-6 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">-</th>
@@ -186,7 +292,7 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                 <td className="px-2 py-4 text-center text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white">
                                     #{compra.id}
                                 </td>
-                                <td className="px-2 py-4 text-xs font-mono whitespace-nowrap text-gray-900 dark:text-white">
+                                {/* <td className="px-2 py-4 text-xs font-mono whitespace-nowrap text-gray-900 dark:text-white">
                                     {compra.numero}
 
                                     <p>
@@ -196,7 +302,7 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                             </span>
                                         )}
                                     </p>
-                                </td>
+                                </td> */}
                                 <td className="px-2 py-4 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <span
                                         className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getEstadoColor(compra.estado_documento)}`}
@@ -207,8 +313,9 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
 
                                 <td className="px-2 py-4 text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <p className="text-xs font-medium">{compra.proveedor?.nombre ?? 'Sin proveedor'}</p>
+                                </td>
+                                <td className="px-2 py-4 text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <p className="text-xs text-gray-400">
-                                        <strong>Creador: </strong>
                                         {compra.usuario?.name}
                                     </p>
                                 </td>
@@ -222,7 +329,7 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                             </div>
                                         )}
                                     </div>
-                                    {compra.tipo_pago ? (
+                                    {/* {compra.tipo_pago ? (
                                         <span
                                             className={`inline-flex rounded px-2 py-1 text-xs font-medium ${
                                                 compra.tipo_pago.codigo === 'CONTADO'
@@ -234,7 +341,7 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                         </span>
                                     ) : (
                                         <span className="text-xs text-gray-400">Sin tipo</span>
-                                    )}
+                                    )} */}
                                 </td>
                                 <td className="px-2 py-4 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <div className="font-medium">
@@ -250,53 +357,14 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                 </td>
 
                                 <td className="px-2 py-4 text-right text-sm font-medium whitespace-nowrap">
-                                    <div className="flex justify-end gap-2">
-                                        {can('compras.show') && (
-                                            <Link
-                                                href={`/compras/${compra.id}`}
-                                                className="inline-flex items-center rounded p-2 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-900 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
-                                                title="Ver detalle"
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Link>
-                                        )}
-
-                                        {/* Botón Imprimir/Exportar - Disponible para todas las compras */}
-                                        {can('compras.show') && (
-                                            <button
-                                                onClick={() => setOutputModal({ isOpen: true, compra })}
-                                                className="inline-flex items-center rounded p-2 text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
-                                                title="Imprimir documento"
-                                            >
-                                                <Printer className="h-4 w-4" />
-                                            </button>
-                                        )}
-
-                                        {/* Botón Editar - disponible si el usuario puede actualizar compras */}
-                                        {can('compras.update') && (
-                                            <Link
-                                                href={`/compras/${compra.id}/edit`}
-                                                className="inline-flex items-center rounded p-2 text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-900 dark:text-amber-400 dark:hover:bg-amber-900/20 dark:hover:text-amber-300"
-                                                title="Editar"
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Link>
-                                        )}
-
-                                        {/* Botón Anular - Solo si está APROBADO */}
-                                        {can('compras.update') && compra.estado_documento?.codigo === 'APROBADO' && (
-                                            <button
-                                                onClick={() => openAnularModal(compra)}
-                                                disabled={isAnulando}
-                                                className="inline-flex items-center rounded p-2 text-red-600 transition-colors hover:bg-red-50 hover:text-red-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
-                                                title="Anular compra"
-                                            >
-                                                <AlertCircle className="h-4 w-4" />
-                                            </button>
-                                        )}
-
-                                        {can('compras.delete') && <EliminarCompraDialog compra={compra} onSuccess={() => window.location.reload()} />}
-                                    </div>
+                                    {/* ✅ NUEVO (2026-09-09): Menú dropdown de acciones */}
+                                    <AccionesCompraDropdown
+                                        compra={compra}
+                                        can={can}
+                                        onPrimir={() => setOutputModal({ isOpen: true, compra })}
+                                        onAnular={() => openAnularModal(compra)}
+                                        isAnulando={isAnulando}
+                                    />
                                 </td>
                             </tr>
                         ))}
