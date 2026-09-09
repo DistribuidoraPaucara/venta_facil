@@ -3188,7 +3188,7 @@ class InventarioController extends Controller
             $ordenamiento  = (string) $request->string('ordenamiento', 'cantidad-desc');
             $soloConStock  = (bool) $request->boolean('solo_con_stock', false);
             $page          = (int) $request->integer('page', 1);
-            $perPage       = (int) $request->integer('per_page', 50);
+            $perPage       = (int) $request->integer('per_page', 20);
 
             // Definir rangos de stock
             $rangos = [

@@ -38,7 +38,7 @@ export default function StockYProductos({
     // ✅ NUEVO (2026-09-09): Estado de paginación
     const [paginacion, setPaginacion] = useState({
         current_page: 1,
-        per_page: 50,
+        per_page: 20,
         total: 0,
         last_page: 1,
         from: 0,
@@ -585,6 +585,7 @@ export default function StockYProductos({
                                     }}
                                     className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-600 dark:text-white"
                                 >
+                                    <option value={20}>20</option>
                                     <option value={25}>25</option>
                                     <option value={50}>50</option>
                                     <option value={100}>100</option>
