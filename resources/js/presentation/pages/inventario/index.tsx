@@ -66,45 +66,45 @@ export default function Dashboard() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboardss de Inventario" />
+            <Head title="Dashboard de Inventario" />
 
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-6 p-2">
                 {/* Header */}
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                             Dashboard de Inventario
                         </h2>
-                        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                        <p className=" text-sm text-gray-700 dark:text-gray-300">
                             Resumen general del estado de tu inventario
                         </p>
                     </div>
                 </div>
 
                 {/* Secciones del Dashboard */}
-                <EstadisticasCards
+                {/* <EstadisticasCards
                     estadisticas={data.estadisticas}
                     canViewStockBajo={can('inventario.stock-bajo')}
                     canViewProximosVencer={can('inventario.proximos-vencer')}
                     canViewVencidos={can('inventario.vencidos')}
-                />
+                /> */}
 
                 <StockYProductos
                     stockPorAlmacen={props.stock_por_almacen}
                     productosMasMovidos={productosMasMovidos}
                 />
 
-                <MovimientosRecientes
+                {/* <MovimientosRecientes
                     movimientos={movimientosRecientes}
                     canViewAll={can('inventario.movimientos')}
-                />
+                /> */}
 
-                <EnlacesRapidos
+                {/* <EnlacesRapidos
                     canViewStockBajo={can('inventario.stock-bajo')}
                     canViewMovimientos={can('inventario.movimientos')}
                     canAdjust={can('inventario.ajuste.form')}
                     canViewReportes={can('inventario.reportes')}
-                />
+                /> */}
 
             </div>
         </AppLayout>

@@ -924,6 +924,19 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
             Route::post('{transferencia}/cancelar', [\App\Http\Controllers\InventarioController::class, 'cancelarTransferencia'])->middleware('permission:inventario.transferencias.cancelar')->name('cancelar');
         });
 
+        // Rutas para reposiciones de inventario
+        Route::prefix('reposiciones')->name('reposiciones.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ReposicionController::class, 'index'])->middleware('permission:inventario.reposiciones.index')->name('index');
+            Route::get('crear', [\App\Http\Controllers\ReposicionController::class, 'create'])->middleware('permission:inventario.reposiciones.create')->name('create');
+            Route::post('crear', [\App\Http\Controllers\ReposicionController::class, 'store'])->middleware('permission:inventario.reposiciones.create')->name('store');
+            Route::get('{reposicion}', [\App\Http\Controllers\ReposicionController::class, 'show'])->middleware('permission:inventario.reposiciones.show')->name('show');
+            Route::get('{reposicion}/edit', [\App\Http\Controllers\ReposicionController::class, 'edit'])->middleware('permission:inventario.reposiciones.edit')->name('edit');
+            Route::put('{reposicion}', [\App\Http\Controllers\ReposicionController::class, 'update'])->middleware('permission:inventario.reposiciones.edit')->name('update');
+            Route::post('{reposicion}/enviar', [\App\Http\Controllers\ReposicionController::class, 'enviar'])->middleware('permission:inventario.reposiciones.enviar')->name('enviar');
+            Route::post('{reposicion}/recibir', [\App\Http\Controllers\ReposicionController::class, 'recibir'])->middleware('permission:inventario.reposiciones.recibir')->name('recibir');
+            Route::delete('{reposicion}', [\App\Http\Controllers\ReposicionController::class, 'destroy'])->middleware('permission:inventario.reposiciones.delete')->name('destroy');
+        });
+
         // Rutas para manejo de mermas
         Route::prefix('mermas')->name('mermas.')->group(function () {
             Route::get('/', [\App\Http\Controllers\InventarioController::class, 'mermas'])->middleware('permission:inventario.mermas.index')->name('index');

@@ -135,6 +135,8 @@ export default function Index() {
                                     <thead>
                                         <tr className="border-b border-gray-200 dark:border-gray-700">
                                             <th className="py-3 text-left font-medium text-gray-900 dark:text-gray-100">
+                                                ID
+                                            </th><th className="py-3 text-left font-medium text-gray-900 dark:text-gray-100">
                                                 Usuario
                                             </th>
                                             <th className="py-3 text-left font-medium text-gray-900 dark:text-gray-100">
@@ -157,6 +159,9 @@ export default function Index() {
                                                 key={user.id}
                                                 className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50"
                                             >
+                                                <td className="py-4 text-gray-600 dark:text-gray-300">
+                                                    {user.id}
+                                                </td>
                                                 <td className="py-4">
                                                     <div>
                                                         <div className="font-medium text-gray-900 dark:text-gray-100">

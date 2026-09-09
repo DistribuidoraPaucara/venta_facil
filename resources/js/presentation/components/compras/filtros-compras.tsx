@@ -155,7 +155,7 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
     }
 
     return (
-        <div className={cn('bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4', className)}>
+        <div className={cn('bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-2', className)}>
             {/* Búsqueda rápida */}
             <form onSubmit={busquedaRapida} className="flex gap-3 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
@@ -202,7 +202,7 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
             {/* Filtros avanzados */}
             {mostrarFiltrosAvanzados && (
                 <div className="border-t pt-4 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Proveedor */}
                         <div>
                             <Label htmlFor="proveedor_id" className="text-sm font-medium">
@@ -236,7 +236,7 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                         </div>
 
                         {/* Moneda */}
-                        <div>
+                        {/* <div>
                             <Label htmlFor="moneda_id" className="text-sm font-medium">
                                 Moneda
                             </Label>
@@ -249,7 +249,7 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                                 allowClear
                                 emptyText="No hay monedas disponibles"
                             />
-                        </div>
+                        </div> */}
 
                         {/* Tipo de Pago */}
                         <div>

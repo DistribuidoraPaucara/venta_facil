@@ -360,7 +360,7 @@ export default function RegistrarPagoModal({
                                             Saldo: {formatCurrency(cuentaPorCobrar.saldo_pendiente)}
                                         </p>
                                         {/* Fecha de vencimiento */}
-                                        <p className="text-green-800 dark:text-green-200">
+                                        <p className="text-green-800 dark:text-green-200 text-xs">
                                             <strong>Vencimiento:</strong> {new Date(cuentaPorCobrar.fecha_vencimiento).toLocaleDateString('es-BO')}
                                         </p>
                                     </>

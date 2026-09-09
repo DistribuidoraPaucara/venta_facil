@@ -1645,7 +1645,7 @@ export default function VentaForm() {
 
                 {/* Información básica */}
                 <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                    <div className="grid grid-cols-1 items-start">
+                    <div className="grid grid-cols-2 gap-4 items-end">
                         {/* Campo número oculto - se genera automáticamente */}
                         <input type="hidden" value={data.numero} onChange={(e) => setData('numero', e.target.value)} />
                         {/* Campo moneda oculto - se establece automáticamente a BOB */}

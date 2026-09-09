@@ -290,7 +290,7 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
                     {/* Content */}
                     <div className="p-6 max-h-full overflow-y-auto space-y-6">
                         {/* ✅ NUEVO: Tabla expandible de precios por unidad */}
-                        {(preciosCompletos || producto?.precios) && (preciosCompletos || producto?.precios)?.length > 0 && (
+                        {/* {(preciosCompletos || producto?.precios) && (preciosCompletos || producto?.precios)?.length > 0 && (
                             <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
                                 <button
                                     onClick={() => setTablaExpandida(!tablaExpandida)}
@@ -346,7 +346,7 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
                                     </div>
                                 )}
                             </div>
-                        )}
+                        )} */}
 
                         {cargandoPreciosApi || preciosPropuestos.length === 0 ? (
                             <div className="py-8 text-center">

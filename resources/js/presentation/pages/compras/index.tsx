@@ -39,7 +39,7 @@ export default function ComprasIndex() {
 
       <div className="space-y-2 p-2">
         {/* Header */}
-        <div className="flex items-center justify-between py-2">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Compras</h1>
             <p className="text-gray-600 dark:text-gray-400">
