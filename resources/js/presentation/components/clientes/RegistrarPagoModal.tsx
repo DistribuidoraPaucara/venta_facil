@@ -340,22 +340,33 @@ export default function RegistrarPagoModal({
                     style={{ maxWidth: '95vw', maxHeight: '95vh' }}
                 >
                     <DialogHeader className="flex-shrink-0 border-b border-gray-200 pb-4 dark:border-gray-800">
-                        <DialogTitle className="text-gray-900 dark:text-white">Registrar Pago Credito {/* Total */}
-                                    {(formData.montoEfectivo || formData.montoTransferencia) && (
-                                        <div className="mt-2 pl-2 border-l border-blue-300 dark:border-blue-600">
-                                            <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                                                Total:{' '}
-                                                {formatCurrency(
-                                                    parseFloat(formData.montoEfectivo || '0') + parseFloat(formData.montoTransferencia || '0'),
-                                                )}
-                                            </p>
-                                            {cuentaPorCobrar && (
-                                                <p className="text-xs text-blue-700 dark:text-blue-300">
-                                                    Saldo: {formatCurrency(cuentaPorCobrar.saldo_pendiente)}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}</DialogTitle>
+                        <DialogTitle className="flex flex-wrap justify-between gap-1 text-lg font-semibold text-gray-900 dark:text-white">
+                            Registrar Pago Credito #{cuentaPorCobrar?.id} {/* Total */}
+                            {/* nombre del cliente */}
+                            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">Cliente: {cuentaPorCobrar?.cliente?.nombre}</p>
+                            {/* Folio de la Venta */}
+                            {cuentaPorCobrar?.venta_id && (
+                                <span className="mt-1 text-sm text-gray-700 dark:text-gray-300">Folio Venta: #{cuentaPorCobrar.venta_id}</span>
+                            )}
+                            {/* Total  */}
+                            <div className="border-l border-blue-300 pl-2 dark:border-blue-600">
+                                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                    Total:{' '}
+                                    {formatCurrency(parseFloat(formData.montoEfectivo || '0') + parseFloat(formData.montoTransferencia || '0'))}
+                                </p>
+                                {cuentaPorCobrar && (
+                                    <>
+                                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                                            Saldo: {formatCurrency(cuentaPorCobrar.saldo_pendiente)}
+                                        </p>
+                                        {/* Fecha de vencimiento */}
+                                        <p className="text-green-800 dark:text-green-200">
+                                            <strong>Vencimiento:</strong> {new Date(cuentaPorCobrar.fecha_vencimiento).toLocaleDateString('es-BO')}
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        </DialogTitle>
                     </DialogHeader>
 
                     <div className="flex-1 space-y-4 overflow-y-auto pr-2">
@@ -409,7 +420,7 @@ export default function RegistrarPagoModal({
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* ✅ NUEVO: Mostrar información de la cuenta directamente */}
-                            {cuentaPorCobrar && (
+                            {/* {cuentaPorCobrar && (
                                 <div className="rounded-md border-2 border-green-200 bg-green-50 p-4 text-sm dark:border-green-700 dark:bg-green-950">
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between">
@@ -445,13 +456,13 @@ export default function RegistrarPagoModal({
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            )} */}
 
                             {/* ✅ NUEVO: Montos desglosados por tipo de pago */}
                             <div className="space-y-3 p-2">
                                 {/* <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">💰 Desglose de Pago</p> */}
 
-                                <div className="flex flex-wrap gap-4 items-center justify-center">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
                                     {/* Efectivo */}
                                     <div className="space-y-1">
                                         <Label htmlFor="montoEfectivo" className="text-sm text-gray-700 dark:text-gray-300">
@@ -513,7 +524,7 @@ export default function RegistrarPagoModal({
                                             />
                                         )} */}
                                     </div>
-                                    
+
                                     {/* Fecha de Pago */}
                                     <div className="space-y-2">
                                         <Label htmlFor="fecha_pago" className="text-gray-700 dark:text-gray-300">
@@ -576,12 +587,7 @@ export default function RegistrarPagoModal({
                         </Button>
                         <Button
                             onClick={handleSubmit}
-                            disabled={
-                                loading ||
-                                !formData.cuenta_id ||
-                                cargandoCaja ||
-                                (verificarCaja && !cajaInfo?.tiene_caja_abierta)
-                            }
+                            disabled={loading || !formData.cuenta_id || cargandoCaja || (verificarCaja && !cajaInfo?.tiene_caja_abierta)}
                             className="bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-700 dark:hover:bg-blue-800"
                             title={verificarCaja && !cajaInfo?.tiene_caja_abierta ? 'Abre una caja para registrar pagos' : ''}
                         >
