@@ -724,24 +724,26 @@ class ProductoController extends Controller
                             ]);
 
                             // ✨ NUEVO: Guardar los límites de stock en stock_limites
+                            // ✨ IMPORTANTE: Un producto en un almacén solo puede estar en UN sector
                             $stockMinimo = isset($almacenData['stock_minimo']) ? (int) $almacenData['stock_minimo'] : 0;
                             $stockMaximo = isset($almacenData['stock_maximo']) ? (int) $almacenData['stock_maximo'] : 999999;
 
                             if ($stockMinimo > 0 || $stockMaximo < 999999) {
-                                // Usar el sector asignado (que ahora está en $stockProducto->sector_id)
-                                StockLimite::updateOrCreate(
-                                    [
-                                        'producto_id'  => $producto->id,
-                                        'almacen_id'   => $almacenId,
-                                        'sector_id'    => $stockProducto->sector_id,
-                                    ],
-                                    [
-                                        'stock_minimo' => $stockMinimo,
-                                        'stock_maximo' => $stockMaximo,
-                                    ]
-                                );
+                                // 🔥 LIMPIEZA: Eliminar TODOS los límites anteriores para este producto-almacén
+                                StockLimite::where('producto_id', $producto->id)
+                                    ->where('almacen_id', $almacenId)
+                                    ->delete();
 
-                                Log::info('✅ StockLimite creado/actualizado', [
+                                // ✨ Crear el nuevo registro con el sector actual
+                                StockLimite::create([
+                                    'producto_id'  => $producto->id,
+                                    'almacen_id'   => $almacenId,
+                                    'sector_id'    => $stockProducto->sector_id,
+                                    'stock_minimo' => $stockMinimo,
+                                    'stock_maximo' => $stockMaximo,
+                                ]);
+
+                                Log::info('✅ StockLimite creado (sin duplicados)', [
                                     'producto_id' => $producto->id,
                                     'almacen_id'  => $almacenId,
                                     'sector_id'   => $stockProducto->sector_id,
@@ -1462,31 +1464,34 @@ class ProductoController extends Controller
                             ]);
 
                             // ✨ NUEVO: Actualizar los límites de stock en stock_limites
-                            // ✨ IMPORTANTE: Usar $sectorId (del frontend) no $stockExistente->sector_id
-                            // Esto permite actualizar si el sector cambió, y elimina registros duplicados
+                            // ✨ IMPORTANTE: Un producto en un almacén solo puede estar en UN sector
+                            // Si el sector cambió, eliminar TODOS los registros anteriores
                             $stockMinimo = isset($almacenData['stock_minimo']) ? (int) $almacenData['stock_minimo'] : 0;
                             $stockMaximo = isset($almacenData['stock_maximo']) ? (int) $almacenData['stock_maximo'] : 999999;
 
                             if ($stockMinimo > 0 || $stockMaximo < 999999) {
-                                StockLimite::updateOrCreate(
-                                    [
-                                        'producto_id'  => $producto->id,
-                                        'almacen_id'   => $almacenId,
-                                        'sector_id'    => $sectorId ?? $stockExistente->sector_id, // Usar nuevo sector del frontend, fallback al anterior
-                                    ],
-                                    [
-                                        'stock_minimo' => $stockMinimo,
-                                        'stock_maximo' => $stockMaximo,
-                                    ]
-                                );
+                                // 🔥 LIMPIEZA: Eliminar TODOS los límites anteriores para este producto-almacén
+                                // porque solo puede haber uno (el sector cambió o hay duplicados)
+                                StockLimite::where('producto_id', $producto->id)
+                                    ->where('almacen_id', $almacenId)
+                                    ->delete();
 
-                                // ✨ LIMPIEZA: Si el sector cambió, eliminar registro antiguo
-                                if ($sectorId && $sectorId !== $stockExistente->sector_id) {
-                                    StockLimite::where('producto_id', $producto->id)
-                                        ->where('almacen_id', $almacenId)
-                                        ->where('sector_id', $stockExistente->sector_id)
-                                        ->delete();
-                                }
+                                // ✨ Crear el nuevo registro con el sector actual
+                                StockLimite::create([
+                                    'producto_id'  => $producto->id,
+                                    'almacen_id'   => $almacenId,
+                                    'sector_id'    => $sectorId ?? $stockExistente->sector_id,
+                                    'stock_minimo' => $stockMinimo,
+                                    'stock_maximo' => $stockMaximo,
+                                ]);
+
+                                Log::info('✅ StockLimite actualizado (sin duplicados)', [
+                                    'producto_id' => $producto->id,
+                                    'almacen_id'  => $almacenId,
+                                    'sector_id'   => $sectorId ?? $stockExistente->sector_id,
+                                    'stock_minimo' => $stockMinimo,
+                                    'stock_maximo' => $stockMaximo,
+                                ]);
                             }
                         } else {
                             Log::info('➕ StockProducto NO encontrado - CREANDO:', [
