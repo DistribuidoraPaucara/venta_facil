@@ -41,6 +41,19 @@ export const routes = {
             edit: (id: number | string) => `/prestamos/proveedores/${id}/edit`,
         },
     },
+
+    // Reposiciones (Inventario)
+    reposiciones: {
+        index: () => '/inventario/reposiciones',
+        create: () => '/inventario/reposiciones/crear',
+        show: (id: number | string) => `/inventario/reposiciones/${id}`,
+        edit: (id: number | string) => `/inventario/reposiciones/${id}/edit`,
+        enviar: (id: number | string) => `/inventario/reposiciones/${id}/enviar`,
+        recibir: (id: number | string) => `/inventario/reposiciones/${id}/recibir`,
+        destroy: (id: number | string) => `/inventario/reposiciones/${id}`,
+        store: () => '/inventario/reposiciones/crear',
+        update: (id: number | string) => `/inventario/reposiciones/${id}`,
+    },
 } as const;
 
 /**
