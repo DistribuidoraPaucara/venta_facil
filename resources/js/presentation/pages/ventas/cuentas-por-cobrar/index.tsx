@@ -823,7 +823,7 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
 
                 {/* Tabla de Cuentas por Cobrar */}
                 <div>
-                    <div className="overflow-y-auto rounded-lg border border-gray-200 shadow dark:border-gray-700">
+                    <div className="overflow-y-auto overflow-x-visible rounded-lg border border-gray-200 shadow dark:border-gray-700">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -928,7 +928,7 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                                                     <div className="relative" ref={menuAbiertoId === cuenta.id ? menuRef : null}>
                                                         {/* Menú Popup */}
                                                         {menuAbiertoId === cuenta.id && (
-                                                            <div className="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                                                            <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
                                                                 <div className="py-1">
                                                                     {/* Opción: Ver Detalles */}
                                                                     <button
