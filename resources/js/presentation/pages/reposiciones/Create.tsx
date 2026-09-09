@@ -74,6 +74,24 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
   const [cantidadesPorProducto, setCantidadesPorProducto] = useState<Record<number, number>>({});
   const [unidadesReposicion, setUnidadesReposicion] = useState<Record<number, 'base' | 'conversion'>>({});
 
+  // Auto-agregar productos con cantidad sugerida > 0
+  useEffect(() => {
+    productosStockBajo.forEach((producto) => {
+      if (producto.cantidad_sugerida && producto.cantidad_sugerida > 0) {
+        const yaAgregado = data.detalles.some((d) => d.producto_id === producto.id);
+        if (!yaAgregado) {
+          setData('detalles', [
+            ...data.detalles,
+            {
+              producto_id: producto.id,
+              cantidad_solicitada: producto.cantidad_sugerida,
+            },
+          ]);
+        }
+      }
+    });
+  }, [productosStockBajo]);
+
   const agregarProducto = (productoId: number) => {
     const cantidad = cantidadesPorProducto[productoId];
     if (!cantidad || cantidad <= 0) {
