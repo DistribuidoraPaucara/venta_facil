@@ -109,21 +109,31 @@ const ProductCard: React.FC<{
         </div>
         <div className="flex items-end justify-between mt-auto gap-2">
           <div className="text-xs text-muted-foreground space-y-1 flex-1">
-            <div className={`grid ${can('ver_precio_costo') ? 'grid-cols-2' : 'grid-cols-1'} gap-12 mb-2`}>
-              <div>
+            {/* Fila 1: Venta y Stock */}
+            <div className="flex gap-2">
+              <div className="flex-1">
                 <span className="block text-[9px] uppercase tracking-wide text-green-600 dark:text-green-400 font-semibold">Venta</span>
                 <span className="font-bold text-xs text-green-700 dark:text-green-200">{currency(precioVenta)}</span>
               </div>
-              {/* ✅ NUEVO: Ocultar precio base si no tiene permiso */}
-              {can('ver_precio_costo') && (
-                <div>
-                  <span className="block text-[9px] uppercase tracking-wide text-purple-600 dark:text-purple-400 font-semibold">Costo</span>
-                  <span className="font-bold text-xs text-purple-700 dark:text-purple-200">{currency(p.precio_base)}</span>
+              {!p.es_combo && (
+                <div className="flex-1">
+                  <span className="block text-[10px] uppercase tracking-wide">Stock</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${((p as any).stock_disponible_calc ?? 0) === 0 ? 'bg-red-100 text-red-700' : ((p as any).stock_disponible_calc ?? 0) < (p.stock_minimo ?? 0) ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    {((p as any).stock_disponible_calc ?? 0)}
+                  </span>
                 </div>
               )}
             </div>
 
-            {p.es_combo ? (
+            {/* Fila 2: Costo (si tiene permiso) o Capacidad (si es combo) */}
+            {can('ver_precio_costo') && (
+              <div>
+                <span className="block text-[9px] uppercase tracking-wide text-purple-600 dark:text-purple-400 font-semibold">Costo</span>
+                <span className="font-bold text-xs text-purple-700 dark:text-purple-200">{currency(p.precio_base)}</span>
+              </div>
+            )}
+
+            {p.es_combo && (
               <div>
                 <span className="block text-[10px] uppercase tracking-wide">Capacidad</span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200">
@@ -131,35 +141,27 @@ const ProductCard: React.FC<{
                   {(p as any).capacidad ?? 0} combos
                 </span>
               </div>
-            ) : (
-              <>
-                {/* Fila 1: Stock */}
-                <div>
-                  <span className="block text-[10px] uppercase tracking-wide">Stock</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${((p as any).stock_disponible_calc ?? 0) === 0 ? 'bg-red-100 text-red-700' : ((p as any).stock_disponible_calc ?? 0) < (p.stock_minimo ?? 0) ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                    {((p as any).stock_disponible_calc ?? 0)}
-                  </span>
-                </div>
+            )}
 
-                {/* Fila 2: Fraccionado (solo si es fraccionado) y Unidad (siempre) */}
-                <div className="flex gap-2">
-                  {p.es_fraccionado && (
-                    <div className="flex-1">
-                      <span className="block text-[10px] uppercase tracking-wide">Fraccionado</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200">
-                        <span>✂️</span>
-                        <span>Sí</span>
-                      </span>
-                    </div>
-                  )}
-                  <div className={p.es_fraccionado ? 'flex-1' : 'w-full'}>
-                    <span className="block text-[10px] uppercase tracking-wide">Unidad</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
-                      {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
+            {/* Fila 3: Fraccionado (solo si es fraccionado) y Unidad (siempre) */}
+            {!p.es_combo && (
+              <div className="flex gap-2">
+                {p.es_fraccionado && (
+                  <div className="flex-1">
+                    <span className="block text-[10px] uppercase tracking-wide">Fraccionado</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200">
+                      <span>✂️</span>
+                      <span>Sí</span>
                     </span>
                   </div>
+                )}
+                <div className={p.es_fraccionado ? 'flex-1' : 'w-full'}>
+                  <span className="block text-[10px] uppercase tracking-wide">Unidad</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200">
+                    {(p as any).unidad?.nombre || (p as any).unidad?.codigo || '—'}
+                  </span>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
