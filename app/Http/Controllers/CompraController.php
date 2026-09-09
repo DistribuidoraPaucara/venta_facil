@@ -69,9 +69,16 @@ class CompraController extends Controller
 
         $query = Compra::with(['proveedor', 'usuario', 'estadoDocumento', 'moneda', 'tipoPago']);
 
-        // ✅ CRÍTICO: Filtrar por almacén del usuario (empresa)
-        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
-        $query->where('almacen_id', $almacenIdUsuario);
+        // ✅ FIJO (2026-09-09): Filtrar por TODOS los almacenes de la empresa del usuario
+        // Un usuario puede crear compras en cualquier almacén de su empresa
+        // Por eso debemos filtrar por todos los almacenes, no solo el almacén_id principal
+        $empresaId = auth()->user()?->empresa_id;
+        if ($empresaId) {
+            $almacenesIds = \App\Models\Almacen::where('empresa_id', $empresaId)
+                ->pluck('id')
+                ->toArray();
+            $query->whereIn('almacen_id', $almacenesIds);
+        }
 
         // Filtro por ID de compra
         if (! empty($filtros['id'])) {
@@ -2126,12 +2133,19 @@ class CompraController extends Controller
     public function indexApi(Request $request): JsonResponse
     {
         try {
-            // ✅ CRÍTICO: Filtrar por almacén del usuario (empresa)
-            $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
+            // ✅ FIJO (2026-09-09): Filtrar por TODOS los almacenes de la empresa
+            $empresaId = auth()->user()?->empresa_id;
 
-            $query = Compra::with(['proveedor:id,nombre,razon_social'])
-                ->where('almacen_id', $almacenIdUsuario)
-                ->orderBy('created_at', 'desc');
+            $query = Compra::with(['proveedor:id,nombre,razon_social']);
+
+            if ($empresaId) {
+                $almacenesIds = \App\Models\Almacen::where('empresa_id', $empresaId)
+                    ->pluck('id')
+                    ->toArray();
+                $query->whereIn('almacen_id', $almacenesIds);
+            }
+
+            $query->orderBy('created_at', 'desc');
 
             // Filtro de búsqueda general (q)
             if ($request->filled('q')) {
