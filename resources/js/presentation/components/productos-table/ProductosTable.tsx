@@ -496,10 +496,10 @@ export default function ProductosTable({
                         <thead className="border-b-2 border-gray-300 bg-gradient-to-b from-gray-100 to-gray-50 dark:border-zinc-600 dark:from-zinc-700 dark:to-zinc-800">
                             <tr>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Producto</th>
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">SKU</th>
+                                {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">SKU</th> */}
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disponible</th>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Cantidad</th>
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Un.</th>
+                                {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">PRECIO</th> */}
                                 {tipo === 'compra' && (
                                     <>
                                         <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
@@ -512,7 +512,7 @@ export default function ProductosTable({
                                     </>
                                 )}
                                 {tipo === 'venta' && (
-                                    <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
+                                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
                                         Precio Unitario
                                     </th>
                                 )}
@@ -520,7 +520,7 @@ export default function ProductosTable({
                                 {/* <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
                                     Cat.
                                 </th> */}
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Marca</th>
+                                {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Marca</th> */}
                                 <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">-</th>
                             </tr>
                         </thead>

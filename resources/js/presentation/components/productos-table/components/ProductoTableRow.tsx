@@ -308,11 +308,11 @@ export default function ProductoTableRow({
             </td>
 
             {/* Unidad */}
-            <td className="items-left px-2 py-2">
+            {/* <td className="items-left px-2 py-2">
                 <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
                     {detalle.unidad_medida_nombre || productoInfo?.unidad?.codigo || 'UN'}
                 </span>
-            </td>
+            </td> */}
 
             {/* Precio Unitario (Compra) */}
             {tipo === 'compra' && (
@@ -427,7 +427,7 @@ export default function ProductoTableRow({
 
             {/* Precio Venta - Con selector de precios para fraccionados */}
             {tipo === 'venta' && (
-                <td className="font-small px-2 py-2 text-xs">
+                <td className="font-small px-2 py-2 text-xs text-center">
                     {(() => {
                         const precios = detalle.producto?.precios || [];
                         const preciosVenta = precios.filter((p) => {

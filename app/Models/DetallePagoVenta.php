@@ -13,6 +13,7 @@ class DetallePagoVenta extends Model
         'venta_id',
         'tipo_pago_id',
         'monto',
+        'monto_original',
         'referencia',
         'fecha_pago',
         'comprobante',

@@ -132,7 +132,8 @@ class PagoVentaService
                 $detallePago = DetallePagoVenta::create([
                     'venta_id' => $venta->id,
                     'tipo_pago_id' => $pago['tipo_pago_id'],
-                    'monto' => $pago['monto'],  // ✅ Monto escalado, no original
+                    'monto' => $pago['monto'],  // ✅ Monto escalado para la venta
+                    'monto_original' => $pago['monto_original'],  // ✅ NUEVO: Monto original que pagó el cliente
                     'referencia' => $pago['referencia'] ?? null,
                     'fecha_pago' => $pago['fecha_pago'] ?? now(),
                     'comprobante' => $pago['comprobante'] ?? null,

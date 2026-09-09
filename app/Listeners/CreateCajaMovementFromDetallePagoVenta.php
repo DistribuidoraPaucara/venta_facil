@@ -54,6 +54,10 @@ class CreateCajaMovementFromDetallePagoVenta
                 return;
             }
 
+            // ✅ ACTUALIZADO: Usar monto_original (lo que realmente pagó) en lugar de monto escalado
+            // monto_original es lo que entra a caja, monto es el registro de la venta
+            $montoParaCaja = $detallePago->monto_original ?? $detallePago->monto;
+
             // Crear movimiento de caja
             $movimiento = MovimientoCaja::create([
                 'apertura_caja_id' => $apertura->id,
@@ -62,7 +66,7 @@ class CreateCajaMovementFromDetallePagoVenta
                 'tipo_operacion_id' => $tipoOperacion->id,
                 'tipo_pago_id' => $detallePago->tipo_pago_id,
                 'venta_id' => $detallePago->venta_id,
-                'monto' => $detallePago->monto,
+                'monto' => $montoParaCaja,  // ✅ Monto original que realmente entra a caja
                 'fecha' => $detallePago->fecha_pago ?? now(),
                 'numero_documento' => $detallePago->venta?->numero ?? 'N/A',
                 'observaciones' => "Venta #{$detallePago->venta_id} | Referencia: {$detallePago->referencia} | Comprobante: {$detallePago->comprobante}",
