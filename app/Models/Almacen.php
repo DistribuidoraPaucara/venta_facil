@@ -55,6 +55,11 @@ class Almacen extends Model
         return $this->hasMany(Sector::class, 'almacen_id');
     }
 
+    public function stockLimites()
+    {
+        return $this->hasMany(StockLimite::class, 'almacen_id');
+    }
+
     /**
      * Obtener el sector genérico automático de este almacén
      * Usado para asignar stocks cuando no se especifica un sector

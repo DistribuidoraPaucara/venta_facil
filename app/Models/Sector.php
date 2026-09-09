@@ -55,6 +55,14 @@ class Sector extends Model
     }
 
     /**
+     * Relación: Un sector tiene muchos límites de stock
+     */
+    public function stockLimites(): HasMany
+    {
+        return $this->hasMany(StockLimite::class, 'sector_id');
+    }
+
+    /**
      * Scope: Obtener solo sectores genéricos
      */
     public function scopeGenerico($query)

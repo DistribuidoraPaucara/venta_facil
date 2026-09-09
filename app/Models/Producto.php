@@ -144,6 +144,11 @@ class Producto extends Model
         return $this->hasMany(StockProducto::class, 'producto_id');
     }
 
+    public function stockLimites()
+    {
+        return $this->hasMany(StockLimite::class, 'producto_id');
+    }
+
     public function unidad()
     {
         return $this->belongsTo(UnidadMedida::class, 'unidad_medida_id');
