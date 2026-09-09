@@ -79,12 +79,14 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
       return;
     }
 
+    const nuevoDetalle = {
+      producto_id: productoId,
+      cantidad_solicitada: cantidad,
+    };
+
     setData('detalles', [
       ...data.detalles,
-      {
-        producto_id: productoId,
-        cantidad_solicitada: cantidad,
-      },
+      nuevoDetalle,
     ]);
 
     setCantidadesPorProducto({
@@ -360,7 +362,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                           <td className="py-3 px-4 text-center">
                             {yaAgregado ? (
                               <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                {formatearNumero((producto.stock_actual ?? 0) + cantidadAgregada)}
+                                {formatearNumero(Number(producto.stock_actual ?? 0) + cantidadAgregada)}
                               </span>
                             ) : (
                               <span className="text-gray-400 dark:text-gray-500">-</span>
