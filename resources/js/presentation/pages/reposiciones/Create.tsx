@@ -349,37 +349,20 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                                 className="w-24 border border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right font-semibold"
                               />
                             ) : (
-                              // Input para cantidad antes de agregar
-                              <div className="flex gap-1 items-center">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  placeholder="Cantidad"
-                                  value={cantidadesPorProducto[producto.id] ?? ''}
-                                  onChange={(e) =>
-                                    setCantidadesPorProducto({
-                                      ...cantidadesPorProducto,
-                                      [producto.id]: Number(e.target.value) || 0,
-                                    })
-                                  }
-                                  className="w-24 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right"
-                                />
-                                {producto.cantidad_sugerida ? (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setCantidadesPorProducto({
-                                        ...cantidadesPorProducto,
-                                        [producto.id]: producto.cantidad_sugerida!,
-                                      })
-                                    }
-                                    title={`Sugerencia: ${formatearNumero(producto.cantidad_sugerida)}`}
-                                    className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
-                                  >
-                                    ⚡
-                                  </button>
-                                ) : null}
-                              </div>
+                              // Input para cantidad antes de agregar - pre-cargado con sugerencia
+                              <input
+                                type="number"
+                                min="1"
+                                placeholder="Cantidad"
+                                value={cantidadesPorProducto[producto.id] ?? (producto.cantidad_sugerida ?? '')}
+                                onChange={(e) =>
+                                  setCantidadesPorProducto({
+                                    ...cantidadesPorProducto,
+                                    [producto.id]: Number(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-24 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 text-right font-semibold text-blue-600 dark:text-blue-400"
+                              />
                             )}
                           </td>
                           <td className="py-3 px-4 text-center">
