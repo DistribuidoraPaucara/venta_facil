@@ -128,7 +128,7 @@ class ReposicionController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('reposiciones.show', $reposicion)->with('success', 'Reposición creada correctamente');
+            return redirect()->route('reposiciones.index')->with('success', 'Reposición creada correctamente');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error creando reposición: ' . $e->getMessage());
