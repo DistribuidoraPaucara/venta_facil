@@ -17,6 +17,7 @@ use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\Receta;
 use App\Models\RecetaIngrediente;
+use App\Models\StockLimite;
 use App\Models\Sector;
 use App\Models\StockProducto;
 use App\Models\TipoAjusteInventario;
@@ -710,7 +711,7 @@ class ProductoController extends Controller
                             }
 
                             // Crear StockProducto
-                            StockProducto::create([
+                            $stockProducto = StockProducto::create([
                                 'producto_id'         => $producto->id,
                                 'almacen_id'          => $almacenId,
                                 'sector_id'           => $sectorId, // El boot del modelo asignará genérico si es null
@@ -721,6 +722,33 @@ class ProductoController extends Controller
                                 'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : null,
                                 'fecha_actualizacion' => now(),
                             ]);
+
+                            // ✨ NUEVO: Guardar los límites de stock en stock_limites
+                            $stockMinimo = isset($almacenData['stock_minimo']) ? (int) $almacenData['stock_minimo'] : 0;
+                            $stockMaximo = isset($almacenData['stock_maximo']) ? (int) $almacenData['stock_maximo'] : 999999;
+
+                            if ($stockMinimo > 0 || $stockMaximo < 999999) {
+                                // Usar el sector asignado (que ahora está en $stockProducto->sector_id)
+                                StockLimite::updateOrCreate(
+                                    [
+                                        'producto_id'  => $producto->id,
+                                        'almacen_id'   => $almacenId,
+                                        'sector_id'    => $stockProducto->sector_id,
+                                    ],
+                                    [
+                                        'stock_minimo' => $stockMinimo,
+                                        'stock_maximo' => $stockMaximo,
+                                    ]
+                                );
+
+                                Log::info('✅ StockLimite creado/actualizado', [
+                                    'producto_id' => $producto->id,
+                                    'almacen_id'  => $almacenId,
+                                    'sector_id'   => $stockProducto->sector_id,
+                                    'stock_minimo' => $stockMinimo,
+                                    'stock_maximo' => $stockMaximo,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -1417,6 +1445,24 @@ class ProductoController extends Controller
                                 'stock_id' => $stockExistente->id,
                                 'sector_actualizado' => $stockExistente->fresh()->sector_id,
                             ]);
+
+                            // ✨ NUEVO: Actualizar los límites de stock en stock_limites
+                            $stockMinimo = isset($almacenData['stock_minimo']) ? (int) $almacenData['stock_minimo'] : 0;
+                            $stockMaximo = isset($almacenData['stock_maximo']) ? (int) $almacenData['stock_maximo'] : 999999;
+
+                            if ($stockMinimo > 0 || $stockMaximo < 999999) {
+                                StockLimite::updateOrCreate(
+                                    [
+                                        'producto_id'  => $producto->id,
+                                        'almacen_id'   => $almacenId,
+                                        'sector_id'    => $stockExistente->sector_id,
+                                    ],
+                                    [
+                                        'stock_minimo' => $stockMinimo,
+                                        'stock_maximo' => $stockMaximo,
+                                    ]
+                                );
+                            }
                         } else {
                             Log::info('➕ StockProducto NO encontrado - CREANDO:', [
                                 'producto_id' => $producto->id,
@@ -1447,6 +1493,24 @@ class ProductoController extends Controller
                                 'lote'                => $nuevoStock->lote,
                                 'fecha_vencimiento'   => $nuevoStock->fecha_vencimiento,
                             ]);
+
+                            // ✨ NUEVO: Guardar los límites de stock en stock_limites para el nuevo registro
+                            $stockMinimo = isset($almacenData['stock_minimo']) ? (int) $almacenData['stock_minimo'] : 0;
+                            $stockMaximo = isset($almacenData['stock_maximo']) ? (int) $almacenData['stock_maximo'] : 999999;
+
+                            if ($stockMinimo > 0 || $stockMaximo < 999999) {
+                                StockLimite::updateOrCreate(
+                                    [
+                                        'producto_id'  => $producto->id,
+                                        'almacen_id'   => $almacenId,
+                                        'sector_id'    => $nuevoStock->sector_id,
+                                    ],
+                                    [
+                                        'stock_minimo' => $stockMinimo,
+                                        'stock_maximo' => $stockMaximo,
+                                    ]
+                                );
+                            }
                         }
                     }
 

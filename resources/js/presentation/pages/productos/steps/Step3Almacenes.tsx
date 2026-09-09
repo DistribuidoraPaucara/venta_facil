@@ -495,6 +495,73 @@ export default function Step3Almacenes({
                                                 </div>
                                             </div>
 
+                                            {/* Fila 3: Límites de Stock (Mínimo, Máximo) */}
+                                            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                                                {/* Stock Mínimo */}
+                                                <div>
+                                                    <div className="flex items-center gap-1 mb-1">
+                                                        <Label className="text-xs font-semibold text-foreground">Stock Mín.</Label>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                                    <HelpCircle size={12} />
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top">
+                                                                Cantidad mínima requerida para este producto en este almacén
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                    <Input
+                                                        type="number"
+                                                        inputMode="decimal"
+                                                        step="0.01"
+                                                        value={a.stock_minimo || ''}
+                                                        onChange={(e) => {
+                                                            setAlmacen(
+                                                                i,
+                                                                'stock_minimo',
+                                                                e.target.value === '' ? undefined : Number(e.target.value),
+                                                            );
+                                                        }}
+                                                        className="h-9 text-xs w-full border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
+                                                        aria-label={`Stock mínimo ${i + 1}`}
+                                                    />
+                                                </div>
+
+                                                {/* Stock Máximo */}
+                                                <div>
+                                                    <div className="flex items-center gap-1 mb-1">
+                                                        <Label className="text-xs font-semibold text-foreground">Stock Máx.</Label>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                                    <HelpCircle size={12} />
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top">
+                                                                Cantidad máxima permitida para este producto en este almacén
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                    <Input
+                                                        type="number"
+                                                        inputMode="decimal"
+                                                        step="0.01"
+                                                        value={a.stock_maximo || ''}
+                                                        onChange={(e) => {
+                                                            setAlmacen(
+                                                                i,
+                                                                'stock_maximo',
+                                                                e.target.value === '' ? undefined : Number(e.target.value),
+                                                            );
+                                                        }}
+                                                        className="h-9 text-xs w-full border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
+                                                        aria-label={`Stock máximo ${i + 1}`}
+                                                    />
+                                                </div>
+                                            </div>
+
                                             {/* ✨ NUEVO: Mostrar equivalentes en conversiones si está fraccionado */}
                                             {data.es_fraccionado && data.conversiones && data.conversiones.length > 0 && totalStock > 0 && (
                                                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
