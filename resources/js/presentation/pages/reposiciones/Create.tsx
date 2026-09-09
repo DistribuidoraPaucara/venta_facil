@@ -76,21 +76,22 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
 
   // Auto-agregar productos con cantidad sugerida > 0
   useEffect(() => {
-    productosStockBajo.forEach((producto) => {
-      if (producto.cantidad_sugerida && producto.cantidad_sugerida > 0) {
-        const yaAgregado = data.detalles.some((d) => d.producto_id === producto.id);
-        if (!yaAgregado) {
-          setData('detalles', [
-            ...data.detalles,
-            {
-              producto_id: producto.id,
-              cantidad_solicitada: producto.cantidad_sugerida,
-            },
-          ]);
-        }
-      }
-    });
-  }, [productosStockBajo]);
+    const productosParaAgregar = productosStockBajo.filter(
+      (producto) =>
+        producto.cantidad_sugerida &&
+        producto.cantidad_sugerida > 0 &&
+        !data.detalles.some((d) => d.producto_id === producto.id)
+    );
+
+    if (productosParaAgregar.length > 0) {
+      const nuevosDetalles = productosParaAgregar.map((producto) => ({
+        producto_id: producto.id,
+        cantidad_solicitada: producto.cantidad_sugerida!,
+      }));
+
+      setData('detalles', [...data.detalles, ...nuevosDetalles]);
+    }
+  }, [productosStockBajo.length]);
 
   const agregarProducto = (productoId: number) => {
     const cantidad = cantidadesPorProducto[productoId];
