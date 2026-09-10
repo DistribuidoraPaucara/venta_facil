@@ -937,6 +937,17 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
             Route::delete('{reposicion}', [\App\Http\Controllers\ReposicionController::class, 'destroy'])->middleware('permission:inventario.reposiciones.delete')->name('destroy');
         });
 
+        // Rutas para análisis de productos a comprar
+        Route::prefix('productos-compra')->name('productos-compra.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ComprasController::class, 'index'])->middleware('permission:inventario.reposiciones.index')->name('index');
+        });
+
+        // Rutas para configuración de stock
+        Route::prefix('configuracion-stock')->name('configuracion-stock.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ConfiguracionStockController::class, 'index'])->middleware('permission:inventario.reposiciones.index')->name('index');
+            Route::post('actualizar', [\App\Http\Controllers\ConfiguracionStockController::class, 'actualizar'])->middleware('permission:inventario.reposiciones.create')->name('actualizar');
+        });
+
         // Rutas para manejo de mermas
         Route::prefix('mermas')->name('mermas.')->group(function () {
             Route::get('/', [\App\Http\Controllers\InventarioController::class, 'mermas'])->middleware('permission:inventario.mermas.index')->name('index');

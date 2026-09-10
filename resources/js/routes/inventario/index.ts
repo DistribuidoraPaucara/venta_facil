@@ -11,6 +11,8 @@ import tiposAjusteInventario from './tipos-ajuste-inventario'
 import vehiculos from './vehiculos'
 import transferencias from './transferencias'
 import reposiciones from './reposiciones'
+import productosCompra from './productos-compra'
+import configuracionStock from './configuracion-stock'
 import mermas from './mermas'
 import inicial from './inicial'
 import actualizarStockMasivo from './actualizar-stock-masivo'
@@ -658,6 +660,8 @@ tiposAjusteInventario,
 vehiculos,
 transferencias,
 reposiciones,
+productosCompra,
+configuracionStock,
 mermas,
 inicial,
 actualizarStockMasivo,

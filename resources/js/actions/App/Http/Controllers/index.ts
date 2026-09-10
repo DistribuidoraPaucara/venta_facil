@@ -98,6 +98,8 @@ import ImpresionMovimientosController from './ImpresionMovimientosController'
 import ImpresionProductosVendidosController from './ImpresionProductosVendidosController'
 import TipoAjusteInventarioController from './TipoAjusteInventarioController'
 import ReposicionController from './ReposicionController'
+import ComprasController from './ComprasController'
+import ConfiguracionStockController from './ConfiguracionStockController'
 import InventarioInicialController from './InventarioInicialController'
 import ReservaStockController from './ReservaStockController'
 import Inventario from './Inventario'
@@ -221,6 +223,8 @@ ImpresionMovimientosController,
 ImpresionProductosVendidosController,
 TipoAjusteInventarioController,
 ReposicionController,
+ComprasController,
+ConfiguracionStockController,
 InventarioInicialController,
 ReservaStockController,
 Inventario,

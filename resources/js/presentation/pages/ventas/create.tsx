@@ -336,7 +336,7 @@ export default function VentaForm() {
         const transferencia = Number(montoTransferencia) || 0;
         const totalPagado = efectivo + transferencia;
 
-        let tipoPagoIdAutomatico: number | null = null;
+        let tipoPagoIdAutomatico: number = 1; // ✅ DEFECTO: EFECTIVO (1)
 
         if (efectivo > 0 && transferencia > 0) {
             // Ambos montos: MIXTO (id=4)
@@ -350,7 +350,7 @@ export default function VentaForm() {
         }
 
         // Actualizar tipo de pago si hay cambio
-        if (tipoPagoIdAutomatico !== null && tipoPagoIdAutomatico !== data.tipo_pago_id) {
+        if (tipoPagoIdAutomatico !== data.tipo_pago_id) {
             setData('tipo_pago_id', tipoPagoIdAutomatico);
 
             console.log('💳 [VentaForm] Tipo de pago detectado automáticamente:', {
@@ -742,18 +742,19 @@ export default function VentaForm() {
 
             setDetallesWithProducts(updatedDetalles);
 
+            // ✅ DESHABILITADO (2026-09-09): Comentar calcularCarritoDebounced - no está haciendo nada útil
             // Recalcular precios según rangos con la nueva cantidad
             // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
             // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS)
-            precioRango.calcularCarritoDebounced(
-                updatedDetalles
-                    .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
-                    .map((d) => ({
-                        producto_id: d.producto_id,
-                        cantidad: d.cantidad,
-                        tipo_precio_id: d.tipo_precio_id,
-                    })),
-            );
+            // precioRango.calcularCarritoDebounced(
+            //     updatedDetalles
+            //         .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
+            //         .map((d) => ({
+            //             producto_id: d.producto_id,
+            //             cantidad: d.cantidad,
+            //             tipo_precio_id: d.tipo_precio_id,
+            //         })),
+            // );
 
             calculateTotals(updatedDetalles);
             calculatePeso(updatedDetalles);
@@ -840,18 +841,19 @@ export default function VentaForm() {
             return updated;
         });
 
+        // ✅ DESHABILITADO (2026-09-09): Comentar calcularCarritoDebounced - no está haciendo nada útil
         // 🔑 NUEVO: Calcular precios según rangos
         // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
         // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS/Precio Personalizado)
-        precioRango.calcularCarritoDebounced(
-            newDetalles
-                .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
-                .map((d) => ({
-                    producto_id: d.producto_id,
-                    cantidad: d.cantidad,
-                    tipo_precio_id: d.tipo_precio_id,
-                })),
-        );
+        // precioRango.calcularCarritoDebounced(
+        //     newDetalles
+        //         .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
+        //         .map((d) => ({
+        //             producto_id: d.producto_id,
+        //             cantidad: d.cantidad,
+        //             tipo_precio_id: d.tipo_precio_id,
+        //         })),
+        // );
 
         calculateTotals(newDetalles);
         calculatePeso(newDetalles);
@@ -886,10 +888,19 @@ export default function VentaForm() {
     const updateDetailMultiple = (index: number, updates: Record<string, number | string | null>) => {
         const updatedDetalles = [...detallesWithProducts];
 
+        // Campos que deben ser convertidos a número
+        const numericFields = ['cantidad', 'precio_unitario', 'descuento', 'tipo_precio_id', 'unidad_venta_id', 'subtotal'];
+
         // Aplicar todos los cambios al detalle
         Object.entries(updates).forEach(([field, value]) => {
-            const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value === null ? null : value;
-            (updatedDetalles[index] as any)[field] = numericValue;
+            if (numericFields.includes(field)) {
+                // Para campos numéricos, convertir a número
+                const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value === null ? null : value;
+                (updatedDetalles[index] as any)[field] = numericValue;
+            } else {
+                // Para campos de cadena, mantenerlos como están
+                (updatedDetalles[index] as any)[field] = value;
+            }
         });
 
         // Recalcular subtotal si fue necesario
@@ -1025,17 +1036,18 @@ export default function VentaForm() {
 
         if (field === 'cantidad' && !esUnidadOPrecioFraccionado) {
             console.log(`📊 [updateDetail] Recalculando rango para cantidad de producto ${updatedDetalles[index].producto_id}`);
+            // ✅ DESHABILITADO (2026-09-09): Comentar calcularCarritoDebounced - no está haciendo nada útil
             // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
             // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS)
-            precioRango.calcularCarritoDebounced(
-                updatedDetalles
-                    .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
-                    .map((d) => ({
-                        producto_id: d.producto_id,
-                        cantidad: d.cantidad,
-                        tipo_precio_id: d.tipo_precio_id,
-                    })),
-            );
+            // precioRango.calcularCarritoDebounced(
+            //     updatedDetalles
+            //         .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
+            //         .map((d) => ({
+            //             producto_id: d.producto_id,
+            //             cantidad: d.cantidad,
+            //             tipo_precio_id: d.tipo_precio_id,
+            //         })),
+            // );
         }
 
         calculateTotals(updatedDetalles);
@@ -1053,20 +1065,21 @@ export default function VentaForm() {
             return updated;
         });
 
+        // ✅ DESHABILITADO (2026-09-09): Comentar calcularCarritoDebounced - no está haciendo nada útil
         // 🔑 NUEVO: Recalcular rangos cuando se elimina un producto
         // ✅ MODIFICADO (2026-09-06): Ahora aplica para TODOS los clientes, incluido CLIENTE GENERAL
         // ✅ NUEVO (2026-07-03): EXCLUIR productos con tipo_precio_id === null (OTROS)
-        if (updatedDetalles.length > 0) {
-            precioRango.calcularCarritoDebounced(
-                updatedDetalles
-                    .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
-                    .map((d) => ({
-                        producto_id: d.producto_id,
-                        cantidad: d.cantidad,
-                        tipo_precio_id: d.tipo_precio_id,
-                    })),
-            );
-        }
+        // if (updatedDetalles.length > 0) {
+        //     precioRango.calcularCarritoDebounced(
+        //         updatedDetalles
+        //             .filter((d) => d.tipo_precio_id !== null) // ✅ EXCLUIR productos con OTROS
+        //             .map((d) => ({
+        //                 producto_id: d.producto_id,
+        //                 cantidad: d.cantidad,
+        //                 tipo_precio_id: d.tipo_precio_id,
+        //             })),
+        //     );
+        // }
 
         calculateTotals(updatedDetalles);
         calculatePeso(updatedDetalles);
@@ -1452,6 +1465,11 @@ export default function VentaForm() {
                     setClienteSeleccionado(clienteGeneral);
                 }
 
+                // ✅ NUEVO (2026-09-10): Focus automático en el input de búsqueda de productos
+                setTimeout(() => {
+                    document.getElementById('product-search-input')?.focus();
+                }, 0);
+
                 // ✅ NUEVO (2026-07-16): Detectar si hay prestables y abrir pantalla de préstamo
                 (async () => {
                     try {
@@ -1497,17 +1515,6 @@ export default function VentaForm() {
                         // No fallar el flujo si hay error al obtener detalles de prestables
                     }
                 })();
-
-                // ✅ NUEVO (2026-09-04): Abrir directamente URL de impresión en lugar de modal
-                if (result.data?.id) {
-                    const printUrl = `/ventas/${result.data.id}/imprimir?formato=TICKET_80&accion=stream`;
-                    window.open(printUrl, '_blank');
-
-                    console.log('🖨️ Abriendo impresión directa:', {
-                        venta_id: result.data.id,
-                        url: printUrl,
-                    });
-                }
             } else {
                 // ❌ ERROR: Mostrar mensaje y mantener formulario
                 const errorMessage = result.message || 'Error al procesar la venta';

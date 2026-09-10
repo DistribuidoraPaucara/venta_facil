@@ -148,10 +148,20 @@ export default function ProductosTable({
         if (tipo === 'venta' && !selectedTipoPrecio[ultimoDetalle.producto_id]) {
             // 1️⃣ PRIORIDAD: Si el detalle YA viene con tipo_precio_id del backend, usarlo
             if (ultimoDetalle.tipo_precio_id) {
-                console.log(`✅ [ProductosTable] Inicializando selectedTipoPrecio con backend: ${ultimoDetalle.tipo_precio_id}`);
+                // ✅ FIJO (2026-09-09): Si es fraccionado y la unidad_venta_id es diferente de unidad_medida_id,
+                // incluir la unidad en el valor para evitar conflictos con múltiples precios del mismo tipo
+                let valorTipoPrecio = String(ultimoDetalle.tipo_precio_id);
+                if (
+                    (ultimoDetalle as any).es_fraccionado &&
+                    ultimoDetalle.unidad_venta_id &&
+                    ultimoDetalle.unidad_venta_id !== ultimoDetalle.unidad_medida_id
+                ) {
+                    valorTipoPrecio = `${ultimoDetalle.tipo_precio_id}_${ultimoDetalle.unidad_venta_id}`;
+                }
+                console.log(`✅ [ProductosTable] Inicializando selectedTipoPrecio con backend: ${valorTipoPrecio}`);
                 setSelectedTipoPrecio((prev) => ({
                     ...prev,
-                    [ultimoDetalle.producto_id]: String(ultimoDetalle.tipo_precio_id),
+                    [ultimoDetalle.producto_id]: valorTipoPrecio,
                 }));
             }
             // 2️⃣ Si no, usar el recomendado
@@ -161,6 +171,11 @@ export default function ProductosTable({
                     ...prev,
                     [ultimoDetalle.producto_id]: String(ultimoDetalle.tipo_precio_id_recomendado),
                 }));
+                // ✅ IMPORTANTE: Sincronizar el detalle con el valor del selector
+                if (onUpdateDetail) {
+                    const lastIndex = detalles.length - 1;
+                    onUpdateDetail(lastIndex, 'tipo_precio_id', ultimoDetalle.tipo_precio_id_recomendado);
+                }
             }
             // 3️⃣ Si no hay nada, buscar un precio de venta
             else {

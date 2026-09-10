@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { formatCurrencyWith2Decimals } from '@/lib/utils';
 import BarcodeScannerModal from './BarcodeScannerModal';
 import type { Producto } from '@/domain/entities/ventas';
@@ -16,7 +16,13 @@ interface ProductSearchBarProps {
     onMedicamentoInfo: (producto: Producto) => void;
 }
 
-export default function ProductSearchBar({
+export interface ProductSearchBarHandle {
+    focus: () => void;
+}
+
+const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProps>(
+    (
+        {
     tipo,
     almacen_id,
     cliente_id,
@@ -26,7 +32,9 @@ export default function ProductSearchBar({
     permitirProductosSinStock = false,
     onProductSelected,
     onMedicamentoInfo
-}: ProductSearchBarProps) {
+}: ProductSearchBarProps,
+        ref
+    ) => {
     const [showScannerModal, setShowScannerModal] = useState(false);
     const [scannerError, setScannerError] = useState<string | null>(null);
     const [showSuggestions, setShowSuggestions] = useState(true);
@@ -54,6 +62,13 @@ export default function ProductSearchBar({
         permitirProductosSinStock, // ✅ NUEVO (2026-05-26): Pasar permitirProductosSinStock
         onAddProduct: onProductSelected
     });
+
+    // ✅ NUEVO (2026-09-10): Exponer método focus via forwardRef
+    useImperativeHandle(ref, () => ({
+        focus: () => {
+            inputSearchRef.current?.focus();
+        }
+    }), []);
 
     // ✅ Reaabrir sugerencias cuando hay nuevos resultados
     useEffect(() => {
@@ -153,6 +168,7 @@ export default function ProductSearchBar({
                 <div className="flex gap-2">
                     <div className="flex-1 relative">
                         <input
+                            id="product-search-input"
                             ref={inputSearchRef}
                             type="text"
                             value={productSearch}
@@ -407,4 +423,8 @@ export default function ProductSearchBar({
             />
         </>
     );
-}
+});
+
+ProductSearchBar.displayName = 'ProductSearchBar';
+
+export default ProductSearchBar;

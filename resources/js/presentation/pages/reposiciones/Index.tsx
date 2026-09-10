@@ -24,9 +24,9 @@ interface Props {
 function ReposicionesIndex({ reposiciones }: Props) {
   const getEstadoBadge = (estado: string) => {
     const variants: Record<string, { bg: string; text: string }> = {
-      BORRADOR: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
-      ENVIADO: { bg: 'bg-blue-100', text: 'text-blue-800' },
-      RECIBIDO: { bg: 'bg-green-100', text: 'text-green-800' },
+      BORRADOR: { bg: 'bg-yellow-100 dark:bg-yellow-900', text: 'text-yellow-800 dark:text-yellow-200' },
+      ENVIADO: { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-800 dark:text-blue-200' },
+      RECIBIDO: { bg: 'bg-green-100 dark:bg-green-900', text: 'text-green-800 dark:text-green-200' },
     };
     const v = variants[estado] || variants.BORRADOR;
     return <Badge className={`${v.bg} ${v.text}`}>{estado}</Badge>;
@@ -45,7 +45,7 @@ function ReposicionesIndex({ reposiciones }: Props) {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Reposiciones</h1>
-            <p className="text-gray-600">Gestiona reposiciones de inventario</p>
+            <p className="text-gray-600 dark:text-gray-400">Gestiona reposiciones de inventario</p>
           </div>
           <Link href={route('reposiciones.create')}>
             <Button className="gap-2">
@@ -62,7 +62,7 @@ function ReposicionesIndex({ reposiciones }: Props) {
           <CardContent>
             {reposiciones.data.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No hay reposiciones registradas</p>
+                <p className="text-gray-500 dark:text-gray-400">No hay reposiciones registradas</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -80,7 +80,7 @@ function ReposicionesIndex({ reposiciones }: Props) {
                   </thead>
                   <tbody>
                     {reposiciones.data.map((reposicion) => (
-                      <tr key={reposicion.id} className="border-b hover:bg-gray-50">
+                      <tr key={reposicion.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <td className="py-3 px-4 font-semibold">{reposicion.numero}</td>
                         <td className="py-3 px-4">{reposicion.almacen_origen.nombre}</td>
                         <td className="py-3 px-4">{reposicion.almacen_destino.nombre}</td>

@@ -861,8 +861,8 @@ class InventarioController extends Controller
                 'disponible_total_posterior' => $movimiento->disponible_total_posterior ?? 0,
                 'reservada_total_anterior' => $movimiento->reservada_total_anterior ?? 0,
                 'reservada_total_posterior' => $movimiento->reservada_total_posterior ?? 0,
-                'fecha'             => $movimiento->fecha->toISOString(),
-                'created_at'        => $movimiento->created_at->toISOString(),  // ✅ NUEVO (2026-02-11): Fecha de creación
+                'fecha'             => $movimiento->fecha?->toISOString() ?? now()->toISOString(),
+                'created_at'        => $movimiento->created_at?->toISOString() ?? now()->toISOString(),  // ✅ NUEVO (2026-02-11): Fecha de creación
                 'usuario'           => [
                     'id'   => $movimiento->user_id,
                     'name' => $movimiento->user?->name ?? 'Sistema',

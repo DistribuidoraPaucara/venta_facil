@@ -452,11 +452,21 @@ export default function ProductoTableRow({
                         let valorInicial = '';
                         if (selectedTipoPrecio[productoId] !== undefined) {
                             const tipoPrecioSeleccionado = selectedTipoPrecio[productoId];
-                            const precioSeleccionado = preciosVenta.find((p: any) => String(p.tipo_precio_id) === String(tipoPrecioSeleccionado));
+                            // ✅ FIJO: Parsear el valor guardado que puede ser "tipo_id_unidad_id"
+                            const partesGuardadas = String(tipoPrecioSeleccionado).split('_');
+                            const tipoPrecioIdGuardado = parseInt(partesGuardadas[0]);
+                            const unidadIdGuardada = partesGuardadas[1] ? parseInt(partesGuardadas[1]) : null;
+
+                            // ✅ Buscar el precio usando el tipo_precio_id y unidad guardados
+                            const precioSeleccionado = preciosVenta.find((p: any) =>
+                                String(p.tipo_precio_id) === String(tipoPrecioIdGuardado) &&
+                                (unidadIdGuardada === null || Number(p.unidad_medida_id) === unidadIdGuardada)
+                            );
+
                             if (precioSeleccionado?.unidad_medida_id) {
-                                valorInicial = `${tipoPrecioSeleccionado}_${precioSeleccionado.unidad_medida_id}`;
+                                valorInicial = `${tipoPrecioIdGuardado}_${precioSeleccionado.unidad_medida_id}`;
                             } else {
-                                valorInicial = String(tipoPrecioSeleccionado);
+                                valorInicial = String(tipoPrecioIdGuardado);
                             }
                         } else if (detalle.tipo_precio_id === null) {
                             valorInicial = 'otros';
@@ -472,9 +482,22 @@ export default function ProductoTableRow({
                         return (
                             <select
                                 disabled={readOnly}
-                                value={valorInicial}
+                                // ✅ FIJO (2026-09-09): Usar selectedTipoPrecio como fuente de verdad para sincronización inmediata
+                                // Si está guardado en selectedTipoPrecio, usarlo directamente; sino usar valorInicial calculado
+                                value={selectedTipoPrecio[productoId] !== undefined ? String(selectedTipoPrecio[productoId]) : valorInicial}
                                 onChange={(e) => {
                                     const valorSeleccionado = e.target.value;
+                                    console.log(`🔄 [ProductoTableRow onChange] Seleccionó precio:`, {
+                                        producto_id: detalle.producto_id,
+                                        valorSeleccionado,
+                                        preciosDisponibles: preciosVenta.map(p => ({
+                                            id: p.id,
+                                            tipo_precio_id: p.tipo_precio_id,
+                                            unidad_medida_id: p.unidad_medida_id,
+                                            precio: p.precio,
+                                            nombre: p.nombre
+                                        }))
+                                    });
 
                                     if (valorSeleccionado === 'otros') {
                                         if (onManualTipoPrecioChange) {
@@ -493,11 +516,25 @@ export default function ProductoTableRow({
                                     const tipoPrecioIdSeleccionado = parseInt(partes[0]);
                                     const unidadMedidaIdSeleccionada = partes[1] ? parseInt(partes[1]) : null;
 
+                                    // ✅ FIJO (2026-09-09): Cuando unidadMedidaIdSeleccionada es null, buscar ESPECÍFICAMENTE el precio sin unidad
                                     const precioSeleccionado = preciosVenta.find(
                                         (p) =>
                                             String(p.tipo_precio_id) === String(tipoPrecioIdSeleccionado) &&
-                                            (unidadMedidaIdSeleccionada === null || Number(p.unidad_medida_id) === unidadMedidaIdSeleccionada),
+                                            (unidadMedidaIdSeleccionada === null
+                                                ? p.unidad_medida_id === null  // Si buscamos sin unidad, debe ser ESPECÍFICAMENTE sin unidad
+                                                : Number(p.unidad_medida_id) === unidadMedidaIdSeleccionada),
                                     );
+
+                                    console.log(`🔍 [ProductoTableRow] Búsqueda de precio:`, {
+                                        tipoPrecioIdSeleccionado,
+                                        unidadMedidaIdSeleccionada,
+                                        precioEncontrado: precioSeleccionado ? {
+                                            id: precioSeleccionado.id,
+                                            tipo_precio_id: precioSeleccionado.tipo_precio_id,
+                                            unidad_medida_id: precioSeleccionado.unidad_medida_id,
+                                            precio: precioSeleccionado.precio
+                                        } : 'NO ENCONTRADO'
+                                    });
 
                                     if (precioSeleccionado) {
                                         if (onManualTipoPrecioChange) {
@@ -510,6 +547,7 @@ export default function ProductoTableRow({
                                         setEditingField(null);
 
                                         const unidadNueva = precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id;
+                                        const precioNuevo = precioSeleccionado.precio || 0;
                                         let unidadNombreNueva = productoInfo?.unidad?.nombre || 'Unidad';
                                         if (unidadNueva && unidadNueva !== detalle.unidad_medida_id) {
                                             const conversionNueva = productoInfo?.conversiones?.find((c: any) => c.unidad_destino_id === unidadNueva);
@@ -520,20 +558,22 @@ export default function ProductoTableRow({
                                             }
                                         }
 
+                                        // ✅ Actualizar TODOS los campos en UNA sola llamada para evitar problema de closure
                                         if (onUpdateDetailMultiple) {
                                             onUpdateDetailMultiple(index, {
                                                 tipo_precio_id: precioSeleccionado.tipo_precio_id,
                                                 tipo_precio_nombre: precioSeleccionado.nombre || '',
-                                                precio_unitario: precioSeleccionado.precio || 0,
-                                                unidad_venta_id: precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id,
-                                                cantidad: 1,
+                                                precio_unitario: precioNuevo,
+                                                unidad_venta_id: unidadNueva,
                                                 unidad_medida_nombre: unidadNombreNueva,
                                             });
                                         } else {
+                                            // Fallback si no hay onUpdateDetailMultiple
                                             onUpdateDetail(index, 'tipo_precio_id', precioSeleccionado.tipo_precio_id);
                                             onUpdateDetail(index, 'tipo_precio_nombre', precioSeleccionado.nombre || '');
-                                            onUpdateDetail(index, 'precio_unitario', precioSeleccionado.precio || 0);
-                                            onUpdateDetail(index, 'unidad_venta_id', precioSeleccionado.unidad_medida_id || detalle.unidad_medida_id);
+                                            onUpdateDetail(index, 'precio_unitario', precioNuevo);
+                                            onUpdateDetail(index, 'unidad_venta_id', unidadNueva);
+                                            onUpdateDetail(index, 'unidad_medida_nombre', unidadNombreNueva);
                                         }
                                     }
                                 }}
