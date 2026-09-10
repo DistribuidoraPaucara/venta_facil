@@ -23,7 +23,7 @@ class ReposicionController extends Controller
             ->latest()
             ->paginate(20);
 
-        return Inertia::render('Reposiciones/Index', [
+        return Inertia::render('reposiciones/Index', [
             'reposiciones' => $reposiciones,
         ]);
     }
@@ -102,7 +102,7 @@ class ReposicionController extends Controller
             }
         }
 
-        return Inertia::render('Reposiciones/Create', [
+        return Inertia::render('reposiciones/Create', [
             'almacenes' => $almacenes,
             'productosStockBajo' => $productosStockBajo->values(),
         ]);
@@ -291,7 +291,7 @@ class ReposicionController extends Controller
 
         $reposicion->load(['empresa', 'almacenOrigen', 'almacenDestino', 'usuario', 'detalles.producto']);
 
-        return Inertia::render('Reposiciones/Show', [
+        return Inertia::render('reposiciones/Show', [
             'reposicion' => $reposicion,
         ]);
     }
@@ -309,7 +309,7 @@ class ReposicionController extends Controller
 
         $reposicion->load('detalles.producto');
 
-        return Inertia::render('Reposiciones/Edit', [
+        return Inertia::render('reposiciones/Edit', [
             'reposicion' => $reposicion,
             'almacenes' => $almacenes,
         ]);
