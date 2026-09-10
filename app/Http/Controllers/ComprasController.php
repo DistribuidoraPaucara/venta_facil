@@ -63,7 +63,7 @@ class ComprasController extends Controller
             }
         }
 
-        return Inertia::render('compras/Index', [
+        return Inertia::render('compras/index', [
             'productosParaComprar' => $productosParaComprar->values(),
             'almacenPrincipal' => $almacenPrincipal,
         ]);
