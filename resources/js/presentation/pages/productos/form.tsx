@@ -605,6 +605,7 @@ export default function ProductoForm({
             (data.conversiones as any[]).forEach((conv, i) => {
                 formData.append(`conversiones[${i}][unidad_base_id]`, String(conv.unidad_base_id));
                 formData.append(`conversiones[${i}][unidad_destino_id]`, String(conv.unidad_destino_id));
+                formData.append(`conversiones[${i}][producto_destino_id]`, conv.producto_destino_id ? String(conv.producto_destino_id) : ''); // ✨ NUEVO: Producto destino para fraccionamientos
                 formData.append(`conversiones[${i}][factor_conversion]`, String(conv.factor_conversion));
                 // ✨ NUEVO (2026-09-06): Incluir nombre personalizado (SIEMPRE, aunque esté vacío)
                 formData.append(`conversiones[${i}][nombre_cuando_se_vende_como]`, conv.nombre_cuando_se_vende_como || '');
