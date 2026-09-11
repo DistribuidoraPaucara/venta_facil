@@ -2036,10 +2036,10 @@ class ProductoController extends Controller
                 'proveedor:id,nombre,razon_social',
                 'unidad:id,nombre,codigo',
                 'imagenes:id,producto_id,url,es_principal,orden',
-                'stocks:id,producto_id,almacen_id,sector_id,cantidad,cantidad_disponible',
-                'stocks.almacen:id,nombre',
-                'stocks.sector:id,nombre',
-                'limites:id,producto_id,almacen_id,sector_id,cantidad_minima,cantidad_maxima',
+                'stock:id,producto_id,almacen_id,sector_id,cantidad,cantidad_disponible',
+                'stock.almacen:id,nombre',
+                'stock.sector:id,nombre',
+                'stockLimites:id,producto_id,almacen_id,sector_id,cantidad_minima,cantidad_maxima',
             ])
             ->first();
 
@@ -2054,7 +2054,7 @@ class ProductoController extends Controller
             print('✅ Producto encontrado: ' . $producto->nombre);
 
             // Formatear respuesta con información de stock
-            $stocksPorUbicacion = $producto->stocks?->map(function ($stock) {
+            $stocksPorUbicacion = $producto->stock?->map(function ($stock) {
                 return [
                     'id' => $stock->id,
                     'almacen_id' => $stock->almacen_id,
@@ -2066,7 +2066,7 @@ class ProductoController extends Controller
                 ];
             })->toArray() ?? [];
 
-            $limitesPorUbicacion = $producto->limites?->map(function ($limite) {
+            $limitesPorUbicacion = $producto->stockLimites?->map(function ($limite) {
                 return [
                     'id' => $limite->id,
                     'almacen_id' => $limite->almacen_id,

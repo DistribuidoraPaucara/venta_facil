@@ -234,16 +234,16 @@ class FraccionamientoApiController extends Controller
                 ->select('id', 'nombre', 'sku', 'unidad_medida_id')
                 ->with([
                     'unidad:id,nombre,codigo',
-                    'stocks:id,producto_id,almacen_id,sector_id,cantidad,cantidad_disponible',
-                    'stocks.almacen:id,nombre',
-                    'stocks.sector:id,nombre',
-                    'limites:id,producto_id,almacen_id,sector_id,cantidad_minima,cantidad_maxima',
+                    'stock:id,producto_id,almacen_id,sector_id,cantidad,cantidad_disponible',
+                    'stock.almacen:id,nombre',
+                    'stock.sector:id,nombre',
+                    'stockLimites:id,producto_id,almacen_id,sector_id,cantidad_minima,cantidad_maxima',
                 ])
                 ->orderBy('nombre')
                 ->get()
                 ->map(function ($producto) {
                     // Agrupar stocks por almacén y sector
-                    $stocksPorUbicacion = $producto->stocks?->map(function ($stock) {
+                    $stocksPorUbicacion = $producto->stock?->map(function ($stock) {
                         return [
                             'id' => $stock->id,
                             'almacen_id' => $stock->almacen_id,
@@ -256,7 +256,7 @@ class FraccionamientoApiController extends Controller
                     })->toArray() ?? [];
 
                     // Agrupar límites por almacén y sector
-                    $limitesPorUbicacion = $producto->limites?->map(function ($limite) {
+                    $limitesPorUbicacion = $producto->stockLimites?->map(function ($limite) {
                         return [
                             'id' => $limite->id,
                             'almacen_id' => $limite->almacen_id,
