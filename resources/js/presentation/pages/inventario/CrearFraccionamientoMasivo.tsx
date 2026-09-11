@@ -5,96 +5,161 @@ import { Button } from '@/presentation/components/ui/button';
 import { Card } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
 import { Select } from '@/presentation/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Search } from 'lucide-react';
 
 interface LineaFraccionamiento {
   id: string;
   producto_padre_id: number | null;
+  producto_padre_nombre: string;
   cantidad_padre: number;
-  producto_hijo_id: number | null;
-  cantidad_hijo: number;
-  factor_conversion: number;
+  unidad_padre: string;
+  productos_hijos: Array<{
+    id: string;
+    producto_hijo_id: number | null;
+    producto_hijo_nombre: string;
+    cantidad_hijo: number;
+    unidad_hijo: string;
+    factor_conversion: number;
+  }>;
 }
 
 export default function CrearFraccionamientoMasivo() {
   const [almacenes, setAlmacenes] = useState<any[]>([]);
-  const [sectores, setSectores] = useState<any[]>([]);
   const [productos, setProductos] = useState<any[]>([]);
   const [almacenId, setAlmacenId] = useState<number | null>(null);
-  const [sectorId, setSectorId] = useState<number | null>(null);
   const [razon, setRazon] = useState('fraccionamiento_manual');
   const [notas, setNotas] = useState('');
-  const [lineas, setLineas] = useState<LineaFraccionamiento[]>([{
-    id: Math.random().toString(),
-    producto_padre_id: null,
-    cantidad_padre: 0,
-    producto_hijo_id: null,
-    cantidad_hijo: 0,
-    factor_conversion: 0,
-  }]);
+
+  const [lineas, setLineas] = useState<LineaFraccionamiento[]>([]);
+  const [buscaProductoPadre, setBuscaProductoPadre] = useState('');
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expandedLineId, setExpandedLineId] = useState<string | null>(null);
 
   useEffect(() => {
-    cargarData();
+    cargarAlmacenes();
+    cargarProductos();
   }, []);
 
-  const cargarData = async () => {
+  const cargarAlmacenes = async () => {
     try {
-      const [almRes, sectRes, prodRes] = await Promise.all([
-        fetch('/api/almacenes').then(r => r.json()),
-        fetch('/api/sectores').then(r => r.json()),
-        fetch('/api/fraccionamientos/productos/disponibles').then(r => r.json()),
-      ]);
-      setAlmacenes(almRes.data || []);
-      setSectores(sectRes.data || []);
-      setProductos(prodRes.data || []);
+      const res = await fetch('/api/almacenes');
+      const data = await res.json();
+      setAlmacenes(data.data || []);
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('Error cargando almacenes:', error);
     }
   };
 
-  const agregarLinea = () => {
-    setLineas([...lineas, {
-      id: Math.random().toString(),
-      producto_padre_id: null,
-      cantidad_padre: 0,
-      producto_hijo_id: null,
-      cantidad_hijo: 0,
-      factor_conversion: 0,
-    }]);
-  };
-
-  const eliminarLinea = (id: string) => {
-    if (lineas.length > 1) {
-      setLineas(lineas.filter(l => l.id !== id));
+  const cargarProductos = async () => {
+    try {
+      const res = await fetch('/api/fraccionamientos/productos/disponibles');
+      const data = await res.json();
+      setProductos(data.data || []);
+    } catch (error) {
+      console.error('Error cargando productos:', error);
     }
   };
 
-  const actualizarLinea = (id: string, updates: Partial<LineaFraccionamiento>) => {
-    setLineas(lineas.map(l => {
-      if (l.id === id) {
-        const nueva = { ...l, ...updates };
-        // Auto-calcular cantidad_hijo si cambió cantidad_padre
-        if (updates.cantidad_padre !== undefined && l.factor_conversion > 0) {
-          nueva.cantidad_hijo = updates.cantidad_padre * l.factor_conversion;
-        }
-        return nueva;
+  const productosFilrados = productos.filter(p =>
+    p.nombre.toLowerCase().includes(buscaProductoPadre.toLowerCase()) ||
+    p.sku.toLowerCase().includes(buscaProductoPadre.toLowerCase())
+  );
+
+  const agregarProductoPadre = async (productoPadreId: number) => {
+    const productoPadre = productos.find(p => p.id === productoPadreId);
+    if (!productoPadre) return;
+
+    // Obtener conversiones (productos hijos)
+    try {
+      const res = await fetch(`/api/fraccionamientos/producto/${productoPadreId}/conversiones`);
+      const data = await res.json();
+      const conversiones = data.data || [];
+
+      const nuevaLinea: LineaFraccionamiento = {
+        id: Math.random().toString(),
+        producto_padre_id: productoPadreId,
+        producto_padre_nombre: productoPadre.nombre,
+        cantidad_padre: 0,
+        unidad_padre: productoPadre.unidad_nombre,
+        productos_hijos: conversiones.map((conv: any) => ({
+          id: Math.random().toString(),
+          producto_hijo_id: conv.producto_hijo_id,
+          producto_hijo_nombre: conv.producto_hijo?.nombre || '',
+          cantidad_hijo: 0,
+          unidad_hijo: conv.unidad_destino_nombre || '',
+          factor_conversion: conv.factor_conversion || 0,
+        })),
+      };
+
+      setLineas([...lineas, nuevaLinea]);
+      setBuscaProductoPadre('');
+      setMostrarSugerencias(false);
+    } catch (error) {
+      console.error('Error cargando conversiones:', error);
+      alert('Error al cargar los productos hijos');
+    }
+  };
+
+  const actualizarCantidadPadre = (lineaId: string, cantidad: number) => {
+    setLineas(lineas.map(linea => {
+      if (linea.id === lineaId) {
+        return {
+          ...linea,
+          cantidad_padre: cantidad,
+          productos_hijos: linea.productos_hijos.map(hijo => ({
+            ...hijo,
+            cantidad_hijo: cantidad * hijo.factor_conversion,
+          })),
+        };
       }
-      return l;
+      return linea;
     }));
+  };
+
+  const actualizarCantidadHijo = (lineaId: string, hijoId: string, cantidad: number) => {
+    setLineas(lineas.map(linea => {
+      if (linea.id === lineaId) {
+        return {
+          ...linea,
+          productos_hijos: linea.productos_hijos.map(hijo =>
+            hijo.id === hijoId ? { ...hijo, cantidad_hijo: cantidad } : hijo
+          ),
+        };
+      }
+      return linea;
+    }));
+  };
+
+  const eliminarLinea = (lineaId: string) => {
+    setLineas(lineas.filter(l => l.id !== lineaId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!almacenId || !sectorId) {
-      alert('Selecciona almacén y sector');
+    if (!almacenId) {
+      alert('Selecciona almacén');
       return;
     }
 
-    const detalles = lineas.filter(l => l.producto_padre_id && l.producto_hijo_id && l.cantidad_padre > 0);
+    const detalles = [];
+    for (const linea of lineas) {
+      for (const hijo of linea.productos_hijos) {
+        if (hijo.producto_hijo_id && linea.cantidad_padre > 0 && hijo.cantidad_hijo > 0) {
+          detalles.push({
+            producto_padre_id: linea.producto_padre_id,
+            cantidad_padre: linea.cantidad_padre,
+            producto_hijo_id: hijo.producto_hijo_id,
+            cantidad_hijo: hijo.cantidad_hijo,
+            factor_conversion: hijo.factor_conversion,
+          });
+        }
+      }
+    }
+
     if (detalles.length === 0) {
-      alert('Debe haber al menos un fraccionamiento válido');
+      alert('Debe tener al menos un fraccionamiento válido');
       return;
     }
 
@@ -108,16 +173,10 @@ export default function CrearFraccionamientoMasivo() {
         },
         body: JSON.stringify({
           almacen_id: almacenId,
-          sector_id: sectorId,
+          sector_id: 0,
           razon,
           notas,
-          detalles: detalles.map(l => ({
-            producto_padre_id: l.producto_padre_id,
-            cantidad_padre: l.cantidad_padre,
-            producto_hijo_id: l.producto_hijo_id,
-            cantidad_hijo: l.cantidad_hijo,
-            factor_conversion: l.factor_conversion,
-          })),
+          detalles,
         }),
       });
 
@@ -143,11 +202,11 @@ export default function CrearFraccionamientoMasivo() {
       <div className="py-8 dark:bg-gray-950 min-h-screen">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Fraccionamiento Masivo</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">Registra múltiples fraccionamientos en una sola operación</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">Selecciona almacén, busca productos padre y carga sus conversiones</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Encabezado */}
-            <Card className="p-6 space-y-4 dark:bg-gray-900 dark:border-gray-800">
+            <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-white">Almacén *</label>
@@ -155,16 +214,6 @@ export default function CrearFraccionamientoMasivo() {
                     <option value="">Selecciona almacén</option>
                     {almacenes.map((a: any) => (
                       <option key={a.id} value={a.id}>{a.nombre}</option>
-                    ))}
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1 dark:text-white">Sector *</label>
-                  <Select value={sectorId?.toString() || ''} onValueChange={(v) => setSectorId(Number(v) || null)} disabled={!almacenId}>
-                    <option value="">Selecciona sector</option>
-                    {sectores.map((s: any) => (
-                      <option key={s.id} value={s.id}>{s.nombre}</option>
                     ))}
                   </Select>
                 </div>
@@ -179,7 +228,7 @@ export default function CrearFraccionamientoMasivo() {
                   </Select>
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-1 dark:text-white">Notas</label>
                   <Input
                     type="text"
@@ -191,113 +240,106 @@ export default function CrearFraccionamientoMasivo() {
               </div>
             </Card>
 
-            {/* Líneas */}
-            <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
-              <h2 className="text-lg font-semibold mb-4 dark:text-white">Líneas de Fraccionamiento</h2>
-              <div className="space-y-4">
-                {lineas.map((linea, idx) => (
-                  <div key={linea.id} className="p-4 border rounded-lg space-y-3 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-sm dark:text-white">Línea {idx + 1}</span>
-                      {lineas.length > 1 && (
+            {/* Búsqueda de productos */}
+            {almacenId && (
+              <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
+                <label className="block text-sm font-medium mb-2 dark:text-white">Buscar Producto Padre</label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={buscaProductoPadre}
+                    onChange={(e) => {
+                      setBuscaProductoPadre(e.target.value);
+                      setMostrarSugerencias(true);
+                    }}
+                    placeholder="Por nombre o SKU"
+                  />
+                  {mostrarSugerencias && buscaProductoPadre && (
+                    <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded mt-1 z-10 max-h-48 overflow-y-auto">
+                      {productosFilrados.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => agregarProductoPadre(p.id)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 border-b dark:border-gray-700 last:border-b-0"
+                        >
+                          <div className="font-medium text-sm dark:text-white">{p.nombre}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">SKU: {p.sku}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {/* Líneas agregadas */}
+            {lineas.length > 0 && (
+              <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
+                <h2 className="text-lg font-semibold mb-4 dark:text-white">Productos a Fraccionar</h2>
+                <div className="space-y-4">
+                  {lineas.map((linea) => (
+                    <div key={linea.id} className="p-4 border rounded-lg dark:border-gray-700 dark:bg-gray-800">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-bold dark:text-white">{linea.producto_padre_nombre}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Cantidad Padre ({linea.unidad_padre})</p>
+                        </div>
                         <button
                           type="button"
                           onClick={() => eliminarLinea(linea.id)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 dark:text-red-400 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                      </div>
+
+                      <div className="mb-3">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={linea.cantidad_padre}
+                          onChange={(e) => actualizarCantidadPadre(linea.id, Number(e.target.value))}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      {linea.productos_hijos.length > 0 && (
+                        <div className="space-y-2 border-t dark:border-gray-700 pt-3">
+                          <p className="text-sm font-medium dark:text-white">Productos Hijos Generados:</p>
+                          {linea.productos_hijos.map(hijo => (
+                            <div key={hijo.id} className="flex gap-2 items-center">
+                              <span className="text-sm flex-1 dark:text-gray-300">{hijo.producto_hijo_nombre}</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={hijo.cantidad_hijo}
+                                onChange={(e) => actualizarCantidadHijo(linea.id, hijo.id, Number(e.target.value))}
+                                placeholder="0.00"
+                                className="w-24"
+                              />
+                              <span className="text-sm w-16 dark:text-gray-400">{hijo.unidad_hijo}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Producto Padre</label>
-                        <select
-                          value={linea.producto_padre_id || ''}
-                          onChange={(e) => actualizarLinea(linea.id, { producto_padre_id: Number(e.target.value) || null })}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        >
-                          <option value="">Selecciona</option>
-                          {productos.map((p: any) => (
-                            <option key={p.id} value={p.id}>{p.nombre}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Cantidad Padre</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={linea.cantidad_padre}
-                          onChange={(e) => actualizarLinea(linea.id, { cantidad_padre: Number(e.target.value) })}
-                          placeholder="0.00"
-                          className="h-9"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Factor</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={linea.factor_conversion}
-                          onChange={(e) => actualizarLinea(linea.id, { factor_conversion: Number(e.target.value) })}
-                          placeholder="0.00"
-                          className="h-9"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Cantidad Hijo</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={linea.cantidad_hijo}
-                          onChange={(e) => actualizarLinea(linea.id, { cantidad_hijo: Number(e.target.value) })}
-                          placeholder="0.00"
-                          className="h-9"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Producto Hijo</label>
-                        <select
-                          value={linea.producto_hijo_id || ''}
-                          onChange={(e) => actualizarLinea(linea.id, { producto_hijo_id: Number(e.target.value) || null })}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        >
-                          <option value="">Selecciona</option>
-                          {productos.map((p: any) => (
-                            <option key={p.id} value={p.id}>{p.nombre}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={agregarLinea}
-                className="mt-4 flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-700 font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Agregar línea
-              </button>
-            </Card>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             {/* Acciones */}
             <div className="flex gap-3">
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || lineas.length === 0}>
                 {loading ? 'Registrando...' : 'Registrar Fraccionamientos'}
               </Button>
               <Button
                 type="button"
                 onClick={() => router.visit('/inventario/fraccionamientos-masivos')}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-900"
+                className="bg-gray-300 hover:bg-gray-400 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
               >
                 Cancelar
               </Button>
