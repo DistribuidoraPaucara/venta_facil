@@ -625,8 +625,8 @@ class ProductoController extends Controller
                 if ($data['es_fraccionado'] ?? false) {
                     $conversiones = $data['conversiones'] ?? [];
 
-                    foreach ($conversiones as $conv) {
-                        \App\Models\ConversionUnidadProducto::create([
+                    foreach ($conversiones as $idx => $conv) {
+                        $datosCrear = [
                             'producto_id'             => $producto->id,
                             'unidad_base_id'          => $conv['unidad_base_id'],
                             'unidad_destino_id'       => $conv['unidad_destino_id'],
@@ -635,7 +635,9 @@ class ProductoController extends Controller
                             'nombre_cuando_se_vende_como' => $conv['nombre_cuando_se_vende_como'] ?? null, // ✨ NUEVO (2026-09-06)
                             'activo'                  => $conv['activo'] ?? true,
                             'es_conversion_principal' => $conv['es_conversion_principal'] ?? false,
-                        ]);
+                        ];
+                        Log::info("✨ Creando conversión [$idx]:", $datosCrear);
+                        \App\Models\ConversionUnidadProducto::create($datosCrear);
                     }
 
                     Log::info('Conversiones de unidad guardadas', [
@@ -1268,8 +1270,12 @@ class ProductoController extends Controller
 
                     // Crear nuevas conversiones
                     $conversiones = $data['conversiones'] ?? [];
-                    foreach ($conversiones as $conv) {
-                        \App\Models\ConversionUnidadProducto::create([
+                    Log::info('📋 Conversiones recibidas en backend:', [
+                        'cantidad' => count($conversiones),
+                        'conversiones' => $conversiones,
+                    ]);
+                    foreach ($conversiones as $idx => $conv) {
+                        $datosCrear = [
                             'producto_id'             => $producto->id,
                             'unidad_base_id'          => $conv['unidad_base_id'],
                             'unidad_destino_id'       => $conv['unidad_destino_id'],
@@ -1278,7 +1284,9 @@ class ProductoController extends Controller
                             'nombre_cuando_se_vende_como' => $conv['nombre_cuando_se_vende_como'] ?? null, // ✨ NUEVO (2026-09-06)
                             'activo'                  => $conv['activo'] ?? true,
                             'es_conversion_principal' => $conv['es_conversion_principal'] ?? false,
-                        ]);
+                        ];
+                        Log::info("✨ Creando conversión [$idx]:", $datosCrear);
+                        \App\Models\ConversionUnidadProducto::create($datosCrear);
                     }
 
                     // Actualizar es_fraccionado en el producto
