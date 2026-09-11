@@ -61,6 +61,7 @@ use App\Http\Controllers\ReportesController;
 use App\Http\Controllers\TipoOperacionCajaController;
 use App\Http\Controllers\Api\EgresosAnalisisController;
 use App\Http\Controllers\Api\FraccionamientoApiController;
+use App\Http\Controllers\Api\FraccionamientoMasivoApiController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -754,6 +755,13 @@ Route::group(['prefix' => 'inventario'], function () {
         Route::delete('{movimiento}/revertir', [FraccionamientoApiController::class, 'revertir']);
         Route::get('producto/{productoId}/historial', [FraccionamientoApiController::class, 'historialProducto']);
         Route::get('producto/{productoPadreId}/estadisticas', [FraccionamientoApiController::class, 'estadisticas']);
+    });
+
+    // ✅ NUEVO: Rutas de Fraccionamiento Masivo (2026-09-11)
+    Route::group(['prefix' => 'fraccionamientos-masivos'], function () {
+        Route::post('/', [FraccionamientoMasivoApiController::class, 'store']);
+        Route::get('/', [FraccionamientoMasivoApiController::class, 'index']);
+        Route::get('{fraccionamientoMasivo}', [FraccionamientoMasivoApiController::class, 'show']);
     });
 
     // ✅ NUEVO: Tipos de Operación para ajustes masivos
