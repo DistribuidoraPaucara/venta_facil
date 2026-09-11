@@ -630,6 +630,7 @@ class ProductoController extends Controller
                             'producto_id'             => $producto->id,
                             'unidad_base_id'          => $conv['unidad_base_id'],
                             'unidad_destino_id'       => $conv['unidad_destino_id'],
+                            'producto_destino_id'     => $conv['producto_destino_id'] ?? null, // ✨ NUEVO: Producto destino para fraccionamientos
                             'factor_conversion'       => $conv['factor_conversion'],
                             'nombre_cuando_se_vende_como' => $conv['nombre_cuando_se_vende_como'] ?? null, // ✨ NUEVO (2026-09-06)
                             'activo'                  => $conv['activo'] ?? true,
@@ -1272,6 +1273,7 @@ class ProductoController extends Controller
                             'producto_id'             => $producto->id,
                             'unidad_base_id'          => $conv['unidad_base_id'],
                             'unidad_destino_id'       => $conv['unidad_destino_id'],
+                            'producto_destino_id'     => $conv['producto_destino_id'] ?? null, // ✨ NUEVO: Producto destino para fraccionamientos
                             'factor_conversion'       => $conv['factor_conversion'],
                             'nombre_cuando_se_vende_como' => $conv['nombre_cuando_se_vende_como'] ?? null, // ✨ NUEVO (2026-09-06)
                             'activo'                  => $conv['activo'] ?? true,
