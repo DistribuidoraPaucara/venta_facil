@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\MovimientoFraccionamiento;
+use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\StockProducto;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -111,6 +113,39 @@ class FraccionamientoService
                 'fecha_actualizacion' => now(),
             ]);
 
+            // 5️⃣.A Registrar movimientos de inventario
+            // SALIDA del producto padre
+            MovimientoInventario::registrar(
+                $stockPadre,
+                -$cantidadPadre,
+                'SALIDA_FRACCIONAMIENTO',
+                "Fraccionamiento: {$cantidadPadre} {$productoPadre->unidad_medida_id} → {$cantidadHijo} unidades",
+                null,
+                Auth::id(),
+                null,
+                null,
+                null,
+                'fraccionamiento',
+                null,
+                null
+            );
+
+            // ENTRADA del producto hijo
+            MovimientoInventario::registrar(
+                $stockHijo,
+                $cantidadHijo,
+                'ENTRADA_FRACCIONAMIENTO',
+                "Fraccionamiento: {$cantidadPadre} {$productoPadre->unidad_medida_id} → {$cantidadHijo} unidades",
+                null,
+                Auth::id(),
+                null,
+                null,
+                null,
+                'fraccionamiento',
+                null,
+                null
+            );
+
             // 6️⃣ Crear registro de fraccionamiento
             $movimiento = MovimientoFraccionamiento::create([
                 'producto_padre_id' => $productoPadreId,
@@ -192,9 +227,44 @@ class FraccionamientoService
                 'fecha_actualizacion' => now(),
             ]);
 
-            $stockHijo->decrement('cantidad', $movimiento->cantidad_hijo);
-            $stockHijo->decrement('cantidad_disponible', $movimiento->cantidad_hijo);
-            $stockHijo->update(['fecha_actualizacion' => now()]);
+            StockProducto::where('id', $stockHijo->id)->update([
+                'cantidad' => DB::raw('cantidad - ' . $movimiento->cantidad_hijo),
+                'cantidad_disponible' => DB::raw('cantidad_disponible - ' . $movimiento->cantidad_hijo),
+                'fecha_actualizacion' => now(),
+            ]);
+
+            // 4️⃣.A Registrar movimientos inversos de inventario (anulaciones)
+            // ENTRADA del producto padre (reversa de la salida)
+            MovimientoInventario::registrar(
+                $stockPadre,
+                $movimiento->cantidad_padre,
+                'ENTRADA_FRACCIONAMIENTO',
+                "Reversión de fraccionamiento: {$movimiento->cantidad_padre} {$stockPadre->producto->unidad_medida_id}",
+                null,
+                Auth::id(),
+                null,
+                null,
+                null,
+                'fraccionamiento_reversión',
+                $movimiento->id,
+                null
+            );
+
+            // SALIDA del producto hijo (reversa de la entrada)
+            MovimientoInventario::registrar(
+                $stockHijo,
+                -$movimiento->cantidad_hijo,
+                'SALIDA_FRACCIONAMIENTO',
+                "Reversión de fraccionamiento: {$movimiento->cantidad_hijo} unidades",
+                null,
+                Auth::id(),
+                null,
+                null,
+                null,
+                'fraccionamiento_reversión',
+                $movimiento->id,
+                null
+            );
 
             // 5️⃣ Soft delete del movimiento
             $movimiento->delete();
