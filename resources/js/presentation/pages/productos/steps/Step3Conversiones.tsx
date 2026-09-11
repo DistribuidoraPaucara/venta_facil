@@ -55,33 +55,43 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
     const [conversionesComunes, setConversionesComunes] = useState<any[]>([]);
     const [loadingConversiones, setLoadingConversiones] = useState(false);
     const [showForm, setShowForm] = useState(false);
-    const [productosOptions, setProductosOptions] = useState<Option[]>([]);
-    const [loadingProductos, setLoadingProductos] = useState(false);
+    const [productosDestino, setProductosDestino] = useState<Option[]>([]);
+    const [loadingProductosDestino, setLoadingProductosDestino] = useState(false);
     const factorInputRef = useRef<HTMLInputElement>(null);
 
-    // Cargar productos disponibles
+    // Cargar productos destino SOLO cuando se selecciona unidad destino
     useEffect(() => {
-        const cargarProductos = async () => {
-            setLoadingProductos(true);
+        if (!formConversion.unidad_destino_id) {
+            setProductosDestino([]);
+            return;
+        }
+
+        const cargarProductosDestino = async () => {
+            setLoadingProductosDestino(true);
             try {
                 const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
                 if (response.data.success && response.data.data) {
-                    const opciones = response.data.data.map((prod: any) => ({
+                    // Filtrar productos que tengan la unidad destino seleccionada
+                    const productosFiltrados = response.data.data.filter(
+                        (prod: any) => prod.unidad_medida_id === Number(formConversion.unidad_destino_id)
+                    );
+
+                    const opciones = productosFiltrados.map((prod: any) => ({
                         value: prod.id,
                         label: `${prod.sku} - ${prod.nombre}`,
                         description: prod.unidad_nombre,
                     }));
-                    setProductosOptions(opciones);
+                    setProductosDestino(opciones);
                 }
             } catch (error) {
-                console.error('❌ Error cargando productos:', error);
+                console.error('❌ Error cargando productos destino:', error);
             } finally {
-                setLoadingProductos(false);
+                setLoadingProductosDestino(false);
             }
         };
 
-        cargarProductos();
-    }, []);
+        cargarProductosDestino();
+    }, [formConversion.unidad_destino_id]);
 
     const conversiones = data.conversiones || [];
 
@@ -428,25 +438,35 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                         {/* ✨ NUEVO: Producto Destino (para fraccionamientos) */}
                         <div className="space-y-2">
                             <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
-                            {loadingProductos ? (
+                            {!formConversion.unidad_destino_id ? (
+                                <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm text-gray-600 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-400">
+                                    Selecciona unidad destino primero
+                                </div>
+                            ) : loadingProductosDestino ? (
                                 <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm dark:border-slate-600 dark:bg-slate-800">
-                                    Cargando productos...
+                                    Buscando productos...
+                                </div>
+                            ) : productosDestino.length === 0 ? (
+                                <div className="rounded border border-yellow-300 bg-yellow-100 p-2 text-sm text-yellow-800 dark:border-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-300">
+                                    No hay productos con esta unidad destino
                                 </div>
                             ) : (
                                 <SearchSelect
-                                    options={productosOptions}
+                                    options={productosDestino}
                                     value={formConversion.producto_destino_id || ''}
-                                    onChange={(value) =>
+                                    onChange={(value) => {
+                                        const productoSeleccionado = productosDestino.find(p => p.value === value);
                                         setFormConversion((prev) => ({
                                             ...prev,
                                             producto_destino_id: value,
-                                        }))
-                                    }
-                                    placeholder="Ej: Botella Coca, Tableta, Unidad..."
+                                            nombre_cuando_se_vende_como: productoSeleccionado?.label || prev.nombre_cuando_se_vende_como,
+                                        }));
+                                    }}
+                                    placeholder="Buscar producto..."
                                 />
                             )}
                             <p className="text-xs text-muted-foreground">
-                                El producto en el que se fracciona este producto (para ventas por unidad)
+                                Busca el producto en el que se fracciona este (se auto-llena el nombre)
                             </p>
                         </div>
 
