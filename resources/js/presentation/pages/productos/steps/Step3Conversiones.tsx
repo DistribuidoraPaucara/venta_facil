@@ -3,7 +3,7 @@ import { Button } from '@/presentation/components/ui/button';
 import { Checkbox } from '@/presentation/components/ui/checkbox';
 import { Input } from '@/presentation/components/ui/input';
 import { Label } from '@/presentation/components/ui/label';
-import SearchSelect from '@/presentation/components/ui/search-select';
+import InputSearchSelect from '@/presentation/components/ui/input-search-select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import axios from 'axios';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -13,6 +13,7 @@ interface Option {
     value: number | string;
     label: string;
     description?: string;
+    meta?: Record<string, any>;
 }
 
 export interface Step3Props {
@@ -425,29 +426,25 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                         {/* El producto trae su unidad y nombre automáticamente */}
                         <div className="space-y-2 sm:col-span-2">
                             <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
-                            {loadingProductosDestino ? (
-                                <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm dark:border-slate-600 dark:bg-slate-800">
-                                    Buscando productos...
-                                </div>
-                            ) : (
-                                <SearchSelect
-                                    options={productosDestino}
-                                    value={formConversion.producto_destino_id || ''}
-                                    onChange={(value) => {
-                                        const productoSeleccionado = productosDestino.find((p: any) => p.value === value);
-                                        if (productoSeleccionado?.meta) {
-                                            setFormConversion((prev) => ({
-                                                ...prev,
-                                                producto_destino_id: value,
-                                                unidad_destino_id: productoSeleccionado.meta.unidad_id,
-                                                nombre_cuando_se_vende_como: productoSeleccionado.meta.nombre,
-                                            }));
-                                        }
-                                    }}
-                                    onSearch={handleBuscarProductoDestino}
-                                    placeholder="Busca SKU o nombre del producto (Ej: Coca 2Lts, Botella)..."
-                                />
-                            )}
+                            <InputSearchSelect
+                                options={productosDestino}
+                                value={formConversion.producto_destino_id || ''}
+                                onChange={(value) => {
+                                    const productoSeleccionado = productosDestino.find((p) => p.value === value);
+                                    if (productoSeleccionado?.meta) {
+                                        setFormConversion((prev) => ({
+                                            ...prev,
+                                            producto_destino_id: value,
+                                            unidad_destino_id: productoSeleccionado.meta?.unidad_id,
+                                            nombre_cuando_se_vende_como: productoSeleccionado.meta?.nombre,
+                                        }));
+                                    }
+                                }}
+                                onSearch={handleBuscarProductoDestino}
+                                placeholder="Busca SKU o nombre del producto (Ej: Coca 2Lts)..."
+                                loading={loadingProductosDestino}
+                                emptyText="Sin coincidencias. Intenta otro término."
+                            />
                             <p className="text-xs text-muted-foreground">
                                 Selecciona el producto en el que se fracciona este. Se auto-llenan: unidad destino y nombre.
                             </p>
