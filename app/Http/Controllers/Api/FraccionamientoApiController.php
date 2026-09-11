@@ -218,6 +218,36 @@ class FraccionamientoApiController extends Controller
         try {
             $historial = $this->fraccionamientoService->obtenerHistorialProducto($productoId);
 
+            // Transformar datos para que tengan camelCase en el frontend
+            $historial = collect($historial)->map(function ($movimiento) {
+                return [
+                    'id' => $movimiento->id,
+                    'producto_padre_id' => $movimiento->producto_padre_id,
+                    'cantidad_padre' => $movimiento->cantidad_padre,
+                    'unidad_padre_id' => $movimiento->unidad_padre_id,
+                    'unidad_padre' => $movimiento->unidadPadre,
+                    'producto_hijo_id' => $movimiento->producto_hijo_id,
+                    'cantidad_hijo' => $movimiento->cantidad_hijo,
+                    'unidad_hijo_id' => $movimiento->unidad_hijo_id,
+                    'unidad_hijo' => $movimiento->unidadHijo,
+                    'productoPadre' => $movimiento->productoPadre,
+                    'productoHijo' => $movimiento->productoHijo,
+                    'almacen_id' => $movimiento->almacen_id,
+                    'almacen' => $movimiento->almacen,
+                    'sector_id' => $movimiento->sector_id,
+                    'sector' => $movimiento->sector,
+                    'usuario_id' => $movimiento->usuario_id,
+                    'usuario' => $movimiento->usuario,
+                    'fecha_fraccionamiento' => $movimiento->fecha_fraccionamiento,
+                    'razon' => $movimiento->razon,
+                    'notas' => $movimiento->notas,
+                    'empresa_id' => $movimiento->empresa_id,
+                    'created_at' => $movimiento->created_at,
+                    'updated_at' => $movimiento->updated_at,
+                    'deleted_at' => $movimiento->deleted_at,
+                ];
+            })->values();
+
             return ApiResponse::success($historial);
         } catch (\Exception $e) {
             Log::error('❌ Error al obtener historial', [
