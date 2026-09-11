@@ -99,6 +99,7 @@ class FraccionamientoService
 
             // 4️⃣ Actualizar stock del padre (restar)
             $stockPadre->decrement('cantidad', $cantidadPadre);
+            $stockPadre->decrement('cantidad_disponible', $cantidadPadre);
             $stockPadre->update(['fecha_actualizacion' => now()]);
 
             // 5️⃣ Actualizar stock del hijo (sumar)
@@ -182,6 +183,7 @@ class FraccionamientoService
 
             // 4️⃣ Revertir cambios
             $stockPadre->increment('cantidad', $movimiento->cantidad_padre);
+            $stockPadre->increment('cantidad_disponible', $movimiento->cantidad_padre);
             $stockPadre->update(['fecha_actualizacion' => now()]);
 
             $stockHijo->decrement('cantidad', $movimiento->cantidad_hijo);
