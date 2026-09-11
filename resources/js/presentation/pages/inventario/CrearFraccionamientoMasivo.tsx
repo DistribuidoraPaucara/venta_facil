@@ -140,17 +140,17 @@ export default function CrearFraccionamientoMasivo() {
     <AppLayout>
       <Head title="Crear Fraccionamiento Masivo" />
 
-      <div className="py-8">
+      <div className="py-8 dark:bg-gray-950 min-h-screen">
         <div className="max-w-6xl mx-auto px-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Fraccionamiento Masivo</h1>
-          <p className="text-gray-600 mb-8">Registra múltiples fraccionamientos en una sola operación</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Fraccionamiento Masivo</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">Registra múltiples fraccionamientos en una sola operación</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Encabezado */}
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 dark:bg-gray-900 dark:border-gray-800">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Almacén *</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-white">Almacén *</label>
                   <Select value={almacenId?.toString() || ''} onValueChange={(v) => setAlmacenId(Number(v) || null)}>
                     <option value="">Selecciona almacén</option>
                     {almacenes.map((a: any) => (
@@ -160,7 +160,7 @@ export default function CrearFraccionamientoMasivo() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Sector *</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-white">Sector *</label>
                   <Select value={sectorId?.toString() || ''} onValueChange={(v) => setSectorId(Number(v) || null)} disabled={!almacenId}>
                     <option value="">Selecciona sector</option>
                     {sectores.map((s: any) => (
@@ -170,7 +170,7 @@ export default function CrearFraccionamientoMasivo() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Razón</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-white">Razón</label>
                   <Select value={razon} onValueChange={setRazon}>
                     <option value="fraccionamiento_manual">Fraccionamiento Manual</option>
                     <option value="fraccionamiento_compra">Por Compra</option>
@@ -180,7 +180,7 @@ export default function CrearFraccionamientoMasivo() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Notas</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-white">Notas</label>
                   <Input
                     type="text"
                     value={notas}
@@ -192,13 +192,13 @@ export default function CrearFraccionamientoMasivo() {
             </Card>
 
             {/* Líneas */}
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Líneas de Fraccionamiento</h2>
+            <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
+              <h2 className="text-lg font-semibold mb-4 dark:text-white">Líneas de Fraccionamiento</h2>
               <div className="space-y-4">
                 {lineas.map((linea, idx) => (
-                  <div key={linea.id} className="p-4 border rounded-lg space-y-3 bg-gray-50">
+                  <div key={linea.id} className="p-4 border rounded-lg space-y-3 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-sm">Línea {idx + 1}</span>
+                      <span className="font-medium text-sm dark:text-white">Línea {idx + 1}</span>
                       {lineas.length > 1 && (
                         <button
                           type="button"
@@ -212,7 +212,7 @@ export default function CrearFraccionamientoMasivo() {
 
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                       <div>
-                        <label className="block text-xs font-medium mb-1">Producto Padre</label>
+                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Producto Padre</label>
                         <select
                           value={linea.producto_padre_id || ''}
                           onChange={(e) => actualizarLinea(linea.id, { producto_padre_id: Number(e.target.value) || null })}
@@ -226,7 +226,7 @@ export default function CrearFraccionamientoMasivo() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium mb-1">Cantidad Padre</label>
+                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Cantidad Padre</label>
                         <Input
                           type="number"
                           step="0.01"
@@ -238,7 +238,7 @@ export default function CrearFraccionamientoMasivo() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium mb-1">Factor</label>
+                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Factor</label>
                         <Input
                           type="number"
                           step="0.01"
@@ -250,7 +250,7 @@ export default function CrearFraccionamientoMasivo() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium mb-1">Cantidad Hijo</label>
+                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Cantidad Hijo</label>
                         <Input
                           type="number"
                           step="0.01"
@@ -262,7 +262,7 @@ export default function CrearFraccionamientoMasivo() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium mb-1">Producto Hijo</label>
+                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Producto Hijo</label>
                         <select
                           value={linea.producto_hijo_id || ''}
                           onChange={(e) => actualizarLinea(linea.id, { producto_hijo_id: Number(e.target.value) || null })}
