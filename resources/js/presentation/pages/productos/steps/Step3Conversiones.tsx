@@ -59,39 +59,41 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
     const [loadingProductosDestino, setLoadingProductosDestino] = useState(false);
     const factorInputRef = useRef<HTMLInputElement>(null);
 
-    // Cargar productos destino SOLO cuando se selecciona unidad destino
-    useEffect(() => {
-        if (!formConversion.unidad_destino_id) {
+    // Cargar productos destino cuando usuario busca
+    const [busquedaProductoDestino, setBusquedaProductoDestino] = useState('');
+
+    const handleBuscarProductoDestino = async (termino: string) => {
+        setBusquedaProductoDestino(termino);
+
+        if (!termino.trim()) {
             setProductosDestino([]);
             return;
         }
 
-        const cargarProductosDestino = async () => {
-            setLoadingProductosDestino(true);
-            try {
-                const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
-                if (response.data.success && response.data.data) {
-                    // Filtrar productos que tengan la unidad destino seleccionada
-                    const productosFiltrados = response.data.data.filter(
-                        (prod: any) => prod.unidad_medida_id === Number(formConversion.unidad_destino_id)
-                    );
+        setLoadingProductosDestino(true);
+        try {
+            const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
+            if (response.data.success && response.data.data) {
+                // Filtrar productos que coincidan con la búsqueda
+                const productosFiltrados = response.data.data.filter((prod: any) =>
+                    prod.sku.toLowerCase().includes(termino.toLowerCase()) ||
+                    prod.nombre.toLowerCase().includes(termino.toLowerCase())
+                );
 
-                    const opciones = productosFiltrados.map((prod: any) => ({
-                        value: prod.id,
-                        label: `${prod.sku} - ${prod.nombre}`,
-                        description: prod.unidad_nombre,
-                    }));
-                    setProductosDestino(opciones);
-                }
-            } catch (error) {
-                console.error('❌ Error cargando productos destino:', error);
-            } finally {
-                setLoadingProductosDestino(false);
+                const opciones = productosFiltrados.map((prod: any) => ({
+                    value: prod.id,
+                    label: `${prod.sku} - ${prod.nombre}`,
+                    description: prod.unidad_nombre,
+                    meta: { unidad_id: prod.unidad_medida_id, nombre: prod.nombre }, // Guardar datos del producto
+                }));
+                setProductosDestino(opciones);
             }
-        };
-
-        cargarProductosDestino();
-    }, [formConversion.unidad_destino_id]);
+        } catch (error) {
+            console.error('❌ Error buscando productos destino:', error);
+        } finally {
+            setLoadingProductosDestino(false);
+        }
+    };
 
     const conversiones = data.conversiones || [];
 
@@ -419,55 +421,43 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                             <p className="text-xs text-muted-foreground">Auto-asignada del producto</p>
                         </div>
 
-                        {/* Unidad Destino */}
-                        <div className="space-y-2">
-                            <Label>Unidad Destino (Venta) *</Label>
-                            <SearchSelect
-                                options={unidadesOptions.filter((u) => u.value !== unidadBase?.id)}
-                                value={formConversion.unidad_destino_id}
-                                onChange={(value) =>
-                                    setFormConversion((prev) => ({
-                                        ...prev,
-                                        unidad_destino_id: value,
-                                    }))
-                                }
-                                placeholder="Ej: TABLETA, PIEZA, METRO..."
-                            />
-                        </div>
-
-                        {/* ✨ NUEVO: Producto Destino (para fraccionamientos) */}
-                        <div className="space-y-2">
+                        {/* ✨ REFACTORIZADO: Búsqueda directa de Producto Destino */}
+                        {/* El producto trae su unidad y nombre automáticamente */}
+                        <div className="space-y-2 sm:col-span-2">
                             <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
-                            {!formConversion.unidad_destino_id ? (
-                                <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm text-gray-600 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-400">
-                                    Selecciona unidad destino primero
-                                </div>
-                            ) : loadingProductosDestino ? (
+                            {loadingProductosDestino ? (
                                 <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm dark:border-slate-600 dark:bg-slate-800">
                                     Buscando productos...
-                                </div>
-                            ) : productosDestino.length === 0 ? (
-                                <div className="rounded border border-yellow-300 bg-yellow-100 p-2 text-sm text-yellow-800 dark:border-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-300">
-                                    No hay productos con esta unidad destino
                                 </div>
                             ) : (
                                 <SearchSelect
                                     options={productosDestino}
                                     value={formConversion.producto_destino_id || ''}
                                     onChange={(value) => {
-                                        const productoSeleccionado = productosDestino.find(p => p.value === value);
-                                        setFormConversion((prev) => ({
-                                            ...prev,
-                                            producto_destino_id: value,
-                                            nombre_cuando_se_vende_como: productoSeleccionado?.label || prev.nombre_cuando_se_vende_como,
-                                        }));
+                                        const productoSeleccionado = productosDestino.find((p: any) => p.value === value);
+                                        if (productoSeleccionado?.meta) {
+                                            setFormConversion((prev) => ({
+                                                ...prev,
+                                                producto_destino_id: value,
+                                                unidad_destino_id: productoSeleccionado.meta.unidad_id,
+                                                nombre_cuando_se_vende_como: productoSeleccionado.meta.nombre,
+                                            }));
+                                        }
                                     }}
-                                    placeholder="Buscar producto..."
+                                    onSearch={handleBuscarProductoDestino}
+                                    placeholder="Busca SKU o nombre del producto (Ej: Coca 2Lts, Botella)..."
                                 />
                             )}
                             <p className="text-xs text-muted-foreground">
-                                Busca el producto en el que se fracciona este (se auto-llena el nombre)
+                                Selecciona el producto en el que se fracciona este. Se auto-llenan: unidad destino y nombre.
                             </p>
+                            {formConversion.unidad_destino_id && (
+                                <div className="mt-2 flex gap-2 rounded bg-blue-50 p-2 dark:bg-blue-950/30">
+                                    <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                                        ✓ Unidad destino: {unidadesOptions.find((u) => u.value === formConversion.unidad_destino_id)?.label}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Factor Conversión */}
