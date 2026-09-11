@@ -5,7 +5,7 @@ import { Button } from '@/presentation/components/ui/button';
 import { Card } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
 import { Select } from '@/presentation/components/ui/select';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 interface LineaFraccionamiento {
   id: string;
@@ -34,7 +34,6 @@ export default function CrearFraccionamientoMasivo() {
   const [buscaProductoPadre, setBuscaProductoPadre] = useState('');
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [expandedLineId, setExpandedLineId] = useState<string | null>(null);
 
   useEffect(() => {
     cargarAlmacenes();
