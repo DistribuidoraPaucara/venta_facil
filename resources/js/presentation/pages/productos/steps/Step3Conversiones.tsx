@@ -31,8 +31,9 @@ export interface Step3Props {
 interface FormConversion {
     unidad_base_id: number | string;
     unidad_destino_id: number | string;
+    producto_destino_id?: number | string; // ✨ NUEVO: Producto destino para fraccionamientos
     factor_conversion: number | string;
-    nombre_cuando_se_vende_como?: string; // ✨ NUEVO (2026-09-06): Nombre personalizado
+    nombre_cuando_se_vende_como?: string;
     activo: boolean;
     es_conversion_principal: boolean;
 }
@@ -40,8 +41,9 @@ interface FormConversion {
 const initialFormConversion: FormConversion = {
     unidad_base_id: '',
     unidad_destino_id: '',
+    producto_destino_id: '',
     factor_conversion: '',
-    nombre_cuando_se_vende_como: '', // ✨ NUEVO
+    nombre_cuando_se_vende_como: '',
     activo: true,
     es_conversion_principal: false,
 };
@@ -180,8 +182,9 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
         const newConversion: ConversionUnidad = {
             unidad_base_id: Number(unidadBase?.id),
             unidad_destino_id: Number(formConversion.unidad_destino_id),
+            producto_destino_id: formConversion.producto_destino_id ? Number(formConversion.producto_destino_id) : undefined,
             factor_conversion: Number(formConversion.factor_conversion),
-            nombre_cuando_se_vende_como: formConversion.nombre_cuando_se_vende_como || undefined, // ✨ NUEVO (2026-09-06)
+            nombre_cuando_se_vende_como: formConversion.nombre_cuando_se_vende_como || undefined,
             activo: formConversion.activo,
             es_conversion_principal: formConversion.es_conversion_principal,
         };
@@ -394,6 +397,25 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 }
                                 placeholder="Ej: TABLETA, PIEZA, METRO..."
                             />
+                        </div>
+
+                        {/* ✨ NUEVO: Producto Destino (para fraccionamientos) */}
+                        <div className="space-y-2">
+                            <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
+                            <SearchSelect
+                                options={unidadesOptions} // Cambiar a opciones de productos
+                                value={formConversion.producto_destino_id}
+                                onChange={(value) =>
+                                    setFormConversion((prev) => ({
+                                        ...prev,
+                                        producto_destino_id: value,
+                                    }))
+                                }
+                                placeholder="Ej: Botella individual, Tableta, Unidad..."
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                El producto en el que se fracciona este producto (para ventas por unidad)
+                            </p>
                         </div>
 
                         {/* Factor Conversión */}

@@ -90,11 +90,14 @@ export interface ConversionUnidad {
   producto_id?: Id;
   unidad_base_id: Id;
   unidad_destino_id: Id;
+  producto_destino_id?: Id; // ✨ NUEVO: Producto destino para fraccionamientos
   factor_conversion: number;
+  nombre_cuando_se_vende_como?: string; // ✨ Nombre personalizado cuando se vende en esta unidad
   activo: boolean;
   es_conversion_principal: boolean;
   unidad_base?: { id: Id; codigo: string; nombre: string };
   unidad_destino?: { id: Id; codigo: string; nombre: string };
+  producto_destino?: { id: Id; nombre: string; sku: string }; // ✨ Relación al producto destino
 }
 
 export interface ProductoFormData extends BaseFormData {
