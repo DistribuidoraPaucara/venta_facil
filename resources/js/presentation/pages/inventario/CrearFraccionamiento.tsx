@@ -694,43 +694,73 @@ export default function CrearFraccionamiento() {
                         📊 Cantidades
                       </h3>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-6">
+                        {/* Cantidad a fraccionar del Padre */}
                         <div>
                           <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                            {productoPadre?.nombre} ({productoPadre?.unidad_nombre}) *
+                            Cantidad a fraccionar de {productoPadre?.nombre} *
                           </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={formData.cantidad_padre}
-                            onChange={(e) => setFormData({ ...formData, cantidad_padre: e.target.value })}
-                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                              errores.cantidad_padre ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                            placeholder="0.00"
-                          />
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.cantidad_padre}
+                              onChange={(e) => {
+                                const valor = e.target.value;
+                                setFormData({ ...formData, cantidad_padre: valor });
+                                // Calcular automáticamente cantidad_hijo
+                                if (valor && !isNaN(parseFloat(valor)) && conversionesDisponibles.length > 0) {
+                                  const cantidadCalculada = (parseFloat(valor) * conversionesDisponibles[0].factor_conversion).toFixed(2);
+                                  setFormData((prev) => ({ ...prev, cantidad_hijo: cantidadCalculada }));
+                                }
+                              }}
+                              className={`flex-1 px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                errores.cantidad_padre ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                              }`}
+                              placeholder="0.00"
+                            />
+                            <div className="px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white font-medium">
+                              {productoPadre?.unidad_nombre}
+                            </div>
+                          </div>
                           {errores.cantidad_padre && (
                             <p className="text-red-500 text-sm mt-1">{errores.cantidad_padre}</p>
                           )}
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Stock disponible: {productoPadre?.stocks?.find((s) => s.almacen_id === parseInt(formData.almacen_id))?.cantidad || 0} {productoPadre?.unidad_nombre}
+                          </p>
                         </div>
 
+                        {/* Factor y Cantidad Calculada */}
+                        {conversionesDisponibles.length > 0 && formData.cantidad_padre && (
+                          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Cálculo Automático:</p>
+                            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {formData.cantidad_padre} {productoPadre?.unidad_nombre} × {conversionesDisponibles[0].factor_conversion} = <span className="text-green-600 dark:text-green-400">{formData.cantidad_hijo} {productoHijo?.unidad_nombre}</span>
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Cantidad Hijo (Read-only) */}
                         <div>
                           <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                            {productoHijo?.nombre} ({productoHijo?.unidad_nombre}) *
+                            Cantidad resultante en {productoHijo?.nombre} (Automática)
                           </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={formData.cantidad_hijo}
-                            onChange={(e) => setFormData({ ...formData, cantidad_hijo: e.target.value })}
-                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                              errores.cantidad_hijo ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                            placeholder="0.00"
-                          />
-                          {errores.cantidad_hijo && (
-                            <p className="text-red-500 text-sm mt-1">{errores.cantidad_hijo}</p>
-                          )}
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.cantidad_hijo}
+                              readOnly
+                              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
+                            />
+                            <div className="px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white font-medium">
+                              {productoHijo?.unidad_nombre}
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Se calcula automáticamente usando el factor de conversión
+                          </p>
                         </div>
                       </div>
                     </div>
