@@ -97,10 +97,12 @@ class FraccionamientoService
                 ]);
             }
 
-            // 4️⃣ Actualizar stock del padre (restar)
-            $stockPadre->decrement('cantidad', $cantidadPadre);
-            $stockPadre->decrement('cantidad_disponible', $cantidadPadre);
-            $stockPadre->update(['fecha_actualizacion' => now()]);
+            // 4️⃣ Actualizar stock del padre (restar ambas columnas en una sola query)
+            StockProducto::where('id', $stockPadre->id)->update([
+                'cantidad' => DB::raw('cantidad - ' . $cantidadPadre),
+                'cantidad_disponible' => DB::raw('cantidad_disponible - ' . $cantidadPadre),
+                'fecha_actualizacion' => now(),
+            ]);
 
             // 5️⃣ Actualizar stock del hijo (sumar)
             $stockHijo->increment('cantidad', $cantidadHijo);
@@ -181,10 +183,12 @@ class FraccionamientoService
                 );
             }
 
-            // 4️⃣ Revertir cambios
-            $stockPadre->increment('cantidad', $movimiento->cantidad_padre);
-            $stockPadre->increment('cantidad_disponible', $movimiento->cantidad_padre);
-            $stockPadre->update(['fecha_actualizacion' => now()]);
+            // 4️⃣ Revertir cambios (actualizar ambas columnas en una sola query)
+            StockProducto::where('id', $stockPadre->id)->update([
+                'cantidad' => DB::raw('cantidad + ' . $movimiento->cantidad_padre),
+                'cantidad_disponible' => DB::raw('cantidad_disponible + ' . $movimiento->cantidad_padre),
+                'fecha_actualizacion' => now(),
+            ]);
 
             $stockHijo->decrement('cantidad', $movimiento->cantidad_hijo);
             $stockHijo->decrement('cantidad_disponible', $movimiento->cantidad_hijo);
