@@ -74,6 +74,10 @@ export default function CrearFraccionamiento() {
   const [busqueda, setBusqueda] = useState('');
   const [sugerencias, setSugerencias] = useState<Producto[]>([]);
 
+  // Conversiones del producto padre
+  const [conversionesDisponibles, setConversionesDisponibles] = useState<any[]>([]);
+  const [cargandoConversiones, setCargandoConversiones] = useState(false);
+
   const [formData, setFormData] = useState({
     cantidad_padre: '',
     cantidad_hijo: '',
@@ -192,7 +196,34 @@ export default function CrearFraccionamiento() {
 
     setBusqueda('');
     setSugerencias([]);
+
+    // Si es producto padre, buscar conversiones automáticamente
+    if (rol === 'padre') {
+      buscarConversiones(producto.id);
+    }
+
     toast.success(`${producto.nombre} agregado como ${rol}`);
+  };
+
+  // Buscar conversiones del producto padre
+  const buscarConversiones = async (productoPadreId: number) => {
+    setCargandoConversiones(true);
+    try {
+      const res = await fetch(`/api/inventario/fraccionamientos/producto/${productoPadreId}/conversiones`);
+      const data = await res.json();
+
+      if (data.success && data.data.length > 0) {
+        setConversionesDisponibles(data.data);
+        toast.success(`${data.data.length} conversión(es) disponible(s)`);
+      } else {
+        setConversionesDisponibles([]);
+      }
+    } catch (error) {
+      console.error('Error buscando conversiones:', error);
+      setConversionesDisponibles([]);
+    } finally {
+      setCargandoConversiones(false);
+    }
   };
 
   // Cambiar orden de productos
@@ -413,6 +444,61 @@ export default function CrearFraccionamiento() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Conversiones disponibles del producto padre */}
+                  {conversionesDisponibles.length > 0 && productosAgregados.length === 1 && (
+                    <div className="border-b pb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        🔄 Conversiones Disponibles
+                      </h3>
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          Selecciona el producto hijo de las conversiones configuradas:
+                        </p>
+                        {conversionesDisponibles.map((conversion) => (
+                          <button
+                            key={conversion.id}
+                            type="button"
+                            onClick={() => {
+                              if (conversion.producto_hijo) {
+                                handleAgregarProducto({
+                                  id: conversion.producto_hijo_id,
+                                  nombre: conversion.producto_hijo.nombre,
+                                  sku: conversion.producto_hijo.sku,
+                                  unidad_medida_id: 0,
+                                  unidad_nombre: conversion.producto_hijo.unidad_nombre,
+                                });
+                                // Auto-llenar cantidades basado en factor
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  cantidad_padre: '1',
+                                  cantidad_hijo: conversion.factor_conversion.toString(),
+                                }));
+                              }
+                            }}
+                            className="w-full text-left px-4 py-3 border border-blue-300 dark:border-blue-700 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold text-gray-900 dark:text-white">
+                                  {conversion.producto_hijo.sku}
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {conversion.producto_hijo.nombre}
+                                </p>
+                                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                  Factor: 1 {conversion.unidad_base_nombre} = {conversion.factor_conversion} {conversion.unidad_destino_nombre}
+                                </p>
+                              </div>
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                ✓ Usar
+                              </Badge>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Tabla de Productos Agregados */}
                   {productosAgregados.length > 0 && (

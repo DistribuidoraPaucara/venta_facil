@@ -134,7 +134,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 export const productosDisponibles = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +149,7 @@ productosDisponibles.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 productosDisponibles.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ productosDisponibles.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 productosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -167,7 +167,7 @@ productosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 })
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -177,7 +177,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
     /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
     const productosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -187,7 +187,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
         productosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -196,7 +196,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
         })
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
         productosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

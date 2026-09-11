@@ -221,6 +221,53 @@ class FraccionamientoApiController extends Controller
     }
 
     /**
+     * GET /api/inventario/fraccionamientos/producto/{productoId}/conversiones
+     * Obtener conversiones de fraccionamiento para un producto padre
+     */
+    public function conversionesDelProducto(int $productoId): JsonResponse
+    {
+        try {
+            $conversiones = \App\Models\ConversionUnidadProducto::where('producto_id', $productoId)
+                ->where('activo', true)
+                ->where('producto_destino_id', '!=', null)
+                ->with([
+                    'productoDestino:id,nombre,sku,unidad_medida_id',
+                    'productoDestino.unidad:id,nombre,codigo',
+                    'unidadBase:id,nombre,codigo',
+                    'unidadDestino:id,nombre,codigo',
+                ])
+                ->get()
+                ->map(function ($conversion) {
+                    return [
+                        'id' => $conversion->id,
+                        'producto_padre_id' => $conversion->producto_id,
+                        'producto_hijo_id' => $conversion->producto_destino_id,
+                        'producto_hijo' => [
+                            'id' => $conversion->productoDestino?->id,
+                            'nombre' => $conversion->productoDestino?->nombre,
+                            'sku' => $conversion->productoDestino?->sku,
+                            'unidad_nombre' => $conversion->productoDestino?->unidad?->nombre,
+                        ],
+                        'unidad_base_nombre' => $conversion->unidadBase?->nombre,
+                        'unidad_destino_nombre' => $conversion->unidadDestino?->nombre,
+                        'factor_conversion' => (float) $conversion->factor_conversion,
+                        'nombre_cuando_se_vende_como' => $conversion->nombre_cuando_se_vende_como,
+                    ];
+                });
+
+            return ApiResponse::success($conversiones);
+        } catch (\Exception $e) {
+            Log::error('❌ Error al obtener conversiones de fraccionamiento', [
+                'error' => $e->getMessage(),
+                'producto_id' => $productoId,
+                'user_id' => auth()->id(),
+            ]);
+
+            return ApiResponse::error('Error al obtener conversiones', 500);
+        }
+    }
+
+    /**
      * GET /api/inventario/fraccionamientos/productos/disponibles
      * Obtener productos activos de la empresa para fraccionamientos con stock y límites
      */

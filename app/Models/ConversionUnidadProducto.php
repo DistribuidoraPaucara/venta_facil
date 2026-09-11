@@ -11,10 +11,11 @@ class ConversionUnidadProducto extends Model
 
     protected $fillable = [
         'producto_id',
+        'producto_destino_id',
         'unidad_base_id',
         'unidad_destino_id',
         'factor_conversion',
-        'nombre_cuando_se_vende_como', // ✨ NUEVO (2026-09-06): Nombre personalizado
+        'nombre_cuando_se_vende_como',
         'activo',
         'es_conversion_principal',
     ];
@@ -50,6 +51,15 @@ class ConversionUnidadProducto extends Model
     public function unidadDestino(): BelongsTo
     {
         return $this->belongsTo(UnidadMedida::class, 'unidad_destino_id');
+    }
+
+    /**
+     * Relación: Producto destino para fraccionamientos
+     * (ej: el Paquete Coca se fracciona en Botellas Coca individuales)
+     */
+    public function productoDestino(): BelongsTo
+    {
+        return $this->belongsTo(Producto::class, 'producto_destino_id');
     }
 
     /**

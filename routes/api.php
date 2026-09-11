@@ -749,6 +749,7 @@ Route::group(['prefix' => 'inventario'], function () {
         Route::post('/', [FraccionamientoApiController::class, 'store']);
         Route::get('/', [FraccionamientoApiController::class, 'index']);
         Route::get('productos/disponibles', [FraccionamientoApiController::class, 'productosDisponibles']);
+        Route::get('producto/{productoId}/conversiones', [FraccionamientoApiController::class, 'conversionesDelProducto']);
         Route::get('{movimiento}', [FraccionamientoApiController::class, 'show']);
         Route::delete('{movimiento}/revertir', [FraccionamientoApiController::class, 'revertir']);
         Route::get('producto/{productoId}/historial', [FraccionamientoApiController::class, 'historialProducto']);
