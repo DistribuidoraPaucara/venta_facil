@@ -864,6 +864,10 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::get('fraccionamientos', [\App\Http\Controllers\FraccionamientoController::class, 'index'])->name('fraccionamientos.index');
         Route::get('fraccionamientos/crear', [\App\Http\Controllers\FraccionamientoController::class, 'create'])->name('fraccionamientos.create');
 
+        // ✅ NUEVO (2026-09-11): Rutas para fraccionamientos masivos
+        Route::get('fraccionamientos-masivos/crear', fn() => inertia('inventario/CrearFraccionamientoMasivo'))->name('fraccionamientos-masivos.crear');
+        Route::get('fraccionamientos-masivos', fn() => inertia('inventario/ListarFraccionamientosMasivos'))->name('fraccionamientos-masivos.index');
+
         // ✅ NUEVO: Ruta para ajuste por tabla editable
         Route::get('ajuste-tabla', function () {
             // ✅ CRÍTICO: Obtener empresa del usuario para filtrar almacenes y stock
