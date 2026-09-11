@@ -129,7 +129,7 @@ export default function CrearFraccionamiento() {
     }
   };
 
-  // Buscar productos POR ALMACÉN - solo mostrar productos con stock en ese almacén
+  // Buscar productos - Padre necesita stock, Hijo NO necesita stock previo
   const handleBuscar = async (valor: string) => {
     setBusqueda(valor);
 
@@ -148,6 +148,7 @@ export default function CrearFraccionamiento() {
     try {
       const valorLower = valor.toLowerCase();
       const almacenIdInt = parseInt(formData.almacen_id);
+      const esProductoPadre = productosAgregados.length === 0;
 
       // Primero intentar buscar por código de barras
       try {
@@ -157,9 +158,16 @@ export default function CrearFraccionamiento() {
         const barcodeData = await barcodeRes.json();
 
         if (barcodeData.success && barcodeData.data) {
-          // Solo si tiene stock en el almacén seleccionado
-          const tieneStock = barcodeData.data.stocks?.some((s: Stock) => s.almacen_id === almacenIdInt);
-          if (tieneStock) {
+          // Solo padre necesita stock en el almacén
+          if (esProductoPadre) {
+            const tieneStock = barcodeData.data.stocks?.some((s: Stock) => s.almacen_id === almacenIdInt);
+            if (tieneStock) {
+              setSugerencias([barcodeData.data]);
+              setBuscando(false);
+              return;
+            }
+          } else {
+            // Hijo puede ser cualquier producto
             setSugerencias([barcodeData.data]);
             setBuscando(false);
             return;
@@ -169,12 +177,18 @@ export default function CrearFraccionamiento() {
         // Continuar con búsqueda por nombre/SKU
       }
 
-      // Búsqueda por nombre o SKU - filtrar por almacén
-      const resultados = productos.filter(
-        (p) =>
-          (p.nombre.toLowerCase().includes(valorLower) || p.sku.toLowerCase().includes(valorLower)) &&
-          p.stocks?.some((s: Stock) => s.almacen_id === almacenIdInt)
-      );
+      // Búsqueda por nombre o SKU
+      const resultados = productos.filter((p) => {
+        const coincideNombre = p.nombre.toLowerCase().includes(valorLower) || p.sku.toLowerCase().includes(valorLower);
+
+        // Si es padre: debe tener stock en el almacén
+        if (esProductoPadre) {
+          return coincideNombre && p.stocks?.some((s: Stock) => s.almacen_id === almacenIdInt);
+        }
+
+        // Si es hijo: puede ser cualquier producto
+        return coincideNombre;
+      });
 
       setSugerencias(resultados);
     } catch (error) {
@@ -402,6 +416,71 @@ export default function CrearFraccionamiento() {
             <div className="lg:col-span-2">
               <Card className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Sección: Ubicación */}
+                  <div className="border-b pb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      📍 Ubicación
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                          Almacén *
+                        </label>
+                        <select
+                          value={formData.almacen_id}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              almacen_id: e.target.value,
+                              sector_id: '',
+                            });
+                            // Limpiar búsqueda y productos cuando cambia almacén
+                            setProductosAgregados([]);
+                            setBusqueda('');
+                            setSugerencias([]);
+                            setConversionesDisponibles([]);
+                            setSectoresDisponiblesParaProducto([]);
+                          }}
+                          className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            errores.almacen_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                        >
+                          <option value="">Selecciona...</option>
+                          {almacenes.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.nombre}
+                            </option>
+                          ))}
+                        </select>
+                        {errores.almacen_id && (
+                          <p className="text-red-500 text-sm mt-1">{errores.almacen_id}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                          Sector (Auto-asignado)
+                        </label>
+                        <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
+                          {formData.sector_id && sectoresDisponiblesParaProducto.length > 0 ? (
+                            <p className="font-medium text-green-600 dark:text-green-400">
+                              ✓ {sectoresDisponiblesParaProducto.find((s) => String(s.id) === formData.sector_id)?.nombre}
+                            </p>
+                          ) : productoPadre && sectoresDisponiblesParaProducto.length === 0 ? (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              ⚠️ El producto no tiene sectores en este almacén
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Se asignará automáticamente cuando selecciones el producto padre
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Input Único de Búsqueda/Escaneo */}
                   <div className="border-b pb-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -484,6 +563,8 @@ export default function CrearFraccionamiento() {
                       </div>
                     </div>
                   </div>
+
+                  
 
                   {/* Conversiones disponibles del producto padre */}
                   {conversionesDisponibles.length > 0 && productosAgregados.length === 1 && (
@@ -655,70 +736,7 @@ export default function CrearFraccionamiento() {
                     </div>
                   )}
 
-                  {/* Sección: Ubicación */}
-                  <div className="border-b pb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                      📍 Ubicación
-                    </h3>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                          Almacén *
-                        </label>
-                        <select
-                          value={formData.almacen_id}
-                          onChange={(e) => {
-                            setFormData({
-                              ...formData,
-                              almacen_id: e.target.value,
-                              sector_id: '',
-                            });
-                            // Limpiar búsqueda y productos cuando cambia almacén
-                            setProductosAgregados([]);
-                            setBusqueda('');
-                            setSugerencias([]);
-                            setConversionesDisponibles([]);
-                            setSectoresDisponiblesParaProducto([]);
-                          }}
-                          className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            errores.almacen_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                          }`}
-                        >
-                          <option value="">Selecciona...</option>
-                          {almacenes.map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.nombre}
-                            </option>
-                          ))}
-                        </select>
-                        {errores.almacen_id && (
-                          <p className="text-red-500 text-sm mt-1">{errores.almacen_id}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                          Sector (Auto-asignado)
-                        </label>
-                        <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
-                          {formData.sector_id && sectoresDisponiblesParaProducto.length > 0 ? (
-                            <p className="font-medium text-green-600 dark:text-green-400">
-                              ✓ {sectoresDisponiblesParaProducto.find((s) => String(s.id) === formData.sector_id)?.nombre}
-                            </p>
-                          ) : productoPadre && sectoresDisponiblesParaProducto.length === 0 ? (
-                            <p className="text-sm text-red-600 dark:text-red-400">
-                              ⚠️ El producto no tiene sectores en este almacén
-                            </p>
-                          ) : (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Se asignará automáticamente cuando selecciones el producto padre
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  
 
                   {/* Sección: Detalles */}
                   <div>
