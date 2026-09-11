@@ -89,6 +89,9 @@ export default function CrearFraccionamiento() {
 
   const [errores, setErrores] = useState<Record<string, string>>({});
 
+  // Sectores disponibles para el producto padre en el almacén seleccionado
+  const [sectoresDisponiblesParaProducto, setSectoresDisponiblesParaProducto] = useState<Array<{ id: number; nombre: string }>>([]);
+
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -197,9 +200,30 @@ export default function CrearFraccionamiento() {
     setBusqueda('');
     setSugerencias([]);
 
-    // Si es producto padre, buscar conversiones automáticamente
+    // Si es producto padre
     if (rol === 'padre') {
+      // Buscar conversiones automáticamente
       buscarConversiones(producto.id);
+
+      // Cargar sectores disponibles de este producto en el almacén seleccionado
+      if (formData.almacen_id && producto.limites) {
+        const sectoresDelProducto = producto.limites
+          .filter((limite: any) => limite.almacen_id === parseInt(formData.almacen_id))
+          .map((limite: any) => {
+            const sectorEncontrado = sectores.find((s) => s.id === limite.sector_id);
+            return {
+              id: limite.sector_id,
+              nombre: sectorEncontrado?.nombre || 'Sector desconocido',
+            };
+          });
+
+        setSectoresDisponiblesParaProducto(sectoresDelProducto);
+
+        // Si hay solo un sector, seleccionarlo automáticamente
+        if (sectoresDelProducto.length === 1) {
+          setFormData((prev) => ({ ...prev, sector_id: String(sectoresDelProducto[0].id) }));
+        }
+      }
     }
 
     toast.success(`${producto.nombre} agregado como ${rol}`);
