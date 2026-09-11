@@ -680,10 +680,16 @@ export default function CrearFraccionamiento() {
                             errores.sector_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                           }`}
                         >
-                          <option value="">Selecciona...</option>
-                          {sectores.map((s, idx) => (
-                            <option key={s.id || `sector-${idx}`} value={s.id || s.nombre}>
-                              {s.nombre}
+                          <option value="">
+                            {sectoresDisponiblesParaProducto.length > 0
+                              ? 'Selecciona...'
+                              : productosAgregados.length > 0 && productoPadre
+                              ? 'Sin sectores disponibles'
+                              : 'Selecciona almacén y producto padre'}
+                          </option>
+                          {sectoresDisponiblesParaProducto.map((sector) => (
+                            <option key={sector.id} value={sector.id}>
+                              {sector.nombre}
                             </option>
                           ))}
                         </select>
