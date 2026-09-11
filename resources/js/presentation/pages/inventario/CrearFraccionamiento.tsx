@@ -323,7 +323,7 @@ export default function CrearFraccionamiento() {
       return;
     }
     if (!formData.sector_id) {
-      setErrores((prev) => ({ ...prev, sector_id: 'Requerido' }));
+      toast.error('El sector no se asignó automáticamente. Verifica que el producto padre tenga stock_limites en este almacén');
       return;
     }
 
@@ -699,31 +699,23 @@ export default function CrearFraccionamiento() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                          Sector *
+                          Sector (Auto-asignado)
                         </label>
-                        <select
-                          value={formData.sector_id}
-                          onChange={(e) => setFormData({ ...formData, sector_id: e.target.value })}
-                          className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            errores.sector_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                          }`}
-                        >
-                          <option value="">
-                            {sectoresDisponiblesParaProducto.length > 0
-                              ? 'Selecciona...'
-                              : productosAgregados.length > 0 && productoPadre
-                              ? 'Sin sectores disponibles'
-                              : 'Selecciona almacén y producto padre'}
-                          </option>
-                          {sectoresDisponiblesParaProducto.map((sector) => (
-                            <option key={sector.id} value={sector.id}>
-                              {sector.nombre}
-                            </option>
-                          ))}
-                        </select>
-                        {errores.sector_id && (
-                          <p className="text-red-500 text-sm mt-1">{errores.sector_id}</p>
-                        )}
+                        <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
+                          {formData.sector_id && sectoresDisponiblesParaProducto.length > 0 ? (
+                            <p className="font-medium text-green-600 dark:text-green-400">
+                              ✓ {sectoresDisponiblesParaProducto.find((s) => String(s.id) === formData.sector_id)?.nombre}
+                            </p>
+                          ) : productoPadre && sectoresDisponiblesParaProducto.length === 0 ? (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              ⚠️ El producto no tiene sectores en este almacén
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Se asignará automáticamente cuando selecciones el producto padre
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
