@@ -9,6 +9,7 @@ export interface SelectOption {
   label: string;
   description?: string;
   disabled?: boolean;
+  meta?: Record<string, any>; // Datos adicionales asociados a la opción
 }
 
 interface SearchSelectProps {
