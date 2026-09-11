@@ -2039,7 +2039,7 @@ class ProductoController extends Controller
                 'stock:id,producto_id,almacen_id,sector_id,cantidad,cantidad_disponible',
                 'stock.almacen:id,nombre',
                 'stock.sector:id,nombre',
-                'stockLimites:id,producto_id,almacen_id,sector_id,cantidad_minima,cantidad_maxima',
+                'stockLimites:id,producto_id,almacen_id,sector_id,stock_minimo,stock_maximo,capacidad_advertencia',
             ])
             ->first();
 
@@ -2071,8 +2071,9 @@ class ProductoController extends Controller
                     'id' => $limite->id,
                     'almacen_id' => $limite->almacen_id,
                     'sector_id' => $limite->sector_id,
-                    'cantidad_minima' => (float) $limite->cantidad_minima,
-                    'cantidad_maxima' => (float) $limite->cantidad_maxima,
+                    'stock_minimo' => (int) $limite->stock_minimo,
+                    'stock_maximo' => (int) $limite->stock_maximo,
+                    'capacidad_advertencia' => (int) $limite->capacidad_advertencia,
                 ];
             })->toArray() ?? [];
 
