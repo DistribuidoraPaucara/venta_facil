@@ -6,7 +6,6 @@ import { Card } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
 import { Select } from '@/presentation/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
-import apiClient from '@/lib/apiClient';
 
 interface LineaFraccionamiento {
   id: string;
@@ -42,13 +41,13 @@ export default function CrearFraccionamientoMasivo() {
   const cargarData = async () => {
     try {
       const [almRes, sectRes, prodRes] = await Promise.all([
-        apiClient.get('/almacenes'),
-        apiClient.get('/sectores'),
-        apiClient.get('/fraccionamientos/productos/disponibles'),
+        fetch('/api/almacenes').then(r => r.json()),
+        fetch('/api/sectores').then(r => r.json()),
+        fetch('/api/fraccionamientos/productos/disponibles').then(r => r.json()),
       ]);
-      setAlmacenes(almRes.data?.data || []);
-      setSectores(sectRes.data?.data || []);
-      setProductos(prodRes.data?.data || []);
+      setAlmacenes(almRes.data || []);
+      setSectores(sectRes.data || []);
+      setProductos(prodRes.data || []);
     } catch (error) {
       console.error('Error cargando datos:', error);
     }
@@ -101,23 +100,37 @@ export default function CrearFraccionamientoMasivo() {
 
     setLoading(true);
     try {
-      await apiClient.post('/fraccionamientos-masivos', {
-        almacen_id: almacenId,
-        sector_id: sectorId,
-        razon,
-        notas,
-        detalles: detalles.map(l => ({
-          producto_padre_id: l.producto_padre_id,
-          cantidad_padre: l.cantidad_padre,
-          producto_hijo_id: l.producto_hijo_id,
-          cantidad_hijo: l.cantidad_hijo,
-          factor_conversion: l.factor_conversion,
-        })),
+      const res = await fetch('/api/fraccionamientos-masivos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({
+          almacen_id: almacenId,
+          sector_id: sectorId,
+          razon,
+          notas,
+          detalles: detalles.map(l => ({
+            producto_padre_id: l.producto_padre_id,
+            cantidad_padre: l.cantidad_padre,
+            producto_hijo_id: l.producto_hijo_id,
+            cantidad_hijo: l.cantidad_hijo,
+            factor_conversion: l.factor_conversion,
+          })),
+        }),
       });
+
+      if (!res.ok) {
+        const error = await res.json();
+        alert(error.message || 'Error al registrar');
+        return;
+      }
+
       alert('Fraccionamientos registrados exitosamente');
-      router.visit(route('fraccionamientos-masivos.index'));
+      router.visit('/inventario/fraccionamientos-masivos');
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al registrar');
+      alert(error.message || 'Error al registrar');
     } finally {
       setLoading(false);
     }
@@ -283,7 +296,7 @@ export default function CrearFraccionamientoMasivo() {
               </Button>
               <Button
                 type="button"
-                onClick={() => router.visit(route('fraccionamientos-masivos.index'))}
+                onClick={() => router.visit('/inventario/fraccionamientos-masivos')}
                 className="bg-gray-300 hover:bg-gray-400 text-gray-900"
               >
                 Cancelar

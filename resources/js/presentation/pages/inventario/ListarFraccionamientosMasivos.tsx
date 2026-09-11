@@ -4,14 +4,13 @@ import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Card } from '@/presentation/components/ui/card';
 import { Plus, Loader2 } from 'lucide-react';
-import apiClient from '@/lib/apiClient';
 
 export default function ListarFraccionamientosMasivos() {
   const [fraccionamientos, setFraccionamientos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [perPage, setPerPage] = useState(15);
+  const perPage = 15;
 
   useEffect(() => {
     cargarFraccionamientos();
@@ -20,17 +19,11 @@ export default function ListarFraccionamientosMasivos() {
   const cargarFraccionamientos = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/fraccionamientos-masivos', {
-        params: { page, per_page: perPage },
-      });
-      const data = response.data?.data;
-      if (data && typeof data === 'object') {
-        if (Array.isArray(data.data)) {
-          setFraccionamientos(data.data);
-          setTotal(data.total || 0);
-        } else {
-          setFraccionamientos(Array.isArray(data) ? data : []);
-        }
+      const response = await fetch(`/api/fraccionamientos-masivos?page=${page}&per_page=${perPage}`);
+      const data = await response.json();
+      if (data?.data) {
+        setFraccionamientos(data.data.data || data.data);
+        setTotal(data.data.total || 0);
       }
     } catch (error) {
       console.error('Error cargando fraccionamientos:', error);
@@ -63,7 +56,7 @@ export default function ListarFraccionamientosMasivos() {
               <h1 className="text-3xl font-bold text-gray-900">Fraccionamientos Masivos</h1>
               <p className="text-gray-600 mt-2">Historial de operaciones de fraccionamiento múltiple</p>
             </div>
-            <Button onClick={() => router.visit(route('fraccionamientos-masivos.crear'))}>
+            <Button onClick={() => router.visit('/inventario/fraccionamientos-masivos/crear')}>
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Fraccionamiento
             </Button>
@@ -72,7 +65,7 @@ export default function ListarFraccionamientosMasivos() {
           {fraccionamientos.length === 0 ? (
             <Card className="p-8 text-center">
               <p className="text-gray-600 mb-4">No hay fraccionamientos masivos registrados</p>
-              <Button onClick={() => router.visit(route('fraccionamientos-masivos.crear'))}>
+              <Button onClick={() => router.visit('/inventario/fraccionamientos-masivos/crear')}>
                 Crear el primero
               </Button>
             </Card>
