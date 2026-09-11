@@ -55,7 +55,33 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
     const [conversionesComunes, setConversionesComunes] = useState<any[]>([]);
     const [loadingConversiones, setLoadingConversiones] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [productosOptions, setProductosOptions] = useState<Option[]>([]);
+    const [loadingProductos, setLoadingProductos] = useState(false);
     const factorInputRef = useRef<HTMLInputElement>(null);
+
+    // Cargar productos disponibles
+    useEffect(() => {
+        const cargarProductos = async () => {
+            setLoadingProductos(true);
+            try {
+                const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
+                if (response.data.success && response.data.data) {
+                    const opciones = response.data.data.map((prod: any) => ({
+                        value: prod.id,
+                        label: `${prod.sku} - ${prod.nombre}`,
+                        description: prod.unidad_nombre,
+                    }));
+                    setProductosOptions(opciones);
+                }
+            } catch (error) {
+                console.error('❌ Error cargando productos:', error);
+            } finally {
+                setLoadingProductos(false);
+            }
+        };
+
+        cargarProductos();
+    }, []);
 
     const conversiones = data.conversiones || [];
 
@@ -402,17 +428,23 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                         {/* ✨ NUEVO: Producto Destino (para fraccionamientos) */}
                         <div className="space-y-2">
                             <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
-                            <SearchSelect
-                                options={unidadesOptions} // Cambiar a opciones de productos
-                                value={formConversion.producto_destino_id}
-                                onChange={(value) =>
-                                    setFormConversion((prev) => ({
-                                        ...prev,
-                                        producto_destino_id: value,
-                                    }))
-                                }
-                                placeholder="Ej: Botella individual, Tableta, Unidad..."
-                            />
+                            {loadingProductos ? (
+                                <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm dark:border-slate-600 dark:bg-slate-800">
+                                    Cargando productos...
+                                </div>
+                            ) : (
+                                <SearchSelect
+                                    options={productosOptions}
+                                    value={formConversion.producto_destino_id || ''}
+                                    onChange={(value) =>
+                                        setFormConversion((prev) => ({
+                                            ...prev,
+                                            producto_destino_id: value,
+                                        }))
+                                    }
+                                    placeholder="Ej: Botella Coca, Tableta, Unidad..."
+                                />
+                            )}
                             <p className="text-xs text-muted-foreground">
                                 El producto en el que se fracciona este producto (para ventas por unidad)
                             </p>
