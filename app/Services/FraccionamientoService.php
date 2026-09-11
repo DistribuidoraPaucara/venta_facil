@@ -113,38 +113,52 @@ class FraccionamientoService
                 'fecha_actualizacion' => now(),
             ]);
 
-            // 5️⃣.A Registrar movimientos de inventario
+            // 5️⃣.A Registrar movimientos de inventario (SIN actualizar stock nuevamente)
+            // Capturar valores del stock padre DESPUÉS de actualizar
+            $stockPadreActualizado = StockProducto::find($stockPadre->id);
+
             // SALIDA del producto padre
-            MovimientoInventario::registrar(
-                $stockPadre,
-                -$cantidadPadre,
-                'SALIDA_FRACCIONAMIENTO',
-                "Fraccionamiento: {$cantidadPadre} {$productoPadre->unidad_medida_id} → {$cantidadHijo} unidades",
-                null,
-                Auth::id(),
-                null,
-                null,
-                null,
-                'fraccionamiento',
-                null,
-                null
-            );
+            MovimientoInventario::create([
+                'stock_producto_id' => $stockPadre->id,
+                'cantidad' => -$cantidadPadre,
+                'cantidad_anterior' => $stockPadre->cantidad,
+                'cantidad_posterior' => $stockPadreActualizado->cantidad,
+                'cantidad_total_anterior' => $stockPadre->cantidad,
+                'cantidad_total_posterior' => $stockPadreActualizado->cantidad,
+                'cantidad_disponible_anterior' => $stockPadre->cantidad_disponible,
+                'cantidad_disponible_posterior' => $stockPadreActualizado->cantidad_disponible,
+                'cantidad_reservada_anterior' => $stockPadre->cantidad_reservada,
+                'cantidad_reservada_posterior' => $stockPadreActualizado->cantidad_reservada,
+                'tipo' => 'SALIDA_FRACCIONAMIENTO',
+                'observacion' => "Fraccionamiento: {$cantidadPadre} {$productoPadre->unidad_medida_id} → {$cantidadHijo} unidades",
+                'fecha' => now(),
+                'user_id' => Auth::id(),
+                'referencia_tipo' => 'fraccionamiento',
+                'referencia_id' => null, // Se setea después cuando se crea el movimiento
+            ]);
+
+            // Capturar valores del stock hijo DESPUÉS de actualizar
+            $stockHijoActualizado = StockProducto::find($stockHijo->id);
 
             // ENTRADA del producto hijo
-            MovimientoInventario::registrar(
-                $stockHijo,
-                $cantidadHijo,
-                'ENTRADA_FRACCIONAMIENTO',
-                "Fraccionamiento: {$cantidadPadre} {$productoPadre->unidad_medida_id} → {$cantidadHijo} unidades",
-                null,
-                Auth::id(),
-                null,
-                null,
-                null,
-                'fraccionamiento',
-                null,
-                null
-            );
+            MovimientoInventario::create([
+                'stock_producto_id' => $stockHijo->id,
+                'cantidad' => $cantidadHijo,
+                'cantidad_anterior' => $stockHijo->cantidad - $cantidadHijo, // Antes de la actualización
+                'cantidad_posterior' => $stockHijoActualizado->cantidad,
+                'cantidad_total_anterior' => $stockHijo->cantidad - $cantidadHijo,
+                'cantidad_total_posterior' => $stockHijoActualizado->cantidad,
+                'cantidad_disponible_anterior' => $stockHijo->cantidad_disponible - $cantidadHijo,
+                'cantidad_disponible_posterior' => $stockHijoActualizado->cantidad_disponible,
+                'cantidad_reservada_anterior' => $stockHijo->cantidad_reservada,
+                'cantidad_reservada_posterior' => $stockHijoActualizado->cantidad_reservada,
+                'tipo' => 'ENTRADA_FRACCIONAMIENTO',
+                'observacion' => "Fraccionamiento: {$cantidadPadre} {$productoPadre->unidad_medida_id} → {$cantidadHijo} unidades",
+                'fecha' => now(),
+                'user_id' => Auth::id(),
+                'referencia_tipo' => 'fraccionamiento',
+                'referencia_id' => null, // Se setea después cuando se crea el movimiento
+            ]);
 
             // 6️⃣ Crear registro de fraccionamiento
             $movimiento = MovimientoFraccionamiento::create([
@@ -233,38 +247,52 @@ class FraccionamientoService
                 'fecha_actualizacion' => now(),
             ]);
 
-            // 4️⃣.A Registrar movimientos inversos de inventario (anulaciones)
+            // 4️⃣.A Registrar movimientos inversos de inventario (SIN actualizar stock nuevamente)
+            // Capturar valores del stock padre DESPUÉS de actualizar
+            $stockPadreActualizado = StockProducto::find($stockPadre->id);
+
             // ENTRADA del producto padre (reversa de la salida)
-            MovimientoInventario::registrar(
-                $stockPadre,
-                $movimiento->cantidad_padre,
-                'ENTRADA_FRACCIONAMIENTO',
-                "Reversión de fraccionamiento: {$movimiento->cantidad_padre} {$stockPadre->producto->unidad_medida_id}",
-                null,
-                Auth::id(),
-                null,
-                null,
-                null,
-                'fraccionamiento_reversión',
-                $movimiento->id,
-                null
-            );
+            MovimientoInventario::create([
+                'stock_producto_id' => $stockPadre->id,
+                'cantidad' => $movimiento->cantidad_padre,
+                'cantidad_anterior' => $stockPadre->cantidad,
+                'cantidad_posterior' => $stockPadreActualizado->cantidad,
+                'cantidad_total_anterior' => $stockPadre->cantidad,
+                'cantidad_total_posterior' => $stockPadreActualizado->cantidad,
+                'cantidad_disponible_anterior' => $stockPadre->cantidad_disponible,
+                'cantidad_disponible_posterior' => $stockPadreActualizado->cantidad_disponible,
+                'cantidad_reservada_anterior' => $stockPadre->cantidad_reservada,
+                'cantidad_reservada_posterior' => $stockPadreActualizado->cantidad_reservada,
+                'tipo' => 'ENTRADA_FRACCIONAMIENTO',
+                'observacion' => "Reversión de fraccionamiento: {$movimiento->cantidad_padre}",
+                'fecha' => now(),
+                'user_id' => Auth::id(),
+                'referencia_tipo' => 'fraccionamiento_reversión',
+                'referencia_id' => $movimiento->id,
+            ]);
+
+            // Capturar valores del stock hijo DESPUÉS de actualizar
+            $stockHijoActualizado = StockProducto::find($stockHijo->id);
 
             // SALIDA del producto hijo (reversa de la entrada)
-            MovimientoInventario::registrar(
-                $stockHijo,
-                -$movimiento->cantidad_hijo,
-                'SALIDA_FRACCIONAMIENTO',
-                "Reversión de fraccionamiento: {$movimiento->cantidad_hijo} unidades",
-                null,
-                Auth::id(),
-                null,
-                null,
-                null,
-                'fraccionamiento_reversión',
-                $movimiento->id,
-                null
-            );
+            MovimientoInventario::create([
+                'stock_producto_id' => $stockHijo->id,
+                'cantidad' => -$movimiento->cantidad_hijo,
+                'cantidad_anterior' => $stockHijo->cantidad,
+                'cantidad_posterior' => $stockHijoActualizado->cantidad,
+                'cantidad_total_anterior' => $stockHijo->cantidad,
+                'cantidad_total_posterior' => $stockHijoActualizado->cantidad,
+                'cantidad_disponible_anterior' => $stockHijo->cantidad_disponible,
+                'cantidad_disponible_posterior' => $stockHijoActualizado->cantidad_disponible,
+                'cantidad_reservada_anterior' => $stockHijo->cantidad_reservada,
+                'cantidad_reservada_posterior' => $stockHijoActualizado->cantidad_reservada,
+                'tipo' => 'SALIDA_FRACCIONAMIENTO',
+                'observacion' => "Reversión de fraccionamiento: {$movimiento->cantidad_hijo} unidades",
+                'fecha' => now(),
+                'user_id' => Auth::id(),
+                'referencia_tipo' => 'fraccionamiento_reversión',
+                'referencia_id' => $movimiento->id,
+            ]);
 
             // 5️⃣ Soft delete del movimiento
             $movimiento->delete();
