@@ -129,7 +129,7 @@ export default function CrearFraccionamiento() {
     }
   };
 
-  // Buscar productos por nombre, SKU o código de barras
+  // Buscar productos POR ALMACÉN - solo mostrar productos con stock en ese almacén
   const handleBuscar = async (valor: string) => {
     setBusqueda(valor);
 
@@ -138,9 +138,16 @@ export default function CrearFraccionamiento() {
       return;
     }
 
+    // Si no hay almacén, no buscar
+    if (!formData.almacen_id) {
+      setSugerencias([]);
+      return;
+    }
+
     setBuscando(true);
     try {
       const valorLower = valor.toLowerCase();
+      const almacenIdInt = parseInt(formData.almacen_id);
 
       // Primero intentar buscar por código de barras
       try {
@@ -150,19 +157,23 @@ export default function CrearFraccionamiento() {
         const barcodeData = await barcodeRes.json();
 
         if (barcodeData.success && barcodeData.data) {
-          setSugerencias([barcodeData.data]);
-          setBuscando(false);
-          return;
+          // Solo si tiene stock en el almacén seleccionado
+          const tieneStock = barcodeData.data.stocks?.some((s: Stock) => s.almacen_id === almacenIdInt);
+          if (tieneStock) {
+            setSugerencias([barcodeData.data]);
+            setBuscando(false);
+            return;
+          }
         }
       } catch (error) {
         // Continuar con búsqueda por nombre/SKU
       }
 
-      // Búsqueda por nombre o SKU
+      // Búsqueda por nombre o SKU - filtrar por almacén
       const resultados = productos.filter(
         (p) =>
-          p.nombre.toLowerCase().includes(valorLower) ||
-          p.sku.toLowerCase().includes(valorLower)
+          (p.nombre.toLowerCase().includes(valorLower) || p.sku.toLowerCase().includes(valorLower)) &&
+          p.stocks?.some((s: Stock) => s.almacen_id === almacenIdInt)
       );
 
       setSugerencias(resultados);
@@ -407,8 +418,13 @@ export default function CrearFraccionamiento() {
                             type="text"
                             value={busqueda}
                             onChange={(e) => handleBuscar(e.target.value)}
-                            placeholder="Escanea código de barras o escribe SKU/nombre..."
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder={formData.almacen_id ? "Escanea código de barras o escribe SKU/nombre..." : "Selecciona un almacén primero..."}
+                            disabled={!formData.almacen_id}
+                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              formData.almacen_id
+                                ? 'border-gray-300 dark:border-gray-600 cursor-text'
+                                : 'border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-50'
+                            }`}
                             autoFocus
                           />
                           {buscando && (
@@ -652,7 +668,19 @@ export default function CrearFraccionamiento() {
                         </label>
                         <select
                           value={formData.almacen_id}
-                          onChange={(e) => setFormData({ ...formData, almacen_id: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              almacen_id: e.target.value,
+                              sector_id: '',
+                            });
+                            // Limpiar búsqueda y productos cuando cambia almacén
+                            setProductosAgregados([]);
+                            setBusqueda('');
+                            setSugerencias([]);
+                            setConversionesDisponibles([]);
+                            setSectoresDisponiblesParaProducto([]);
+                          }}
                           className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             errores.almacen_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                           }`}
