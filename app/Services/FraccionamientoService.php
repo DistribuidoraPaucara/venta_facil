@@ -104,10 +104,12 @@ class FraccionamientoService
                 'fecha_actualizacion' => now(),
             ]);
 
-            // 5️⃣ Actualizar stock del hijo (sumar)
-            $stockHijo->increment('cantidad', $cantidadHijo);
-            $stockHijo->increment('cantidad_disponible', $cantidadHijo);
-            $stockHijo->update(['fecha_actualizacion' => now()]);
+            // 5️⃣ Actualizar stock del hijo (sumar ambas columnas en una sola query)
+            StockProducto::where('id', $stockHijo->id)->update([
+                'cantidad' => DB::raw('cantidad + ' . $cantidadHijo),
+                'cantidad_disponible' => DB::raw('cantidad_disponible + ' . $cantidadHijo),
+                'fecha_actualizacion' => now(),
+            ]);
 
             // 6️⃣ Crear registro de fraccionamiento
             $movimiento = MovimientoFraccionamiento::create([
