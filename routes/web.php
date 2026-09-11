@@ -859,6 +859,11 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::get('productos-vendidos/imprimir', [\App\Http\Controllers\ImpresionProductosVendidosController::class, 'imprimir'])->middleware('permission:inventario.movimientos')->name('productos-vendidos.imprimir');
         Route::get('ajuste', [\App\Http\Controllers\InventarioController::class, 'ajusteForm'])->middleware('permission:inventario.ajuste.form')->name('ajuste.form');
         Route::post('ajuste', [\App\Http\Controllers\InventarioController::class, 'procesarAjuste'])->middleware('permission:inventario.ajuste.procesar')->name('ajuste.procesar');
+
+        // ✅ NUEVO (2026-09-10): Rutas para gestión de fraccionamientos
+        Route::get('fraccionamientos', [\App\Http\Controllers\FraccionamientoController::class, 'index'])->name('fraccionamientos.index');
+        Route::get('fraccionamientos/crear', [\App\Http\Controllers\FraccionamientoController::class, 'create'])->name('fraccionamientos.create');
+
         // ✅ NUEVO: Ruta para ajuste por tabla editable
         Route::get('ajuste-tabla', function () {
             // ✅ CRÍTICO: Obtener empresa del usuario para filtrar almacenes y stock

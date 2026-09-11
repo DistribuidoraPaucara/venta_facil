@@ -60,6 +60,7 @@ use App\Http\Controllers\PrestamoEventoController;
 use App\Http\Controllers\ReportesController;
 use App\Http\Controllers\TipoOperacionCajaController;
 use App\Http\Controllers\Api\EgresosAnalisisController;
+use App\Http\Controllers\Api\FraccionamientoApiController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -108,17 +109,23 @@ Route::get('/tipos-operacion-caja', function () {
 
 // ✅ NUEVO: Endpoint para cargar almacenes (para gestión de stock)
 Route::get('/almacenes', function () {
+    $empresaId = auth()->user()?->empresa_id;
     return response()->json([
         'success' => true,
-        'data' => \App\Models\Almacen::where('activo', true)->get()
+        'data' => \App\Models\Almacen::where('activo', true)
+            ->where('empresa_id', $empresaId)
+            ->get()
     ]);
 });
 
 // ✅ NUEVO: Endpoint para cargar almacenes de prestables
 Route::get('/almacenes-prestables', function () {
+    $empresaId = auth()->user()?->empresa_id;
     return response()->json([
         'success' => true,
-        'data' => \App\Models\AlmacenPrestable::where('activo', true)->get()
+        'data' => \App\Models\AlmacenPrestable::where('activo', true)
+            ->where('empresa_id', $empresaId)
+            ->get()
     ]);
 });
 
@@ -737,6 +744,17 @@ Route::group(['prefix' => 'inventario'], function () {
     Route::post('movimientos', [InventarioController::class, 'crearMovimiento']);
     Route::get('estadisticas', [InventarioController::class, 'estadisticasApi']);
 
+    // ✅ NUEVO: Rutas de Fraccionamiento (2026-09-10)
+    Route::group(['prefix' => 'fraccionamientos'], function () {
+        Route::post('/', [FraccionamientoApiController::class, 'store']);
+        Route::get('/', [FraccionamientoApiController::class, 'index']);
+        Route::get('productos/disponibles', [FraccionamientoApiController::class, 'productosDisponibles']);
+        Route::get('{movimiento}', [FraccionamientoApiController::class, 'show']);
+        Route::delete('{movimiento}/revertir', [FraccionamientoApiController::class, 'revertir']);
+        Route::get('producto/{productoId}/historial', [FraccionamientoApiController::class, 'historialProducto']);
+        Route::get('producto/{productoPadreId}/estadisticas', [FraccionamientoApiController::class, 'estadisticas']);
+    });
+
     // ✅ NUEVO: Tipos de Operación para ajustes masivos
     Route::get('tipos-operacion', [TipoOperacionController::class, 'index']);
     Route::get('tipos-operacion/{tipoOperacion}', [TipoOperacionController::class, 'show']);
@@ -765,6 +783,8 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
         Route::get('buscar', [ProductoController::class, 'buscarApi']);
         Route::get('sin-restriccion', [ProductoController::class, 'obtenerTodosSinRestriccion']);
         Route::get('para-actualizar-stock', [ProductoController::class, 'obtenerProductosParaActualizarStock']);
+        Route::get('sectores-disponibles', [ProductoController::class, 'obtenerSectoresDisponibles']);
+        Route::get('almacenes-disponibles', [ProductoController::class, 'obtenerAlmacenesDisponibles']);
         Route::get('conversiones/comunes', [ProductoController::class, 'conversionesComunes']);
         Route::get('{producto}', [ProductoController::class, 'showApi']);
         Route::put('{producto}', [ProductoController::class, 'updateApi']);

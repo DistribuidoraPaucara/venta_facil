@@ -3,6 +3,7 @@ import controlVencimientos from './control-vencimientos'
 import movimientos from './movimientos'
 import productosVendidos from './productos-vendidos'
 import ajuste from './ajuste'
+import fraccionamientos from './fraccionamientos'
 import ajusteTabla from './ajuste-tabla'
 import ajusteMasivo from './ajuste-masivo'
 import historialCargas from './historial-cargas'
@@ -652,6 +653,7 @@ vencidos,
 movimientos,
 productosVendidos,
 ajuste,
+fraccionamientos,
 ajusteTabla,
 ajusteMasivo,
 historialCargas,

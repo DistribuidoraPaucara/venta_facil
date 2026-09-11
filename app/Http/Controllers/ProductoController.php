@@ -2036,9 +2036,10 @@ class ProductoController extends Controller
                 'proveedor:id,nombre,razon_social',
                 'unidad:id,nombre,codigo',
                 'imagenes:id,producto_id,url,es_principal,orden',
-                'stock' => function ($q) {
-                    $q->with(['almacen', 'sector']);
-                }
+                'stocks:id,producto_id,almacen_id,sector_id,cantidad,cantidad_disponible',
+                'stocks.almacen:id,nombre',
+                'stocks.sector:id,nombre',
+                'limites:id,producto_id,almacen_id,sector_id,cantidad_minima,cantidad_maxima',
             ])
             ->first();
 
@@ -2052,11 +2053,45 @@ class ProductoController extends Controller
 
             print('✅ Producto encontrado: ' . $producto->nombre);
 
+            // Formatear respuesta con información de stock
+            $stocksPorUbicacion = $producto->stocks?->map(function ($stock) {
+                return [
+                    'id' => $stock->id,
+                    'almacen_id' => $stock->almacen_id,
+                    'almacen_nombre' => $stock->almacen?->nombre,
+                    'sector_id' => $stock->sector_id,
+                    'sector_nombre' => $stock->sector?->nombre,
+                    'cantidad' => (float) $stock->cantidad,
+                    'cantidad_disponible' => (float) $stock->cantidad_disponible,
+                ];
+            })->toArray() ?? [];
+
+            $limitesPorUbicacion = $producto->limites?->map(function ($limite) {
+                return [
+                    'id' => $limite->id,
+                    'almacen_id' => $limite->almacen_id,
+                    'sector_id' => $limite->sector_id,
+                    'cantidad_minima' => (float) $limite->cantidad_minima,
+                    'cantidad_maxima' => (float) $limite->cantidad_maxima,
+                ];
+            })->toArray() ?? [];
+
+            $productoFormato = [
+                'id' => $producto->id,
+                'nombre' => $producto->nombre,
+                'sku' => $producto->sku,
+                'unidad_medida_id' => $producto->unidad_medida_id,
+                'unidad_nombre' => $producto->unidad?->nombre ?? 'Unidad',
+                'stocks' => $stocksPorUbicacion,
+                'limites' => $limitesPorUbicacion,
+                'stock_total' => collect($stocksPorUbicacion)->sum('cantidad'),
+            ];
+
             return response()->json([
                 'success' => true,
                 'status' => 200,
                 'message' => 'Producto encontrado',
-                'data' => $producto,
+                'data' => $productoFormato,
             ]);
         } catch (\Exception $e) {
             Log::error('❌ [buscarPorCodigoBarras] Error', [
@@ -5277,16 +5312,31 @@ class ProductoController extends Controller
                     'conversiones' => function ($query) {
                         $query->where('activo', true)->select('id', 'producto_id', 'unidad_destino_id', 'factor_conversion');
                     },
-                    'conversiones.unidadDestino:id,nombre,codigo'
+                    'conversiones.unidadDestino:id,nombre,codigo',
+                    'codigosBarra' => function ($query) {
+                        $query->where('activo', true)
+                            ->orderByDesc('es_principal')
+                            ->select('id', 'producto_id', 'codigo', 'es_principal');
+                    },
+                    'stockLimites.sector:id,nombre',
+                    'stockLimites.almacen:id,nombre'
                 ])
                 ->orderBy('nombre')
                 ->get()
                 ->map(function ($producto) {
+                    $codigoBarraPrincipal = $producto->codigosBarra?->first()?->codigo;
+                    $sectorNombre = $producto->stockLimites?->first()?->sector?->nombre ?? 'Sin sector';
+                    $almacenId = $producto->stockLimites?->first()?->almacen_id;
+                    $almacenNombre = $producto->stockLimites?->first()?->almacen?->nombre ?? 'Sin almacén';
+
                     return [
                         'id' => $producto->id,
                         'sku' => $producto->sku,
+                        'codigo_barras' => $codigoBarraPrincipal,
                         'nombre' => $producto->nombre,
-                        'categoria' => $producto->categoria?->nombre ?? 'Sin categoría',
+                        'sector' => $sectorNombre,
+                        'almacen_id' => $almacenId,
+                        'almacen' => $almacenNombre,
                         'cantidad_total' => $producto->stock->sum('cantidad') ?? 0,
                         'unidad_medida_id' => $producto->unidad_medida_id,
                         'unidad_nombre' => $producto->unidad?->nombre ?? 'UN',
@@ -5307,6 +5357,71 @@ class ProductoController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('❌ Error obtienendo productos para actualizar stock', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * GET /api/productos/sectores-disponibles
+     * Obtiene los sectores disponibles con productos que tienen stock_limites
+     */
+    public function obtenerSectoresDisponibles(Request $request): JsonResponse
+    {
+        try {
+            $empresaId = auth()->user()?->empresa_id;
+
+            $sectores = Sector::query()
+                ->whereHas('almacen', function ($query) use ($empresaId) {
+                    $query->where('empresa_id', $empresaId);
+                })
+                ->whereHas('stockLimites.producto', function ($query) {
+                    $query->where('activo', true);
+                })
+                ->select('id', 'nombre')
+                ->orderBy('nombre')
+                ->distinct()
+                ->get()
+                ->map(function ($sector) {
+                    return ['id' => $sector->id, 'nombre' => $sector->nombre];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $sectores,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error obteniendo sectores disponibles', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * GET /api/productos/almacenes-disponibles
+     * Obtiene los almacenes disponibles con productos que tienen stock_limites
+     */
+    public function obtenerAlmacenesDisponibles(Request $request): JsonResponse
+    {
+        try {
+            $almacenes = Almacen::query()
+                ->whereHas('stockLimites.producto', function ($query) {
+                    $query->where('activo', true);
+                })
+                ->select('id', 'nombre')
+                ->orderBy('nombre')
+                ->distinct()
+                ->get()
+                ->map(function ($almacen) {
+                    return ['nombre' => $almacen->nombre];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $almacenes,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error obteniendo almacenes disponibles', [
                 'error' => $e->getMessage(),
             ]);
 

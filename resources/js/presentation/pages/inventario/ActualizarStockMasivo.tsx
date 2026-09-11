@@ -38,8 +38,10 @@ interface ChangesPreview {
 interface Producto {
   id: number;
   sku: string;
+  codigo_barras?: string;             // ✅ NUEVO - Código de barras
   nombre: string;
-  categoria: string;
+  sector: string;                     // ✅ NUEVO - Sector
+  almacen?: string;                   // ✅ NUEVO - Almacén
   cantidad_total: number;
   unidad_medida_id: number;           // ✅ NUEVO
   unidad_nombre: string;              // ✅ NUEVO
@@ -60,10 +62,16 @@ export default function ActualizarStockMasivo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pestaña, setPestaña] = useState<'tabla' | 'csv'>('tabla');
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [sectores, setSectores] = useState<Array<{ nombre: string }>>([]);
+  const [almacenes, setAlmacenes] = useState<Array<{ nombre: string }>>([]);
   const [cargandoProductos, setCargandoProductos] = useState(true);
   const [cambiosTabla, setCambiosTabla] = useState<TablaEdicion>({});
   const [guardandoTabla, setGuardandoTabla] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+  const [sectorFiltro, setSectorFiltro] = useState('');
+  const [almacenFiltro, setAlmacenFiltro] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [porPagina] = useState(15);
 
   const [archivo, setArchivo] = useState<File | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -72,22 +80,80 @@ export default function ActualizarStockMasivo() {
   const [resultado, setResultado] = useState<any>(null);
   const [errores, setErrores] = useState<string[]>([]);
 
-  // Cargar productos al abrir la página
+  // Cargar productos, sectores y almacenes al abrir la página
   useEffect(() => {
     cargarProductos();
+    cargarSectores();
+    cargarAlmacenes();
   }, []);
 
-  // Filtrar productos según búsqueda
-  const productosFiltrados = useMemo(() => {
-    if (!busqueda.trim()) return productos;
+  // Cargar sectores disponibles
+  const cargarSectores = async () => {
+    try {
+      const response = await fetch('/api/productos/sectores-disponibles');
+      const data = await response.json();
 
-    const busquedaLower = busqueda.toLowerCase();
-    return productos.filter(p =>
-      p.sku.toLowerCase().includes(busquedaLower) ||
-      p.nombre.toLowerCase().includes(busquedaLower) ||
-      p.categoria.toLowerCase().includes(busquedaLower)
-    );
-  }, [productos, busqueda]);
+      if (Array.isArray(data.data)) {
+        setSectores(data.data as Array<{ nombre: string }>);
+      }
+    } catch (error) {
+      console.error('Error cargando sectores:', error);
+    }
+  };
+
+  // Cargar almacenes disponibles
+  const cargarAlmacenes = async () => {
+    try {
+      const response = await fetch('/api/productos/almacenes-disponibles');
+      const data = await response.json();
+
+      if (Array.isArray(data.data)) {
+        setAlmacenes(data.data as Array<{ nombre: string }>);
+      }
+    } catch (error) {
+      console.error('Error cargando almacenes:', error);
+    }
+  };
+
+  // Filtrar productos según búsqueda, sector y almacén
+  const productosFiltrados = useMemo(() => {
+    let resultado = productos;
+
+    // Filtrar por sector
+    if (sectorFiltro) {
+      resultado = resultado.filter(p => p.sector === sectorFiltro);
+    }
+
+    // Filtrar por almacén
+    if (almacenFiltro) {
+      resultado = resultado.filter(p => p.almacen === almacenFiltro);
+    }
+
+    // Filtrar por búsqueda (SKU, nombre, sector, almacén, código de barras)
+    if (busqueda.trim()) {
+      const busquedaLower = busqueda.toLowerCase();
+      resultado = resultado.filter(p =>
+        p.sku.toLowerCase().includes(busquedaLower) ||
+        p.nombre.toLowerCase().includes(busquedaLower) ||
+        p.sector.toLowerCase().includes(busquedaLower) ||
+        (p.almacen?.toLowerCase().includes(busquedaLower) || false) ||
+        (p.codigo_barras?.toLowerCase().includes(busquedaLower) || false)
+      );
+    }
+
+    return resultado;
+  }, [productos, busqueda, sectorFiltro, almacenFiltro]);
+
+  // Calcular productos paginados
+  const totalPaginas = Math.ceil(productosFiltrados.length / porPagina);
+  const indiceInicio = (paginaActual - 1) * porPagina;
+  const indiceFin = indiceInicio + porPagina;
+  const productosPaginados = productosFiltrados.slice(indiceInicio, indiceFin);
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, sectorFiltro, almacenFiltro]);
 
   // Cargar todos los productos
   const cargarProductos = async () => {
@@ -362,13 +428,13 @@ export default function ActualizarStockMasivo() {
               </div>
             ) : (
               <div>
-                {/* Buscador */}
-                <div className="mb-2 flex items-center gap-2">
+                {/* Buscador y Filtros de Sector y Almacén */}
+                <div className="mb-4 flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1 min-w-0">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 md:w-5 h-4 md:h-5 text-gray-400 flex-shrink-0" />
                     <input
                       type="text"
-                      placeholder="Buscar..."
+                      placeholder="Buscar por SKU, código de barras, nombre, sector o almacén..."
                       value={busqueda}
                       onChange={(e) => setBusqueda(e.target.value)}
                       className="w-full pl-9 md:pl-10 pr-9 md:pr-10 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -382,12 +448,45 @@ export default function ActualizarStockMasivo() {
                       </button>
                     )}
                   </div>
+                  <select
+                    value={sectorFiltro}
+                    onChange={(e) => setSectorFiltro(e.target.value)}
+                    className="px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Todos los sectores</option>
+                    {sectores.map((sector) => (
+                      <option key={sector.nombre} value={sector.nombre}>
+                        {sector.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={almacenFiltro}
+                    onChange={(e) => setAlmacenFiltro(e.target.value)}
+                    className="px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Todos los almacenes</option>
+                    {almacenes.map((almacen) => (
+                      <option key={almacen.nombre} value={almacen.nombre}>
+                        {almacen.nombre}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Contador de resultados */}
-                {busqueda && (
-                  <div className="mb-3 text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                    Mostrando {productosFiltrados.length} de {productos.length} productos
+                {/* Contador de resultados y paginación info */}
+                {(busqueda || sectorFiltro || almacenFiltro || productosFiltrados.length > 0) && (
+                  <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs md:text-sm">
+                    <div className="text-gray-600 dark:text-gray-400">
+                      Mostrando {indiceInicio + 1}-{Math.min(indiceFin, productosFiltrados.length)} de {productosFiltrados.length} productos
+                      {sectorFiltro && <span> • Sector: {sectorFiltro}</span>}
+                      {almacenFiltro && <span> • Almacén: {almacenFiltro}</span>}
+                    </div>
+                    {totalPaginas > 1 && (
+                      <div className="text-gray-600 dark:text-gray-400">
+                        Página {paginaActual} de {totalPaginas}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -402,9 +501,11 @@ export default function ActualizarStockMasivo() {
                     <TableHeader>
                       <TableRow className="bg-gray-50 dark:bg-gray-900">
                         <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4">ID</TableHead>
-                        <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4">SKU</TableHead>
+                        {/* <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4">SKU</TableHead> */}
+                        <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden sm:table-cell">Código</TableHead>
                         <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden md:table-cell">Producto</TableHead>
-                        <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden lg:table-cell">Categoría</TableHead>
+                        <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden md:table-cell">Sector</TableHead>
+                        <TableHead className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden lg:table-cell">Almacén</TableHead>
                         <TableHead className="text-xs md:text-sm text-right text-gray-900 dark:text-white px-1 md:px-4">Stock</TableHead>
                         <TableHead className="text-xs md:text-sm text-right text-gray-900 dark:text-white px-1 md:px-4">Inc.</TableHead>
                         <TableHead className="text-xs md:text-sm text-right text-gray-900 dark:text-white px-1 md:px-4 hidden sm:table-cell">Final</TableHead>
@@ -412,7 +513,7 @@ export default function ActualizarStockMasivo() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {productosFiltrados.map((producto) => {
+                      {productosPaginados.map((producto) => {
                         const tienesCambio = producto.id in cambiosTabla;
                         const unidadBase = producto.unidad_medida_id || 1;
                         const cambio = cambiosTabla[producto.id] || { cantidad: 0, unidad_id: unidadBase, cantidad_convertida: 0 };
@@ -424,11 +525,23 @@ export default function ActualizarStockMasivo() {
                         return (
                           <TableRow key={producto.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 text-xs md:text-sm">
                             <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">#{producto.id}</TableCell>
-                            <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">{producto.sku}</TableCell>
+                            {/* <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">{producto.sku}</TableCell> */}
+                            <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-mono px-2 md:px-4 hidden sm:table-cell">
+                              {producto.codigo_barras ? (
+                                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">{producto.codigo_barras}</span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500">—</span>
+                              )}
+                            </TableCell>
                             <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden md:table-cell">{producto.nombre}</TableCell>
+                            <TableCell className="text-xs md:text-sm text-gray-600 dark:text-gray-300 px-2 md:px-4 hidden md:table-cell">
+                              <Badge className="text-xs md:text-sm bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                                {producto.sector}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="text-xs md:text-sm text-gray-600 dark:text-gray-300 px-2 md:px-4 hidden lg:table-cell">
-                              <Badge className="text-xs md:text-sm bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                {producto.categoria}
+                              <Badge className="text-xs md:text-sm bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                {producto.almacen}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs md:text-sm text-right text-gray-900 dark:text-white font-semibold px-1 md:px-4">
@@ -487,6 +600,65 @@ export default function ActualizarStockMasivo() {
                     </TableBody>
                   </Table>
                 </div>
+                )}
+
+                {/* Controles de paginación */}
+                {totalPaginas > 1 && (
+                  <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <Button
+                      onClick={() => setPaginaActual(paginaActual - 1)}
+                      disabled={paginaActual === 1}
+                      variant="outline"
+                      className="w-full sm:w-auto text-xs md:text-sm py-1.5 md:py-2"
+                    >
+                      ← Anterior
+                    </Button>
+
+                    {/* Números de página - solo visible en tablet+ */}
+                    <div className="hidden sm:flex gap-1 flex-wrap justify-center">
+                      {Array.from({ length: Math.min(totalPaginas, 10) }, (_, i) => {
+                        // Mostrar máximo 10 botones de página
+                        let pagina: number;
+                        if (totalPaginas <= 10) {
+                          pagina = i + 1;
+                        } else {
+                          // Mostrar páginas alrededor de la actual
+                          const inicio = Math.max(1, paginaActual - 4);
+                          pagina = inicio + i;
+                          if (pagina > totalPaginas) return null;
+                        }
+
+                        return (
+                          <Button
+                            key={pagina}
+                            onClick={() => setPaginaActual(pagina)}
+                            variant={paginaActual === pagina ? 'default' : 'outline'}
+                            className={`w-8 h-8 sm:w-9 sm:h-9 p-0 text-xs sm:text-sm ${
+                              paginaActual === pagina
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : ''
+                            }`}
+                          >
+                            {pagina}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Indicador de página en móvil */}
+                    <div className="sm:hidden text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                      Pág. {paginaActual} de {totalPaginas}
+                    </div>
+
+                    <Button
+                      onClick={() => setPaginaActual(paginaActual + 1)}
+                      disabled={paginaActual === totalPaginas}
+                      variant="outline"
+                      className="w-full sm:w-auto text-xs md:text-sm py-1.5 md:py-2"
+                    >
+                      Siguiente →
+                    </Button>
+                  </div>
                 )}
 
                 <div className="mt-6 flex flex-col sm:flex-row gap-2 sm:gap-3">

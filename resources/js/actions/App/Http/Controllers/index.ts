@@ -96,6 +96,7 @@ import CierreDiarioGeneralController from './CierreDiarioGeneralController'
 import ImpresionControlVencimientosController from './ImpresionControlVencimientosController'
 import ImpresionMovimientosController from './ImpresionMovimientosController'
 import ImpresionProductosVendidosController from './ImpresionProductosVendidosController'
+import FraccionamientoController from './FraccionamientoController'
 import TipoAjusteInventarioController from './TipoAjusteInventarioController'
 import ReposicionController from './ReposicionController'
 import ComprasController from './ComprasController'
@@ -221,6 +222,7 @@ CierreDiarioGeneralController,
 ImpresionControlVencimientosController,
 ImpresionMovimientosController,
 ImpresionProductosVendidosController,
+FraccionamientoController,
 TipoAjusteInventarioController,
 ReposicionController,
 ComprasController,
