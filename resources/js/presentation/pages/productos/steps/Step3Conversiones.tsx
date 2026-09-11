@@ -57,43 +57,47 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
     const [loadingConversiones, setLoadingConversiones] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [productosDestino, setProductosDestino] = useState<Option[]>([]);
-    const [loadingProductosDestino, setLoadingProductosDestino] = useState(false);
     const factorInputRef = useRef<HTMLInputElement>(null);
 
-    // Cargar productos destino cuando usuario busca
-    const [busquedaProductoDestino, setBusquedaProductoDestino] = useState('');
+    // Productos cachados (se cargan una sola vez al montar)
+    const [todosProductos, setTodosProductos] = useState<any[]>([]);
 
-    const handleBuscarProductoDestino = async (termino: string) => {
-        setBusquedaProductoDestino(termino);
+    // Cargar lista completa de productos al montar (ONCE)
+    useEffect(() => {
+        const cargarProductosIniciales = async () => {
+            try {
+                const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
+                if (response.data.success && response.data.data) {
+                    setTodosProductos(response.data.data);
+                }
+            } catch (error) {
+                console.error('❌ Error cargando productos iniciales:', error);
+            }
+        };
 
+        cargarProductosIniciales();
+    }, []); // Solo corre una vez al montar
+
+    // Filtrar productos localmente (sin peticiones al servidor)
+    const handleBuscarProductoDestino = (termino: string) => {
         if (!termino.trim()) {
             setProductosDestino([]);
             return;
         }
 
-        setLoadingProductosDestino(true);
-        try {
-            const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
-            if (response.data.success && response.data.data) {
-                // Filtrar productos que coincidan con la búsqueda
-                const productosFiltrados = response.data.data.filter((prod: any) =>
-                    prod.sku.toLowerCase().includes(termino.toLowerCase()) ||
-                    prod.nombre.toLowerCase().includes(termino.toLowerCase())
-                );
+        // Filtrado local - INSTANTÁNEO
+        const productosFiltrados = todosProductos.filter((prod: any) =>
+            prod.sku.toLowerCase().includes(termino.toLowerCase()) ||
+            prod.nombre.toLowerCase().includes(termino.toLowerCase())
+        );
 
-                const opciones = productosFiltrados.map((prod: any) => ({
-                    value: prod.id,
-                    label: `${prod.sku} - ${prod.nombre}`,
-                    description: prod.unidad_nombre,
-                    meta: { unidad_id: prod.unidad_medida_id, nombre: prod.nombre }, // Guardar datos del producto
-                }));
-                setProductosDestino(opciones);
-            }
-        } catch (error) {
-            console.error('❌ Error buscando productos destino:', error);
-        } finally {
-            setLoadingProductosDestino(false);
-        }
+        const opciones = productosFiltrados.map((prod: any) => ({
+            value: prod.id,
+            label: `${prod.sku} - ${prod.nombre}`,
+            description: prod.unidad_nombre,
+            meta: { unidad_id: prod.unidad_medida_id, nombre: prod.nombre },
+        }));
+        setProductosDestino(opciones);
     };
 
     const conversiones = data.conversiones || [];
@@ -442,7 +446,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 }}
                                 onSearch={handleBuscarProductoDestino}
                                 placeholder="Busca SKU o nombre del producto (Ej: Coca 2Lts)..."
-                                loading={loadingProductosDestino}
+                                loading={false}
                                 emptyText="Sin coincidencias. Intenta otro término."
                             />
                             <p className="text-xs text-muted-foreground">

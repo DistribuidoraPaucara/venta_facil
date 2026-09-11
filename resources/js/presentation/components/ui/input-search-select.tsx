@@ -1,5 +1,5 @@
 // InputSearchSelect - Input simple de búsqueda con opciones seleccionables
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Input } from '@/presentation/components/ui/input';
 
 export interface SearchOption {
@@ -32,11 +32,12 @@ export default function InputSearchSelect({
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Encontrar la opción seleccionada
   const selectedOption = options.find((opt) => String(opt.value) === String(value));
 
-  // Cerrar dropdown al hacer clic fuera
+  // Cerrar dropdown al hacer clic fuera (solo cuando no está cargando)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -53,22 +54,47 @@ export default function InputSearchSelect({
     };
   }, []);
 
-  // Manejar búsqueda con debounce
+  // Manejar búsqueda con debounce mejorado
   useEffect(() => {
-    if (onSearch && searchQuery) {
-      const timeoutId = setTimeout(() => {
-        onSearch(searchQuery);
-      }, 300);
-
-      return () => clearTimeout(timeoutId);
+    // Limpiar timeout anterior
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+
+    // Si hay búsqueda y callback, hacer request
+    if (onSearch && searchQuery.trim()) {
+      debounceTimerRef.current = setTimeout(() => {
+        onSearch(searchQuery.trim());
+      }, 400); // Aumentado a 400ms para reducir peticiones
+    } else if (!searchQuery.trim()) {
+      // Si se borra el search, limpiar opciones
+      setIsOpen(false);
+    }
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [searchQuery, onSearch]);
 
-  const handleSelect = (option: SearchOption) => {
+  const handleSelect = useCallback((option: SearchOption) => {
     onChange(option.value);
     setIsOpen(false);
     setSearchQuery('');
-  };
+  }, [onChange]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setSearchQuery(newValue);
+    // Mantener dropdown abierto mientras hay texto
+    if (newValue.trim()) {
+      setIsOpen(true);
+    }
+  }, []);
+
+  // Mantener dropdown abierto mientras hay opciones o está cargando
+  const shouldShowDropdown = isOpen && (loading || options.length > 0 || !searchQuery.trim());
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -77,16 +103,14 @@ export default function InputSearchSelect({
         type="text"
         placeholder={placeholder}
         value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setIsOpen(true);
-        }}
-        onFocus={() => setIsOpen(true)}
+        onChange={handleInputChange}
+        onFocus={() => searchQuery.trim() && setIsOpen(true)}
         className="w-full"
+        autoComplete="off"
       />
 
-      {/* Dropdown de opciones */}
-      {isOpen && (
+      {/* Dropdown de opciones - Se mantiene visible mientras hay opciones o carga */}
+      {shouldShowDropdown && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-md shadow-lg max-h-[300px] overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-3 text-muted-foreground">
