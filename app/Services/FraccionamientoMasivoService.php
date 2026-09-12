@@ -75,7 +75,6 @@ class FraccionamientoMasivoService
     private function procesarDetalle(FraccionamientoMasivo $fm, array $d, int $num): void
     {
         $almacenId = $fm->almacen_id;
-        $sectorId = $fm->sector_id;
         $ppId = $d['producto_padre_id'];
         $cpPadre = $d['cantidad_padre'];
         $phId = $d['producto_hijo_id'];
@@ -84,9 +83,27 @@ class FraccionamientoMasivoService
         $pp = Producto::findOrFail($ppId);
         $ph = Producto::findOrFail($phId);
 
+        // Obtener sector del padre desde stock_limites
+        $sectorPadre = \App\Models\StockLimite::where('producto_id', $ppId)
+            ->where('almacen_id', $almacenId)
+            ->value('sector_id');
+
+        if (!$sectorPadre) {
+            throw new \Exception("Producto {$pp->nombre} no tiene sector asignado en almacén {$almacenId}");
+        }
+
+        // Obtener sector del hijo desde stock_limites
+        $sectorHijo = \App\Models\StockLimite::where('producto_id', $phId)
+            ->where('almacen_id', $almacenId)
+            ->value('sector_id');
+
+        if (!$sectorHijo) {
+            throw new \Exception("Producto {$ph->nombre} no tiene sector asignado en almacén {$almacenId}");
+        }
+
         $sp = StockProducto::where('producto_id', $ppId)
             ->where('almacen_id', $almacenId)
-            ->where('sector_id', $sectorId)
+            ->where('sector_id', $sectorPadre)
             ->lockForUpdate()
             ->first();
 
@@ -100,12 +117,12 @@ class FraccionamientoMasivoService
 
         $sh = StockProducto::where('producto_id', $phId)
             ->where('almacen_id', $almacenId)
-            ->where('sector_id', $sectorId)
+            ->where('sector_id', $sectorHijo)
             ->lockForUpdate()
             ->firstOrCreate([
                 'producto_id' => $phId,
                 'almacen_id' => $almacenId,
-                'sector_id' => $sectorId,
+                'sector_id' => $sectorHijo,
             ], [
                 'cantidad' => 0,
                 'cantidad_disponible' => 0,
