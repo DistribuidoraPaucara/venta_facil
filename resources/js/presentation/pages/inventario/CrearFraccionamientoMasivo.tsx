@@ -4,7 +4,6 @@ import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Card } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
-import { Select } from '@/presentation/components/ui/select';
 import { Trash2 } from 'lucide-react';
 
 interface LineaFraccionamiento {
@@ -224,22 +223,30 @@ export default function CrearFraccionamientoMasivo() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-white">Almacén *</label>
-                  <Select value={almacenId?.toString() || ''} onValueChange={(v) => setAlmacenId(Number(v) || null)}>
+                  <select
+                    value={almacenId?.toString() || ''}
+                    onChange={(e) => setAlmacenId(Number(e.target.value) || null)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
                     <option value="">Selecciona almacén</option>
                     {almacenes.map((a: any) => (
                       <option key={a.id} value={a.id}>{a.nombre}</option>
                     ))}
-                  </Select>
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1 dark:text-white">Razón</label>
-                  <Select value={razon} onValueChange={setRazon}>
+                  <select
+                    value={razon}
+                    onChange={(e) => setRazon(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
                     <option value="fraccionamiento_manual">Fraccionamiento Manual</option>
                     <option value="fraccionamiento_compra">Por Compra</option>
                     <option value="reagrupamiento">Reagrupamiento</option>
                     <option value="ajuste_inventario">Ajuste de Inventario</option>
-                  </Select>
+                  </select>
                 </div>
 
                 <div className="md:col-span-2">
