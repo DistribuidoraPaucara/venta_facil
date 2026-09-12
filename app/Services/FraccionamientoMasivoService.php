@@ -120,6 +120,13 @@ class FraccionamientoMasivoService
             throw new \Exception("Producto {$ph->nombre} no tiene sector asignado en almacén {$almacenId}");
         }
 
+        Log::debug("Sector del hijo obtenido", [
+            'producto_hijo_id' => $phId,
+            'almacen_id' => $almacenId,
+            'sector_hijo' => $sectorHijo,
+            'obtiene_de_stock' => StockProducto::where('producto_id', $phId)->where('almacen_id', $almacenId)->exists(),
+        ]);
+
         $sp = StockProducto::where('producto_id', $ppId)
             ->where('almacen_id', $almacenId)
             ->where('sector_id', $sectorPadre)
@@ -161,6 +168,19 @@ class FraccionamientoMasivoService
         // Releer datos actualizados directamente desde SQL
         $spA = DB::table('stock_productos')->where('id', $sp->id)->first();
         $shA = DB::table('stock_productos')->where('id', $sh->id)->first();
+
+        Log::debug("Stock antes y después de actualizar", [
+            'padre_id' => $sp->id,
+            'padre_cantidad_anterior' => $sp->cantidad,
+            'padre_cantidad_posterior' => $spA->cantidad,
+            'padre_disponible_anterior' => $sp->cantidad_disponible,
+            'padre_disponible_posterior' => $spA->cantidad_disponible,
+            'hijo_id' => $sh->id,
+            'hijo_cantidad_anterior' => $sh->cantidad,
+            'hijo_cantidad_posterior' => $shA->cantidad,
+            'hijo_disponible_anterior' => $sh->cantidad_disponible,
+            'hijo_disponible_posterior' => $shA->cantidad_disponible,
+        ]);
 
         MovimientoInventario::create([
             'stock_producto_id' => $sp->id,
