@@ -120,13 +120,6 @@ class FraccionamientoMasivoService
             throw new \Exception("Producto {$ph->nombre} no tiene sector asignado en almacén {$almacenId}");
         }
 
-        Log::debug("Sector del hijo obtenido", [
-            'producto_hijo_id' => $phId,
-            'almacen_id' => $almacenId,
-            'sector_hijo' => $sectorHijo,
-            'obtiene_de_stock' => StockProducto::where('producto_id', $phId)->where('almacen_id', $almacenId)->exists(),
-        ]);
-
         $sp = StockProducto::where('producto_id', $ppId)
             ->where('almacen_id', $almacenId)
             ->where('sector_id', $sectorPadre)
@@ -151,46 +144,52 @@ class FraccionamientoMasivoService
                 'sector_id' => $sectorHijo,
             ], [
                 'cantidad' => 0,
-                'cantidad_disponible' => 0,  // Se actualizará al sumar
+                'cantidad_disponible' => 0,
                 'cantidad_reservada' => 0,
             ]);
 
-        StockProducto::where('id', $sp->id)->update([
-            'cantidad' => DB::raw('cantidad - ' . $cpPadre),
-            'cantidad_disponible' => DB::raw('cantidad_disponible - ' . $cpPadre),
-        ]);
+        // Guardar valores ANTES
+        $spAntes = [
+            'cantidad' => $sp->cantidad,
+            'cantidad_disponible' => $sp->cantidad_disponible,
+            'cantidad_reservada' => $sp->cantidad_reservada ?? 0,
+        ];
+        $shAntes = [
+            'cantidad' => $sh->cantidad,
+            'cantidad_disponible' => $sh->cantidad_disponible,
+            'cantidad_reservada' => $sh->cantidad_reservada ?? 0,
+        ];
 
-        StockProducto::where('id', $sh->id)->update([
-            'cantidad' => DB::raw('cantidad + ' . $cpHijo),
-            'cantidad_disponible' => DB::raw('cantidad_disponible + ' . $cpHijo),
-        ]);
+        // Actualizar (sin DB::raw, de forma directa)
+        $sp->cantidad -= $cpPadre;
+        $sp->cantidad_disponible -= $cpPadre;
+        $sp->save();
 
-        // Releer datos actualizados directamente desde SQL
-        $spA = DB::table('stock_productos')->where('id', $sp->id)->first();
-        $shA = DB::table('stock_productos')->where('id', $sh->id)->first();
+        $sh->cantidad += $cpHijo;
+        $sh->cantidad_disponible += $cpHijo;
+        $sh->save();
 
-        Log::debug("Stock antes y después de actualizar", [
-            'padre_id' => $sp->id,
-            'padre_cantidad_anterior' => $sp->cantidad,
-            'padre_cantidad_posterior' => $spA->cantidad,
-            'padre_disponible_anterior' => $sp->cantidad_disponible,
-            'padre_disponible_posterior' => $spA->cantidad_disponible,
-            'hijo_id' => $sh->id,
-            'hijo_cantidad_anterior' => $sh->cantidad,
-            'hijo_cantidad_posterior' => $shA->cantidad,
-            'hijo_disponible_anterior' => $sh->cantidad_disponible,
-            'hijo_disponible_posterior' => $shA->cantidad_disponible,
-        ]);
+        // Valores DESPUÉS
+        $spDespues = [
+            'cantidad' => $sp->cantidad,
+            'cantidad_disponible' => $sp->cantidad_disponible,
+            'cantidad_reservada' => $sp->cantidad_reservada ?? 0,
+        ];
+        $shDespues = [
+            'cantidad' => $sh->cantidad,
+            'cantidad_disponible' => $sh->cantidad_disponible,
+            'cantidad_reservada' => $sh->cantidad_reservada ?? 0,
+        ];
 
         MovimientoInventario::create([
             'stock_producto_id' => $sp->id,
             'cantidad' => -$cpPadre,
-            'cantidad_total_anterior' => $sp->cantidad,
-            'cantidad_total_posterior' => $spA->cantidad,
-            'cantidad_disponible_anterior' => $sp->cantidad_disponible,
-            'cantidad_disponible_posterior' => $spA->cantidad_disponible,
-            'cantidad_reservada_anterior' => $sp->cantidad_reservada ?? 0,
-            'cantidad_reservada_posterior' => $spA->cantidad_reservada ?? 0,
+            'cantidad_total_anterior' => $spAntes['cantidad'],
+            'cantidad_total_posterior' => $spDespues['cantidad'],
+            'cantidad_disponible_anterior' => $spAntes['cantidad_disponible'],
+            'cantidad_disponible_posterior' => $spDespues['cantidad_disponible'],
+            'cantidad_reservada_anterior' => $spAntes['cantidad_reservada'],
+            'cantidad_reservada_posterior' => $spDespues['cantidad_reservada'],
             'tipo' => 'SALIDA_FRACCIONAMIENTO',
             'observacion' => "Fraccionamiento masivo: $cpPadre → $cpHijo",
             'fecha' => now(),
@@ -201,12 +200,12 @@ class FraccionamientoMasivoService
         MovimientoInventario::create([
             'stock_producto_id' => $sh->id,
             'cantidad' => $cpHijo,
-            'cantidad_total_anterior' => $sh->cantidad,
-            'cantidad_total_posterior' => $shA->cantidad,
-            'cantidad_disponible_anterior' => $sh->cantidad_disponible,
-            'cantidad_disponible_posterior' => $shA->cantidad_disponible,
-            'cantidad_reservada_anterior' => $sh->cantidad_reservada ?? 0,
-            'cantidad_reservada_posterior' => $shA->cantidad_reservada ?? 0,
+            'cantidad_total_anterior' => $shAntes['cantidad'],
+            'cantidad_total_posterior' => $shDespues['cantidad'],
+            'cantidad_disponible_anterior' => $shAntes['cantidad_disponible'],
+            'cantidad_disponible_posterior' => $shDespues['cantidad_disponible'],
+            'cantidad_reservada_anterior' => $shAntes['cantidad_reservada'],
+            'cantidad_reservada_posterior' => $shDespues['cantidad_reservada'],
             'tipo' => 'ENTRADA_FRACCIONAMIENTO',
             'observacion' => "Fraccionamiento masivo: $cpPadre → $cpHijo",
             'fecha' => now(),
