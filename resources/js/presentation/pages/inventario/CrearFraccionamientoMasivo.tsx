@@ -106,7 +106,18 @@ export default function CrearFraccionamientoMasivo() {
     try {
       const res = await fetch(`/api/fraccionamientos/producto/${productoPadreId}/conversiones`);
       const data = await res.json();
-      const conversiones = data.data || [];
+      console.log('Conversiones cargadas:', data);
+
+      let conversiones: any[] = [];
+      if (Array.isArray(data)) {
+        conversiones = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        conversiones = data.data;
+      } else {
+        conversiones = [];
+      }
+
+      console.log('Conversiones procesadas:', conversiones.length);
 
       const nuevaLinea: LineaFraccionamiento = {
         id: Math.random().toString(),
