@@ -38,6 +38,7 @@ class FraccionamientoMasivoApiController extends Controller
 
             // Obtener sector automáticamente del producto padre
             $sectorId = $validated['sector_id'];
+            Log::debug('Intentando obtener sector', ['sector_id_input' => $sectorId, 'almacen_id' => $validated['almacen_id']]);
             if (!$sectorId && !empty($validated['detalles'])) {
                 $almacenId = $validated['almacen_id'];
                 $productoPadreId = $validated['detalles'][0]['producto_padre_id'];
@@ -59,10 +60,9 @@ class FraccionamientoMasivoApiController extends Controller
                     } else {
                         // Si no hay stock_limites, usar sector genérico del almacén seleccionado
                         $sectorGenerico = \App\Models\Sector::where('almacen_id', $almacenId)
-                            ->whereRaw("LOWER(nombre) LIKE ?", ['%general%'])
-                            ->orWhere(function ($q) use ($almacenId) {
-                                $q->where('almacen_id', $almacenId)
-                                    ->whereRaw("LOWER(nombre) LIKE ?", ['%genérico%']);
+                            ->where(function ($q) {
+                                $q->whereRaw("LOWER(nombre) LIKE ?", ['%general%'])
+                                  ->orWhereRaw("LOWER(nombre) LIKE ?", ['%genérico%']);
                             })
                             ->first();
 
@@ -78,6 +78,12 @@ class FraccionamientoMasivoApiController extends Controller
                     }
                 }
             }
+
+            Log::debug('Sector obtenido para fraccionamiento', [
+                'sector_id_final' => $sectorId,
+                'almacen_id' => $validated['almacen_id'],
+                'existe_sector' => $sectorId ? \App\Models\Sector::where('id', $sectorId)->exists() : false,
+            ]);
 
             $fm = $this->service->registrar(
                 $validated['almacen_id'],
