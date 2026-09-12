@@ -36,15 +36,35 @@ class FraccionamientoMasivoApiController extends Controller
                 'detalles.*.factor_conversion' => 'nullable|numeric|min:0.01',
             ]);
 
-            // Obtener sector automáticamente del producto padre si no se proporciona
+            // Obtener sector automáticamente
             $sectorId = $validated['sector_id'];
             if (!$sectorId && !empty($validated['detalles'])) {
+                $almacenId = $validated['almacen_id'];
                 $productoPadreId = $validated['detalles'][0]['producto_padre_id'];
+
+                // Intentar obtener sector del producto padre
                 $stockLimite = \App\Models\StockLimite::where('producto_id', $productoPadreId)
-                    ->where('almacen_id', $validated['almacen_id'])
+                    ->where('almacen_id', $almacenId)
                     ->first();
+
                 if ($stockLimite) {
                     $sectorId = $stockLimite->sector_id;
+                } else {
+                    // Si no existe, obtener sector genérico del almacén
+                    $sectorGenerico = \App\Models\Sector::where('almacen_id', $almacenId)
+                        ->where('nombre', 'like', '%genérico%')
+                        ->orWhere('nombre', 'like', '%general%')
+                        ->first();
+
+                    if ($sectorGenerico) {
+                        $sectorId = $sectorGenerico->id;
+                    } else {
+                        // Si no hay genérico, usar el primer sector del almacén
+                        $primerSector = \App\Models\Sector::where('almacen_id', $almacenId)->first();
+                        if ($primerSector) {
+                            $sectorId = $primerSector->id;
+                        }
+                    }
                 }
             }
 
