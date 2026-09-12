@@ -52,42 +52,16 @@ export default function CrearFraccionamientoMasivo() {
 
   const cargarProductos = async () => {
     try {
-      // Intentar obtener desde endpoint directo de productos
-      let res = await fetch('/api/productos');
-
-      if (!res.ok) {
-        // Si falla, intentar otro endpoint
-        res = await fetch('/productos/api');
-      }
-
+      const res = await fetch('/api/inventario/fraccionamientos/productos/disponibles');
       const data = await res.json();
-      console.log('Respuesta de API:', data);
+      console.log('Productos cargados:', data);
 
-      // Manejar diferentes formatos de respuesta
-      let productosArray: any[] = [];
-      if (Array.isArray(data)) {
-        productosArray = data;
-      } else if (data.data && Array.isArray(data.data)) {
-        productosArray = data.data;
-      } else if (data.productos && Array.isArray(data.productos)) {
-        productosArray = data.productos;
-      } else if (data.data && typeof data.data === 'object') {
-        productosArray = [data.data];
-      }
-
-      // Asegurar que cada producto tenga los campos necesarios
-      productosArray = productosArray.map((p: any) => ({
-        id: p.id,
-        nombre: p.nombre || '',
-        sku: p.sku || '',
-        unidad_nombre: p.unidad_nombre || p.unidad?.nombre || 'Unidad',
-      }));
-
-      console.log('Productos procesados:', productosArray.length, productosArray);
+      // El endpoint devuelve un array en data.data
+      const productosArray = Array.isArray(data.data) ? data.data : [];
+      console.log('Total de productos:', productosArray.length);
       setProductos(productosArray);
     } catch (error) {
       console.error('Error cargando productos:', error);
-      // Mostrar array vacío - el usuario puede ver el error en consola
       setProductos([]);
     }
   };
