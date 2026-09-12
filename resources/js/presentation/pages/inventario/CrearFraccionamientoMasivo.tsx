@@ -93,6 +93,11 @@ export default function CrearFraccionamientoMasivo() {
 
       console.log('Conversiones procesadas:', conversiones.length);
 
+      if (conversiones.length === 0) {
+        alert(`El producto "${productoPadre.nombre}" no tiene conversiones configuradas. Debe tener al menos una conversión hacia un producto hijo.`);
+        return;
+      }
+
       const nuevaLinea: LineaFraccionamiento = {
         id: Math.random().toString(),
         producto_padre_id: productoPadreId,
