@@ -182,7 +182,7 @@ export default function CrearFraccionamientoMasivo() {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/fraccionamientos-masivos', {
+      const res = await fetch('/api/inventario/fraccionamientos-masivos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -267,8 +267,8 @@ export default function CrearFraccionamientoMasivo() {
 
             {/* Búsqueda de productos */}
             {almacenId && (
-              <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
-                <label className="block text-sm font-medium mb-2 dark:text-white">Buscar Producto Padre</label>
+              <Card className="p-2 dark:bg-gray-900 dark:border-gray-800">
+                <label className="block text-sm font-medium dark:text-white">Buscar Producto Padre</label>
                 <div className="relative z-20">
                   <Input
                     type="text"
@@ -304,61 +304,76 @@ export default function CrearFraccionamientoMasivo() {
               </Card>
             )}
 
-            {/* Líneas agregadas */}
+            {/* Tabla de líneas agregadas */}
             {lineas.length > 0 && (
-              <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
+              <Card className="p-6 dark:bg-gray-900 dark:border-gray-800 overflow-x-auto">
                 <h2 className="text-lg font-semibold mb-4 dark:text-white">Productos a Fraccionar</h2>
-                <div className="space-y-4">
-                  {lineas.map((linea) => (
-                    <div key={linea.id} className="p-4 border rounded-lg dark:border-gray-700 dark:bg-gray-800">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-bold dark:text-white">{linea.producto_padre_nombre}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Cantidad Padre ({linea.unidad_padre})</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => eliminarLinea(linea.id)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="mb-3">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={linea.cantidad_padre}
-                          onChange={(e) => actualizarCantidadPadre(linea.id, Number(e.target.value))}
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      {linea.productos_hijos.length > 0 && (
-                        <div className="space-y-2 border-t dark:border-gray-700 pt-3">
-                          <p className="text-sm font-medium dark:text-white">Productos Hijos Generados:</p>
-                          {linea.productos_hijos.map(hijo => (
-                            <div key={hijo.id} className="flex gap-2 items-center">
-                              <span className="text-sm flex-1 dark:text-gray-300">{hijo.producto_hijo_nombre}</span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={hijo.cantidad_hijo}
-                                onChange={(e) => actualizarCantidadHijo(linea.id, hijo.id, Number(e.target.value))}
-                                placeholder="0.00"
-                                className="w-24"
-                              />
-                              <span className="text-sm w-16 dark:text-gray-400">{hijo.unidad_hijo}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b dark:border-gray-700">
+                      <th className="text-left py-3 px-4 font-semibold dark:text-white">Producto Padre</th>
+                      <th className="text-center py-3 px-4 font-semibold dark:text-white">Cantidad</th>
+                      <th className="text-center py-3 px-4 font-semibold dark:text-white">Unidad</th>
+                      <th className="text-left py-3 px-4 font-semibold dark:text-white">Producto Hijo</th>
+                      <th className="text-center py-3 px-4 font-semibold dark:text-white">Cant. Hijo</th>
+                      <th className="text-center py-3 px-4 font-semibold dark:text-white">Unidad</th>
+                      <th className="text-center py-3 px-4 font-semibold dark:text-white">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y dark:divide-gray-700">
+                    {lineas.map((linea) => (
+                      linea.productos_hijos.map((hijo, idx) => (
+                        <tr key={`${linea.id}-${hijo.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                          {idx === 0 && (
+                            <>
+                              <td className="py-3 px-4 dark:text-white font-medium" rowSpan={linea.productos_hijos.length}>
+                                {linea.producto_padre_nombre}
+                              </td>
+                              <td className="py-3 px-4 dark:text-white text-center" rowSpan={linea.productos_hijos.length}>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={linea.cantidad_padre}
+                                  onChange={(e) => actualizarCantidadPadre(linea.id, Number(e.target.value))}
+                                  placeholder="0.00"
+                                  className="w-20 text-center"
+                                />
+                              </td>
+                              <td className="py-3 px-4 dark:text-gray-400 text-center" rowSpan={linea.productos_hijos.length}>
+                                {linea.unidad_padre}
+                              </td>
+                            </>
+                          )}
+                          <td className="py-3 px-4 dark:text-white">{hijo.producto_hijo_nombre}</td>
+                          <td className="py-3 px-4 dark:text-white text-center">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={hijo.cantidad_hijo}
+                              onChange={(e) => actualizarCantidadHijo(linea.id, hijo.id, Number(e.target.value))}
+                              placeholder="0.00"
+                              className="w-20 text-center"
+                            />
+                          </td>
+                          <td className="py-3 px-4 dark:text-gray-400 text-center">{hijo.unidad_hijo}</td>
+                          {idx === 0 && (
+                            <td className="py-3 px-4 text-center" rowSpan={linea.productos_hijos.length}>
+                              <button
+                                type="button"
+                                onClick={() => eliminarLinea(linea.id)}
+                                className="text-red-600 dark:text-red-400 hover:text-red-700 inline-flex"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    ))}
+                  </tbody>
+                </table>
               </Card>
             )}
 

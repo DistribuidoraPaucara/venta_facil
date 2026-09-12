@@ -19,7 +19,7 @@ export default function ListarFraccionamientosMasivos() {
   const cargarFraccionamientos = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/fraccionamientos-masivos?page=${page}&per_page=${perPage}`);
+      const response = await fetch(`/api/inventario/fraccionamientos-masivos?page=${page}&per_page=${perPage}`);
       const data = await response.json();
       if (data?.data) {
         setFraccionamientos(data.data.data || data.data);
