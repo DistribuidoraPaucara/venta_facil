@@ -144,7 +144,7 @@ class FraccionamientoMasivoService
                 'sector_id' => $sectorHijo,
             ], [
                 'cantidad' => 0,
-                'cantidad_disponible' => 0,
+                'cantidad_disponible' => 0,  // Se actualizará al sumar
                 'cantidad_reservada' => 0,
             ]);
 
@@ -158,8 +158,9 @@ class FraccionamientoMasivoService
             'cantidad_disponible' => DB::raw('cantidad_disponible + ' . $cpHijo),
         ]);
 
-        $spA = StockProducto::find($sp->id);
-        $shA = StockProducto::find($sh->id);
+        // Releer datos actualizados con fresh()
+        $spA = $sp->fresh();
+        $shA = $sh->fresh();
 
         MovimientoInventario::create([
             'stock_producto_id' => $sp->id,
