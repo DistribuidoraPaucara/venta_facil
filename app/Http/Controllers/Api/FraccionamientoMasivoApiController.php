@@ -36,13 +36,13 @@ class FraccionamientoMasivoApiController extends Controller
                 'detalles.*.factor_conversion' => 'nullable|numeric|min:0.01',
             ]);
 
-            // Obtener sector automáticamente
+            // Obtener sector automáticamente del producto padre
             $sectorId = $validated['sector_id'];
             if (!$sectorId && !empty($validated['detalles'])) {
                 $almacenId = $validated['almacen_id'];
                 $productoPadreId = $validated['detalles'][0]['producto_padre_id'];
 
-                // Intentar obtener sector del producto padre
+                // Intentar obtener sector del producto padre (primero en almacén seleccionado, luego en cualquier almacén)
                 $stockLimite = \App\Models\StockLimite::where('producto_id', $productoPadreId)
                     ->where('almacen_id', $almacenId)
                     ->first();
@@ -50,19 +50,30 @@ class FraccionamientoMasivoApiController extends Controller
                 if ($stockLimite) {
                     $sectorId = $stockLimite->sector_id;
                 } else {
-                    // Si no existe, obtener sector genérico del almacén
-                    $sectorGenerico = \App\Models\Sector::where('almacen_id', $almacenId)
-                        ->where('nombre', 'like', '%genérico%')
-                        ->orWhere('nombre', 'like', '%general%')
+                    // Si no existe en el almacén seleccionado, obtener de cualquier almacén donde exista
+                    $stockLimiteAlternativo = \App\Models\StockLimite::where('producto_id', $productoPadreId)
                         ->first();
 
-                    if ($sectorGenerico) {
-                        $sectorId = $sectorGenerico->id;
+                    if ($stockLimiteAlternativo) {
+                        $sectorId = $stockLimiteAlternativo->sector_id;
                     } else {
-                        // Si no hay genérico, usar el primer sector del almacén
-                        $primerSector = \App\Models\Sector::where('almacen_id', $almacenId)->first();
-                        if ($primerSector) {
-                            $sectorId = $primerSector->id;
+                        // Si no hay stock_limites, usar sector genérico del almacén seleccionado
+                        $sectorGenerico = \App\Models\Sector::where('almacen_id', $almacenId)
+                            ->whereRaw("LOWER(nombre) LIKE ?", ['%general%'])
+                            ->orWhere(function ($q) use ($almacenId) {
+                                $q->where('almacen_id', $almacenId)
+                                    ->whereRaw("LOWER(nombre) LIKE ?", ['%genérico%']);
+                            })
+                            ->first();
+
+                        if ($sectorGenerico) {
+                            $sectorId = $sectorGenerico->id;
+                        } else {
+                            // Último recurso: primer sector del almacén
+                            $primerSector = \App\Models\Sector::where('almacen_id', $almacenId)->first();
+                            if ($primerSector) {
+                                $sectorId = $primerSector->id;
+                            }
                         }
                     }
                 }
