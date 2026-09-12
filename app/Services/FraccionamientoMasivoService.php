@@ -171,9 +171,9 @@ class FraccionamientoMasivoService
         MovimientoInventario::create([
             'stock_producto_id' => $sh->id,
             'cantidad' => $cpHijo,
-            'cantidad_anterior' => $sh->cantidad - $cpHijo,
+            'cantidad_anterior' => $sh->cantidad,
             'cantidad_posterior' => $shA->cantidad,
-            'cantidad_disponible_anterior' => $sh->cantidad_disponible - $cpHijo,
+            'cantidad_disponible_anterior' => $sh->cantidad_disponible,
             'cantidad_disponible_posterior' => $shA->cantidad_disponible,
             'tipo' => 'ENTRADA_FRACCIONAMIENTO',
             'observacion' => "Fraccionamiento masivo: $cpPadre → $cpHijo",
