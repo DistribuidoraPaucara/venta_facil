@@ -25,7 +25,7 @@ class FraccionamientoMasivoApiController extends Controller
         try {
             $validated = $request->validate([
                 'almacen_id' => 'required|integer|exists:almacenes,id',
-                'sector_id' => 'nullable|integer|exists:sectores,id',
+                'sector_id' => 'nullable|integer',  // Ya no se valida contra base de datos (se obtiene del servicio)
                 'razon' => 'required|in:fraccionamiento_manual,fraccionamiento_compra,reagrupamiento,ajuste_inventario',
                 'notas' => 'nullable|string|max:1000',
                 'detalles' => 'required|array|min:1',
@@ -36,58 +36,10 @@ class FraccionamientoMasivoApiController extends Controller
                 'detalles.*.factor_conversion' => 'nullable|numeric|min:0.01',
             ]);
 
-            // Obtener sector automáticamente del producto padre
-            $sectorId = $validated['sector_id'];
-            Log::debug('Intentando obtener sector', ['sector_id_input' => $sectorId, 'almacen_id' => $validated['almacen_id']]);
-            if (!$sectorId && !empty($validated['detalles'])) {
-                $almacenId = $validated['almacen_id'];
-                $productoPadreId = $validated['detalles'][0]['producto_padre_id'];
-
-                // Intentar obtener sector del producto padre (primero en almacén seleccionado, luego en cualquier almacén)
-                $stockLimite = \App\Models\StockLimite::where('producto_id', $productoPadreId)
-                    ->where('almacen_id', $almacenId)
-                    ->first();
-
-                if ($stockLimite) {
-                    $sectorId = $stockLimite->sector_id;
-                } else {
-                    // Si no existe en el almacén seleccionado, obtener de cualquier almacén donde exista
-                    $stockLimiteAlternativo = \App\Models\StockLimite::where('producto_id', $productoPadreId)
-                        ->first();
-
-                    if ($stockLimiteAlternativo) {
-                        $sectorId = $stockLimiteAlternativo->sector_id;
-                    } else {
-                        // Si no hay stock_limites, usar sector genérico del almacén seleccionado
-                        $sectorGenerico = \App\Models\Sector::where('almacen_id', $almacenId)
-                            ->where(function ($q) {
-                                $q->whereRaw("LOWER(nombre) LIKE ?", ['%general%'])
-                                  ->orWhereRaw("LOWER(nombre) LIKE ?", ['%genérico%']);
-                            })
-                            ->first();
-
-                        if ($sectorGenerico) {
-                            $sectorId = $sectorGenerico->id;
-                        } else {
-                            // Último recurso: primer sector del almacén
-                            $primerSector = \App\Models\Sector::where('almacen_id', $almacenId)->first();
-                            if ($primerSector) {
-                                $sectorId = $primerSector->id;
-                            }
-                        }
-                    }
-                }
-            }
-
-            Log::debug('Sector obtenido para fraccionamiento', [
-                'sector_id_final' => $sectorId,
-                'almacen_id' => $validated['almacen_id'],
-                'existe_sector' => $sectorId ? \App\Models\Sector::where('id', $sectorId)->exists() : false,
-            ]);
-
+            // El sector ya no es requerido porque se obtiene de stock_limites de cada producto
             $fm = $this->service->registrar(
                 $validated['almacen_id'],
-                $sectorId,
+                $validated['sector_id'] ?? 0,  // Ya no es utilizado, se obtiene del servicio
                 $validated['detalles'],
                 $validated['razon'],
                 $validated['notas'] ?? null
