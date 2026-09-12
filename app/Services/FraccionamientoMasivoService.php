@@ -35,6 +35,18 @@ class FraccionamientoMasivoService
                 $this->validarDetalle($detalle);
             }
 
+            // Si no hay sector_id válido, obtenerlo del primer producto
+            if (!$sectorId || $sectorId === 0) {
+                $productoPadreId = $detalles[0]['producto_padre_id'];
+                $sectorId = \App\Models\StockLimite::where('producto_id', $productoPadreId)
+                    ->where('almacen_id', $almacenId)
+                    ->value('sector_id');
+
+                if (!$sectorId) {
+                    throw new \Exception('No se puede determinar el sector del fraccionamiento');
+                }
+            }
+
             $fraccionamientoMasivo = FraccionamientoMasivo::create([
                 'almacen_id' => $almacenId,
                 'sector_id' => $sectorId,
