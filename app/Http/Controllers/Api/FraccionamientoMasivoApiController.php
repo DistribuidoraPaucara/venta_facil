@@ -25,7 +25,7 @@ class FraccionamientoMasivoApiController extends Controller
         try {
             $validated = $request->validate([
                 'almacen_id' => 'required|integer|exists:almacenes,id',
-                'sector_id' => 'required|integer|exists:sectores,id',
+                'sector_id' => 'nullable|integer|exists:sectores,id',
                 'razon' => 'required|in:fraccionamiento_manual,fraccionamiento_compra,reagrupamiento,ajuste_inventario',
                 'notas' => 'nullable|string|max:1000',
                 'detalles' => 'required|array|min:1',
@@ -36,9 +36,21 @@ class FraccionamientoMasivoApiController extends Controller
                 'detalles.*.factor_conversion' => 'nullable|numeric|min:0.01',
             ]);
 
+            // Obtener sector automáticamente del producto padre si no se proporciona
+            $sectorId = $validated['sector_id'];
+            if (!$sectorId && !empty($validated['detalles'])) {
+                $productoPadreId = $validated['detalles'][0]['producto_padre_id'];
+                $stockLimite = \App\Models\StockLimite::where('producto_id', $productoPadreId)
+                    ->where('almacen_id', $validated['almacen_id'])
+                    ->first();
+                if ($stockLimite) {
+                    $sectorId = $stockLimite->sector_id;
+                }
+            }
+
             $fm = $this->service->registrar(
                 $validated['almacen_id'],
-                $validated['sector_id'],
+                $sectorId,
                 $validated['detalles'],
                 $validated['razon'],
                 $validated['notas'] ?? null
