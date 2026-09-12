@@ -158,9 +158,9 @@ class FraccionamientoMasivoService
             'cantidad_disponible' => DB::raw('cantidad_disponible + ' . $cpHijo),
         ]);
 
-        // Releer datos actualizados con fresh()
-        $spA = $sp->fresh();
-        $shA = $sh->fresh();
+        // Releer datos actualizados directamente desde SQL
+        $spA = DB::table('stock_productos')->where('id', $sp->id)->first();
+        $shA = DB::table('stock_productos')->where('id', $sh->id)->first();
 
         MovimientoInventario::create([
             'stock_producto_id' => $sp->id,
