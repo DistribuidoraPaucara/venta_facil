@@ -52,7 +52,8 @@ export default function CrearFraccionamientoMasivo() {
 
   const cargarProductos = async () => {
     try {
-      const res = await fetch('/api/fraccionamientos/productos/disponibles');
+      // Obtener todos los productos activos como fallback
+      const res = await fetch('/api/productos?activos=true');
       const data = await res.json();
       setProductos(data.data || []);
     } catch (error) {
