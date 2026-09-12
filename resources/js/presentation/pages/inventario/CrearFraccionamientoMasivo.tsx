@@ -44,7 +44,8 @@ export default function CrearFraccionamientoMasivo() {
     try {
       const res = await fetch('/api/almacenes');
       const data = await res.json();
-      setAlmacenes(data.data || []);
+      const almacenesArray = Array.isArray(data) ? data : data.data || [];
+      setAlmacenes(almacenesArray);
     } catch (error) {
       console.error('Error cargando almacenes:', error);
     }
@@ -52,22 +53,35 @@ export default function CrearFraccionamientoMasivo() {
 
   const cargarProductos = async () => {
     try {
-      // Obtener todos los productos activos como fallback
-      const res = await fetch('/api/productos?activos=true');
+      // Obtener todos los productos activos
+      const res = await fetch('/api/productos');
       const data = await res.json();
-      setProductos(data.data || []);
+
+      // Manejar diferentes formatos de respuesta
+      let productosArray: any[] = [];
+      if (Array.isArray(data)) {
+        productosArray = data;
+      } else if (data.data) {
+        productosArray = Array.isArray(data.data) ? data.data : [data.data];
+      } else if (data.productos) {
+        productosArray = Array.isArray(data.productos) ? data.productos : [data.productos];
+      }
+
+      setProductos(productosArray);
     } catch (error) {
       console.error('Error cargando productos:', error);
+      setProductos([]);
     }
   };
 
-  const productosFilrados = productos.filter(p =>
-    p.nombre.toLowerCase().includes(buscaProductoPadre.toLowerCase()) ||
-    p.sku.toLowerCase().includes(buscaProductoPadre.toLowerCase())
-  );
+  const productosFilrados = Array.isArray(productos) ? productos.filter(p =>
+    p.nombre?.toLowerCase().includes(buscaProductoPadre.toLowerCase()) ||
+    p.sku?.toLowerCase().includes(buscaProductoPadre.toLowerCase())
+  ) : [];
 
   const agregarProductoPadre = async (productoPadreId: number) => {
-    const productoPadre = productos.find(p => p.id === productoPadreId);
+    const productosArray = Array.isArray(productos) ? productos : [];
+    const productoPadre = productosArray.find((p: any) => p.id === productoPadreId);
     if (!productoPadre) return;
 
     // Obtener conversiones (productos hijos)
