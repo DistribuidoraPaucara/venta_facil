@@ -104,10 +104,17 @@ class FraccionamientoMasivoService
             throw new \Exception("Producto {$pp->nombre} no tiene sector asignado en almacén {$almacenId}");
         }
 
-        // Obtener sector del hijo desde stock_limites
-        $sectorHijo = \App\Models\StockLimite::where('producto_id', $phId)
+        // Obtener sector del hijo: primero buscar donde ya tiene stock, luego de stock_limites
+        $sectorHijo = StockProducto::where('producto_id', $phId)
             ->where('almacen_id', $almacenId)
             ->value('sector_id');
+
+        if (!$sectorHijo) {
+            // Si no hay stock, obtener de stock_limites
+            $sectorHijo = \App\Models\StockLimite::where('producto_id', $phId)
+                ->where('almacen_id', $almacenId)
+                ->value('sector_id');
+        }
 
         if (!$sectorHijo) {
             throw new \Exception("Producto {$ph->nombre} no tiene sector asignado en almacén {$almacenId}");
