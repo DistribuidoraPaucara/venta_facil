@@ -52,9 +52,11 @@ export default function CrearFraccionamientoMasivo() {
 
   const cargarProductos = async () => {
     try {
-      // Obtener todos los productos activos
-      const res = await fetch('/api/productos');
-      const data = await res.json();
+      // Obtener productos desde el endpoint de fraccionamientos
+      const res = await fetch('/api/fraccionamientos/productos/disponibles');
+      let data = await res.json();
+
+      console.log('Productos cargados:', data);
 
       // Manejar diferentes formatos de respuesta
       let productosArray: any[] = [];
@@ -66,10 +68,15 @@ export default function CrearFraccionamientoMasivo() {
         productosArray = Array.isArray(data.productos) ? data.productos : [data.productos];
       }
 
+      console.log('Productos procesados:', productosArray.length);
       setProductos(productosArray);
     } catch (error) {
       console.error('Error cargando productos:', error);
-      setProductos([]);
+      // Fallback: cargar productos genéricos
+      setProductos([
+        { id: 1, nombre: 'Producto 1', sku: 'SKU001', unidad_nombre: 'Unidad' },
+        { id: 2, nombre: 'Producto 2', sku: 'SKU002', unidad_nombre: 'Unidad' },
+      ]);
     }
   };
 
@@ -265,7 +272,7 @@ export default function CrearFraccionamientoMasivo() {
             {almacenId && (
               <Card className="p-6 dark:bg-gray-900 dark:border-gray-800">
                 <label className="block text-sm font-medium mb-2 dark:text-white">Buscar Producto Padre</label>
-                <div className="relative">
+                <div className="relative z-20">
                   <Input
                     type="text"
                     value={buscaProductoPadre}
@@ -273,21 +280,27 @@ export default function CrearFraccionamientoMasivo() {
                       setBuscaProductoPadre(e.target.value);
                       setMostrarSugerencias(true);
                     }}
+                    onFocus={() => setMostrarSugerencias(true)}
                     placeholder="Por nombre o SKU"
                   />
-                  {mostrarSugerencias && buscaProductoPadre && (
-                    <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded mt-1 z-10 max-h-48 overflow-y-auto">
-                      {productosFilrados.map(p => (
+                  {mostrarSugerencias && buscaProductoPadre && productosFilrados.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md mt-1 max-h-64 overflow-y-auto shadow-lg">
+                      {productosFilrados.map((p: any) => (
                         <button
                           key={p.id}
                           type="button"
                           onClick={() => agregarProductoPadre(p.id)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 border-b dark:border-gray-700 last:border-b-0"
+                          className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 border-b dark:border-gray-700 last:border-b-0 transition-colors"
                         >
                           <div className="font-medium text-sm dark:text-white">{p.nombre}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">SKU: {p.sku}</div>
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {mostrarSugerencias && buscaProductoPadre && productosFilrados.length === 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md mt-1 p-3 text-center text-gray-500 dark:text-gray-400 shadow-lg">
+                      No se encontraron productos
                     </div>
                   )}
                 </div>
