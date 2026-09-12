@@ -184,6 +184,8 @@ class FraccionamientoMasivoService
         MovimientoInventario::create([
             'stock_producto_id' => $sp->id,
             'cantidad' => -$cpPadre,
+            'cantidad_anterior' => $spAntes['cantidad_disponible'],
+            'cantidad_posterior' => $spDespues['cantidad_disponible'],
             'cantidad_total_anterior' => $spAntes['cantidad'],
             'cantidad_total_posterior' => $spDespues['cantidad'],
             'cantidad_disponible_anterior' => $spAntes['cantidad_disponible'],
@@ -200,6 +202,8 @@ class FraccionamientoMasivoService
         MovimientoInventario::create([
             'stock_producto_id' => $sh->id,
             'cantidad' => $cpHijo,
+            'cantidad_anterior' => $shAntes['cantidad_disponible'],
+            'cantidad_posterior' => $shDespues['cantidad_disponible'],
             'cantidad_total_anterior' => $shAntes['cantidad'],
             'cantidad_total_posterior' => $shDespues['cantidad'],
             'cantidad_disponible_anterior' => $shAntes['cantidad_disponible'],
