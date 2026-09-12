@@ -76,9 +76,9 @@ export default function CrearFraccionamientoMasivo() {
     const productoPadre = productosArray.find((p: any) => p.id === productoPadreId);
     if (!productoPadre) return;
 
-    // Obtener conversiones (productos hijos)
+    // Obtener conversiones (productos hijos) - mismo endpoint que CrearFraccionamiento
     try {
-      const res = await fetch(`/api/fraccionamientos/producto/${productoPadreId}/conversiones`);
+      const res = await fetch(`/api/inventario/fraccionamientos/producto/${productoPadreId}/conversiones`);
       const data = await res.json();
       console.log('Conversiones cargadas:', data);
 
