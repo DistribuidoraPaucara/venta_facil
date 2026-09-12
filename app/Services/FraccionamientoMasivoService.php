@@ -155,6 +155,10 @@ class FraccionamientoMasivoService
                 'cantidad_reservada' => 0,
             ]);
 
+        // Releer los valores ANTES de actualizar para registrar correctamente en movimientos
+        $spAntes = DB::table('stock_productos')->where('id', $sp->id)->first();
+        $shAntes = DB::table('stock_productos')->where('id', $sh->id)->first();
+
         StockProducto::where('id', $sp->id)->update([
             'cantidad' => DB::raw('cantidad - ' . $cpPadre),
             'cantidad_disponible' => DB::raw('cantidad_disponible - ' . $cpPadre),
@@ -185,11 +189,11 @@ class FraccionamientoMasivoService
         MovimientoInventario::create([
             'stock_producto_id' => $sp->id,
             'cantidad' => -$cpPadre,
-            'cantidad_total_anterior' => $sp->cantidad,
+            'cantidad_total_anterior' => $spAntes->cantidad,
             'cantidad_total_posterior' => $spA->cantidad,
-            'cantidad_disponible_anterior' => $sp->cantidad_disponible,
+            'cantidad_disponible_anterior' => $spAntes->cantidad_disponible,
             'cantidad_disponible_posterior' => $spA->cantidad_disponible,
-            'cantidad_reservada_anterior' => $sp->cantidad_reservada ?? 0,
+            'cantidad_reservada_anterior' => $spAntes->cantidad_reservada ?? 0,
             'cantidad_reservada_posterior' => $spA->cantidad_reservada ?? 0,
             'tipo' => 'SALIDA_FRACCIONAMIENTO',
             'observacion' => "Fraccionamiento masivo: $cpPadre → $cpHijo",
@@ -201,11 +205,11 @@ class FraccionamientoMasivoService
         MovimientoInventario::create([
             'stock_producto_id' => $sh->id,
             'cantidad' => $cpHijo,
-            'cantidad_total_anterior' => $sh->cantidad,
+            'cantidad_total_anterior' => $shAntes->cantidad,
             'cantidad_total_posterior' => $shA->cantidad,
-            'cantidad_disponible_anterior' => $sh->cantidad_disponible,
+            'cantidad_disponible_anterior' => $shAntes->cantidad_disponible,
             'cantidad_disponible_posterior' => $shA->cantidad_disponible,
-            'cantidad_reservada_anterior' => $sh->cantidad_reservada ?? 0,
+            'cantidad_reservada_anterior' => $shAntes->cantidad_reservada ?? 0,
             'cantidad_reservada_posterior' => $shA->cantidad_reservada ?? 0,
             'tipo' => 'ENTRADA_FRACCIONAMIENTO',
             'observacion' => "Fraccionamiento masivo: $cpPadre → $cpHijo",
