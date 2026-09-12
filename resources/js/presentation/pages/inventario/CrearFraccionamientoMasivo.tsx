@@ -52,31 +52,43 @@ export default function CrearFraccionamientoMasivo() {
 
   const cargarProductos = async () => {
     try {
-      // Obtener productos desde el endpoint de fraccionamientos
-      const res = await fetch('/api/fraccionamientos/productos/disponibles');
-      let data = await res.json();
+      // Intentar obtener desde endpoint directo de productos
+      let res = await fetch('/api/productos');
 
-      console.log('Productos cargados:', data);
+      if (!res.ok) {
+        // Si falla, intentar otro endpoint
+        res = await fetch('/productos/api');
+      }
+
+      const data = await res.json();
+      console.log('Respuesta de API:', data);
 
       // Manejar diferentes formatos de respuesta
       let productosArray: any[] = [];
       if (Array.isArray(data)) {
         productosArray = data;
-      } else if (data.data) {
-        productosArray = Array.isArray(data.data) ? data.data : [data.data];
-      } else if (data.productos) {
-        productosArray = Array.isArray(data.productos) ? data.productos : [data.productos];
+      } else if (data.data && Array.isArray(data.data)) {
+        productosArray = data.data;
+      } else if (data.productos && Array.isArray(data.productos)) {
+        productosArray = data.productos;
+      } else if (data.data && typeof data.data === 'object') {
+        productosArray = [data.data];
       }
 
-      console.log('Productos procesados:', productosArray.length);
+      // Asegurar que cada producto tenga los campos necesarios
+      productosArray = productosArray.map((p: any) => ({
+        id: p.id,
+        nombre: p.nombre || '',
+        sku: p.sku || '',
+        unidad_nombre: p.unidad_nombre || p.unidad?.nombre || 'Unidad',
+      }));
+
+      console.log('Productos procesados:', productosArray.length, productosArray);
       setProductos(productosArray);
     } catch (error) {
       console.error('Error cargando productos:', error);
-      // Fallback: cargar productos genéricos
-      setProductos([
-        { id: 1, nombre: 'Producto 1', sku: 'SKU001', unidad_nombre: 'Unidad' },
-        { id: 2, nombre: 'Producto 2', sku: 'SKU002', unidad_nombre: 'Unidad' },
-      ]);
+      // Mostrar array vacío - el usuario puede ver el error en consola
+      setProductos([]);
     }
   };
 
