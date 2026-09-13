@@ -452,17 +452,44 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                     <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-4">
                         {/* Unidad Base */}
                         <div className="space-y-2">
-                            <Label>Unidad Base (Almacenamiento)</Label>
+                            <div className="flex items-center gap-1">
+                                <Label>Unidad Base (Almacenamiento)</Label>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        Auto-asignada del producto
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                             <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm dark:border-slate-600 dark:bg-slate-800">
                                 {unidadBase ? `${unidadBase.nombre} (${unidadBase.codigo})` : 'N/A'}
                             </div>
-                            <p className="text-xs text-muted-foreground">Auto-asignada del producto</p>
                         </div>
 
                         {/* ✨ REFACTORIZADO: Búsqueda directa de Producto Destino */}
                         {/* El producto trae su unidad y nombre automáticamente */}
                         <div className="space-y-2 sm:col-span-2">
-                            <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
+                            <div className="flex items-center gap-1">
+                                <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        Selecciona el producto en el que se fracciona este. Se auto-llenan: unidad destino y nombre.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                             <InputSearchSelect
                                 options={productosDestino}
                                 value={formConversion.producto_destino_id || ''}
@@ -482,9 +509,6 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 loading={false}
                                 emptyText="Sin coincidencias. Intenta otro término."
                             />
-                            <p className="text-xs text-muted-foreground">
-                                Selecciona el producto en el que se fracciona este. Se auto-llenan: unidad destino y nombre.
-                            </p>
                             {formConversion.unidad_destino_id && (
                                 <div className="mt-2 flex gap-2 rounded bg-blue-50 p-2 dark:bg-blue-950/30">
                                     <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
@@ -496,7 +520,21 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
 
                         {/* Factor Conversión */}
                         <div className="space-y-2">
-                            <Label>Factor de Conversión *</Label>
+                            <div className="flex items-center gap-1">
+                                <Label>Factor de Conversión *</Label>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        Cuántas unidades destino hay en 1 unidad base (Ej: 100 significa 1 paquete = 100 unidades)
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                             <div className="flex items-center gap-2">
                                 <Input
                                     ref={factorInputRef}
@@ -514,13 +552,26 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     className="flex-1 text-base font-bold"
                                 />
                             </div>
-                            <p className="text-xs text-muted-foreground">Cuántas unidades destino hay en 1 unidad base</p>
                             {loadingConversiones && <div className="mt-3 text-xs text-muted-foreground italic">Cargando conversiones comunes...</div>}
                         </div>
 
                         {/* ✨ NUEVO (2026-09-06): Nombre cuando se vende en esta unidad */}
                         <div className="space-y-2">
-                            <Label>Nombre cuando se vende en esta unidad (Opcional)</Label>
+                            <div className="flex items-center gap-1">
+                                <Label>Nombre cuando se vende en esta unidad (Opcional)</Label>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        Si dejas vacío, se genera automáticamente. Ej: Si el producto es "Paquete de Coca Cola 6x1", se mostrará como "Coca Cola 2Lts" cuando se venda por unidad.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                             <Input
                                 type="text"
                                 value={formConversion.nombre_cuando_se_vende_como || ''}
@@ -533,10 +584,6 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 placeholder="Ej: Coca Cola 2Lts (para mostrar en venta por unidad)"
                                 className="text-base"
                             />
-                            <p className="text-xs text-muted-foreground">
-                                Si dejas vacío, se genera automáticamente. Ej: Si el producto es &quot;Paquete de Coca Cola 6x1&quot;,
-                                se mostrará como &quot;Coca Cola 2Lts&quot; cuando se venda por unidad.
-                            </p>
                         </div>
 
                         {/* Conversión Principal */}
