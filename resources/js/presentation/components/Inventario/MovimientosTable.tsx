@@ -284,9 +284,9 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                                 <div className="rounded bg-green-50 dark:bg-green-900/20">
                                                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">✅ Disponible Total</p>
                                                     <p className="font-bold text-green-700 dark:text-green-400">
-                                                        {movimiento.disponible_total_anterior !== undefined &&
-                                                        movimiento.disponible_total_anterior !== null
-                                                            ? Math.floor(movimiento.disponible_total_anterior)
+                                                        {movimiento.cantidad_disponible_anterior !== undefined &&
+                                                        movimiento.cantidad_disponible_anterior !== null
+                                                            ? Math.floor(movimiento.cantidad_disponible_anterior)
                                                             : 0}
                                                     </p>
                                                 </div>
@@ -359,9 +359,9 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                                 <div className="rounded bg-green-50 px-2 py-1 dark:bg-green-900/20">
                                                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">✅ Disponible Total</p>
                                                     <p className="font-bold text-green-700 dark:text-green-400">
-                                                        {movimiento.disponible_total_posterior !== undefined &&
-                                                        movimiento.disponible_total_posterior !== null
-                                                            ? Math.floor(movimiento.disponible_total_posterior)
+                                                        {movimiento.cantidad_disponible_posterior !== undefined &&
+                                                        movimiento.cantidad_disponible_posterior !== null
+                                                            ? Math.floor(movimiento.cantidad_disponible_posterior)
                                                             : 0}
                                                     </p>
                                                 </div>

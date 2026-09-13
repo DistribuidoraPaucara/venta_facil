@@ -258,13 +258,19 @@ export default function CrearFraccionamiento() {
   const buscarConversiones = async (productoPadreId: number) => {
     setCargandoConversiones(true);
     try {
-      const res = await fetch(`/api/inventario/fraccionamientos/producto/${productoPadreId}/conversiones`);
+      const url = `/api/inventario/fraccionamientos/producto/${productoPadreId}/conversiones`;
+      console.log('Buscando conversiones en:', url);
+      const res = await fetch(url);
       const data = await res.json();
 
-      if (data.success && data.data.length > 0) {
+      console.log('Respuesta conversiones:', data);
+
+      if (data.success && data.data && data.data.length > 0) {
+        console.log('Conversiones cargadas:', data.data);
         setConversionesDisponibles(data.data);
         toast.success(`${data.data.length} conversión(es) disponible(s)`);
       } else {
+        console.log('Sin conversiones disponibles');
         setConversionesDisponibles([]);
       }
     } catch (error) {
@@ -710,7 +716,11 @@ export default function CrearFraccionamiento() {
                                 setFormData({ ...formData, cantidad_padre: valor });
                                 // Calcular automáticamente cantidad_hijo
                                 if (valor && !isNaN(parseFloat(valor)) && conversionesDisponibles.length > 0) {
-                                  const cantidadCalculada = (parseFloat(valor) * conversionesDisponibles[0].factor_conversion).toFixed(2);
+                                  const conv = conversionesDisponibles[0];
+                                  const factor = conv.factor_conversion || conv.factor || 1;
+                                  console.log('Conversión:', conv);
+                                  console.log('Factor:', factor);
+                                  const cantidadCalculada = (parseFloat(valor) * factor).toFixed(2);
                                   setFormData((prev) => ({ ...prev, cantidad_hijo: cantidadCalculada }));
                                 }
                               }}
@@ -736,7 +746,7 @@ export default function CrearFraccionamiento() {
                           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Cálculo Automático:</p>
                             <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                              {formData.cantidad_padre} {productoPadre?.unidad_nombre} × {conversionesDisponibles[0].factor_conversion} = <span className="text-green-600 dark:text-green-400">{formData.cantidad_hijo} {productoHijo?.unidad_nombre}</span>
+                              {formData.cantidad_padre} {productoPadre?.unidad_nombre} × {conversionesDisponibles[0].factor_conversion || conversionesDisponibles[0].factor || 1} = <span className="text-green-600 dark:text-green-400">{formData.cantidad_hijo} {productoHijo?.unidad_nombre}</span>
                             </p>
                           </div>
                         )}

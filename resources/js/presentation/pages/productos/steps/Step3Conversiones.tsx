@@ -49,6 +49,15 @@ const initialFormConversion: FormConversion = {
     es_conversion_principal: false,
 };
 
+// ✨ NUEVO: Función para mostrar solo decimales necesarios
+const formatearNumero = (num: number | string, maxDecimals: number = 2): string => {
+    const numVal = typeof num === 'string' ? parseFloat(num) : num;
+    if (isNaN(numVal)) return String(num);
+    if (Number.isInteger(numVal)) return String(Math.floor(numVal));
+    const formatted = numVal.toFixed(maxDecimals);
+    return parseFloat(formatted).toString();
+};
+
 export default function Step3Conversiones({ data, unidadesOptions, unidadBase, setData, errors = {} }: Step3Props) {
     const [formConversion, setFormConversion] = useState<FormConversion>(initialFormConversion);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -61,6 +70,8 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
 
     // Productos cachados (se cargan una sola vez al montar)
     const [todosProductos, setTodosProductos] = useState<any[]>([]);
+    // ✨ NUEVO: Stock de productos destino
+    const [stockProductosDestino, setStockProductosDestino] = useState<Record<number, number>>({});
 
     // Cargar lista completa de productos al montar (ONCE)
     useEffect(() => {
@@ -69,6 +80,12 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                 const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
                 if (response.data.success && response.data.data) {
                     setTodosProductos(response.data.data);
+
+                    // ✨ NUEVO: Cargar stock de todos los productos
+                    const productIds = response.data.data.map((p: any) => p.id);
+                    if (productIds.length > 0) {
+                        cargarStockProductos(productIds);
+                    }
                 }
             } catch (error) {
                 console.error('❌ Error cargando productos iniciales:', error);
@@ -77,6 +94,22 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
 
         cargarProductosIniciales();
     }, []); // Solo corre una vez al montar
+
+    // ✨ NUEVO: Cargar stock total de productos
+    const cargarStockProductos = async (productIds: number[]) => {
+        try {
+            const response = await axios.get('/api/productos/stock-total', {
+                params: {
+                    product_ids: productIds.join(','),
+                },
+            });
+            if (response.data.success && response.data.data) {
+                setStockProductosDestino(response.data.data);
+            }
+        } catch (error) {
+            console.error('❌ Error cargando stock de productos:', error);
+        }
+    };
 
     // Filtrar productos localmente (sin peticiones al servidor)
     const handleBuscarProductoDestino = (termino: string) => {
@@ -572,6 +605,8 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     <th className="px-4 py-2 text-left">Unidad Base</th>
                                     <th className="px-4 py-2 text-left">Factor</th>
                                     <th className="px-4 py-2 text-left">Unidad Destino</th>
+                                    <th className="px-4 py-2 text-left">👶 Producto Hijo</th>
+                                    <th className="px-4 py-2 text-left">📊 Stock Hijo</th>
                                     <th className="px-4 py-2 text-left">📦 Nombre en Venta</th>
                                     <th className="px-4 py-2 text-center">Activo</th>
                                     <th className="px-4 py-2 text-center">Principal</th>
@@ -586,12 +621,40 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     >
                                         <td className="px-4 py-2">{unidadBase?.nombre || 'N/A'}</td>
                                         <td className="px-4 py-2">
-                                            <strong>{conv.factor_conversion}</strong>
+                                            <strong>{formatearNumero(conv.factor_conversion)}</strong>
                                             <span className="ml-1 text-xs text-muted-foreground">
                                                 {unidadBase?.codigo || ''} → {getUnitLabel(conv.unidad_destino_id)}
                                             </span>
                                         </td>
                                         <td className="px-4 py-2">{getUnitLabel(conv.unidad_destino_id)}</td>
+                                        {/* ✨ NUEVO: Mostrar producto hijo relacionado */}
+                                        <td className="px-4 py-2 text-xs">
+                                            {conv.producto_destino ? (
+                                                <span className="inline-block rounded bg-purple-100 px-2 py-1 font-semibold text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                                                    {conv.producto_destino.sku} - {conv.producto_destino.nombre}
+                                                </span>
+                                            ) : conv.producto_destino_id ? (
+                                                <span className="inline-block rounded bg-gray-100 px-2 py-1 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                                    ID: {conv.producto_destino_id}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground italic">-</span>
+                                            )}
+                                        </td>
+                                        {/* ✨ NUEVO: Mostrar stock actual del producto hijo */}
+                                        <td className="px-4 py-2 text-xs text-center">
+                                            {conv.producto_destino_id ? (
+                                                <span className={`inline-block rounded px-2 py-1 font-semibold ${
+                                                    (stockProductosDestino[conv.producto_destino_id] ?? 0) > 0
+                                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                                }`}>
+                                                    {formatearNumero(stockProductosDestino[conv.producto_destino_id] ?? 0)}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground italic">-</span>
+                                            )}
+                                        </td>
                                         {/* ✨ NUEVO (2026-09-06): Mostrar nombre personalizado */}
                                         <td className="px-4 py-2 text-xs">
                                             {conv.nombre_cuando_se_vende_como ? (

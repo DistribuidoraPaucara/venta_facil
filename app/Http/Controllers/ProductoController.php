@@ -942,13 +942,18 @@ class ProductoController extends Controller
 
         // Cargar conversiones de unidad
         $payload['conversiones'] = $producto->conversiones()
-            ->with(['unidadBase:id,nombre,codigo', 'unidadDestino:id,nombre,codigo'])
+            ->with([
+                'unidadBase:id,nombre,codigo',
+                'unidadDestino:id,nombre,codigo',
+                'productoDestino:id,nombre,sku' // ✨ NUEVO: Cargar producto destino (hijo)
+            ])
             ->get()
             ->map(function ($conv) {
                 return [
                     'id'                      => $conv->id,
                     'unidad_base_id'          => $conv->unidad_base_id,
                     'unidad_destino_id'       => $conv->unidad_destino_id,
+                    'producto_destino_id'     => $conv->producto_destino_id,
                     'factor_conversion'       => (float) $conv->factor_conversion,
                     'nombre_cuando_se_vende_como' => $conv->nombre_cuando_se_vende_como, // ✨ NUEVO (2026-09-06)
                     'activo'                  => (bool) $conv->activo,
@@ -962,6 +967,11 @@ class ProductoController extends Controller
                         'id'     => $conv->unidadDestino->id,
                         'nombre' => $conv->unidadDestino->nombre,
                         'codigo' => $conv->unidadDestino->codigo,
+                    ] : null,
+                    'producto_destino'        => $conv->productoDestino ? [ // ✨ NUEVO: Incluir datos del producto destino
+                        'id'   => $conv->productoDestino->id,
+                        'nombre' => $conv->productoDestino->nombre,
+                        'sku'  => $conv->productoDestino->sku,
                     ] : null,
                 ];
             })->toArray();
@@ -5593,6 +5603,60 @@ class ProductoController extends Controller
                 'success' => false,
                 'status' => 500,
                 'message' => 'Error al subir imagen',
+            ], 500);
+        }
+    }
+
+    // ✨ NUEVO: Obtener stock total de múltiples productos
+    public function obtenerStockTotal(Request $request): JsonResponse
+    {
+        try {
+            $productIds = $request->string('product_ids', '');
+
+            if (empty($productIds)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                ]);
+            }
+
+            // Parsear los IDs
+            $ids = array_filter(array_map('intval', explode(',', $productIds)));
+
+            if (empty($ids)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                ]);
+            }
+
+            // Obtener stock total de cada producto (suma de todos los almacenes)
+            $stocks = StockProducto::whereIn('producto_id', $ids)
+                ->selectRaw('producto_id, SUM(cantidad) as stock_total')
+                ->groupBy('producto_id')
+                ->pluck('stock_total', 'producto_id')
+                ->toArray();
+
+            // Asegurar que todos los IDs tengan un valor (0 si no tiene stock)
+            $resultado = [];
+            foreach ($ids as $id) {
+                $resultado[$id] = $stocks[$id] ?? 0;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error obteniendo stock total', [
+                'error' => $e->getMessage(),
+                'product_ids' => $request->string('product_ids'),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener stock',
             ], 500);
         }
     }

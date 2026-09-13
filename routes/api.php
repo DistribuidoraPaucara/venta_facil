@@ -371,6 +371,7 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     Route::get('/app/productos/filtros', [ProductoController::class, 'filtros']);
     Route::get('/app/productos/buscar', [ProductoController::class, 'buscarApi']);
     Route::get('/app/productos/listar', [ProductoController::class, 'listarApi']);
+    Route::get('/productos/stock-total', [ProductoController::class, 'obtenerStockTotal']); // ✨ NUEVO: Stock total de múltiples productos
     Route::get('/app/productos/{producto}', [ProductoController::class, 'showApi']);
     Route::put('/app/productos/{producto}', [ProductoController::class, 'updateApi']);  // Actualizar
     Route::delete('/app/productos/{producto}', [ProductoController::class, 'destroyApi']); // Eliminar

@@ -4,6 +4,7 @@ import movimientos from './movimientos'
 import productosVendidos from './productos-vendidos'
 import ajuste from './ajuste'
 import fraccionamientos from './fraccionamientos'
+import fraccionamientosMasivos from './fraccionamientos-masivos'
 import ajusteTabla from './ajuste-tabla'
 import ajusteMasivo from './ajuste-masivo'
 import historialCargas from './historial-cargas'
@@ -654,6 +655,7 @@ movimientos,
 productosVendidos,
 ajuste,
 fraccionamientos,
+fraccionamientosMasivos,
 ajusteTabla,
 ajusteMasivo,
 historialCargas,

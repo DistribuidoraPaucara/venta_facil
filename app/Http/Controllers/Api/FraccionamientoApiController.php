@@ -331,22 +331,38 @@ class FraccionamientoApiController extends Controller
      * GET /api/inventario/fraccionamientos/productos/disponibles
      * Obtener productos activos de la empresa para fraccionamientos con stock y límites
      */
-    public function productosDisponibles(): JsonResponse
+    public function productosDisponibles(Request $request): JsonResponse
     {
         try {
             $empresaId = auth()->user()?->empresa_id;
+            $search = $request->string('search', '')->trim();
 
-            $productos = \App\Models\Producto::where('activo', true)
+            $query = \App\Models\Producto::where('activo', true)
                 ->where('empresa_id', $empresaId)
-                ->select('id', 'nombre', 'sku', 'unidad_medida_id')
-                ->with([
+                ->select('id', 'nombre', 'sku', 'unidad_medida_id');
+
+            // ✨ NUEVO: Filtrar por búsqueda si se proporciona
+            if ($search && strlen($search) >= 2) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nombre', 'LIKE', "%{$search}%")
+                      ->orWhere('sku', 'LIKE', "%{$search}%")
+                      // Buscar también en códigos de barras
+                      ->orWhereHas('codigosBarra', function ($codigoQuery) use ($search) {
+                          $codigoQuery->where('codigo', 'LIKE', "%{$search}%");
+                      });
+                });
+            }
+
+            $productos = $query->with([
                     'unidad:id,nombre,codigo',
+                    'codigosBarra:id,producto_id,codigo',
                     'stock:id,producto_id,almacen_id,sector_id,cantidad,cantidad_disponible',
                     'stock.almacen:id,nombre',
                     'stock.sector:id,nombre',
                     'stockLimites:id,producto_id,almacen_id,sector_id,stock_minimo,stock_maximo,capacidad_advertencia',
                 ])
                 ->orderBy('nombre')
+                ->limit(50)
                 ->get()
                 ->map(function ($producto) {
                     // Agrupar stocks por almacén y sector
@@ -374,12 +390,21 @@ class FraccionamientoApiController extends Controller
                         ];
                     })->toArray() ?? [];
 
+                    // ✨ NUEVO: Incluir códigos de barras
+                    $codigos = $producto->codigosBarra?->map(function ($codigo) {
+                        return [
+                            'id' => $codigo->id,
+                            'codigo' => $codigo->codigo,
+                        ];
+                    })->toArray() ?? [];
+
                     return [
                         'id' => $producto->id,
                         'nombre' => $producto->nombre,
                         'sku' => $producto->sku,
                         'unidad_medida_id' => $producto->unidad_medida_id,
                         'unidad_nombre' => $producto->unidad?->nombre ?? 'Unidad',
+                        'codigos' => $codigos,
                         'stocks' => $stocksPorUbicacion,
                         'limites' => $limitesPorUbicacion,
                         'stock_total' => collect($stocksPorUbicacion)->sum('cantidad'),

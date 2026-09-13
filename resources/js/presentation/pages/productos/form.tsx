@@ -115,6 +115,9 @@ export default function ProductoForm({
     const [perfilState, setPerfilState] = useState<Imagen | undefined>(producto?.perfil ?? undefined);
     const [galeriaState, setGaleriaState] = useState<Imagen[]>(producto?.galeria ?? []);
 
+    // ✨ NUEVO: Estado para stock de productos hijos
+    const [stockProductosHijos, setStockProductosHijos] = useState<Record<number, number>>({});
+
     // 🏭 Estado separado para ingredientes de receta
     interface Ingrediente {
         producto_id: number | string;
@@ -340,6 +343,42 @@ export default function ProductoForm({
             setTimeout(() => addAlmacen(), 0);
         }
     }, [isEditing]);
+
+    // ✨ NUEVO: Cargar stock de productos hijos cuando cambien las conversiones
+    useEffect(() => {
+        const cargarStockProductosHijos = async () => {
+            if (!data.conversiones || data.conversiones.length === 0) {
+                setStockProductosHijos({});
+                return;
+            }
+
+            // Obtener IDs de productos destino
+            const productIds = (data.conversiones as any[])
+                .filter((conv) => conv.producto_destino_id)
+                .map((conv) => conv.producto_destino_id as number);
+
+            if (productIds.length === 0) {
+                setStockProductosHijos({});
+                return;
+            }
+
+            try {
+                const response = await axios.get('/api/productos/stock-total', {
+                    params: {
+                        product_ids: productIds.join(','),
+                    },
+                });
+
+                if (response.data.success && response.data.data) {
+                    setStockProductosHijos(response.data.data);
+                }
+            } catch (error) {
+                console.error('❌ Error cargando stock de productos hijos:', error);
+            }
+        };
+
+        cargarStockProductosHijos();
+    }, [data.conversiones]);
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -605,12 +644,20 @@ export default function ProductoForm({
             (data.conversiones as any[]).forEach((conv, i) => {
                 formData.append(`conversiones[${i}][unidad_base_id]`, String(conv.unidad_base_id));
                 formData.append(`conversiones[${i}][unidad_destino_id]`, String(conv.unidad_destino_id));
-                formData.append(`conversiones[${i}][producto_destino_id]`, conv.producto_destino_id ? String(conv.producto_destino_id) : ''); // ✨ NUEVO: Producto destino para fraccionamientos
+                // ✨ CRÍTICO: Asegurar que producto_destino_id se envía SIEMPRE, incluso si viene en objeto producto_destino
+                const productDestinyId = conv.producto_destino_id || conv.producto_destino?.id;
+                formData.append(`conversiones[${i}][producto_destino_id]`, productDestinyId ? String(productDestinyId) : '');
                 formData.append(`conversiones[${i}][factor_conversion]`, String(conv.factor_conversion));
                 // ✨ NUEVO (2026-09-06): Incluir nombre personalizado (SIEMPRE, aunque esté vacío)
                 formData.append(`conversiones[${i}][nombre_cuando_se_vende_como]`, conv.nombre_cuando_se_vende_como || '');
                 formData.append(`conversiones[${i}][activo]`, conv.activo ? '1' : '0');
                 formData.append(`conversiones[${i}][es_conversion_principal]`, conv.es_conversion_principal ? '1' : '0');
+
+                console.log(`📦 Conversión [${i}] siendo enviada:`, {
+                    producto_destino_id: productDestinyId,
+                    producto_destino: conv.producto_destino,
+                    conv_data: conv,
+                });
             });
 
             console.log('✅ Conversiones enviadas:', data.conversiones);
@@ -902,6 +949,15 @@ export default function ProductoForm({
         return totales;
     };
 
+    // ✨ NUEVO: Función para mostrar solo decimales necesarios
+    const formatearNumero = (num: number | string, maxDecimals: number = 2): string => {
+        const numVal = typeof num === 'string' ? parseFloat(num) : num;
+        if (isNaN(numVal)) return String(num);
+        if (Number.isInteger(numVal)) return String(Math.floor(numVal));
+        const formatted = numVal.toFixed(maxDecimals);
+        return parseFloat(formatted).toString();
+    };
+
     // ✨ NUEVO: Calcular equivalentes totales en diferentes unidades de conversión
     const calcularEquivalentesTotales = () => {
         const totales = calcularTotalesAlmacenes();
@@ -1006,55 +1062,109 @@ export default function ProductoForm({
                     </div>
                 </div>
 
-                {/* 🏢 NUEVO: Resumen de totales de almacenes - SIEMPRE VISIBLE */}
+                {/* 🏢 NUEVO: Resumen de stock por almacén - SIEMPRE VISIBLE */}
                 {(data.almacenes || []).length > 0 &&
                     (() => {
-                        const totales = calcularTotalesAlmacenes();
+                        // ✨ NUEVO: Agrupar y sumar stocks por almacén
+                        const stocksPorAlmacen = (data.almacenes || []).reduce((acc: any, almacen: any) => {
+                            const almacenId = Number(almacen.almacen_id);
+                            if (!acc[almacenId]) {
+                                acc[almacenId] = {
+                                    almacen_id: almacenId,
+                                    cantidad: 0,
+                                    cantidad_disponible: 0,
+                                    cantidad_reservada: 0,
+                                };
+                            }
+                            acc[almacenId].cantidad += Number(almacen.cantidad ?? almacen.stock ?? 0);
+                            acc[almacenId].cantidad_disponible += Number(almacen.cantidad_disponible ?? 0);
+                            acc[almacenId].cantidad_reservada += Number(almacen.cantidad_reservada ?? 0);
+                            return acc;
+                        }, {});
+
                         return (
-                            <div className="mb-4 rounded-lg border border-border bg-card p-3">
-                                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                                    {/* Total General */}
-                                    <div className="rounded-md border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950/50">
-                                        <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                                            📦 Total General: <span className="text-sm">{totales.cantidad.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Total Disponible */}
-                                    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-800 dark:bg-emerald-950/50">
-                                        <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                                            ✅ Disponible: <span className="text-sm">{totales.disponible.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Total Reservada */}
-                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-950/50">
-                                        <div className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                            🔒 Reservado: <span className="text-sm">{totales.reservada.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* ✨ NUEVO: Mostrar equivalentes de conversión si está fraccionado */}
-                                {data.es_fraccionado &&
-                                    data.conversiones &&
-                                    data.conversiones.length > 0 &&
-                                    calcularTotalesAlmacenes().cantidad > 0 && (
-                                        <div className="p-2 items-center">
-                                            {/* <div className="text-sm font-semibold text-purple-900 dark:text-purple-200">📊 Stock Total en Diferentes Unidades</div> */}
-                                            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 items-center mt-2">
-                                                {calcularEquivalentesTotales().map((eq, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="rounded border border-purple-200 bg-white p-3 shadow-sm dark:border-purple-700 dark:bg-slate-800"
-                                                    >
-                                                        <div className="text-xs font-medium text-purple-900 dark:text-purple-200">
-                                                            {eq.nombre_venta || eq.unidad} - {Math.round(eq.cantidad)} {eq.codigo}
+                            <div className="mb-2">
+                                {/* <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">📦 Stock por Almacén</h3> */}
+                                <div>
+                                    <div className="mb-1 grid grid-cols-1 items-end gap-3 md:grid-cols-2">
+                                        {Object.values(stocksPorAlmacen).map((almacen: any, idx: number) => {
+                                            const almacenNombre = almacenes.find((a) => a.id === almacen.almacen_id)?.nombre || 'Sin almacén';
+                                            const cantidad = almacen.cantidad;
+                                            const disponible = almacen.cantidad_disponible;
+                                            const reservada = almacen.cantidad_reservada;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="rounded-md border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900"
+                                                >
+                                                    <div className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-300">{almacenNombre}</div>
+                                                    <div className="grid grid-cols-1 gap-1 text-xs md:grid-cols-3">
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">📦 Total:</span>
+                                                            <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                                                {formatearNumero(cantidad)}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">✅ Disponible:</span>
+                                                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                                                {formatearNumero(disponible)}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">🔒 Reservado:</span>
+                                                            <span className="font-semibold text-amber-600 dark:text-amber-400">
+                                                                {formatearNumero(reservada)}
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                </div>
+                                            );
+                                        })}
+                                        {/* ✨ NUEVO: Mostrar equivalentes de conversión si está fraccionado */}
+                                        {data.es_fraccionado && data.conversiones && data.conversiones.length > 0 && (
+                                            <div>
+                                                {/* Stock de productos hijos */}
+                                                {(data.conversiones as any[]).filter((c) => c.producto_destino_id).length > 0 && (
+                                                    <div>
+                                                        <div className="text-xs font-semibold text-cyan-900 dark:text-cyan-200">
+                                                            Stock Productos Fraccionados
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 items-end">
+                                                            {(data.conversiones as any[])
+                                                                .filter((c) => c.producto_destino_id)
+                                                                .map((conv, idx) => {
+                                                                    const nombreHijo =
+                                                                        conv.producto_destino?.nombre || `ID: ${conv.producto_destino_id}`;
+                                                                    const stockHijo = stockProductosHijos[conv.producto_destino_id] || 0;
+                                                                    return (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className={`rounded border p-1 shadow-sm ${
+                                                                                stockHijo > 0
+                                                                                    ? 'border-cyan-200 bg-cyan-50 dark:border-cyan-700 dark:bg-cyan-950/30'
+                                                                                    : 'border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-950/30'
+                                                                            }`}
+                                                                        >
+                                                                            <div
+                                                                                className={`text-xs font-medium ${
+                                                                                    stockHijo > 0
+                                                                                        ? 'text-cyan-700 dark:text-cyan-300'
+                                                                                        : 'text-red-700 dark:text-red-300'
+                                                                                }`}
+                                                                            >
+                                                                                <div>{nombreHijo} : 📦{formatearNumero(stockHijo)}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         );
                     })()}
@@ -1063,17 +1173,43 @@ export default function ProductoForm({
                     {/* Izquierda: Tabs de edición */}
                     <div className={showImages ? 'lg:col-span-2' : 'w-full'}>
                         <Tabs defaultValue="datos" className="w-full">
-                            <TabsList className={`flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background`}>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <TabsTrigger value="datos">Datos del producto</TabsTrigger>
+                            <TabsList className={`flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-3 rounded-2xl border-0`}>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {/* 🔵 Datos del producto */}
+                                    <TabsTrigger value="datos" className="px-4 py-2 rounded-full font-semibold transition-all duration-300 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-gray-800 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 hover:shadow-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105">
+                                        📋 Datos
+                                    </TabsTrigger>
+
+                                    {/* ✨ Fraccionamiento */}
                                     {permite_productos_fraccionados && data.es_fraccionado && (
-                                        <TabsTrigger value="conversiones">✨ Fraccionamiento</TabsTrigger>
+                                        <TabsTrigger value="conversiones" className="px-4 py-2 rounded-full font-semibold transition-all duration-300 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-gray-800 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 hover:shadow-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105">
+                                            ✨ Fraccionamiento
+                                        </TabsTrigger>
                                     )}
-                                    {/* <TabsTrigger value="precio-rango">💰 Rango de Precios</TabsTrigger> */}
-                                    <TabsTrigger value="precios">Precios y códigos</TabsTrigger>
-                                    {data.es_de_produccion && <TabsTrigger value="ingredientes">🏭 Ingredientes</TabsTrigger>}
-                                    <TabsTrigger value="almacenes">Almacenes</TabsTrigger>
-                                    {isEditing && (producto as any)?.es_combo && <TabsTrigger value="combos">📦 Combos</TabsTrigger>}
+
+                                    {/* 💰 Precios y códigos */}
+                                    <TabsTrigger value="precios" className="px-4 py-2 rounded-full font-semibold transition-all duration-300 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-gray-800 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 hover:shadow-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105">
+                                        💰 Precios
+                                    </TabsTrigger>
+
+                                    {/* 🏭 Ingredientes */}
+                                    {data.es_de_produccion && (
+                                        <TabsTrigger value="ingredientes" className="px-4 py-2 rounded-full font-semibold transition-all duration-300 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-gray-800 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 hover:shadow-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105">
+                                            🏭 Ingredientes
+                                        </TabsTrigger>
+                                    )}
+
+                                    {/* 📦 Almacenes */}
+                                    <TabsTrigger value="almacenes" className="px-4 py-2 rounded-full font-semibold transition-all duration-300 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-gray-800 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 hover:shadow-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105">
+                                        📦 Almacenes
+                                    </TabsTrigger>
+
+                                    {/* 📦 Combos */}
+                                    {isEditing && (producto as any)?.es_combo && (
+                                        <TabsTrigger value="combos" className="px-4 py-2 rounded-full font-semibold transition-all duration-300 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-gray-800 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 hover:shadow-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105">
+                                            📦 Combos
+                                        </TabsTrigger>
+                                    )}
                                 </div>
 
                                 {/* 🎨 Botón para toggliar panel de imágenes */}

@@ -134,7 +134,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 export const productosDisponibles = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +149,7 @@ productosDisponibles.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 productosDisponibles.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ productosDisponibles.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 productosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -167,7 +167,7 @@ productosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 })
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
 productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -177,7 +177,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
     /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
     const productosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -187,7 +187,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
         productosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -196,7 +196,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
         })
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:274
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
  * @route '/api/inventario/fraccionamientos/productos/disponibles'
  */
         productosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -212,7 +212,7 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
     productosDisponibles.form = productosDisponiblesForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
  */
 export const conversionesDelProducto = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -227,7 +227,7 @@ conversionesDelProducto.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
  */
 conversionesDelProducto.url = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -255,7 +255,7 @@ conversionesDelProducto.url = (args: { productoId: string | number } | [producto
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
  */
 conversionesDelProducto.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -264,7 +264,7 @@ conversionesDelProducto.get = (args: { productoId: string | number } | [producto
 })
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
  */
 conversionesDelProducto.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -274,7 +274,7 @@ conversionesDelProducto.head = (args: { productoId: string | number } | [product
 
     /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
  */
     const conversionesDelProductoForm = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -284,7 +284,7 @@ conversionesDelProducto.head = (args: { productoId: string | number } | [product
 
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
  */
         conversionesDelProductoForm.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -293,7 +293,7 @@ conversionesDelProducto.head = (args: { productoId: string | number } | [product
         })
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:227
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
  */
         conversionesDelProductoForm.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -309,7 +309,7 @@ conversionesDelProducto.head = (args: { productoId: string | number } | [product
     conversionesDelProducto.form = conversionesDelProductoForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:133
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
  * @route '/api/inventario/fraccionamientos/{movimiento}'
  */
 export const show = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -324,7 +324,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:133
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
  * @route '/api/inventario/fraccionamientos/{movimiento}'
  */
 show.url = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -357,7 +357,7 @@ show.url = (args: { movimiento: number | { id: number } } | [movimiento: number 
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:133
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
  * @route '/api/inventario/fraccionamientos/{movimiento}'
  */
 show.get = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -366,7 +366,7 @@ show.get = (args: { movimiento: number | { id: number } } | [movimiento: number 
 })
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:133
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
  * @route '/api/inventario/fraccionamientos/{movimiento}'
  */
 show.head = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -376,7 +376,7 @@ show.head = (args: { movimiento: number | { id: number } } | [movimiento: number
 
     /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:133
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
  * @route '/api/inventario/fraccionamientos/{movimiento}'
  */
     const showForm = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -386,7 +386,7 @@ show.head = (args: { movimiento: number | { id: number } } | [movimiento: number
 
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:133
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
  * @route '/api/inventario/fraccionamientos/{movimiento}'
  */
         showForm.get = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -395,7 +395,7 @@ show.head = (args: { movimiento: number | { id: number } } | [movimiento: number
         })
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:133
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
  * @route '/api/inventario/fraccionamientos/{movimiento}'
  */
         showForm.head = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -411,7 +411,7 @@ show.head = (args: { movimiento: number | { id: number } } | [movimiento: number
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:162
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
  * @route '/api/inventario/fraccionamientos/{movimiento}/revertir'
  */
 export const revertir = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -426,7 +426,7 @@ revertir.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:162
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
  * @route '/api/inventario/fraccionamientos/{movimiento}/revertir'
  */
 revertir.url = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -459,7 +459,7 @@ revertir.url = (args: { movimiento: number | { id: number } } | [movimiento: num
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:162
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
  * @route '/api/inventario/fraccionamientos/{movimiento}/revertir'
  */
 revertir.delete = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -469,7 +469,7 @@ revertir.delete = (args: { movimiento: number | { id: number } } | [movimiento: 
 
     /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:162
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
  * @route '/api/inventario/fraccionamientos/{movimiento}/revertir'
  */
     const revertirForm = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -484,7 +484,7 @@ revertir.delete = (args: { movimiento: number | { id: number } } | [movimiento: 
 
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:162
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
  * @route '/api/inventario/fraccionamientos/{movimiento}/revertir'
  */
         revertirForm.delete = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -500,7 +500,7 @@ revertir.delete = (args: { movimiento: number | { id: number } } | [movimiento: 
     revertir.form = revertirForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:186
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
  */
 export const historialProducto = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -515,7 +515,7 @@ historialProducto.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:186
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
  */
 historialProducto.url = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -543,7 +543,7 @@ historialProducto.url = (args: { productoId: string | number } | [productoId: st
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:186
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
  */
 historialProducto.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -552,7 +552,7 @@ historialProducto.get = (args: { productoId: string | number } | [productoId: st
 })
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:186
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
  */
 historialProducto.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -562,7 +562,7 @@ historialProducto.head = (args: { productoId: string | number } | [productoId: s
 
     /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:186
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
  */
     const historialProductoForm = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -572,7 +572,7 @@ historialProducto.head = (args: { productoId: string | number } | [productoId: s
 
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:186
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
  */
         historialProductoForm.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -581,7 +581,7 @@ historialProducto.head = (args: { productoId: string | number } | [productoId: s
         })
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:186
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
  * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
  */
         historialProductoForm.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -597,7 +597,7 @@ historialProducto.head = (args: { productoId: string | number } | [productoId: s
     historialProducto.form = historialProductoForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:206
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
  * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
  */
 export const estadisticas = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -612,7 +612,7 @@ estadisticas.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:206
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
  * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
  */
 estadisticas.url = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -640,7 +640,7 @@ estadisticas.url = (args: { productoPadreId: string | number } | [productoPadreI
 
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:206
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
  * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
  */
 estadisticas.get = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -649,7 +649,7 @@ estadisticas.get = (args: { productoPadreId: string | number } | [productoPadreI
 })
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:206
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
  * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
  */
 estadisticas.head = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -659,7 +659,7 @@ estadisticas.head = (args: { productoPadreId: string | number } | [productoPadre
 
     /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:206
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
  * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
  */
     const estadisticasForm = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -669,7 +669,7 @@ estadisticas.head = (args: { productoPadreId: string | number } | [productoPadre
 
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:206
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
  * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
  */
         estadisticasForm.get = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -678,7 +678,7 @@ estadisticas.head = (args: { productoPadreId: string | number } | [productoPadre
         })
             /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:206
+ * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
  * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
  */
         estadisticasForm.head = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

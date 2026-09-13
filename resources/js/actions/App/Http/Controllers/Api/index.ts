@@ -19,6 +19,7 @@ import EntregaController from './EntregaController'
 import ApiVentaController from './ApiVentaController'
 import PagoVentaController from './PagoVentaController'
 import FraccionamientoApiController from './FraccionamientoApiController'
+import FraccionamientoMasivoApiController from './FraccionamientoMasivoApiController'
 import TipoOperacionController from './TipoOperacionController'
 import PrecioRangoProductoController from './PrecioRangoProductoController'
 import GeocodingController from './GeocodingController'
@@ -66,6 +67,7 @@ EntregaController,
 ApiVentaController,
 PagoVentaController,
 FraccionamientoApiController,
+FraccionamientoMasivoApiController,
 TipoOperacionController,
 PrecioRangoProductoController,
 GeocodingController,
