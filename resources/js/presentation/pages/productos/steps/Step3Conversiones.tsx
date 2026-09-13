@@ -293,10 +293,25 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
     };
 
     const handleEditConversion = (index: number) => {
-        setFormConversion(conversiones[index]);
+        const conversion = conversiones[index];
+        setFormConversion(conversion);
         setEditingIndex(index);
         setValidationError('');
         setShowForm(true); // 📂 Mostrar formulario automáticamente
+
+        // ✨ NUEVO: Cargar el producto destino en el dropdown si existe
+        if (conversion.producto_destino_id) {
+            const productoDestino = todosProductos.find((p: any) => p.id === conversion.producto_destino_id);
+            if (productoDestino) {
+                const opcion: Option = {
+                    value: productoDestino.id,
+                    label: `${productoDestino.sku} - ${productoDestino.nombre}`,
+                    description: productoDestino.unidad_nombre,
+                    meta: { unidad_id: productoDestino.unidad_medida_id, nombre: productoDestino.nombre },
+                };
+                setProductosDestino([opcion]);
+            }
+        }
     };
 
     const handleDeleteConversion = (index: number) => {
@@ -308,6 +323,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
         setFormConversion(initialFormConversion);
         setEditingIndex(null);
         setValidationError('');
+        setProductosDestino([]); // ✨ NUEVO: Limpiar el dropdown de productos
     };
 
     const handlePrincipalChange = (checked: boolean) => {
@@ -427,7 +443,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                 {/* Toggle Formulario - Encabezado clickeable */}
                 <div
                     onClick={() => setShowForm(!showForm)}
-                    className="flex cursor-pointer items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:bg-blue-950/50"
+                    className="text-xs flex cursor-pointer items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:bg-blue-950/50"
                 >
                     <p className="text-blue-900 dark:text-blue-100">➕ Agregar Nueva Conversión</p>
                     {showForm ? (
@@ -441,7 +457,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
             {/* Formulario de Conversión (Colapsable) */}
             {showForm && (
                 <div className="mt-2 space-y-4 rounded-lg border border-gray-200 bg-white p-4 animate-in fade-in dark:border-slate-700 dark:bg-slate-900">
-                    <h4 className="font-semibold">{editingIndex !== null ? '✏️ Editar Conversión' : '➕ Nueva Conversión'}</h4>
+                    <h4 className="font-semibold">{editingIndex !== null ? '✏️ Editar Fraccionamiento' : '➕ Nuevo Fraccionamiento'}</h4>
 
                     {validationError && (
                         <div className="rounded border border-red-300 bg-red-100 p-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-950/30 dark:text-red-300">
@@ -449,7 +465,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-4">
+                    <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-4">
                         {/* Unidad Base */}
                         <div className="space-y-2">
                             <div className="flex items-center gap-1">
@@ -474,7 +490,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
 
                         {/* ✨ REFACTORIZADO: Búsqueda directa de Producto Destino */}
                         {/* El producto trae su unidad y nombre automáticamente */}
-                        <div className="space-y-2 sm:col-span-2">
+                        <div>
                             <div className="flex items-center gap-1">
                                 <Label>Producto Destino (Fraccionamiento - Opcional)</Label>
                                 <Tooltip>
@@ -653,7 +669,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     <th className="px-4 py-2 text-left">Factor</th>
                                     <th className="px-4 py-2 text-left">Unidad Destino</th>
                                     <th className="px-4 py-2 text-left">👶 Producto Hijo</th>
-                                    <th className="px-4 py-2 text-left">📊 Stock Hijo</th>
+                                    {/* <th className="px-4 py-2 text-left">📊 Stock Hijo</th> */}
                                     <th className="px-4 py-2 text-left">📦 Nombre en Venta</th>
                                     <th className="px-4 py-2 text-center">Activo</th>
                                     <th className="px-4 py-2 text-center">Principal</th>
@@ -668,10 +684,11 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     >
                                         <td className="px-4 py-2">{unidadBase?.nombre || 'N/A'}</td>
                                         <td className="px-4 py-2">
-                                            <strong>{formatearNumero(conv.factor_conversion)}</strong>
+                                            
                                             <span className="ml-1 text-xs text-muted-foreground">
-                                                {unidadBase?.codigo || ''} → {getUnitLabel(conv.unidad_destino_id)}
+                                                {unidadBase?.codigo || ''} →  
                                             </span>
+                                            <strong>{formatearNumero(conv.factor_conversion)} {getUnitLabel(conv.unidad_destino_id)}</strong>
                                         </td>
                                         <td className="px-4 py-2">{getUnitLabel(conv.unidad_destino_id)}</td>
                                         {/* ✨ NUEVO: Mostrar producto hijo relacionado */}
@@ -689,7 +706,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                             )}
                                         </td>
                                         {/* ✨ NUEVO: Mostrar stock actual del producto hijo */}
-                                        <td className="px-4 py-2 text-xs text-center">
+                                        {/* <td className="px-4 py-2 text-xs text-center">
                                             {conv.producto_destino_id ? (
                                                 <span className={`inline-block rounded px-2 py-1 font-semibold ${
                                                     (stockProductosDestino[conv.producto_destino_id] ?? 0) > 0
