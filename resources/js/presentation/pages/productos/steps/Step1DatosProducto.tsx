@@ -523,9 +523,25 @@ function Step1DatosProducto({
                 </div>
                 <div className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-medium">
-                            Unidad de medida {data.es_fraccionado && <span className="text-yellow-600 dark:text-yellow-400">🔒</span>}
-                        </label>
+                        <div className="flex items-center gap-1">
+                            <label className="text-sm font-medium">
+                                Unidad de medida {data.es_fraccionado && <span className="text-yellow-600 dark:text-yellow-400">🔒</span>}
+                            </label>
+                            {data.es_fraccionado && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        La unidad de medida está bloqueada para productos fraccionados. Todas las conversiones deben usar esta misma unidad como base.
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
                         <a
                             href="/unidades/create"
                             target="_blank"
@@ -537,11 +553,6 @@ function Step1DatosProducto({
                             <span>Crear</span>
                         </a>
                     </div>
-                    {data.es_fraccionado && (
-                        <div className="rounded border border-yellow-300 bg-yellow-50 p-2 text-xs text-yellow-800 dark:border-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300">
-                            ℹ️ La unidad de medida está bloqueada para productos fraccionados. Todas las conversiones deben usar esta misma unidad como base.
-                        </div>
-                    )}
                     <SearchSelect
                         id="unidad_medida_id"
                         label=""
