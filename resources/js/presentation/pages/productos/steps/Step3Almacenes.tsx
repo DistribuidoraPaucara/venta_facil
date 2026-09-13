@@ -134,7 +134,7 @@ export default function Step3Almacenes({
 
     // ✨ Inicializar con sectores pre-cargados del backend si están disponibles
     const [sectoresOptions, setSectoresOptions] = useState<Record<number | string, Option[]>>(sectores || {});
-    const [setLoadingSectores] = useState<Record<number | string, boolean>>({});
+    const [loadingSectores, setLoadingSectores] = useState<Record<number | string, boolean>>({});
 
     const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(true);
 
@@ -159,12 +159,12 @@ export default function Step3Almacenes({
 
 
     // Cargar sectores cuando se selecciona un almacén
-    const handleAlmacenChange = async (i: number, almacenId: number | string) => {
+    const handleAlmacenChange = async (i: number, almacenId: number | string | undefined) => {
         console.log(`🔄 Almacén seleccionado en posición ${i}:`, almacenId);
 
         // ✨ ACTUALIZADO: Usar newData local en lugar de data.almacenes que puede estar desactualizado
         const newData = [...(data.almacenes || [])];
-        const finalAlmacenId = almacenId !== '' ? Number(almacenId) : undefined;
+        const finalAlmacenId = almacenId && almacenId !== '' ? Number(almacenId) : (undefined as any);
         newData[i] = { ...newData[i], almacen_id: finalAlmacenId };
 
         if (!almacenId) {
@@ -337,270 +337,242 @@ export default function Step3Almacenes({
                         {(data.almacenes || []).length === 0 && (
                             <div className="text-sm text-muted-foreground">No hay entradas. Añada al menos un almacén si desea controlar stock.</div>
                         )}
-                        {expandedAlmacenes && (data.almacenes || []).map((a: StockAlmacen, i: number) => (
-                            <div key={i} className="p-1 border rounded-lg bg-slate-50 dark:bg-slate-900/30 space-y-3 md:space-y-2">
-                                {/* Fila 1: Almacén (full width en mobile, 40% en desktop) */}
-                                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
-                                    <div>
-                                        <div className="flex items-center gap-1 mb-1">
-                                            <Label className="text-xs font-semibold text-foreground">Almacén* #{a.id}</Label>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                        <HelpCircle size={12} />
-                                                    </button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">
-                                                    Selecciona el almacén donde se guarda este lote
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <SearchSelect
-                                            id={`almacen-select-${i}`}
-                                            placeholder="Seleccionar almacén"
-                                            value={a.almacen_id ? String(a.almacen_id) : ''}
-                                            options={almacenesOptions}
-                                            onChange={(value) => handleAlmacenChange(i, value ? Number(value) : undefined)}
-                                            allowClear={true}
-                                        />
-                                    </div>
-                                    {/* Sector */}
-                                    {/* <div>
-                                        <div className="flex items-center gap-1 mb-1">
-                                            <Label className="text-xs font-semibold text-foreground">Sector</Label>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                        <HelpCircle size={12} />
-                                                    </button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">
-                                                    Ubicación física dentro del almacén donde se guarda el lote
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <SearchSelect
-                                            id={`sector-select-${i}`}
-                                            placeholder="Seleccionar sector"
-                                            value={a.sector_id ? String(a.sector_id) : ''}
-                                            options={sectoresOptions[a.almacen_id] || []}
-                                            onChange={(value) => setAlmacen(i, 'sector_id', value ? Number(value) : undefined)}
-                                            allowClear={true}
-                                        />
-                                    </div> */}
+                        {expandedAlmacenes && (() => {
+                            const almacenesPorId = new Map<string | number, { nombre: string; lotes: StockAlmacen[] }>();
 
-                                    {/* Lote */}
-                                    <div>
-                                        <div className="flex items-center gap-1 mb-1">
-                                            <Label className="text-xs font-semibold text-foreground">Lote</Label>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                        <HelpCircle size={12} />
-                                                    </button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">
-                                                    Identificador del lote para trazabilidad
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <Input
-                                            size="sm"
-                                            value={a.lote || ''}
-                                            onChange={(e) => setAlmacen(i, 'lote', e.target.value)}
-                                            placeholder="Lote"
-                                            className="h-9 text-xs dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100"
-                                            aria-label={`Lote ${i + 1}`}
-                                        />
-                                    </div>
+                            (data.almacenes || []).forEach((a: StockAlmacen) => {
+                                const key = String(a.almacen_id || 0);
+                                if (!almacenesPorId.has(key)) {
+                                    const almacenOption = almacenesOptions.find(o => String(o.value) === key);
+                                    almacenesPorId.set(key, {
+                                        nombre: almacenOption?.label || `Almacén ${key}`,
+                                        lotes: []
+                                    });
+                                }
+                                almacenesPorId.get(key)!.lotes.push(a);
+                            });
 
-                                    {/* Vencimiento */}
-                                    <div>
-                                        <div className="flex items-center gap-1 mb-1">
-                                            <Checkbox
-                                                id={`has-exp-${i}`}
-                                                checked={!!a.fecha_vencimiento}
-                                                onCheckedChange={(v) => {
-                                                    const checked = !!v;
-                                                    setAlmacen(i, 'fecha_vencimiento', checked ? (a.fecha_vencimiento || todayISO()) : '');
-                                                }}
-                                                className="h-4 w-4"
-                                            />
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <label htmlFor={`has-exp-${i}`} className="text-xs cursor-pointer flex items-center gap-1 hover:text-blue-600">
-                                                        Vto.
-                                                        <HelpCircle size={11} className="text-gray-400" />
-                                                    </label>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">
-                                                    Fecha de vencimiento del lote (opcional)
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <Input
-                                            type="date"
-                                            value={a.fecha_vencimiento || ''}
-                                            onChange={(e) => setAlmacen(i, 'fecha_vencimiento', e.target.value)}
-                                            disabled={!a.fecha_vencimiento}
-                                            className="h-9 text-xs w-full dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 disabled:opacity-50 disabled:dark:bg-zinc-900"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Stock: Cantidad Total, Disponible, Reservada */}
-                                {(() => {
-                                    const totalStock = Number(a.cantidad ?? a.stock ?? 0);
-                                    const disponible = Number(a.cantidad_disponible ?? 0);
-                                    const reservada = Number(a.cantidad_reservada ?? 0);
-                                    const esValido = totalStock >= disponible + reservada;
-                                    const hasError = canEditStockQuantities && !esValido;
-
-                                    return (
-                                        <>
-                                            {/* Fila 2: Stock (Total, Disponible, Reservada) */}
-                                            <div className="grid grid-cols-3 gap-3">
-                                                {/* Cantidad Total */}
-                                                <div className="relative">
-                                                    <div className="flex items-center gap-1 mb-1">
-                                                        <Label className="text-xs font-semibold text-foreground">Total</Label>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                                    <HelpCircle size={12} />
-                                                                </button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top">
-                                                                Cantidad total del lote en almacén
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </div>
-                                                    <Input
-                                                        type="number"
-                                                        inputMode="decimal"
-                                                        step="0.01"
-                                                        value={totalStock || ''}
-                                                        onChange={(e) => {
-                                                            const newValue = e.target.value === '' ? undefined : Number(e.target.value);
-                                                            if (handleCantidadTotalChange) {
-                                                                handleCantidadTotalChange(i, newValue);
-                                                            }
-                                                        }}
-                                                        readOnly={!canEditStockQuantities}
-                                                        className={`h-9 text-xs w-full ${
-                                                            canEditStockQuantities
-                                                                ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-100'
-                                                                : 'opacity-60 bg-blue-50/50 dark:bg-blue-950/20 dark:text-blue-300'
-                                                        } ${hasError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40 dark:text-red-200' : ''}`}
-                                                    />
-                                                    {hasError && (
-                                                        <div className="text-xs text-red-600 mt-1">
-                                                            ⚠️ Total ≥ Disp. + Res.
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Disponible */}
-                                                <div>
-                                                    <div className="flex items-center gap-1 mb-1">
-                                                        <Label className="text-xs font-semibold text-foreground">Disp.</Label>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                                    <HelpCircle size={12} />
-                                                                </button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top">
-                                                                Cantidad disponible para vender
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </div>
-                                                    <Input
-                                                        type="number"
-                                                        inputMode="decimal"
-                                                        step="0.01"
-                                                        value={disponible || ''}
-                                                        onChange={(e) => {
-                                                            setAlmacen(
-                                                                i,
-                                                                'cantidad_disponible',
-                                                                e.target.value === '' ? undefined : Number(e.target.value),
-                                                            );
-                                                        }}
-                                                        readOnly={!canEditStockQuantities}
-                                                        className={`h-9 text-xs w-full ${
-                                                            canEditStockQuantities
-                                                                ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100'
-                                                                : 'opacity-60 bg-emerald-50/50 dark:bg-emerald-950/20 dark:text-emerald-300'
-                                                        } ${hasError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40 dark:text-red-200' : ''}`}
-                                                    />
-                                                </div>
-
-                                                {/* Reservada */}
-                                                <div>
-                                                    <div className="flex items-center gap-1 mb-1">
-                                                        <Label className="text-xs font-semibold text-foreground">Res.</Label>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                                    <HelpCircle size={12} />
-                                                                </button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top">
-                                                                Cantidad reservada para pedidos pendientes
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </div>
-                                                    <Input
-                                                        type="number"
-                                                        inputMode="decimal"
-                                                        step="0.01"
-                                                        value={reservada || ''}
-                                                        onChange={(e) => {
-                                                            setAlmacen(
-                                                                i,
-                                                                'cantidad_reservada',
-                                                                e.target.value === '' ? undefined : Number(e.target.value),
-                                                            );
-                                                        }}
-                                                        readOnly={!canEditStockQuantities}
-                                                        className={`h-9 text-xs w-full ${
-                                                            canEditStockQuantities
-                                                                ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100'
-                                                                : 'opacity-60 bg-amber-50/50 dark:bg-amber-950/20 dark:text-amber-300'
-                                                        } ${hasError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40 dark:text-red-200' : ''}`}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* ✨ NUEVO: Mostrar equivalentes en conversiones si está fraccionado */}
-                                            {/* {data.es_fraccionado && data.conversiones && data.conversiones.length > 0 && totalStock > 0 && (
-                                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                                                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                                        📊 Equivalentes en conversiones:
-                                                    </div>
-                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                                        {calcularEquivalentes(totalStock, data.conversiones).map((eq, idx) => (
-                                                            <div
-                                                                key={idx}
-                                                                className="p-2 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded border border-purple-200 dark:border-purple-700"
-                                                            >
-                                                                <div className="text-xs font-medium text-purple-900 dark:text-purple-200 truncate">
-                                                                    {eq.nombre_venta || eq.unidad}
+                            return (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {Array.from(almacenesPorId.values()).map((grupo, groupIdx) => (
+                                        <div key={groupIdx} className="space-y-3">
+                                            <h3 className="font-semibold text-sm bg-gradient-to-r from-amber-100 to-amber-50 dark:from-amber-900 dark:to-amber-950 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-700">
+                                                📦 {grupo.nombre}
+                                            </h3>
+                                            <div className="space-y-3">
+                                                {grupo.lotes.map((a: StockAlmacen, i: number) => (
+                                                    <div key={i} className="p-1 border rounded-lg bg-slate-50 dark:bg-slate-900/30 space-y-3 md:space-y-2">
+                                                        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
+                                                            <div>
+                                                                <div className="flex items-center gap-1 mb-1">
+                                                                    <Label className="text-xs font-semibold text-foreground">Almacén* #{a.id}</Label>
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                                                <HelpCircle size={12} />
+                                                                            </button>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent side="top">
+                                                                            Selecciona el almacén donde se guarda este lote
+                                                                        </TooltipContent>
+                                                                    </Tooltip>
                                                                 </div>
-                                                                <div className="text-sm font-bold text-purple-700 dark:text-purple-300">
-                                                                    {Math.round(eq.cantidad)} {eq.codigo}
-                                                                </div>
+                                                                <SearchSelect
+                                                                    id={`almacen-select-${i}`}
+                                                                    placeholder="Seleccionar almacén"
+                                                                    value={a.almacen_id ? String(a.almacen_id) : ''}
+                                                                    options={almacenesOptions}
+                                                                    onChange={(value) => handleAlmacenChange(i, value ? Number(value) : undefined)}
+                                                                    allowClear={true}
+                                                                />
                                                             </div>
-                                                        ))}
+
+                                                            <div>
+                                                                <div className="flex items-center gap-1 mb-1">
+                                                                    <Label className="text-xs font-semibold text-foreground">Lote</Label>
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                                                <HelpCircle size={12} />
+                                                                            </button>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent side="top">
+                                                                            Identificador del lote para trazabilidad
+                                                                        </TooltipContent>
+                                                                    </Tooltip>
+                                                                </div>
+                                                                <Input
+                                                                    value={a.lote || ''}
+                                                                    onChange={(e) => setAlmacen(i, 'lote', e.target.value)}
+                                                                    placeholder="Lote"
+                                                                    className="h-9 text-xs dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100"
+                                                                    aria-label={`Lote ${i + 1}`}
+                                                                />
+                                                            </div>
+
+                                                            <div>
+                                                                <div className="flex items-center gap-1 mb-1">
+                                                                    <Checkbox
+                                                                        id={`has-exp-${i}`}
+                                                                        checked={!!a.fecha_vencimiento}
+                                                                        onCheckedChange={(v) => {
+                                                                            const checked = !!v;
+                                                                            setAlmacen(i, 'fecha_vencimiento', checked ? (a.fecha_vencimiento || todayISO()) : '');
+                                                                        }}
+                                                                        className="h-4 w-4"
+                                                                    />
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <label htmlFor={`has-exp-${i}`} className="text-xs cursor-pointer flex items-center gap-1 hover:text-blue-600">
+                                                                                Vto.
+                                                                                <HelpCircle size={11} className="text-gray-400" />
+                                                                            </label>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent side="top">
+                                                                            Fecha de vencimiento del lote (opcional)
+                                                                        </TooltipContent>
+                                                                    </Tooltip>
+                                                                </div>
+                                                                <Input
+                                                                    type="date"
+                                                                    value={a.fecha_vencimiento || ''}
+                                                                    onChange={(e) => setAlmacen(i, 'fecha_vencimiento', e.target.value)}
+                                                                    disabled={!a.fecha_vencimiento}
+                                                                    className="h-9 text-xs w-full dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 disabled:opacity-50 disabled:dark:bg-zinc-900"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {(() => {
+                                                            const totalStock = Number(a.stock ?? 0);
+                                                            const disponible = Number(a.cantidad_disponible ?? 0);
+                                                            const reservada = Number(a.cantidad_reservada ?? 0);
+                                                            const esValido = totalStock >= disponible + reservada;
+                                                            const hasError = canEditStockQuantities && !esValido;
+
+                                                            return (
+                                                                <>
+                                                                    <div className="grid grid-cols-3 gap-3">
+                                                                        <div className="relative">
+                                                                            <div className="flex items-center gap-1 mb-1">
+                                                                                <Label className="text-xs font-semibold text-foreground">Total</Label>
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger asChild>
+                                                                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                                                            <HelpCircle size={12} />
+                                                                                        </button>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent side="top">
+                                                                                        Cantidad total del lote en almacén
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                            </div>
+                                                                            <Input
+                                                                                type="number"
+                                                                                inputMode="decimal"
+                                                                                step="0.01"
+                                                                                value={totalStock || ''}
+                                                                                onChange={(e) => {
+                                                                                    const newValue = e.target.value === '' ? undefined : Number(e.target.value);
+                                                                                    if (handleCantidadTotalChange) {
+                                                                                        handleCantidadTotalChange(i, newValue);
+                                                                                    }
+                                                                                }}
+                                                                                readOnly={!canEditStockQuantities}
+                                                                                className={`h-9 text-xs w-full ${
+                                                                                    canEditStockQuantities
+                                                                                        ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-100'
+                                                                                        : 'opacity-60 bg-blue-50/50 dark:bg-blue-950/20 dark:text-blue-300'
+                                                                                } ${hasError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40 dark:text-red-200' : ''}`}
+                                                                            />
+                                                                            {hasError && (
+                                                                                <div className="text-xs text-red-600 mt-1">
+                                                                                    ⚠️ Total ≥ Disp. + Res.
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <div>
+                                                                            <div className="flex items-center gap-1 mb-1">
+                                                                                <Label className="text-xs font-semibold text-foreground">Disp.</Label>
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger asChild>
+                                                                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                                                            <HelpCircle size={12} />
+                                                                                        </button>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent side="top">
+                                                                                        Cantidad disponible para vender
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                            </div>
+                                                                            <Input
+                                                                                type="number"
+                                                                                inputMode="decimal"
+                                                                                step="0.01"
+                                                                                value={disponible || ''}
+                                                                                onChange={(e) => {
+                                                                                    setAlmacen(
+                                                                                        i,
+                                                                                        'cantidad_disponible',
+                                                                                        e.target.value === '' ? undefined : Number(e.target.value),
+                                                                                    );
+                                                                                }}
+                                                                                readOnly={!canEditStockQuantities}
+                                                                                className={`h-9 text-xs w-full ${
+                                                                                    canEditStockQuantities
+                                                                                        ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100'
+                                                                                        : 'opacity-60 bg-emerald-50/50 dark:bg-emerald-950/20 dark:text-emerald-300'
+                                                                                } ${hasError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40 dark:text-red-200' : ''}`}
+                                                                            />
+                                                                        </div>
+
+                                                                        <div>
+                                                                            <div className="flex items-center gap-1 mb-1">
+                                                                                <Label className="text-xs font-semibold text-foreground">Res.</Label>
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger asChild>
+                                                                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                                                            <HelpCircle size={12} />
+                                                                                        </button>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent side="top">
+                                                                                        Cantidad reservada para pedidos pendientes
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                            </div>
+                                                                            <Input
+                                                                                type="number"
+                                                                                inputMode="decimal"
+                                                                                step="0.01"
+                                                                                value={reservada || ''}
+                                                                                onChange={(e) => {
+                                                                                    setAlmacen(
+                                                                                        i,
+                                                                                        'cantidad_reservada',
+                                                                                        e.target.value === '' ? undefined : Number(e.target.value),
+                                                                                    );
+                                                                                }}
+                                                                                readOnly={!canEditStockQuantities}
+                                                                                className={`h-9 text-xs w-full ${
+                                                                                    canEditStockQuantities
+                                                                                        ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100'
+                                                                                        : 'opacity-60 bg-amber-50/50 dark:bg-amber-950/20 dark:text-amber-300'
+                                                                                } ${hasError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40 dark:text-red-200' : ''}`}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        })()}
                                                     </div>
-                                                </div>
-                                            )} */}
-                                        </>
-                                    );
-                                })()}
-                            </div>
-                        ))}
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
 
