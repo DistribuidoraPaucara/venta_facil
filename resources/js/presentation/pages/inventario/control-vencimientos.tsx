@@ -8,6 +8,14 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { Printer } from 'lucide-react';
 import { useState } from 'react';
 
+// ✨ NUEVO: Formatear números mostrando decimales solo si es necesario
+function formatearNumero(valor: number | undefined): string {
+    if (valor === undefined || valor === null) return '0';
+    const num = Number(valor);
+    // Si es un número entero, mostrar sin decimales
+    return Number.isInteger(num) ? num.toString() : num.toFixed(2);
+}
+
 interface ProductoVencimiento {
     id: number;
     producto: {
@@ -380,11 +388,11 @@ export default function ControlVencimientos() {
                                                     </td>
                                                     <td className="px-2 py-2 whitespace-nowrap">
                                                         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                                            {producto.stock_actual}
+                                                            {formatearNumero(producto.stock_actual)}
                                                         </div>
                                                     </td>
                                                     <td className="px-2 py-2 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-600 dark:text-gray-400">{producto.cantidad_disponible}</div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">{formatearNumero(producto.cantidad_disponible)}</div>
                                                     </td>
                                                     <td className="px-2 py-2 whitespace-nowrap">
                                                         <div className="text-sm text-gray-900 dark:text-gray-100">
