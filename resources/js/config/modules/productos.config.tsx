@@ -207,6 +207,24 @@ const ProductCard: React.FC<{
                 */}
               </div>
             )}
+
+            {/* Fila 4: Sectores y Almacenes (desde stockLimites) */}
+            {(p as any).stockLimites && (p as any).stockLimites.length > 0 && (
+              <div>
+                <span className="block text-[9px] uppercase tracking-wide text-indigo-600 dark:text-indigo-400 font-semibold mb-1">Sectores/Almacenes</span>
+                <div className="flex flex-wrap gap-1">
+                  {(p as any).stockLimites.map((sl: any, idx: number) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 truncate"
+                      title={`${sl.almacen?.nombre || 'N/A'} - ${sl.sector?.nombre || 'N/A'}`}
+                    >
+                      <span className="line-clamp-1">{sl.sector?.nombre || 'N/A'}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Menú popup con 3 puntos - En desktop y mobile */}
