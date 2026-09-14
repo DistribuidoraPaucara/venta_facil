@@ -22,6 +22,7 @@ interface ProductoVencimiento {
         id: number;
         nombre: string;
         sku: string;
+        codigo_barra: string | null;
         categoria: {
             nombre: string;
         };
@@ -203,10 +204,10 @@ export default function ControlVencimientos() {
                     <div className="justify-space-between grid grid-cols-1 items-center gap-4 md:grid-cols-5">
                         {/* Búsqueda */}
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Buscar Producto</label>
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Buscar Producto o Código</label>
                             <Input
                                 type="text"
-                                placeholder="Nombre del producto..."
+                                placeholder="Nombre, SKU o código barra..."
                                 value={busqueda}
                                 onChange={(e) => setBusqueda(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && aplicarFiltros()}
@@ -347,7 +348,7 @@ export default function ControlVencimientos() {
                                                 Producto
                                             </th>
                                             <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
-                                                Codigo
+                                                Código Barra
                                             </th>
                                             {/* <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                             Categoría
@@ -404,7 +405,7 @@ export default function ControlVencimientos() {
                                                     </td>
                                                     <td className="px-2 py-2 whitespace-nowrap">
                                                         <div className="font-mono text-sm text-gray-600 dark:text-gray-400">
-                                                            {producto.producto.sku}
+                                                            {producto.producto.codigo_barra || producto.producto.sku || '—'}
                                                         </div>
                                                     </td>
                                                     {/* <td className="px-2 py-2 whitespace-nowrap">
