@@ -236,6 +236,7 @@ export default function Step3Almacenes({
                         <table className="w-full text-sm">
                             <thead className="border-b bg-base-100 dark:bg-base-900/40">
                                 <tr>
+                                    <th className="px-4 py-2 text-left font-semibold">ID</th>
                                     <th className="px-4 py-2 text-left font-semibold">Almacén</th>
                                     <th className="px-4 py-2 text-left font-semibold">Sector</th>
                                     <th className="px-4 py-2 text-left font-semibold">Stock Mín.</th>
@@ -243,20 +244,17 @@ export default function Step3Almacenes({
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* ✨ CAMBIO: Iterar sobre data.almacenes para mantener el orden de adición */}
-                                {(data.almacenes || []).map((almacenData: any, idx: number) => {
-                                    // Encontrar la opción correspondiente en almacenesOptions
-                                    const almacenOption = almacenesOptions.find((opt) => String(opt.value) === String(almacenData.almacen_id));
-                                    if (!almacenOption) return null; // Skip si no existe la opción
+                                {/* ✨ CAMBIO: Iterar sobre stock_limites (no duplicados) en lugar de almacenes */}
+                                {Object.entries(stockLimites || {}).map(([key, almacenLimites]: [string, any], idx: number) => {
+                                    const almacenId = almacenLimites.almacen_id || Number(key);
 
-                                    const limitesBackend = (data as any).stock_limites || {};
-                                    const key = almacenData.almacen_id;
-                                    const limites = stockLimites[key] || limitesBackend[key] || limitesBackend[Number(key)] || {};
-                                    const almacenLimites = limites;
-                                    console.log(`📋 Almacén ${key}:`, { stockLimites: stockLimites[key], limitesBackend: limitesBackend[key], final: limites });
+                                    // Encontrar la opción correspondiente en almacenesOptions
+                                    const almacenOption = almacenesOptions.find((opt) => String(opt.value) === String(almacenId));
+                                    if (!almacenOption) return null; // Skip si no existe la opción
 
                                     return (
                                         <tr key={`${key}-${idx}`} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
+                                            <td className="px-4 py-3 font-medium">{almacenOption.value}</td>
                                             <td className="px-4 py-3 font-medium">{almacenOption.label}</td>
                                             <td className="px-4 py-3">
                                                 <div className="relative" style={{ position: 'relative', zIndex: 50 }}>
@@ -264,13 +262,13 @@ export default function Step3Almacenes({
                                                         id={`sector-limit-${key}`}
                                                         placeholder="Seleccionar"
                                                         value={almacenLimites.sector_id ? String(almacenLimites.sector_id) : ''}
-                                                        options={sectoresOptions[key] || []}
+                                                        options={sectoresOptions[almacenId] || []}
                                                         onChange={(value) => {
                                                             const newLimites = { ...stockLimites };
-                                                            if (!newLimites[key]) {
-                                                                newLimites[key] = {};
-                                                            }
-                                                            newLimites[key].sector_id = value ? Number(value) : undefined;
+                                                            newLimites[key] = {
+                                                                ...almacenLimites,
+                                                                sector_id: value ? Number(value) : undefined,
+                                                            };
                                                             setStockLimites(newLimites);
                                                         }}
                                                         allowClear={true}
