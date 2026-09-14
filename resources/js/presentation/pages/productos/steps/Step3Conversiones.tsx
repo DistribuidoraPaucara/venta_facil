@@ -603,44 +603,34 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                         </div>
 
                         {/* Conversión Principal */}
-                        <div className="flex items-end space-y-2">
-                            <div className="flex flex-1 items-center gap-3 rounded-lg border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-2 transition-shadow hover:shadow-md dark:border-blue-700 dark:from-blue-950/30 dark:to-indigo-950/30">
-                                <Checkbox
-                                    id="es_principal"
-                                    checked={formConversion.es_conversion_principal}
-                                    onCheckedChange={handlePrincipalChange}
-                                    className="h-5 w-5"
-                                />
-                                <div className="flex flex-1 flex-col gap-1">
-                                    <Label htmlFor="es_principal" className="cursor-pointer text-sm font-bold text-blue-900 dark:text-blue-100">
-                                        ⭐ Usar como conversión predeterminada
-                                    </Label>
-                                    <p className="text-xs text-blue-700 dark:text-blue-300">Se aplicará automáticamente en operaciones de venta</p>
-                                </div>
-                            </div>
+                        <div className="flex items-center gap-3">
+                            <Checkbox
+                                id="es_principal"
+                                checked={formConversion.es_conversion_principal}
+                                onCheckedChange={handlePrincipalChange}
+                                className="h-5 w-5"
+                            />
+                            <Label htmlFor="es_principal" className="cursor-pointer flex-1 text-sm font-medium">
+                                ⭐ Usar como conversión predeterminada
+                            </Label>
                         </div>
 
                         {/* ✨ NUEVO: Control de Activo */}
-                        <div className="flex items-end space-y-2">
-                            <div className="flex flex-1 items-center gap-3 rounded-lg border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-2 transition-shadow hover:shadow-md dark:border-green-700 dark:from-green-950/30 dark:to-emerald-950/30">
-                                <Checkbox
-                                    id="activo"
-                                    checked={formConversion.activo}
-                                    onCheckedChange={(checked) =>
-                                        setFormConversion((prev) => ({
-                                            ...prev,
-                                            activo: Boolean(checked),
-                                        }))
-                                    }
-                                    className="h-5 w-5"
-                                />
-                                <div className="flex flex-1 flex-col gap-1">
-                                    <Label htmlFor="activo" className="cursor-pointer text-sm font-bold text-green-900 dark:text-green-100">
-                                        ✅ Conversión Activa
-                                    </Label>
-                                    <p className="text-xs text-green-700 dark:text-green-300">Disponible para vender en esta unidad</p>
-                                </div>
-                            </div>
+                        <div className="flex items-center gap-3">
+                            <Checkbox
+                                id="activo"
+                                checked={formConversion.activo}
+                                onCheckedChange={(checked) =>
+                                    setFormConversion((prev) => ({
+                                        ...prev,
+                                        activo: Boolean(checked),
+                                    }))
+                                }
+                                className="h-5 w-5"
+                            />
+                            <Label htmlFor="activo" className="cursor-pointer flex-1 text-sm font-medium">
+                                ✅ Conversión Activa
+                            </Label>
                         </div>
                     </div>
 
