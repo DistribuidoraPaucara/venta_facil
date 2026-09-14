@@ -2585,6 +2585,8 @@ class ProductoController extends Controller
             'almacenes.*.cantidad_disponible' => ['nullable', 'integer', 'min:0'],
             'almacenes.*.lote'            => ['nullable', 'string'],
             'almacenes.*.fecha_vencimiento' => ['nullable', 'date'],
+            'almacenes.*.stock_minimo'    => ['nullable', 'integer', 'min:0'],
+            'almacenes.*.stock_maximo'    => ['nullable', 'integer', 'min:0'],
         ]);
 
         try {
@@ -2821,6 +2823,8 @@ class ProductoController extends Controller
             'almacenes.*.cantidad_disponible' => ['nullable', 'integer', 'min:0'],
             'almacenes.*.lote'            => ['nullable', 'string'],
             'almacenes.*.fecha_vencimiento' => ['nullable', 'date'],
+            'almacenes.*.stock_minimo'    => ['nullable', 'integer', 'min:0'],
+            'almacenes.*.stock_maximo'    => ['nullable', 'integer', 'min:0'],
         ]);
 
         try {
