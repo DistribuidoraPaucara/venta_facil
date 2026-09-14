@@ -572,7 +572,7 @@ class InventarioController extends Controller
         $busqueda = (string) $request->string('busqueda', '');
         $soloConStock = $request->boolean('solo_con_stock', true); // Por defecto: mostrar solo con stock
 
-        $query = StockProducto::with(['producto.categoria', 'almacen', 'sector'])
+        $query = StockProducto::with(['producto.categoria', 'producto.stockLimites.sector', 'almacen'])
             ->withoutTrashed()
             ->whereNotNull('fecha_vencimiento')
             ->whereHas('almacen', function ($q) use ($empresaId) {
@@ -604,6 +604,24 @@ class InventarioController extends Controller
             ->map(function ($stock) {
                 $diasParaVencer = now()->diffInDays($stock->fecha_vencimiento, false);
 
+                // Obtener sector desde StockLimite (producto -> stockLimites -> sector)
+                $stockLimiteParaEsteAlmacenSector = $stock->producto->stockLimites
+                    ->where('almacen_id', $stock->almacen_id)
+                    ->where('sector_id', $stock->sector_id)
+                    ->first();
+
+                $sectorData = [
+                    'id'     => null,
+                    'nombre' => null,
+                ];
+
+                if ($stockLimiteParaEsteAlmacenSector && $stockLimiteParaEsteAlmacenSector->sector) {
+                    $sectorData = [
+                        'id'     => $stockLimiteParaEsteAlmacenSector->sector->id,
+                        'nombre' => $stockLimiteParaEsteAlmacenSector->sector->nombre,
+                    ];
+                }
+
                 return [
                     'id'                => $stock->id,
                     'producto'          => [
@@ -618,10 +636,7 @@ class InventarioController extends Controller
                         'id'     => $stock->almacen->id,
                         'nombre' => $stock->almacen->nombre,
                     ],
-                    'sector'            => [
-                        'id'     => $stock->sector->id ?? null,
-                        'nombre' => $stock->sector->nombre ?? null,
-                    ],
+                    'sector'            => $sectorData,
                     'lote'              => $stock->lote,
                     'stock_actual'      => $stock->cantidad,
                     'cantidad_disponible' => $stock->cantidad_disponible,
