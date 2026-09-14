@@ -30,6 +30,10 @@ interface ProductoVencimiento {
         id: number;
         nombre: string;
     };
+    sector: {
+        id: number;
+        nombre: string;
+    };
     lote: string | null;
     stock_actual: number;
     cantidad_disponible: number;
@@ -325,16 +329,19 @@ export default function ControlVencimientos() {
                                                 Almacén
                                             </th>
                                             <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
+                                                Sector
+                                            </th>
+                                            <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
                                                 Lote
                                             </th>
                                             <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
-                                                Stock Total
+                                                Stock
                                             </th>
-                                            <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
+                                            {/* <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
                                                 Disponible
-                                            </th>
+                                            </th> */}
                                             <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
-                                                Fecha Vencimiento
+                                                Vencimiento
                                             </th>
                                             <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300">
                                                 Días
@@ -382,6 +389,9 @@ export default function ControlVencimientos() {
                                                         <div className="text-sm text-gray-500 dark:text-gray-400">{producto.almacen.nombre}</div>
                                                     </td>
                                                     <td className="px-2 py-2 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">{producto.sector?.nombre || '—'}</div>
+                                                    </td>
+                                                    <td className="px-2 py-2 whitespace-nowrap">
                                                         <div className="font-mono text-sm text-gray-900 dark:text-gray-100">
                                                             {producto.lote || '—'}
                                                         </div>
@@ -391,9 +401,9 @@ export default function ControlVencimientos() {
                                                             {formatearNumero(producto.stock_actual)}
                                                         </div>
                                                     </td>
-                                                    <td className="px-2 py-2 whitespace-nowrap">
+                                                    {/* <td className="px-2 py-2 whitespace-nowrap">
                                                         <div className="text-sm text-gray-600 dark:text-gray-400">{formatearNumero(producto.cantidad_disponible)}</div>
-                                                    </td>
+                                                    </td> */}
                                                     <td className="px-2 py-2 whitespace-nowrap">
                                                         <div className="text-sm text-gray-900 dark:text-gray-100">
                                                             {formatearFecha(producto.fecha_vencimiento)}
