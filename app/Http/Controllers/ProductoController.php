@@ -2205,6 +2205,14 @@ class ProductoController extends Controller
                             'sector:id,nombre,almacen_id'
                         ]);
                 },
+                // ✨ NUEVO: Cargar stock_limites con información de sector y almacén
+                'stockLimites' => function ($q) {
+                    $q->select('id', 'producto_id', 'almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo')
+                      ->with([
+                          'sector:id,nombre',
+                          'almacen:id,nombre',
+                      ]);
+                },
             ]);
 
             // ✅ BÚSQUEDA: Aplicar ILIKE
