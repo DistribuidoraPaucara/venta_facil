@@ -121,10 +121,13 @@ class ProductoController extends Controller
                 'marca:id,nombre',
                 'proveedor:id,nombre,razon_social',
                 'unidad:id,codigo,nombre',
-                // ✨ NUEVO: Cargar stock_limites con información de sector
+                // ✨ NUEVO: Cargar stock_limites con información de sector y almacén
                 'stockLimites' => function ($q) {
-                    $q->select('id', 'producto_id', 'almacen_id', 'sector_id')
-                      ->with('sector:id,nombre');
+                    $q->select('id', 'producto_id', 'almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo')
+                      ->with([
+                          'sector:id,nombre',
+                          'almacen:id,nombre',
+                      ]);
                 },
                 // Cargar todas las imágenes para poder mostrar galería en modal rápido
                 'imagenes:id,producto_id,url,es_principal,orden',
@@ -230,6 +233,20 @@ class ProductoController extends Controller
                 $stockTotal      = (int) ($producto->stock_total_calc ?? $producto->stock?->sum('cantidad') ?? 0);
                 $stockDisponible = (int) ($producto->stock_disponible_calc ?? 0);
 
+                // Stock límites con sectores
+                $stockLimitesConSectores = $producto->stockLimites->map(function ($sl) {
+                    return [
+                        'id'               => $sl->id,
+                        'producto_id'      => $sl->producto_id,
+                        'almacen_id'       => $sl->almacen_id,
+                        'sector_id'        => $sl->sector_id,
+                        'stock_minimo'     => $sl->stock_minimo,
+                        'stock_maximo'     => $sl->stock_maximo,
+                        'almacen'          => $sl->almacen ? ['id' => $sl->almacen->id, 'nombre' => $sl->almacen->nombre] : null,
+                        'sector'           => $sl->sector ? ['id' => $sl->sector->id, 'nombre' => $sl->sector->nombre] : null,
+                    ];
+                })->values();
+
                 return [
                     'id'                    => $producto->id,
                     'nombre'                => $producto->nombre,
@@ -263,6 +280,7 @@ class ProductoController extends Controller
                     'codigosBarra'          => $codigosBarra, // Para compatibilidad
                     'historial_precios'     => [],            // se puede cargar diferido si se requiere
                     'precio_base'           => $precioBase,
+                    'stockLimites'          => $stockLimitesConSectores, // ✨ NUEVO: Relación con sectores
                 ];
             })
             ->withQueryString();
