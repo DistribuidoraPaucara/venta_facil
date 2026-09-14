@@ -2537,6 +2537,18 @@ class ProductoController extends Controller
                 'sector'              => $s->sector ? ['id' => $s->sector->id, 'nombre' => $s->sector->nombre] : null,
             ])->toArray(),
 
+            // ✨ NUEVO: Relación stock_limites con información de almacén y sector
+            'stock_limites' => $producto->stockLimites ? $producto->stockLimites->map(fn($sl) => [
+                'id'               => $sl->id,
+                'producto_id'      => $sl->producto_id,
+                'almacen_id'       => $sl->almacen_id,
+                'sector_id'        => $sl->sector_id,
+                'stock_minimo'     => (int) $sl->stock_minimo,
+                'stock_maximo'     => (int) $sl->stock_maximo,
+                'almacen'          => $sl->almacen ? ['id' => $sl->almacen->id, 'nombre' => $sl->almacen->nombre] : null,
+                'sector'           => $sl->sector ? ['id' => $sl->sector->id, 'nombre' => $sl->sector->nombre] : null,
+            ])->toArray() : [],
+
             // ✅ NUEVO: Campos de COMBO
             'es_combo'            => (bool) $producto->es_combo,
             'combo_items'         => $producto->comboItems ? $producto->comboItems->map(fn($item) => $item->toArray())->toArray() : [],
