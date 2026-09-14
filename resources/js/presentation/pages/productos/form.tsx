@@ -114,6 +114,7 @@ export default function ProductoForm({
     // ✅ Estado separado para imágenes (no van en useForm por ser objetos complejos)
     const [perfilState, setPerfilState] = useState<Imagen | undefined>(producto?.perfil ?? undefined);
     const [galeriaState, setGaleriaState] = useState<Imagen[]>(producto?.galeria ?? []);
+    const [imagenesToDelete, setImagenesToDelete] = useState<number[]>([]); // ✨ NUEVO: Rastrear IDs de imágenes a eliminar
 
     // ✨ NUEVO: Estado para stock de productos hijos
     const [stockProductosHijos, setStockProductosHijos] = useState<Record<number, number>>({});
@@ -509,6 +510,13 @@ export default function ProductoForm({
                 if (img.file) {
                     formData.append(`galeria[${i}]`, img.file);
                 }
+            });
+        }
+
+        // ✨ NUEVO: Enviar IDs de imágenes a eliminar
+        if (imagenesToDelete.length > 0) {
+            imagenesToDelete.forEach((id: number, i: number) => {
+                formData.append(`galeria_eliminar[${i}]`, String(id));
             });
         }
 
@@ -999,6 +1007,13 @@ export default function ProductoForm({
         });
 
         if (confirmed) {
+            const imagenAEliminar = galeriaState[i];
+
+            // Si la imagen tiene un ID (viene de la BD), registrar su ID para eliminación
+            if (imagenAEliminar.id) {
+                setImagenesToDelete([...imagenesToDelete, imagenAEliminar.id]);
+            }
+
             const galeriaFiltrada = galeriaState.filter((_: unknown, idx: number) => idx !== i);
             setGaleriaState(galeriaFiltrada);
         }
