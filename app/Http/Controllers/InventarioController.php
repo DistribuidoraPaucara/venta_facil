@@ -14,6 +14,7 @@ use App\Models\EstadoMerma;
 use App\Models\MermaInventario;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
+use App\Models\Sector;
 use App\Models\StockProducto;
 use App\Models\TipoAjusteInventario;
 use App\Models\TipoMerma;
@@ -568,6 +569,7 @@ class InventarioController extends Controller
         $empresaId = auth()->user()->empresa_id;
 
         $almacenId = $request->integer('almacen_id');
+        $sectorId = $request->integer('sector_id');
         $estado = (string) $request->string('estado', ''); // vencido, critico, urgente, atencion, vigente, todos
         $busqueda = (string) $request->string('busqueda', '');
         $soloConStock = $request->boolean('solo_con_stock', true); // Por defecto: mostrar solo con stock
@@ -586,6 +588,11 @@ class InventarioController extends Controller
         // Filtro por almacén
         if ($almacenId) {
             $query->where('almacen_id', $almacenId);
+        }
+
+        // Filtro por sector
+        if ($sectorId) {
+            $query->where('sector_id', $sectorId);
         }
 
         // Filtro por búsqueda de producto
@@ -660,11 +667,22 @@ class InventarioController extends Controller
             ->orderBy('nombre')
             ->get(['id', 'nombre']);
 
+        // Obtener sectores desde StockLimites
+        $sectores = Sector::whereHas('stockLimites', function ($q) use ($empresaId) {
+            $q->whereHas('almacen', function ($qA) use ($empresaId) {
+                $qA->where('empresa_id', $empresaId);
+            });
+        })
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
         return Inertia::render('inventario/control-vencimientos', [
             'productos' => $stocks->values(),
             'almacenes' => $almacenes,
+            'sectores'  => $sectores,
             'filters'   => [
                 'almacen_id' => $almacenId,
+                'sector_id'  => $sectorId,
                 'estado'     => $estado,
                 'busqueda'   => $busqueda,
                 'solo_con_stock' => $soloConStock,

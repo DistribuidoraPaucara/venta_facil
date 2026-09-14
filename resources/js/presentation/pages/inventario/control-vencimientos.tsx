@@ -48,11 +48,18 @@ interface Almacen {
     nombre: string;
 }
 
+interface Sector {
+    id: number;
+    nombre: string;
+}
+
 interface PageProps extends InertiaPageProps {
     productos: ProductoVencimiento[];
     almacenes: Almacen[];
+    sectores: Sector[];
     filters: {
         almacen_id: number | null;
+        sector_id: number | null;
         estado: string;
         busqueda: string;
         solo_con_stock: boolean;
@@ -72,12 +79,13 @@ const breadcrumbs = [
 
 export default function ControlVencimientos() {
     const { props } = usePage<PageProps>();
-    const { productos: productosRaw, almacenes, filters } = props;
+    const { productos: productosRaw, almacenes, sectores, filters } = props;
     const productos = Array.isArray(productosRaw) ? productosRaw : [];
     const { can } = useAuth();
 
     const [busqueda, setBusqueda] = useState(filters.busqueda || '');
     const [almacenId, setAlmacenId] = useState<number | null>(filters.almacen_id || null);
+    const [sectorId, setSectorId] = useState<number | null>(filters.sector_id || null);
     const [estado, setEstado] = useState(filters.estado || 'todos');
     const [soloConStock, setSoloConStock] = useState(filters.solo_con_stock ?? true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -148,6 +156,7 @@ export default function ControlVencimientos() {
         const params = new URLSearchParams();
         if (busqueda) params.append('busqueda', busqueda);
         if (almacenId) params.append('almacen_id', almacenId.toString());
+        if (sectorId) params.append('sector_id', sectorId.toString());
         if (estado) params.append('estado', estado);
         if (soloConStock) params.append('solo_con_stock', 'true');
 
@@ -165,6 +174,7 @@ export default function ControlVencimientos() {
     const limpiarFiltros = () => {
         setBusqueda('');
         setAlmacenId(null);
+        setSectorId(null);
         setEstado('todos');
         router.get('/inventario/control-vencimientos');
     };
@@ -190,7 +200,7 @@ export default function ControlVencimientos() {
 
                 {/* Filtros */}
                 <div className="space-y-4 rounded-lg bg-white p-2 shadow-sm dark:bg-gray-800">
-                    <div className="justify-space-between grid grid-cols-1 items-center gap-4 md:grid-cols-4">
+                    <div className="justify-space-between grid grid-cols-1 items-center gap-4 md:grid-cols-5">
                         {/* Búsqueda */}
                         <div>
                             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Buscar Producto</label>
@@ -215,6 +225,23 @@ export default function ControlVencimientos() {
                                 {almacenes.map((a) => (
                                     <option key={a.id} value={a.id}>
                                         {a.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Sector */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Sector</label>
+                            <select
+                                value={sectorId || ''}
+                                onChange={(e) => setSectorId(e.target.value ? Number(e.target.value) : null)}
+                                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            >
+                                <option value="">Todos</option>
+                                {sectores.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.nombre}
                                     </option>
                                 ))}
                             </select>
