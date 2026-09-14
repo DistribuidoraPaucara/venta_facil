@@ -2720,7 +2720,9 @@ class ProductoController extends Controller
                         ]);
 
                         // ✨ NUEVO: Procesar stock_minimo y stock_maximo para crear/actualizar stock_limites
-                        if (! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) {
+                        // Solo para stocks sin lote (lote vacío/null) para evitar sobrescrituras cuando hay múltiples lotes
+                        $lote = $almacenData['lote'] ?? '';
+                        if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && empty($lote)) {
                             $stockMinimo = (int) ($almacenData['stock_minimo'] ?? 0);
                             $stockMaximo = (int) ($almacenData['stock_maximo'] ?? 0);
 
@@ -2742,6 +2744,14 @@ class ProductoController extends Controller
                                 'sector_id'    => $sectorId,
                                 'stock_minimo' => $stockMinimo,
                                 'stock_maximo' => $stockMaximo,
+                            ]);
+                        } else if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && ! empty($lote)) {
+                            Log::warning('⚠️ StockLimite NO actualizado - Stock con lote:', [
+                                'producto_id'  => $producto->id,
+                                'almacen_id'   => $almacenId,
+                                'sector_id'    => $sectorId,
+                                'lote'         => $lote,
+                                'nota'         => 'Los límites de stock solo se aplican a stocks sin lote (generales por almacén/sector)',
                             ]);
                         }
                     }
@@ -3063,7 +3073,8 @@ class ProductoController extends Controller
                     }
 
                     // ✨ NUEVO: Procesar stock_minimo y stock_maximo para crear/actualizar stock_limites
-                    if (! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) {
+                    // Solo para stocks sin lote (lote vacío/null) para evitar sobrescrituras cuando hay múltiples lotes
+                    if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && empty($lote)) {
                         $stockMinimo = (int) ($almacenData['stock_minimo'] ?? 0);
                         $stockMaximo = (int) ($almacenData['stock_maximo'] ?? 0);
 
@@ -3085,6 +3096,14 @@ class ProductoController extends Controller
                             'sector_id'    => $sectorId,
                             'stock_minimo' => $stockMinimo,
                             'stock_maximo' => $stockMaximo,
+                        ]);
+                    } else if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && ! empty($lote)) {
+                        Log::warning('⚠️ StockLimite NO actualizado - Stock con lote:', [
+                            'producto_id'  => $producto->id,
+                            'almacen_id'   => $almacenId,
+                            'sector_id'    => $sectorId,
+                            'lote'         => $lote,
+                            'nota'         => 'Los límites de stock solo se aplican a stocks sin lote (generales por almacén/sector)',
                         ]);
                     }
                 }
