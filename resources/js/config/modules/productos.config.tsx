@@ -710,6 +710,7 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
 
   // Enhanced visualization
   enableCardView: true,
+  defaultViewMode: 'grid' as const, // ✨ NUEVO: Forzar grid por defecto
   cardRenderer: (p, { onEdit, onDelete }, extraData) => {
     // 📊 Extraer precio de costo y venta del array precios
     const preciosArray = (p as any).precios || [];
