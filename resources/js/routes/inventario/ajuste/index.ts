@@ -1,7 +1,7 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\InventarioController::form
- * @see app/Http/Controllers/InventarioController.php:1104
+ * @see app/Http/Controllers/InventarioController.php:1148
  * @route '/inventario/ajuste'
  */
 export const form = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ form.definition = {
 
 /**
 * @see \App\Http\Controllers\InventarioController::form
- * @see app/Http/Controllers/InventarioController.php:1104
+ * @see app/Http/Controllers/InventarioController.php:1148
  * @route '/inventario/ajuste'
  */
 form.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ form.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\InventarioController::form
- * @see app/Http/Controllers/InventarioController.php:1104
+ * @see app/Http/Controllers/InventarioController.php:1148
  * @route '/inventario/ajuste'
  */
 form.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ form.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\InventarioController::form
- * @see app/Http/Controllers/InventarioController.php:1104
+ * @see app/Http/Controllers/InventarioController.php:1148
  * @route '/inventario/ajuste'
  */
 form.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -42,44 +42,9 @@ form.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\InventarioController::form
- * @see app/Http/Controllers/InventarioController.php:1104
- * @route '/inventario/ajuste'
- */
-    const formForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: form.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\InventarioController::form
- * @see app/Http/Controllers/InventarioController.php:1104
- * @route '/inventario/ajuste'
- */
-        formForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: form.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\InventarioController::form
- * @see app/Http/Controllers/InventarioController.php:1104
- * @route '/inventario/ajuste'
- */
-        formForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: form.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    form.form = formForm
 /**
 * @see \App\Http\Controllers\InventarioController::procesar
- * @see app/Http/Controllers/InventarioController.php:1284
+ * @see app/Http/Controllers/InventarioController.php:1328
  * @route '/inventario/ajuste'
  */
 export const procesar = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +59,7 @@ procesar.definition = {
 
 /**
 * @see \App\Http\Controllers\InventarioController::procesar
- * @see app/Http/Controllers/InventarioController.php:1284
+ * @see app/Http/Controllers/InventarioController.php:1328
  * @route '/inventario/ajuste'
  */
 procesar.url = (options?: RouteQueryOptions) => {
@@ -103,7 +68,7 @@ procesar.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\InventarioController::procesar
- * @see app/Http/Controllers/InventarioController.php:1284
+ * @see app/Http/Controllers/InventarioController.php:1328
  * @route '/inventario/ajuste'
  */
 procesar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -111,30 +76,9 @@ procesar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\InventarioController::procesar
- * @see app/Http/Controllers/InventarioController.php:1284
- * @route '/inventario/ajuste'
- */
-    const procesarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: procesar.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\InventarioController::procesar
- * @see app/Http/Controllers/InventarioController.php:1284
- * @route '/inventario/ajuste'
- */
-        procesarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: procesar.url(options),
-            method: 'post',
-        })
-    
-    procesar.form = procesarForm
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3861
+ * @see app/Http/Controllers/InventarioController.php:3905
  * @route '/inventario/ajuste/imprimir'
  */
 export const imprimir = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +93,7 @@ imprimir.definition = {
 
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3861
+ * @see app/Http/Controllers/InventarioController.php:3905
  * @route '/inventario/ajuste/imprimir'
  */
 imprimir.url = (options?: RouteQueryOptions) => {
@@ -158,7 +102,7 @@ imprimir.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3861
+ * @see app/Http/Controllers/InventarioController.php:3905
  * @route '/inventario/ajuste/imprimir'
  */
 imprimir.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -167,49 +111,13 @@ imprimir.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3861
+ * @see app/Http/Controllers/InventarioController.php:3905
  * @route '/inventario/ajuste/imprimir'
  */
 imprimir.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: imprimir.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3861
- * @route '/inventario/ajuste/imprimir'
- */
-    const imprimirForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: imprimir.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3861
- * @route '/inventario/ajuste/imprimir'
- */
-        imprimirForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: imprimir.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\InventarioController::imprimir
- * @see app/Http/Controllers/InventarioController.php:3861
- * @route '/inventario/ajuste/imprimir'
- */
-        imprimirForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: imprimir.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    imprimir.form = imprimirForm
 const ajuste = {
     form,
 procesar,

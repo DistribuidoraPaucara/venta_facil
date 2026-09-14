@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::store
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:23
@@ -33,27 +33,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::store
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:23
- * @route '/api/inventario/fraccionamientos'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::store
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:23
- * @route '/api/inventario/fraccionamientos'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::index
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:76
@@ -97,41 +76,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::index
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:76
- * @route '/api/inventario/fraccionamientos'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::index
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:76
- * @route '/api/inventario/fraccionamientos'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::index
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:76
- * @route '/api/inventario/fraccionamientos'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
@@ -175,41 +119,6 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
- * @route '/api/inventario/fraccionamientos/productos/disponibles'
- */
-    const productosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: productosDisponibles.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
- * @route '/api/inventario/fraccionamientos/productos/disponibles'
- */
-        productosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: productosDisponibles.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::productosDisponibles
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:334
- * @route '/api/inventario/fraccionamientos/productos/disponibles'
- */
-        productosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: productosDisponibles.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    productosDisponibles.form = productosDisponiblesForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
@@ -272,41 +181,6 @@ conversionesDelProducto.head = (args: { productoId: string | number } | [product
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
- * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
- */
-    const conversionesDelProductoForm = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: conversionesDelProducto.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
- * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
- */
-        conversionesDelProductoForm.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: conversionesDelProducto.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::conversionesDelProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:287
- * @route '/api/inventario/fraccionamientos/producto/{productoId}/conversiones'
- */
-        conversionesDelProductoForm.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: conversionesDelProducto.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    conversionesDelProducto.form = conversionesDelProductoForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::show
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
@@ -374,41 +248,6 @@ show.head = (args: { movimiento: number | { id: number } } | [movimiento: number
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
- * @route '/api/inventario/fraccionamientos/{movimiento}'
- */
-    const showForm = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
- * @route '/api/inventario/fraccionamientos/{movimiento}'
- */
-        showForm.get = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:163
- * @route '/api/inventario/fraccionamientos/{movimiento}'
- */
-        showForm.head = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
@@ -467,37 +306,6 @@ revertir.delete = (args: { movimiento: number | { id: number } } | [movimiento: 
     method: 'delete',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
- * @route '/api/inventario/fraccionamientos/{movimiento}/revertir'
- */
-    const revertirForm = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: revertir.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::revertir
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:192
- * @route '/api/inventario/fraccionamientos/{movimiento}/revertir'
- */
-        revertirForm.delete = (args: { movimiento: number | { id: number } } | [movimiento: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: revertir.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    revertir.form = revertirForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
@@ -560,41 +368,6 @@ historialProducto.head = (args: { productoId: string | number } | [productoId: s
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
- * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
- */
-    const historialProductoForm = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: historialProducto.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
- * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
- */
-        historialProductoForm.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: historialProducto.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::historialProducto
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:216
- * @route '/api/inventario/fraccionamientos/producto/{productoId}/historial'
- */
-        historialProductoForm.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: historialProducto.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    historialProducto.form = historialProductoForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
  * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
@@ -656,42 +429,6 @@ estadisticas.head = (args: { productoPadreId: string | number } | [productoPadre
     url: estadisticas.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
- * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
- */
-    const estadisticasForm = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: estadisticas.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
- * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
- */
-        estadisticasForm.get = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: estadisticas.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoApiController::estadisticas
- * @see app/Http/Controllers/Api/FraccionamientoApiController.php:266
- * @route '/api/inventario/fraccionamientos/producto/{productoPadreId}/estadisticas'
- */
-        estadisticasForm.head = (args: { productoPadreId: string | number } | [productoPadreId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: estadisticas.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    estadisticas.form = estadisticasForm
 const FraccionamientoApiController = { store, index, productosDisponibles, conversionesDelProducto, show, revertir, historialProducto, estadisticas }
 
 export default FraccionamientoApiController

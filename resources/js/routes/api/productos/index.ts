@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 import stock from './stock'
 import componentes from './componentes'
 /**
@@ -68,44 +68,9 @@ combos.head = (args: { producto: number | { id: number } } | [producto: number |
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ComboController::combos
- * @see app/Http/Controllers/ComboController.php:506
- * @route '/api/productos/{producto}/combos'
- */
-    const combosForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: combos.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ComboController::combos
- * @see app/Http/Controllers/ComboController.php:506
- * @route '/api/productos/{producto}/combos'
- */
-        combosForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: combos.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ComboController::combos
- * @see app/Http/Controllers/ComboController.php:506
- * @route '/api/productos/{producto}/combos'
- */
-        combosForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: combos.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    combos.form = combosForm
 /**
 * @see \App\Http\Controllers\ProductoController::stock
- * @see app/Http/Controllers/ProductoController.php:5107
+ * @see app/Http/Controllers/ProductoController.php:5156
  * @route '/api/productos/{producto}/stock'
  */
 export const stock = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -120,7 +85,7 @@ stock.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::stock
- * @see app/Http/Controllers/ProductoController.php:5107
+ * @see app/Http/Controllers/ProductoController.php:5156
  * @route '/api/productos/{producto}/stock'
  */
 stock.url = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -153,7 +118,7 @@ stock.url = (args: { producto: number | { id: number } } | [producto: number | {
 
 /**
 * @see \App\Http\Controllers\ProductoController::stock
- * @see app/Http/Controllers/ProductoController.php:5107
+ * @see app/Http/Controllers/ProductoController.php:5156
  * @route '/api/productos/{producto}/stock'
  */
 stock.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -162,7 +127,7 @@ stock.get = (args: { producto: number | { id: number } } | [producto: number | {
 })
 /**
 * @see \App\Http\Controllers\ProductoController::stock
- * @see app/Http/Controllers/ProductoController.php:5107
+ * @see app/Http/Controllers/ProductoController.php:5156
  * @route '/api/productos/{producto}/stock'
  */
 stock.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -170,44 +135,9 @@ stock.head = (args: { producto: number | { id: number } } | [producto: number | 
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoController::stock
- * @see app/Http/Controllers/ProductoController.php:5107
- * @route '/api/productos/{producto}/stock'
- */
-    const stockForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: stock.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoController::stock
- * @see app/Http/Controllers/ProductoController.php:5107
- * @route '/api/productos/{producto}/stock'
- */
-        stockForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: stock.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ProductoController::stock
- * @see app/Http/Controllers/ProductoController.php:5107
- * @route '/api/productos/{producto}/stock'
- */
-        stockForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: stock.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    stock.form = stockForm
 /**
 * @see \App\Http\Controllers\ProductoController::buscar
- * @see app/Http/Controllers/ProductoController.php:3225
+ * @see app/Http/Controllers/ProductoController.php:3274
  * @route '/api/productos/buscar'
  */
 export const buscar = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -222,7 +152,7 @@ buscar.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::buscar
- * @see app/Http/Controllers/ProductoController.php:3225
+ * @see app/Http/Controllers/ProductoController.php:3274
  * @route '/api/productos/buscar'
  */
 buscar.url = (options?: RouteQueryOptions) => {
@@ -231,7 +161,7 @@ buscar.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::buscar
- * @see app/Http/Controllers/ProductoController.php:3225
+ * @see app/Http/Controllers/ProductoController.php:3274
  * @route '/api/productos/buscar'
  */
 buscar.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -240,49 +170,13 @@ buscar.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProductoController::buscar
- * @see app/Http/Controllers/ProductoController.php:3225
+ * @see app/Http/Controllers/ProductoController.php:3274
  * @route '/api/productos/buscar'
  */
 buscar.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: buscar.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\ProductoController::buscar
- * @see app/Http/Controllers/ProductoController.php:3225
- * @route '/api/productos/buscar'
- */
-    const buscarForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: buscar.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoController::buscar
- * @see app/Http/Controllers/ProductoController.php:3225
- * @route '/api/productos/buscar'
- */
-        buscarForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: buscar.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ProductoController::buscar
- * @see app/Http/Controllers/ProductoController.php:3225
- * @route '/api/productos/buscar'
- */
-        buscarForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: buscar.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    buscar.form = buscarForm
 const productos = {
     combos,
 stock,

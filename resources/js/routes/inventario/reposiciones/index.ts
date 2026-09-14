@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ReposicionController::index
  * @see app/Http/Controllers/ReposicionController.php:17
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::index
- * @see app/Http/Controllers/ReposicionController.php:17
- * @route '/inventario/reposiciones'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::index
- * @see app/Http/Controllers/ReposicionController.php:17
- * @route '/inventario/reposiciones'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ReposicionController::index
- * @see app/Http/Controllers/ReposicionController.php:17
- * @route '/inventario/reposiciones'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\ReposicionController::create
  * @see app/Http/Controllers/ReposicionController.php:31
@@ -120,41 +85,6 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::create
- * @see app/Http/Controllers/ReposicionController.php:31
- * @route '/inventario/reposiciones/crear'
- */
-    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: create.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::create
- * @see app/Http/Controllers/ReposicionController.php:31
- * @route '/inventario/reposiciones/crear'
- */
-        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ReposicionController::create
- * @see app/Http/Controllers/ReposicionController.php:31
- * @route '/inventario/reposiciones/crear'
- */
-        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    create.form = createForm
 /**
 * @see \App\Http\Controllers\ReposicionController::store
  * @see app/Http/Controllers/ReposicionController.php:111
@@ -189,27 +119,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::store
- * @see app/Http/Controllers/ReposicionController.php:111
- * @route '/inventario/reposiciones/crear'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::store
- * @see app/Http/Controllers/ReposicionController.php:111
- * @route '/inventario/reposiciones/crear'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\ReposicionController::show
  * @see app/Http/Controllers/ReposicionController.php:288
@@ -277,41 +186,6 @@ show.head = (args: { reposicion: number | { id: number } } | [reposicion: number
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:288
- * @route '/inventario/reposiciones/{reposicion}'
- */
-    const showForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:288
- * @route '/inventario/reposiciones/{reposicion}'
- */
-        showForm.get = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:288
- * @route '/inventario/reposiciones/{reposicion}'
- */
-        showForm.head = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 /**
 * @see \App\Http\Controllers\ReposicionController::edit
  * @see app/Http/Controllers/ReposicionController.php:299
@@ -379,41 +253,6 @@ edit.head = (args: { reposicion: number | { id: number } } | [reposicion: number
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:299
- * @route '/inventario/reposiciones/{reposicion}/edit'
- */
-    const editForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: edit.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:299
- * @route '/inventario/reposiciones/{reposicion}/edit'
- */
-        editForm.get = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: edit.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:299
- * @route '/inventario/reposiciones/{reposicion}/edit'
- */
-        editForm.head = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: edit.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    edit.form = editForm
 /**
 * @see \App\Http\Controllers\ReposicionController::update
  * @see app/Http/Controllers/ReposicionController.php:318
@@ -472,37 +311,6 @@ update.put = (args: { reposicion: number | { id: number } } | [reposicion: numbe
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::update
- * @see app/Http/Controllers/ReposicionController.php:318
- * @route '/inventario/reposiciones/{reposicion}'
- */
-    const updateForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::update
- * @see app/Http/Controllers/ReposicionController.php:318
- * @route '/inventario/reposiciones/{reposicion}'
- */
-        updateForm.put = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    update.form = updateForm
 /**
 * @see \App\Http\Controllers\ReposicionController::enviar
  * @see app/Http/Controllers/ReposicionController.php:373
@@ -561,27 +369,6 @@ enviar.post = (args: { reposicion: number | { id: number } } | [reposicion: numb
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::enviar
- * @see app/Http/Controllers/ReposicionController.php:373
- * @route '/inventario/reposiciones/{reposicion}/enviar'
- */
-    const enviarForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: enviar.url(args, options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::enviar
- * @see app/Http/Controllers/ReposicionController.php:373
- * @route '/inventario/reposiciones/{reposicion}/enviar'
- */
-        enviarForm.post = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: enviar.url(args, options),
-            method: 'post',
-        })
-    
-    enviar.form = enviarForm
 /**
 * @see \App\Http\Controllers\ReposicionController::recibir
  * @see app/Http/Controllers/ReposicionController.php:389
@@ -640,27 +427,6 @@ recibir.post = (args: { reposicion: number | { id: number } } | [reposicion: num
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\ReposicionController::recibir
- * @see app/Http/Controllers/ReposicionController.php:389
- * @route '/inventario/reposiciones/{reposicion}/recibir'
- */
-    const recibirForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: recibir.url(args, options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::recibir
- * @see app/Http/Controllers/ReposicionController.php:389
- * @route '/inventario/reposiciones/{reposicion}/recibir'
- */
-        recibirForm.post = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: recibir.url(args, options),
-            method: 'post',
-        })
-    
-    recibir.form = recibirForm
 /**
 * @see \App\Http\Controllers\ReposicionController::destroy
  * @see app/Http/Controllers/ReposicionController.php:361
@@ -718,38 +484,6 @@ destroy.delete = (args: { reposicion: number | { id: number } } | [reposicion: n
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-    /**
-* @see \App\Http\Controllers\ReposicionController::destroy
- * @see app/Http/Controllers/ReposicionController.php:361
- * @route '/inventario/reposiciones/{reposicion}'
- */
-    const destroyForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ReposicionController::destroy
- * @see app/Http/Controllers/ReposicionController.php:361
- * @route '/inventario/reposiciones/{reposicion}'
- */
-        destroyForm.delete = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 const reposiciones = {
     index,
 create,

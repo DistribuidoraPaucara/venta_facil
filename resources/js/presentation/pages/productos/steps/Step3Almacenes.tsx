@@ -254,7 +254,7 @@ export default function Step3Almacenes({
 
                                     return (
                                         <tr key={`${key}-${idx}`} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
-                                            <td className="px-4 py-3 font-medium">{almacenOption.value}</td>
+                                            <td className="px-4 py-3 font-medium">#{almacenOption.value}</td>
                                             <td className="px-4 py-3 font-medium">{almacenOption.label}</td>
                                             <td className="px-4 py-3">
                                                 <div className="relative" style={{ position: 'relative', zIndex: 50 }}>

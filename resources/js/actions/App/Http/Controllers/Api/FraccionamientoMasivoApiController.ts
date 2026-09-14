@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::store
  * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:23
@@ -33,27 +33,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::store
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:23
- * @route '/api/inventario/fraccionamientos-masivos'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::store
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:23
- * @route '/api/inventario/fraccionamientos-masivos'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::index
  * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:67
@@ -97,41 +76,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::index
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:67
- * @route '/api/inventario/fraccionamientos-masivos'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::index
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:67
- * @route '/api/inventario/fraccionamientos-masivos'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::index
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:67
- * @route '/api/inventario/fraccionamientos-masivos'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::show
  * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:97
@@ -198,42 +142,6 @@ show.head = (args: { fraccionamientoMasivo: number | { id: number } } | [fraccio
     url: show.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:97
- * @route '/api/inventario/fraccionamientos-masivos/{fraccionamientoMasivo}'
- */
-    const showForm = (args: { fraccionamientoMasivo: number | { id: number } } | [fraccionamientoMasivo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:97
- * @route '/api/inventario/fraccionamientos-masivos/{fraccionamientoMasivo}'
- */
-        showForm.get = (args: { fraccionamientoMasivo: number | { id: number } } | [fraccionamientoMasivo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\FraccionamientoMasivoApiController::show
- * @see app/Http/Controllers/Api/FraccionamientoMasivoApiController.php:97
- * @route '/api/inventario/fraccionamientos-masivos/{fraccionamientoMasivo}'
- */
-        showForm.head = (args: { fraccionamientoMasivo: number | { id: number } } | [fraccionamientoMasivo: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 const FraccionamientoMasivoApiController = { store, index, show }
 
 export default FraccionamientoMasivoApiController
