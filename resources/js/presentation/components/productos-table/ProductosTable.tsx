@@ -518,17 +518,17 @@ export default function ProductosTable({
                                 {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">PRECIO</th> */}
                                 {tipo === 'compra' && (
                                     <>
-                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
+                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
                                             Precio Compra
                                         </th>
-                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
-                                        <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
+                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
+                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
                                             Vencimiento
                                         </th>
                                     </>
                                 )}
                                 {tipo === 'venta' && (
-                                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
+                                    <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
                                         Precio Unitario
                                     </th>
                                 )}

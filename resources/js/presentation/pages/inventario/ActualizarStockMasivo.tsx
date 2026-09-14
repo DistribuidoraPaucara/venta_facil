@@ -557,7 +557,7 @@ export default function ActualizarStockMasivo() {
                                   onChange={(e) => handleCambioTabla(producto.id, e.target.value, cambio.unidad_id)}
                                   className="w-12 md:w-16 px-1 md:px-2 py-1 text-xs md:text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                                <select
+                                {/* <select
                                   value={String(cambio.unidad_id || unidadBase)}
                                   onChange={(e) => handleCambioTabla(producto.id, String(cambio.cantidad), Number(e.target.value))}
                                   className="px-1 md:px-2 py-1 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -568,7 +568,7 @@ export default function ActualizarStockMasivo() {
                                       {conv.unidad_destino_nombre}
                                     </option>
                                   ))}
-                                </select>
+                                </select> */}
                               </div>
                               {cambio.cantidad_convertida !== cambio.cantidad && cambio.cantidad > 0 && (
                                 <div className="text-xs text-gray-500 dark:text-gray-400">

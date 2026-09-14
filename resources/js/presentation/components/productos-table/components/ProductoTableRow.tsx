@@ -176,7 +176,7 @@ export default function ProductoTableRow({
                 )}
             </td> */}
             {/* Disponibilidad */}
-            <td className="items-left px-2 py-2 text-xs">
+            <td className="text-left px-2 py-2 text-xs">
                 {!proformaConvertida &&
                     (() => {
                         let stockDisponible =
@@ -240,8 +240,8 @@ export default function ProductoTableRow({
             </td>
 
             {/* Cantidad */}
-            <td className="items-left px-2 py-2">
-                <div className="flex flex-col gap-1">
+            <td className="text-left px-2 py-2">
+                <div>
                     <input
                         type="text"
                         inputMode="decimal"
@@ -297,7 +297,7 @@ export default function ProductoTableRow({
                             setEditingField(null);
                             setValidacionError(null);
                         }}
-                        className={`w-24 flex-col rounded-lg border px-1 py-1 text-sm focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
+                        className={`rounded-lg border px-1 py-1 text-sm focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
                             validacionError
                                 ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500 dark:border-red-600 dark:bg-red-950/30'
                                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-zinc-600'
@@ -428,7 +428,7 @@ export default function ProductoTableRow({
 
             {/* Precio Venta - Con selector de precios para fraccionados */}
             {tipo === 'venta' && (
-                <td className="font-small px-2 py-2 text-xs text-center">
+                <td className="font-small px-2 py-2 text-xs text-left">
                     {(() => {
                         const precios = detalle.producto?.precios || [];
                         const preciosVenta = precios.filter((p) => {

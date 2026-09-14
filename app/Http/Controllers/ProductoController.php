@@ -2696,6 +2696,32 @@ class ProductoController extends Controller
                             'cantidad'    => $cantidadTotal,
                             'lote'        => $almacenData['lote'] ?? null,
                         ]);
+
+                        // ✨ NUEVO: Procesar stock_minimo y stock_maximo para crear/actualizar stock_limites
+                        if (! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) {
+                            $stockMinimo = (int) ($almacenData['stock_minimo'] ?? 0);
+                            $stockMaximo = (int) ($almacenData['stock_maximo'] ?? 0);
+
+                            StockLimite::updateOrCreate(
+                                [
+                                    'producto_id' => $producto->id,
+                                    'almacen_id'  => $almacenId,
+                                    'sector_id'   => $sectorId,
+                                ],
+                                [
+                                    'stock_minimo' => $stockMinimo,
+                                    'stock_maximo' => $stockMaximo,
+                                ]
+                            );
+
+                            Log::info('✅ StockLimite CREADO/ACTUALIZADO en storeApi:', [
+                                'producto_id'  => $producto->id,
+                                'almacen_id'   => $almacenId,
+                                'sector_id'    => $sectorId,
+                                'stock_minimo' => $stockMinimo,
+                                'stock_maximo' => $stockMaximo,
+                            ]);
+                        }
                     }
                 }
 
@@ -3009,6 +3035,32 @@ class ProductoController extends Controller
                             'cantidad'            => $nuevoStock->cantidad,
                             'lote'                => $nuevoStock->lote,
                             'fecha_vencimiento'   => $nuevoStock->fecha_vencimiento,
+                        ]);
+                    }
+
+                    // ✨ NUEVO: Procesar stock_minimo y stock_maximo para crear/actualizar stock_limites
+                    if (! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) {
+                        $stockMinimo = (int) ($almacenData['stock_minimo'] ?? 0);
+                        $stockMaximo = (int) ($almacenData['stock_maximo'] ?? 0);
+
+                        StockLimite::updateOrCreate(
+                            [
+                                'producto_id' => $producto->id,
+                                'almacen_id'  => $almacenId,
+                                'sector_id'   => $sectorId,
+                            ],
+                            [
+                                'stock_minimo' => $stockMinimo,
+                                'stock_maximo' => $stockMaximo,
+                            ]
+                        );
+
+                        Log::info('✅ StockLimite CREADO/ACTUALIZADO en updateApi:', [
+                            'producto_id'  => $producto->id,
+                            'almacen_id'   => $almacenId,
+                            'sector_id'    => $sectorId,
+                            'stock_minimo' => $stockMinimo,
+                            'stock_maximo' => $stockMaximo,
                         ]);
                     }
                 }

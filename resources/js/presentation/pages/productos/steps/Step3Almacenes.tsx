@@ -321,7 +321,7 @@ export default function Step3Almacenes({
                 {/* SECCIÓN: ALMACENES Y STOCK (LOTES) */}
                 <div className="space-y-4 mt-2">
                     <div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-1">
                             <button
                                 type="button"
                                 onClick={() => setExpandedAlmacenes(!expandedAlmacenes)}

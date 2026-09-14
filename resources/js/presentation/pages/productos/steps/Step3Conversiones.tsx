@@ -2,8 +2,8 @@ import type { ConversionUnidad } from '@/domain/entities/productos';
 import { Button } from '@/presentation/components/ui/button';
 import { Checkbox } from '@/presentation/components/ui/checkbox';
 import { Input } from '@/presentation/components/ui/input';
-import { Label } from '@/presentation/components/ui/label';
 import InputSearchSelect from '@/presentation/components/ui/input-search-select';
+import { Label } from '@/presentation/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import axios from 'axios';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -119,9 +119,8 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
         }
 
         // Filtrado local - INSTANTÁNEO
-        const productosFiltrados = todosProductos.filter((prod: any) =>
-            prod.sku.toLowerCase().includes(termino.toLowerCase()) ||
-            prod.nombre.toLowerCase().includes(termino.toLowerCase())
+        const productosFiltrados = todosProductos.filter(
+            (prod: any) => prod.sku.toLowerCase().includes(termino.toLowerCase()) || prod.nombre.toLowerCase().includes(termino.toLowerCase()),
         );
 
         const opciones = productosFiltrados.map((prod: any) => ({
@@ -339,8 +338,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
     };
 
     // ✨ NUEVA VALIDACIÓN: Verificar que unidad_base_id coincida con data.unidad_medida_id
-    const unitMismatch = conversiones.length > 0 &&
-        conversiones.some((c: any) => c.unidad_base_id !== Number(data.unidad_medida_id));
+    const unitMismatch = conversiones.length > 0 && conversiones.some((c: any) => c.unidad_base_id !== Number(data.unidad_medida_id));
 
     if (!data.es_fraccionado) {
         return (
@@ -370,14 +368,12 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                     <div className="flex gap-3">
                         <div className="text-2xl">⚠️</div>
                         <div>
-                            <p className="font-bold text-red-900 dark:text-red-200">
-                                Error de configuración: Unidad base no coincide
-                            </p>
+                            <p className="font-bold text-red-900 dark:text-red-200">Error de configuración: Unidad base no coincide</p>
                             <p className="mt-2 text-sm text-red-800 dark:text-red-300">
                                 Las conversiones actuales usan una unidad base diferente a la del producto.
-                                <strong className="block mt-1">
-                                    Acción: Cambiar unidad_medida_id del producto a {unidadBase?.nombre}
-                                    ({unidadBase?.codigo}), o eliminar todas las conversiones y crear nuevas.
+                                <strong className="mt-1 block">
+                                    Acción: Cambiar unidad_medida_id del producto a {unidadBase?.nombre}({unidadBase?.codigo}), o eliminar todas las
+                                    conversiones y crear nuevas.
                                 </strong>
                             </p>
                         </div>
@@ -391,12 +387,10 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                     <div className="flex gap-3">
                         <div className="text-2xl">⚠️</div>
                         <div>
-                            <p className="font-bold text-yellow-900 dark:text-yellow-200">
-                                Producto fraccionado sin conversiones
-                            </p>
+                            <p className="font-bold text-yellow-900 dark:text-yellow-200">Producto fraccionado sin conversiones</p>
                             <p className="mt-2 text-sm text-yellow-800 dark:text-yellow-300">
-                                Este producto está marcado como fraccionado, pero no tiene conversiones de unidades configuradas.
-                                Debes agregar al menos una conversión para poder venderlo en diferentes unidades.
+                                Este producto está marcado como fraccionado, pero no tiene conversiones de unidades configuradas. Debes agregar al
+                                menos una conversión para poder venderlo en diferentes unidades.
                             </p>
                         </div>
                     </div>
@@ -409,12 +403,10 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                     <div className="flex gap-3">
                         <div className="text-2xl">⚡</div>
                         <div>
-                            <p className="font-bold text-orange-900 dark:text-orange-200">
-                                Sin conversión principal definida
-                            </p>
+                            <p className="font-bold text-orange-900 dark:text-orange-200">Sin conversión principal definida</p>
                             <p className="mt-2 text-sm text-orange-800 dark:text-orange-300">
-                                Debe haber exactamente una conversión marcada como principal.
-                                Edita una de las conversiones y márcala como predeterminada.
+                                Debe haber exactamente una conversión marcada como principal. Edita una de las conversiones y márcala como
+                                predeterminada.
                             </p>
                         </div>
                     </div>
@@ -443,7 +435,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                 {/* Toggle Formulario - Encabezado clickeable */}
                 <div
                     onClick={() => setShowForm(!showForm)}
-                    className="text-xs flex cursor-pointer items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:bg-blue-950/50"
+                    className="flex cursor-pointer items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-xs transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:bg-blue-950/50"
                 >
                     <p className="text-blue-900 dark:text-blue-100">➕ Agregar Nueva Conversión</p>
                     {showForm ? (
@@ -474,13 +466,16 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     <TooltipTrigger asChild>
                                         <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
                                         </button>
                                     </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        Auto-asignada del producto
-                                    </TooltipContent>
+                                    <TooltipContent side="right">Auto-asignada del producto</TooltipContent>
                                 </Tooltip>
                             </div>
                             <div className="rounded border border-gray-300 bg-gray-100 p-2 text-sm dark:border-slate-600 dark:bg-slate-800">
@@ -497,7 +492,12 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     <TooltipTrigger asChild>
                                         <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
                                         </button>
                                     </TooltipTrigger>
@@ -525,20 +525,6 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 loading={false}
                                 emptyText="Sin coincidencias. Intenta otro término."
                             />
-                            {formConversion.producto_destino_id && (
-                                <div className="mt-2 flex gap-2 rounded bg-purple-50 p-2 dark:bg-purple-950/30">
-                                    <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
-                                        👶 Producto hijo: {productosDestino.find((p) => p.value === formConversion.producto_destino_id)?.label || `ID: ${formConversion.producto_destino_id}`}
-                                    </span>
-                                </div>
-                            )}
-                            {formConversion.unidad_destino_id && (
-                                <div className="mt-2 flex gap-2 rounded bg-blue-50 p-2 dark:bg-blue-950/30">
-                                    <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                                        ✓ Unidad destino: {unidadesOptions.find((u) => u.value === formConversion.unidad_destino_id)?.label}
-                                    </span>
-                                </div>
-                            )}
                         </div>
 
                         {/* Factor Conversión */}
@@ -549,7 +535,12 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     <TooltipTrigger asChild>
                                         <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
                                         </button>
                                     </TooltipTrigger>
@@ -586,12 +577,18 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     <TooltipTrigger asChild>
                                         <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
                                         </button>
                                     </TooltipTrigger>
                                     <TooltipContent side="right">
-                                        Si dejas vacío, se genera automáticamente. Ej: Si el producto es "Paquete de Coca Cola 6x1", se mostrará como "Coca Cola 2Lts" cuando se venda por unidad.
+                                        Si dejas vacío, se genera automáticamente. Ej: Si el producto es "Paquete de Coca Cola 6x1", se mostrará como
+                                        "Coca Cola 2Lts" cuando se venda por unidad.
                                     </TooltipContent>
                                 </Tooltip>
                             </div>
@@ -617,7 +614,7 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 onCheckedChange={handlePrincipalChange}
                                 className="h-5 w-5"
                             />
-                            <Label htmlFor="es_principal" className="cursor-pointer flex-1 text-sm font-medium">
+                            <Label htmlFor="es_principal" className="flex-1 cursor-pointer text-sm font-medium">
                                 ⭐ Usar como conversión predeterminada
                             </Label>
                         </div>
@@ -635,10 +632,27 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 }
                                 className="h-5 w-5"
                             />
-                            <Label htmlFor="activo" className="cursor-pointer flex-1 text-sm font-medium">
+                            <Label htmlFor="activo" className="flex-1 cursor-pointer text-sm font-medium">
                                 ✅ Conversión Activa
                             </Label>
                         </div>
+
+                        {formConversion.producto_destino_id && (
+                            <div className="mt-2 flex gap-2 rounded bg-purple-50 p-2 dark:bg-purple-950/30">
+                                <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+                                    👶 Producto hijo:{' '}
+                                    {productosDestino.find((p) => p.value === formConversion.producto_destino_id)?.label ||
+                                        `ID: ${formConversion.producto_destino_id}`}
+                                </span>
+                            </div>
+                        )}
+                        {formConversion.unidad_destino_id && (
+                            <div className="mt-2 flex gap-2 rounded bg-blue-50 p-2 dark:bg-blue-950/30">
+                                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                                    ✓ Unidad destino: {unidadesOptions.find((u) => u.value === formConversion.unidad_destino_id)?.label}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex gap-2">
@@ -681,11 +695,10 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     >
                                         <td className="px-4 py-2">{unidadBase?.nombre || 'N/A'}</td>
                                         <td className="px-4 py-2">
-                                            
-                                            <span className="ml-1 text-xs text-muted-foreground">
-                                                {unidadBase?.codigo || ''} →  
-                                            </span>
-                                            <strong>{formatearNumero(conv.factor_conversion)} {getUnitLabel(conv.unidad_destino_id)}</strong>
+                                            <span className="ml-1 text-xs text-muted-foreground">{unidadBase?.codigo || ''} →</span>
+                                            <strong>
+                                                {formatearNumero(conv.factor_conversion)} {getUnitLabel(conv.unidad_destino_id)}
+                                            </strong>
                                         </td>
                                         <td className="px-4 py-2">{getUnitLabel(conv.unidad_destino_id)}</td>
                                         {/* ✨ NUEVO: Mostrar producto hijo relacionado */}
