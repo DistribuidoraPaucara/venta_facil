@@ -2393,6 +2393,14 @@ class ProductoController extends Controller
             'stock' => function ($q) {
                 $q->with(['almacen:id,nombre', 'sector:id,nombre']);
             },
+            // ✨ NUEVO: Cargar stock_limites con información de almacén y sector
+            'stockLimites' => function ($q) {
+                $q->select('id', 'producto_id', 'almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo')
+                  ->with([
+                      'sector:id,nombre',
+                      'almacen:id,nombre',
+                  ]);
+            },
             'precios'      => function ($q) {
                 // Cargar SOLO precios activos con relación a tipo de precio
                 $q->where('activo', true)
