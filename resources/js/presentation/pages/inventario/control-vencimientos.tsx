@@ -204,10 +204,10 @@ export default function ControlVencimientos() {
                     <div className="justify-space-between grid grid-cols-1 items-center gap-4 md:grid-cols-5">
                         {/* Búsqueda */}
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Buscar Producto o Código</label>
+                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Buscar Producto</label>
                             <Input
                                 type="text"
-                                placeholder="Nombre, SKU o código barra..."
+                                placeholder="Nombre, ID, SKU o código barra..."
                                 value={busqueda}
                                 onChange={(e) => setBusqueda(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && aplicarFiltros()}

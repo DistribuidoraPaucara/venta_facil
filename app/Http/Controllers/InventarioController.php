@@ -595,11 +595,16 @@ class InventarioController extends Controller
             $query->where('sector_id', $sectorId);
         }
 
-        // Filtro por búsqueda de producto (nombre o código de barra)
+        // Filtro por búsqueda de producto (nombre, código de barra, SKU o ID)
         if ($busqueda) {
             $query->whereHas('producto', function ($q) use ($busqueda) {
                 $q->where('nombre', 'like', "%{$busqueda}%")
                   ->orWhere('sku', 'like', "%{$busqueda}%");
+
+                // Si la búsqueda es un número, también buscar por ID
+                if (is_numeric($busqueda)) {
+                    $q->orWhere('id', intval($busqueda));
+                }
             });
         }
 
