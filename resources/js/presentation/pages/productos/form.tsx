@@ -251,7 +251,10 @@ export default function ProductoForm({
                   es_de_produccion: producto.es_de_produccion ?? false, // 🏭 NUEVO - Es producto de producción
                   precios: Array.isArray(producto.precios) && producto.precios.length > 0 ? producto.precios : initialProductoData.precios,
                   codigos: producto.codigos?.length ? producto.codigos : [{ codigo: '' }],
-                  almacenes: producto.stock_almacenes?.length ? producto.stock_almacenes : [], // ✨ NUEVO
+                  almacenes: producto.stock_almacenes?.length ? producto.stock_almacenes.map((a: any) => ({
+                      ...a,
+                      stock: a.cantidad, // ✨ MAPEAR: Cantidad → Stock (para compatibilidad con Step3Almacenes)
+                  })) : [], // ✨ NUEVO
                   // ✨ CORREGIDO (2026-09-08): Inicializar globalSectorId desde el primer almacén con sector
                   globalSectorId: producto.stock_almacenes?.find((a: any) => a.sector_id)?.sector_id,
                   conversiones: producto.conversiones?.length ? producto.conversiones : [], // ✨ NUEVO
@@ -897,7 +900,7 @@ export default function ProductoForm({
 
         nuevosAlmacenes[i] = {
             ...almacenActual,
-            cantidad: newValue,
+            stock: newValue ?? 0,
             cantidad_disponible: newValue !== undefined ? Math.max(0, newValue - reservadaActual) : 0,
             cantidad_reservada: reservadaActual,
         };
@@ -942,7 +945,7 @@ export default function ProductoForm({
             reservada: 0,
         };
         (data.almacenes || []).forEach((a) => {
-            totales.cantidad += Number(a.cantidad ?? a.stock ?? 0);
+            totales.cantidad += Number(a.stock ?? 0);
             totales.disponible += Number(a.cantidad_disponible ?? 0);
             totales.reservada += Number(a.cantidad_reservada ?? 0);
         });
@@ -1173,7 +1176,7 @@ export default function ProductoForm({
                     {/* Izquierda: Tabs de edición */}
                     <div className={showImages ? 'lg:col-span-2' : 'w-full'}>
                         <Tabs defaultValue="datos" className="w-full">
-                            <TabsList className={`flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-3 rounded-2xl border-0`}>
+                            <TabsList className={`flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-1 rounded-2xl border-0`}>
                                 <div className="flex flex-wrap items-center gap-3">
                                     {/* 🔵 Datos del producto */}
                                     <TabsTrigger value="datos" className="px-4 py-2 rounded-full font-semibold transition-all duration-300 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-gray-800 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 hover:shadow-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105">
