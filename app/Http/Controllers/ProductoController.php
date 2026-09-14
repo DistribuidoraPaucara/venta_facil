@@ -122,8 +122,9 @@ class ProductoController extends Controller
                 'proveedor:id,nombre,razon_social',
                 'unidad:id,codigo,nombre',
                 // ✨ NUEVO: Cargar stock_limites con información de sector
-                'stockLimites:id,producto_id,almacen_id,sector_id' => function ($q) {
-                    $q->with('sector:id,nombre');
+                'stockLimites' => function ($q) {
+                    $q->select('id', 'producto_id', 'almacen_id', 'sector_id')
+                      ->with('sector:id,nombre');
                 },
                 // Cargar todas las imágenes para poder mostrar galería en modal rápido
                 'imagenes:id,producto_id,url,es_principal,orden',
