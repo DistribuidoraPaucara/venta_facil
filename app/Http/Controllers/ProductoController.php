@@ -2688,6 +2688,9 @@ class ProductoController extends Controller
                         'almacenes_count' => count($data['almacenes']),
                     ]);
 
+                    // Track processed almacen/sector combinations para evitar actualizar StockLimite múltiples veces
+                    $almacenesLimitesYaProcesados = [];
+
                     foreach ($data['almacenes'] as $almacenData) {
                         if (empty($almacenData['almacen_id'])) {
                             continue;
@@ -2720,9 +2723,13 @@ class ProductoController extends Controller
                         ]);
 
                         // ✨ NUEVO: Procesar stock_minimo y stock_maximo para crear/actualizar stock_limites
-                        // Solo para stocks sin lote (lote vacío/null) para evitar sobrescrituras cuando hay múltiples lotes
+                        // Solo UNA VEZ por almacén/sector para evitar sobrescrituras cuando hay múltiples lotes
                         $lote = $almacenData['lote'] ?? '';
-                        if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && empty($lote)) {
+                        $almacenSectorKey = "{$almacenId}_{$sectorId}";
+                        if (! isset($almacenesLimitesYaProcesados[$almacenSectorKey]) &&
+                            (! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) &&
+                            empty($lote)) {
+
                             $stockMinimo = (int) ($almacenData['stock_minimo'] ?? 0);
                             $stockMaximo = (int) ($almacenData['stock_maximo'] ?? 0);
 
@@ -2738,6 +2745,9 @@ class ProductoController extends Controller
                                 ]
                             );
 
+                            // Marcar como ya procesado para este almacén/sector
+                            $almacenesLimitesYaProcesados[$almacenSectorKey] = true;
+
                             Log::info('✅ StockLimite CREADO/ACTUALIZADO en storeApi:', [
                                 'producto_id'  => $producto->id,
                                 'almacen_id'   => $almacenId,
@@ -2745,13 +2755,16 @@ class ProductoController extends Controller
                                 'stock_minimo' => $stockMinimo,
                                 'stock_maximo' => $stockMaximo,
                             ]);
-                        } else if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && ! empty($lote)) {
-                            Log::warning('⚠️ StockLimite NO actualizado - Stock con lote:', [
+                        } else if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) &&
+                                   (isset($almacenesLimitesYaProcesados[$almacenSectorKey]) || ! empty($lote))) {
+                            Log::warning('⚠️ StockLimite NO actualizado:', [
                                 'producto_id'  => $producto->id,
                                 'almacen_id'   => $almacenId,
                                 'sector_id'    => $sectorId,
                                 'lote'         => $lote,
-                                'nota'         => 'Los límites de stock solo se aplican a stocks sin lote (generales por almacén/sector)',
+                                'razon'        => isset($almacenesLimitesYaProcesados[$almacenSectorKey])
+                                    ? 'Ya fue procesado un límite para este almacén/sector'
+                                    : 'Stock tiene lote',
                             ]);
                         }
                     }
@@ -2962,6 +2975,9 @@ class ProductoController extends Controller
                     ->whereNotIn('almacen_id', $nuevosAlmacenIds)
                     ->delete(); // SoftDelete
 
+                // Track processed almacen/sector combinations para evitar actualizar StockLimite múltiples veces
+                $almacenesLimitesYaProcesados = [];
+
                 // Crear o actualizar StockProducto para cada almacén en el array
                 foreach ($data['almacenes'] as $almacenData) {
                     if (empty($almacenData['almacen_id'])) {
@@ -3073,8 +3089,12 @@ class ProductoController extends Controller
                     }
 
                     // ✨ NUEVO: Procesar stock_minimo y stock_maximo para crear/actualizar stock_limites
-                    // Solo para stocks sin lote (lote vacío/null) para evitar sobrescrituras cuando hay múltiples lotes
-                    if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && empty($lote)) {
+                    // Solo UNA VEZ por almacén/sector para evitar sobrescrituras cuando hay múltiples lotes
+                    $almacenSectorKey = "{$almacenId}_{$sectorId}";
+                    if (! isset($almacenesLimitesYaProcesados[$almacenSectorKey]) &&
+                        (! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) &&
+                        empty($lote)) {
+
                         $stockMinimo = (int) ($almacenData['stock_minimo'] ?? 0);
                         $stockMaximo = (int) ($almacenData['stock_maximo'] ?? 0);
 
@@ -3090,6 +3110,9 @@ class ProductoController extends Controller
                             ]
                         );
 
+                        // Marcar como ya procesado para este almacén/sector
+                        $almacenesLimitesYaProcesados[$almacenSectorKey] = true;
+
                         Log::info('✅ StockLimite CREADO/ACTUALIZADO en updateApi:', [
                             'producto_id'  => $producto->id,
                             'almacen_id'   => $almacenId,
@@ -3097,13 +3120,16 @@ class ProductoController extends Controller
                             'stock_minimo' => $stockMinimo,
                             'stock_maximo' => $stockMaximo,
                         ]);
-                    } else if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) && ! empty($lote)) {
-                        Log::warning('⚠️ StockLimite NO actualizado - Stock con lote:', [
+                    } else if ((! empty($almacenData['stock_minimo']) || ! empty($almacenData['stock_maximo'])) &&
+                               (isset($almacenesLimitesYaProcesados[$almacenSectorKey]) || ! empty($lote))) {
+                        Log::warning('⚠️ StockLimite NO actualizado:', [
                             'producto_id'  => $producto->id,
                             'almacen_id'   => $almacenId,
                             'sector_id'    => $sectorId,
                             'lote'         => $lote,
-                            'nota'         => 'Los límites de stock solo se aplican a stocks sin lote (generales por almacén/sector)',
+                            'razon'        => isset($almacenesLimitesYaProcesados[$almacenSectorKey])
+                                ? 'Ya fue procesado un límite para este almacén/sector'
+                                : 'Stock tiene lote',
                         ]);
                     }
                 }
