@@ -515,9 +515,12 @@ export default function ProductoForm({
 
         // ✨ NUEVO: Enviar IDs de imágenes a eliminar
         if (imagenesToDelete.length > 0) {
+            console.log('🗑️ Enviando imágenes a eliminar:', imagenesToDelete);
             imagenesToDelete.forEach((id: number, i: number) => {
                 formData.append(`galeria_eliminar[${i}]`, String(id));
             });
+        } else {
+            console.log('📷 No hay imágenes para eliminar');
         }
 
         // Precios (solo los válidos)
@@ -1008,10 +1011,14 @@ export default function ProductoForm({
 
         if (confirmed) {
             const imagenAEliminar = galeriaState[i];
+            console.log('🗑️ Imagen a eliminar:', imagenAEliminar);
 
             // Si la imagen tiene un ID (viene de la BD), registrar su ID para eliminación
             if (imagenAEliminar.id) {
+                console.log('✅ Registrando imagen para eliminación - ID:', imagenAEliminar.id);
                 setImagenesToDelete([...imagenesToDelete, imagenAEliminar.id]);
+            } else {
+                console.log('⚠️ Imagen NO tiene ID (probablemente es nueva)');
             }
 
             const galeriaFiltrada = galeriaState.filter((_: unknown, idx: number) => idx !== i);
