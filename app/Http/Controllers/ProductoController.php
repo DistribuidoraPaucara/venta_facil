@@ -834,7 +834,7 @@ class ProductoController extends Controller
         $perfil  = $producto->imagenes->firstWhere('es_principal', true);
         $galeria = $producto->imagenes->where('es_principal', false)->values()->map(function ($img) {
             return ['id' => $img->id, 'url' => $img->url];
-        });
+        })->toArray(); // ✨ IMPORTANTE: Convertir a array para Inertia
 
         // Obtener todos los códigos de barra activos para el frontend
         $codigos = $producto->codigosBarra->map(function ($cb) {
