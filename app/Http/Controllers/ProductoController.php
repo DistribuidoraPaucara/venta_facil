@@ -102,6 +102,7 @@ class ProductoController extends Controller
         $categoriaId = $request->integer('categoria_id');
         $marcaId     = $request->integer('marca_id');
         $proveedorId = $request->integer('proveedor_id');
+        $sectorId    = $request->integer('sector_id'); // ✨ NUEVO: Filtro de sector
         $sinPrecio   = $request->boolean('sin_precio');
         $visibleApp  = $request->has('visible_app') ? $request->boolean('visible_app') : null; // ✨ NUEVO
         $orderBy     = $request->string('order_by')->toString();
@@ -120,6 +121,10 @@ class ProductoController extends Controller
                 'marca:id,nombre',
                 'proveedor:id,nombre,razon_social',
                 'unidad:id,codigo,nombre',
+                // ✨ NUEVO: Cargar stock_limites con información de sector
+                'stockLimites:id,producto_id,almacen_id,sector_id' => function ($q) {
+                    $q->with('sector:id,nombre');
+                },
                 // Cargar todas las imágenes para poder mostrar galería en modal rápido
                 'imagenes:id,producto_id,url,es_principal,orden',
                 // Cargar todos los precios activos (no sólo el base) para modal rápido
@@ -172,6 +177,12 @@ class ProductoController extends Controller
                 });
             })
             ->when($visibleApp !== null, fn($qq) => $qq->where('productos.visible_app', $visibleApp)) // ✨ NUEVO
+            ->when($sectorId, function ($qq) use ($sectorId) {
+                // ✨ NUEVO: Filtrar por sector mediante stock_limites
+                $qq->whereHas('stockLimites', function ($q) use ($sectorId) {
+                    $q->where('sector_id', $sectorId);
+                });
+            })
             ->select('productos.*')
             ->leftJoinSub(
                 'select producto_id, sum(cantidad) as stock_total_calc, sum(cantidad_disponible) as stock_disponible_calc from stock_productos where deleted_at is null group by producto_id',
@@ -260,6 +271,13 @@ class ProductoController extends Controller
         $marcas      = Marca::porEmpresa()->orderBy('nombre')->get(['id', 'nombre']);
         $proveedores = \App\Models\Proveedor::query()->orderBy('nombre')->get(['id', 'nombre', 'razon_social']);
 
+        // ✨ NUEVO: Cargar sectores únicos de stock_limites
+        $sectores = Sector::query()
+            ->orderBy('nombre')
+            ->get(['id', 'nombre'])
+            ->map(fn($s) => ['id' => $s->id, 'nombre' => $s->nombre])
+            ->values();
+
         return Inertia::render('productos/index', [
             'productos'    => $items,
             'filters'      => [
@@ -267,6 +285,7 @@ class ProductoController extends Controller
                 'categoria_id' => $categoriaId ?: null,
                 'marca_id'     => $marcaId ?: null,
                 'proveedor_id' => $request->integer('proveedor_id') ?: null,
+                'sector_id'    => $sectorId ?: null, // ✨ NUEVO
                 'sin_precio'   => $sinPrecio ?: null,
                 'visible_app'  => $visibleApp, // ✨ NUEVO
                 'order_by'     => $orderBy ?: null,
@@ -275,6 +294,7 @@ class ProductoController extends Controller
             'categorias'   => $categorias,
             'marcas'       => $marcas,
             'proveedores'  => $proveedores,
+            'sectores'     => $sectores, // ✨ NUEVO
             'unidades'     => UnidadMedida::orderBy('nombre')->get(['id', 'codigo', 'nombre']),
             'tipos_precio' => TipoPrecio::porEmpresa()->activos()->ordenados()->get()->map(function ($tipo) {
                 return [

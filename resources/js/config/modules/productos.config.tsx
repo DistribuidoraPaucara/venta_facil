@@ -683,6 +683,14 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
         type: 'boolean' as const,
         placeholder: 'Todos los estados',
         width: 'sm' as const
+      },
+      {
+        key: 'sector_id',
+        label: 'Sector',
+        type: 'select' as const,
+        placeholder: 'Todos los sectores',
+        extraDataKey: 'sectores',
+        width: 'md' as const
       }
     ],
     sortOptions: [
