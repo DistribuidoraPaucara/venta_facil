@@ -504,13 +504,13 @@ export default function VentaShow() {
                                                         {(detalle.producto as any).unidad ? `${(detalle.producto as any).unidad.nombre}` : '-'}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                                                        {formatCurrencyWith2Decimals(detalle.cantidad)}
+                                                        {typeof detalle.cantidad === 'number' ? (detalle.cantidad % 1 === 0 ? detalle.cantidad : detalle.cantidad.toFixed(2)) : detalle.cantidad}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                                                        {formatCurrencyWith2Decimals(detalle.precio_unitario, venta.moneda.codigo)}
+                                                        {formatCurrencyWith2Decimals(detalle.precio_unitario)}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white">
-                                                        {formatCurrencyWith2Decimals(detalle.subtotal, venta.moneda.codigo)}
+                                                        {formatCurrencyWith2Decimals(detalle.subtotal)}
                                                     </td>
                                                 </tr>
 
@@ -571,7 +571,7 @@ export default function VentaShow() {
                                                                     </td>
                                                                     <td colSpan={2}></td>
                                                                     <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                                                        {formatCurrencyWith2Decimals(cantidadTotal)}
+                                                                        {typeof cantidadTotal === 'number' ? (cantidadTotal % 1 === 0 ? cantidadTotal : cantidadTotal.toFixed(2)) : cantidadTotal}
                                                                     </td>
                                                                     <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">
                                                                         {formatCurrencyWith2Decimals(precioUnitario, venta.moneda.codigo)}
