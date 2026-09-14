@@ -525,6 +525,13 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                 loading={false}
                                 emptyText="Sin coincidencias. Intenta otro término."
                             />
+                            {formConversion.producto_destino_id && (
+                                <div className="mt-2 flex gap-2 rounded bg-purple-50 p-2 dark:bg-purple-950/30">
+                                    <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+                                        👶 Producto hijo: {productosDestino.find((p) => p.value === formConversion.producto_destino_id)?.label || `ID: ${formConversion.producto_destino_id}`}
+                                    </span>
+                                </div>
+                            )}
                             {formConversion.unidad_destino_id && (
                                 <div className="mt-2 flex gap-2 rounded bg-blue-50 p-2 dark:bg-blue-950/30">
                                     <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
