@@ -572,7 +572,7 @@ class InventarioController extends Controller
         $busqueda = (string) $request->string('busqueda', '');
         $soloConStock = $request->boolean('solo_con_stock', true); // Por defecto: mostrar solo con stock
 
-        $query = StockProducto::with(['producto.categoria', 'almacen'])
+        $query = StockProducto::with(['producto.categoria', 'almacen', 'sector'])
             ->withoutTrashed()
             ->whereNotNull('fecha_vencimiento')
             ->whereHas('almacen', function ($q) use ($empresaId) {
@@ -617,6 +617,10 @@ class InventarioController extends Controller
                     'almacen'           => [
                         'id'     => $stock->almacen->id,
                         'nombre' => $stock->almacen->nombre,
+                    ],
+                    'sector'            => [
+                        'id'     => $stock->sector->id ?? null,
+                        'nombre' => $stock->sector->nombre ?? null,
                     ],
                     'lote'              => $stock->lote,
                     'stock_actual'      => $stock->cantidad,
