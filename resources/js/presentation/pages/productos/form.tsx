@@ -616,7 +616,7 @@ export default function ProductoForm({
                 if (almacen.sector_id) {
                     formData.append(`almacenes[${i}][sector_id]`, String(almacen.sector_id));
                 }
-                formData.append(`almacenes[${i}][stock]`, String(almacen.cantidad ?? almacen.stock ?? 0));
+                formData.append(`almacenes[${i}][stock]`, String(almacen.stock ?? almacen.cantidad ?? 0));
                 // ✨ NUEVO: Incluir cantidad_disponible y cantidad_reservada
                 if (almacen.cantidad_disponible !== undefined) {
                     formData.append(`almacenes[${i}][cantidad_disponible]`, String(almacen.cantidad_disponible ?? 0));
@@ -912,6 +912,7 @@ export default function ProductoForm({
         nuevosAlmacenes[i] = {
             ...almacenActual,
             stock: newValue ?? 0,
+            cantidad: newValue ?? 0, // Mantener sincronizado con stock (se usa como respaldo al enviar)
             cantidad_disponible: newValue !== undefined ? Math.max(0, newValue - reservadaActual) : 0,
             cantidad_reservada: reservadaActual,
         };

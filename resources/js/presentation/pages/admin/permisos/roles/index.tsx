@@ -7,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/pre
 import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 import toast from 'react-hot-toast'
-import { Trash2, Pencil, Plus, Search, Users, Shield } from 'lucide-react'
+import { Trash2, Pencil, Plus, Search, Users, Shield, ChevronDown, ChevronRight, UserMinus } from 'lucide-react'
 import Can from '@/presentation/components/auth/Can'
 import { type BreadcrumbItem } from '@/types'
-import type { Role } from '@/domain/entities/admin-permisos'
+import type { Role, RoleUser } from '@/domain/entities/admin-permisos'
 import { rolesService } from '@/infrastructure/services/roles.service'
 
 interface PaginationLink {
@@ -37,6 +37,9 @@ interface PageProps {
     filters: {
         search?: string
     }
+    auth?: {
+        user?: { id: RoleUser['id'] } | null
+    }
     [key: string]: unknown
 }
 
@@ -52,8 +55,45 @@ const breadcrumbs: BreadcrumbItem[] = [
 ]
 
 export default function Index() {
-    const { roles, filters } = usePage<PageProps>().props
+    const { roles, filters, auth } = usePage<PageProps>().props
     const [searchTerm, setSearchTerm] = useState(filters.search || '')
+    const [expandedRoles, setExpandedRoles] = useState<Set<Role['id']>>(new Set())
+    const [removingKey, setRemovingKey] = useState<string | null>(null)
+
+    const handleQuitarUsuario = (role: Role, user: RoleUser) => {
+        const esUsuarioActual = auth?.user?.id === user.id
+        const mensaje = esUsuarioActual
+            ? `⚠️ Vas a quitarte a ti mismo el rol "${role.name}". Podrías perder acceso a esta pantalla.\n\n¿Deseas continuar?`
+            : `¿Quitar el rol "${role.name}" al usuario "${user.name}"?`
+
+        if (!confirm(mensaje)) return
+
+        setRemovingKey(`${role.id}-${user.id}`)
+        router.delete(`/usuarios/${user.id}/remove-role`, {
+            data: { role: role.name },
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                toast.success(`Rol "${role.name}" quitado a ${user.name}.`)
+            },
+            onError: () => {
+                toast.error('No se pudo quitar el rol al usuario.')
+            },
+            onFinish: () => setRemovingKey(null),
+        })
+    }
+
+    const toggleUsuarios = (roleId: Role['id']) => {
+        setExpandedRoles((prev) => {
+            const next = new Set(prev)
+            if (next.has(roleId)) {
+                next.delete(roleId)
+            } else {
+                next.add(roleId)
+            }
+            return next
+        })
+    }
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
@@ -130,7 +170,7 @@ export default function Index() {
                                         <Input
                                             id="search"
                                             type="text"
-                                            placeholder="Buscar por nombre de rol..."
+                                            placeholder="Buscar por rol, nombre o email de usuario..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="pl-10"
@@ -171,8 +211,8 @@ export default function Index() {
                                     </thead>
                                     <tbody>
                                         {roles.data.map((role) => (
+                                            <React.Fragment key={role.id}>
                                             <tr
-                                                key={role.id}
                                                 className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50"
                                             >
                                                 <td className="py-4">
@@ -191,12 +231,24 @@ export default function Index() {
                                                     </div>
                                                 </td>
                                                 <td className="py-4">
-                                                    <div className="flex items-center space-x-2">
-                                                        <Users className="h-4 w-4 text-gray-400" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleUsuarios(role.id)}
+                                                        disabled={!role.users_count}
+                                                        className="-ml-2 flex items-center space-x-2 rounded-md px-2 py-1 hover:bg-gray-100 disabled:cursor-default disabled:hover:bg-transparent dark:hover:bg-gray-700"
+                                                        title={role.users_count ? 'Ver usuarios asociados' : 'Sin usuarios asignados'}
+                                                    >
+                                                        {role.users_count ? (
+                                                            expandedRoles.has(role.id)
+                                                                ? <ChevronDown className="h-4 w-4 text-gray-400" />
+                                                                : <ChevronRight className="h-4 w-4 text-gray-400" />
+                                                        ) : (
+                                                            <Users className="h-4 w-4 text-gray-400" />
+                                                        )}
                                                         <span className="text-gray-600 dark:text-gray-300">
                                                             {role.users_count} usuario{role.users_count !== 1 ? 's' : ''}
                                                         </span>
-                                                    </div>
+                                                    </button>
                                                 </td>
                                                 <td className="py-4">
                                                     <div className="flex items-center space-x-2">
@@ -237,6 +289,54 @@ export default function Index() {
                                                     </div>
                                                 </td>
                                             </tr>
+                                            {expandedRoles.has(role.id) && (
+                                                <tr className="border-b border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-gray-800/30">
+                                                    <td colSpan={5} className="px-4 py-3">
+                                                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+                                                            <Users className="h-3.5 w-3.5" />
+                                                            Usuarios con el rol {role.name}
+                                                        </div>
+                                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                                            {(role.users ?? []).map((user) => (
+                                                                <div
+                                                                    key={user.id}
+                                                                    className="flex items-center gap-2 rounded-md border border-gray-200 bg-white pr-1 hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:bg-blue-900/20"
+                                                                >
+                                                                    <Link
+                                                                        href={`/usuarios/${user.id}`}
+                                                                        className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2"
+                                                                    >
+                                                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                                                            {user.name.charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                                {user.name}
+                                                                            </div>
+                                                                            <div className="truncate text-xs text-gray-500 dark:text-gray-400">
+                                                                                {user.email}
+                                                                            </div>
+                                                                        </div>
+                                                                    </Link>
+                                                                    <Can permission="usuarios.manage-roles">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="ghost"
+                                                                            onClick={() => handleQuitarUsuario(role, user)}
+                                                                            disabled={removingKey === `${role.id}-${user.id}`}
+                                                                            title={`Quitar el rol ${role.name} a ${user.name}`}
+                                                                            className="h-8 w-8 shrink-0 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                                                        >
+                                                                            <UserMinus className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </Can>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                            </React.Fragment>
                                         ))}
                                     </tbody>
                                 </table>

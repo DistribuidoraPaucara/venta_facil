@@ -45,6 +45,15 @@ export default function FiltrosStock({ almacenes, onFiltrosChange }: FiltrosStoc
         soloConStock: false,
     });
 
+    // Selects (almacén, rango, orden) y "solo con stock" inician ocultos
+    const [mostrarMasFiltros, setMostrarMasFiltros] = useState(false);
+    const masFiltrosActivos = [
+        filtros.almacenId !== '',
+        filtros.rangoStock !== 'todos',
+        filtros.ordenamiento !== 'cantidad-desc',
+        filtros.soloConStock,
+    ].filter(Boolean).length;
+
     // Aplica los filtros cuando se presiona Buscar o Enter
     const aplicarBusqueda = () => {
         const filtrosActualizados = { ...filtros, busqueda: busquedaLocal };
@@ -80,7 +89,7 @@ export default function FiltrosStock({ almacenes, onFiltrosChange }: FiltrosStoc
     };
 
     return (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg mb-6 border border-blue-200 dark:border-gray-600">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 p-2 rounded-lg border border-blue-200 dark:border-gray-600">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Filtros
@@ -120,8 +129,31 @@ export default function FiltrosStock({ almacenes, onFiltrosChange }: FiltrosStoc
                     </div>
                 </div>
 
+                {/* Botón para mostrar/ocultar los filtros restantes */}
+                <button
+                    type="button"
+                    onClick={() => setMostrarMasFiltros((v) => !v)}
+                    aria-expanded={mostrarMasFiltros}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200 transition"
+                >
+                    <svg
+                        className={`w-4 h-4 transition-transform ${mostrarMasFiltros ? 'rotate-90' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    {mostrarMasFiltros ? 'Ocultar filtros' : 'Más filtros'}
+                    {masFiltrosActivos > 0 && (
+                        <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">
+                            {masFiltrosActivos} activo{masFiltrosActivos !== 1 ? 's' : ''}
+                        </span>
+                    )}
+                </button>
+
                 {/* Filtros restantes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${mostrarMasFiltros ? '' : 'hidden'}`}>
                     {/* Filtro por Almacén */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

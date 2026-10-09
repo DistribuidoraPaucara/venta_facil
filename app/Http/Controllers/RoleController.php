@@ -20,12 +20,19 @@ class RoleController extends Controller
 
     public function index(Request $request)
     {
-        $query = Role::withCount(['users', 'permissions']);
+        $query = Role::withCount(['users', 'permissions'])
+            ->with(['users' => fn($q) => $q->select('users.id', 'users.name', 'users.email')->orderBy('users.name')]);
 
         // Filtros de búsqueda
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('users', function ($u) use ($search) {
+                        $u->where('users.name', 'like', "%{$search}%")
+                            ->orWhere('users.email', 'like', "%{$search}%");
+                    });
+            });
         }
 
         $roles = $query->orderBy('created_at', 'desc')->paginate(15);

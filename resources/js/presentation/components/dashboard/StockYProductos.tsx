@@ -13,16 +13,14 @@ import FiltrosStock, { type FiltrosState, RANGOS_STOCK } from './FiltrosStock';
 import { ImprimirStockButton } from '../impresion/ImprimirStockButton';
 
 interface StockYProductosProps {
-    stockPorAlmacen: StockPorAlmacen[];
+    almacenes: Array<{ id: number; nombre: string }>; // Almacenes de la empresa (para el filtro)
     productosMasMovidos: ProductoMasMovido[];
 }
 
 export default function StockYProductos({
-    stockPorAlmacen,
+    almacenes,
     productosMasMovidos,
 }: StockYProductosProps) {
-
-    // console.log('Renderizando StockYProductos con stockPorAlmacen:', stockPorAlmacen);
 
     const [filtros, setFiltros] = useState<FiltrosState>({
         busqueda: '',
@@ -32,8 +30,9 @@ export default function StockYProductos({
     });
 
     // Estado para datos filtrados del backend
-    const [stockFiltradoApi, setStockFiltradoApi] = useState<StockPorAlmacen[]>(stockPorAlmacen);
-    const [cargando, setCargando] = useState(false);
+    // El listado se carga solo vía API paginada (el dashboard ya no envía el inventario completo)
+    const [stockFiltradoApi, setStockFiltradoApi] = useState<StockPorAlmacen[]>([]);
+    const [cargando, setCargando] = useState(true);
 
     // ✅ NUEVO (2026-09-09): Estado de paginación
     const [paginacion, setPaginacion] = useState({
@@ -56,19 +55,19 @@ export default function StockYProductos({
     } | null>(null);
     const [eliminando, setEliminando] = useState(false);
 
-    // Obtener lista única de almacenes
-    const almacenes = useMemo(() => {
-        const almacenesMap = new Map();
-        stockPorAlmacen.forEach((stock) => {
-            if (!almacenesMap.has(stock.almacen_id)) {
-                almacenesMap.set(stock.almacen_id, {
-                    id: stock.almacen_id,
-                    nombre: stock.almacen_nombre,
-                });
-            }
-        });
-        return Array.from(almacenesMap.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
-    }, [stockPorAlmacen]);
+    // Columnas Disponible/Reservado inician ocultas
+    const [mostrarDisponibleReservado, setMostrarDisponibleReservado] = useState(false);
+    // Columnas: expandir, ID, Producto, Unidades, SKU, Almacenes, Stock, [Disponible, Reservado], Lote, Vencimiento
+    const totalColumnas = mostrarDisponibleReservado ? 11 : 9;
+
+    // Clic en la fila: abrir productos/{producto}/edit en otra pestaña
+    // (ignora clics en botones/enlaces/inputs, p. ej. el botón de expandir, y cuando se selecciona texto)
+    const abrirEdicionProducto = (e: React.MouseEvent, productoId: number) => {
+        if ((e.target as HTMLElement).closest('button, a, input, select, label')) return;
+        if (window.getSelection()?.toString()) return;
+        window.open(`/productos/${productoId}/edit`, '_blank', 'noopener,noreferrer');
+    };
+
 
     // ✅ NUEVO (2026-09-09): Reset paginación cuando cambien filtros
     useEffect(() => {
@@ -90,6 +89,7 @@ export default function StockYProductos({
                 params.append('rango_stock', filtros.rangoStock);
                 params.append('ordenamiento', filtros.ordenamiento);
                 if (filtros.soloConStock) params.append('solo_con_stock', 'true');
+                params.append('agrupar', 'producto'); // Una fila por producto con el stock de cada almacén
                 // ✅ NUEVO (2026-09-09): Agregar parámetros de paginación
                 params.append('page', paginacion.current_page.toString());
                 params.append('per_page', paginacion.per_page.toString());
@@ -132,6 +132,12 @@ export default function StockYProductos({
     // Alias para mantener el nombre stockFiltrado en el resto del código
     const stockFiltrado = stockFiltradoApi;
 
+    // La impresión sigue usando filas producto+almacén: se "desagrupa" cada producto
+    const filasParaImprimir = useMemo(
+        () => stockFiltrado.flatMap((p) => p.almacenes ?? [p]),
+        [stockFiltrado],
+    );
+
     // Función para obtener el token CSRF
     const getCsrfToken = () => {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -163,6 +169,9 @@ export default function StockYProductos({
             params.append('rango_stock', filtros.rangoStock);
             params.append('ordenamiento', filtros.ordenamiento);
             if (filtros.soloConStock) params.append('solo_con_stock', 'true');
+            params.append('agrupar', 'producto');
+            params.append('page', paginacion.current_page.toString());
+            params.append('per_page', paginacion.per_page.toString());
 
             const reloadResponse = await fetch(`/api/inventario/stock-filtrado?${params.toString()}`);
             if (reloadResponse.ok) {
@@ -219,7 +228,7 @@ export default function StockYProductos({
 
             {/* Tabla de Stock por Producto y Almacén */}
             <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between items-start gap-4">
                         <div className="flex-1">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -234,8 +243,17 @@ export default function StockYProductos({
                                 {/* ✅ NUEVO (2026-09-09): Mostrar información de paginación */}
                                 {paginacion.total > 0 ? `${paginacion.from} - ${paginacion.to} de ${paginacion.total}` : '0 registros'}
                             </p>
+                            <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-600 dark:text-gray-300 select-none">
+                                <input
+                                    type="checkbox"
+                                    className="h-3.5 w-3.5 rounded border-gray-300"
+                                    checked={mostrarDisponibleReservado}
+                                    onChange={(e) => setMostrarDisponibleReservado(e.target.checked)}
+                                />
+                                Mostrar disponible / reservado
+                            </label>
                             <ImprimirStockButton
-                                stock={stockFiltrado}
+                                stock={filasParaImprimir}
                                 almacenFiltro={
                                     filtros.almacenId
                                         ? almacenes.find((a) => a.id === parseInt(filtros.almacenId))?.nombre
@@ -250,13 +268,7 @@ export default function StockYProductos({
                         </div>
                     </div>
                 </div>
-                {stockPorAlmacen.length === 0 ? (
-                    <div className="p-6 text-center">
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">
-                            No hay información de stock disponible
-                        </p>
-                    </div>
-                ) : cargando ? (
+                {cargando ? (
                     <div className="p-6 text-center">
                         <div className="flex justify-center items-center gap-2">
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
@@ -279,28 +291,39 @@ export default function StockYProductos({
                                     <th className="px-1 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
                                         {/* Columna para expandir */}
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         ID
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Producto
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Almacén
+                                    {/* unidades */}
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Unidades
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Stock Total
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        SKU
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Disponible
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Almacenes
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Reservado
+                                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Stock total
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {mostrarDisponibleReservado && (
+                                        <>
+                                            <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                Disponible
+                                            </th>
+                                            <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                Reservado
+                                            </th>
+                                        </>
+                                    )}
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Lote
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Vencimiento
                                     </th>
                                     {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -319,9 +342,18 @@ export default function StockYProductos({
                                     const valorTotal = cantidadTotal * precioVenta;
                                     const isExpanded = expandedRows.has(uniqueKey);
 
-                                    // Verificar si tiene detalles de lotes para expandir
-                                    const tieneLotes = stock.detalles_lotes && stock.detalles_lotes.length > 0;
-                                    const tieneMultiplesLotes = tieneLotes && stock.detalles_lotes.length > 1;
+                                    // Lotes reales (con ID de stock_productos), ordenados por almacén.
+                                    // Los productos sin stock traen lotes "virtuales" sin ID que no se muestran.
+                                    const lotesReales = (stock.detalles_lotes ?? [])
+                                        .filter((l) => typeof l.id === 'number' && l.id > 0)
+                                        .sort((a, b) => (a.almacen_nombre ?? '').localeCompare(b.almacen_nombre ?? ''));
+                                    const tieneLotes = lotesReales.length > 0;
+                                    const tieneMultiplesLotes = lotesReales.length > 1;
+                                    const stockIds = lotesReales.map((l) => l.id);
+
+                                    // Stock por almacén (respuesta agrupada); si no viene agrupada, la propia fila
+                                    const almacenesFila = stock.almacenes ?? [stock];
+                                    const almacenesConStock = almacenesFila.filter((a) => parseFloat(String(a.cantidad || 0)) > 0);
 
                                     // Conversiones del primer detalle (para compatibilidad)
                                     const primeraConversion = stock.detalles_lotes?.[0]?.conversiones || [];
@@ -330,8 +362,12 @@ export default function StockYProductos({
                                     return (
                                         <React.Fragment key={uniqueKey}>
                                             {/* Fila principal */}
-                                            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                                <td className="px-1 py-1 whitespace-nowrap text-center">
+                                            <tr
+                                                className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+                                                title="Abrir edición del producto en otra pestaña"
+                                                onClick={(e) => abrirEdicionProducto(e, stock.producto_id)}
+                                            >
+                                                <td className="px-1 py-1 whitespace-nowrap text-left">
                                                     {(hasFractionedInfo || tieneMultiplesLotes) && (
                                                         <button
                                                             onClick={() => toggleRow(uniqueKey)}
@@ -355,8 +391,20 @@ export default function StockYProductos({
                                                         </button>
                                                     )}
                                                 </td>
-                                                <td>
-                                                    #{stock.producto_id}
+                                                <td className="px-1 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium text-left">
+                                                    {/* IDs de stock_productos (uno por lote) */}
+                                                    {stockIds.length === 0 ? (
+                                                        <span className="text-gray-400">-</span>
+                                                    ) : (
+                                                        <span title={`stock_productos: ${stockIds.map((id) => `#${id}`).join(', ')}`}>
+                                                            {stockIds.slice(0, 2).map((id) => `#${id}`).join(', ')}
+                                                            {stockIds.length > 2 && (
+                                                                <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                                                                    +{stockIds.length - 2}
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-1 py-1 whitespace-nowrap">
                                                     <div className="space-y-1">
@@ -377,53 +425,80 @@ export default function StockYProductos({
                                                                 <>#{stock.producto_codigo_barra}</>
                                                             )}
                                                         </p>
-                                                        {stock.producto_sku && (
+                                                        {/* {stock.producto_sku && (
                                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                                                 sku: {stock.producto_sku}
                                                             </p>
-                                                        )}
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                                                            {stock.unidad_medida_nombre}
-                                                        </span>
+                                                        )} */}
+
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                        {stock.almacen_nombre}
+                                                {/* unidades */}
+                                                <td className="text-left px-2 py-2 whitespace-nowrap">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                                        {stock.unidad_medida_nombre}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <td className="px-2 py-2 whitespace-nowrap">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                        {stock.producto_sku || '-'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-2 py-2">
+                                                    {/* Stock en cada almacén; los almacenes en 0 no se listan */}
+                                                    {almacenesConStock.length === 0 ? (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                                                            Sin stock
+                                                        </span>
+                                                    ) : (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {almacenesConStock.map((a) => (
+                                                                <span
+                                                                    key={a.almacen_id}
+                                                                    className="inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                                                                >
+                                                                    {a.almacen_nombre}:
+                                                                    <b className="text-blue-700 dark:text-blue-300">{formatCantidad(a.cantidad)}</b>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-2 py-2 whitespace-nowrap text-left">
                                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                                         {formatCantidad(cantidadTotal)}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                        {formatCantidad(cantidadDisponible)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                                        {formatCantidad(cantidadReservada)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                {mostrarDisponibleReservado && (
+                                                    <>
+                                                        <td className="px-2 py-2 whitespace-nowrap text-right">
+                                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                                {formatCantidad(cantidadDisponible)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-2 py-2 whitespace-nowrap text-right">
+                                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                                                {formatCantidad(cantidadReservada)}
+                                                            </span>
+                                                        </td>
+                                                    </>
+                                                )}
+                                                <td className="px-2 py-2 whitespace-nowrap">
                                                     {tieneMultiplesLotes ? (
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
-                                                            {stock.detalles_lotes.length} lotes
+                                                            {lotesReales.length} lotes
                                                         </span>
                                                     ) : (
                                                         <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                                                            {tieneLotes ? stock.detalles_lotes[0].lote : '-'}
+                                                            {tieneLotes ? lotesReales[0].lote : '-'}
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`text-sm font-medium ${
-                                                        stock.fecha_vencimiento_proximo
+                                                <td className="px-2 py-2 whitespace-nowrap">
+                                                    <span className={`text-sm font-medium ${stock.fecha_vencimiento_proximo
                                                             ? 'text-gray-700 dark:text-gray-300'
                                                             : 'text-gray-400 dark:text-gray-500'
-                                                    }`}>
+                                                        }`}>
                                                         {stock.fecha_vencimiento_proximo ? stock.fecha_vencimiento_proximo : '-'}
                                                     </span>
                                                 </td>
@@ -437,29 +512,42 @@ export default function StockYProductos({
                                             {/* Fila expandible: detalles por lote y conversiones */}
                                             {isExpanded && (tieneMultiplesLotes || hasFractionedInfo) && (
                                                 <tr className="bg-gray-50 dark:bg-gray-700/50">
-                                                    <td colSpan={9} className="px-2 py-2">
+                                                    <td colSpan={totalColumnas} className="px-2 py-2">
                                                         <div className="space-y-6">
                                                             {/* Detalles por Lote */}
                                                             {tieneMultiplesLotes && (
                                                                 <div>
                                                                     <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                                                                        📦 Detalles por Lote
+                                                                        📦 Detalles por Lote y Almacén
                                                                     </h4>
                                                                     <div className="overflow-x-auto">
                                                                         <table className="min-w-full text-xs border border-gray-300 dark:border-gray-600 rounded-lg">
                                                                             <thead className="bg-gray-200 dark:bg-gray-600">
                                                                                 <tr>
+                                                                                    <th className="px-3 py-2 text-left font-medium">ID</th>
+                                                                                    <th className="px-3 py-2 text-left font-medium">Almacén</th>
                                                                                     <th className="px-3 py-2 text-left font-medium">Lote</th>
                                                                                     <th className="px-3 py-2 text-left font-medium">Vencimiento</th>
                                                                                     <th className="px-3 py-2 text-right font-medium">Cantidad</th>
-                                                                                    <th className="px-3 py-2 text-right font-medium">Disponible</th>
-                                                                                    <th className="px-3 py-2 text-right font-medium">Reservado</th>
+                                                                                    {mostrarDisponibleReservado && (
+                                                                                        <>
+                                                                                            <th className="px-3 py-2 text-right font-medium">Disponible</th>
+                                                                                            <th className="px-3 py-2 text-right font-medium">Reservado</th>
+                                                                                        </>
+                                                                                    )}
                                                                                     <th className="px-3 py-2 text-center font-medium">Acciones</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                                                                {stock.detalles_lotes?.map((lote, idx) => (
-                                                                                    <tr key={idx} className="hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                                                {lotesReales.map((lote, idx) => (
+                                                                                    <tr key={lote.id ?? idx} className="hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                                                        {/* ID del lote */}
+                                                                                        <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                                                                                            {lote.id}
+                                                                                        </td>
+                                                                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
+                                                                                            {lote.almacen_nombre ?? stock.almacen_nombre}
+                                                                                        </td>
                                                                                         <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">
                                                                                             {lote.lote}
                                                                                         </td>
@@ -475,12 +563,16 @@ export default function StockYProductos({
                                                                                         <td className="px-3 py-2 text-right text-gray-900 dark:text-white font-medium">
                                                                                             {formatCantidad(lote.cantidad)}
                                                                                         </td>
-                                                                                        <td className="px-3 py-2 text-right text-green-700 dark:text-green-400">
-                                                                                            {formatCantidad(lote.cantidad_disponible)}
-                                                                                        </td>
-                                                                                        <td className="px-3 py-2 text-right text-yellow-700 dark:text-yellow-400">
-                                                                                            {formatCantidad(lote.cantidad_reservada)}
-                                                                                        </td>
+                                                                                        {mostrarDisponibleReservado && (
+                                                                                            <>
+                                                                                                <td className="px-3 py-2 text-right text-green-700 dark:text-green-400">
+                                                                                                    {formatCantidad(lote.cantidad_disponible)}
+                                                                                                </td>
+                                                                                                <td className="px-3 py-2 text-right text-yellow-700 dark:text-yellow-400">
+                                                                                                    {formatCantidad(lote.cantidad_reservada)}
+                                                                                                </td>
+                                                                                            </>
+                                                                                        )}
                                                                                         <td className="px-3 py-2 text-center">
                                                                                             <button
                                                                                                 onClick={() =>
@@ -547,7 +639,8 @@ export default function StockYProductos({
                                                                                     </span>
                                                                                 </p>
                                                                                 <p className="text-lg font-bold text-orange-700 dark:text-orange-400">
-                                                                                    {formatCantidad(conv.cantidad_en_conversion)}
+                                                                                    {/* Sobre el stock total (todos los almacenes), no solo el primer lote */}
+                                                                                    {formatCantidad(cantidadTotal * conv.factor_conversion)}
                                                                                 </p>
                                                                                 <p className="text-xs text-gray-600 dark:text-gray-400">
                                                                                     Disponible:{' '}

@@ -22,6 +22,9 @@ interface ModulosFiltrosProps {
     totalModulos: number;
 }
 
+// Radix Select no admite value="", se usa un centinela para la opción "todas"
+const TODOS = '__todos__';
+
 export function ModulosFiltros({
     categorias,
     rolesDisponibles = [],
@@ -66,7 +69,7 @@ export function ModulosFiltros({
         (valor: string) => {
             onChange({
                 ...filtros,
-                categoria: valor,
+                categoria: valor === TODOS ? '' : valor,
             });
         },
         [filtros, onChange]
@@ -76,7 +79,7 @@ export function ModulosFiltros({
         (valor: string) => {
             onChange({
                 ...filtros,
-                rolRequerido: valor,
+                rolRequerido: valor === TODOS ? '' : valor,
             });
         },
         [filtros, onChange]
@@ -178,11 +181,12 @@ export function ModulosFiltros({
                                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-2">
                                     Categoría
                                 </label>
-                                <Select value={filtros.categoria || ""} onValueChange={handleCategoriaChange}>
+                                <Select value={filtros.categoria || TODOS} onValueChange={handleCategoriaChange}>
                                     <SelectTrigger className="h-9 text-sm">
                                         <SelectValue placeholder="Todas" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value={TODOS}>Todas</SelectItem>
                                         {categorias.map(cat => (
                                             <SelectItem key={cat} value={cat}>
                                                 {cat}
@@ -199,11 +203,12 @@ export function ModulosFiltros({
                                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-2">
                                     Rol Requerido
                                 </label>
-                                <Select value={filtros.rolRequerido || ""} onValueChange={handleRolChange}>
+                                <Select value={filtros.rolRequerido || TODOS} onValueChange={handleRolChange}>
                                     <SelectTrigger className="h-9 text-sm">
                                         <SelectValue placeholder="Ninguno" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value={TODOS}>Todos</SelectItem>
                                         {rolesDisponibles.map(rol => (
                                             <SelectItem key={rol} value={rol}>
                                                 {rol}

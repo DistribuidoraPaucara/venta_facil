@@ -246,6 +246,18 @@ class VentaController extends Controller
                 'estado_logistico'    => $request->input('estado_logistico'), // ✅ NUEVO: Para filtro de estado logístico
             ];
 
+            // ✅ NUEVO: Si la pantalla se abre sin ningún filtro explícito (primera carga,
+            // o "Limpiar"), mostrar solo las ventas del día. sort_by/sort_order/page no
+            // cuentan como filtro, así que ordenar la vista de "hoy" no la expande a todo
+            // el histórico. Apenas el usuario aplica un filtro real, se respeta tal cual.
+            $tieneFiltrosExplicitos = collect($filtros)->contains(fn($valor) => $valor !== null && $valor !== '');
+
+            if (! $isApiRequest && ! $tieneFiltrosExplicitos) {
+                $hoy                    = now()->toDateString();
+                $filtros['fecha_desde'] = $hoy;
+                $filtros['fecha_hasta'] = $hoy;
+            }
+
             // ✅ CORREGIDO (2026-08-13): sort_by/sort_order NO van en $filtros
             // Ir en el array de filtros los rompe la optimización de 200 registros
             // Ya se pasan directamente a listar()
@@ -286,10 +298,11 @@ class VentaController extends Controller
             }
 
             // Delegar al Service
-            // ✅ ACTUALIZADO (2026-08-13): por defecto 200 registros (últimas 200 con optimización)
+            // ✅ ACTUALIZADO: paginación de menor a mayor, por defecto 15 registros
             // ✅ NUEVO: Pasar parámetros de ordenamiento
+            $perPage          = $request->input('per_page', 15);
             $ventasPaginadas = $this->ventaService->listar(
-                perPage: $request->input('per_page', 200),
+                perPage: $perPage,
                 filtros: array_filter($filtros), // Solo filtros no vacíos
                 sortBy: $sortBy,
                 sortOrder: $sortOrder
@@ -469,9 +482,16 @@ class VentaController extends Controller
             }
 
             // Web Response - Inertia para navegador
+            // ✅ CORREGIDO: sort_by/sort_order/per_page se excluyen de $filtros solo para no
+            // afectar la optimización de paginación (ver comentario más arriba), pero el
+            // frontend sí necesita recibirlos de vuelta para reflejar el estado real en la UI
             return Inertia::render('ventas/Index', [
                 'ventas'           => $ventasPaginadas,
-                'filtros'          => $filtros,
+                'filtros'          => array_merge($filtros, [
+                    'sort_by'    => $sortBy,
+                    'sort_order' => $sortOrder,
+                    'per_page'   => $perPage,
+                ]),
                 'estadisticas'     => null, // TODO: Implementar estadísticas completas cuando sea necesario
                 'datosParaFiltros' => [
                     'clientes'          => Cliente::activos()->select('id', 'nombre', 'nit')->get(),

@@ -1,6 +1,6 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
- * @see routes/web.php:868
+ * @see routes/web.php:882
  * @route '/inventario/fraccionamientos-masivos/crear'
  */
 export const crear = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +14,7 @@ crear.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:868
+ * @see routes/web.php:882
  * @route '/inventario/fraccionamientos-masivos/crear'
  */
 crear.url = (options?: RouteQueryOptions) => {
@@ -22,7 +22,7 @@ crear.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:868
+ * @see routes/web.php:882
  * @route '/inventario/fraccionamientos-masivos/crear'
  */
 crear.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -30,7 +30,7 @@ crear.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:868
+ * @see routes/web.php:882
  * @route '/inventario/fraccionamientos-masivos/crear'
  */
 crear.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -38,8 +38,40 @@ crear.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+ * @see routes/web.php:882
+ * @route '/inventario/fraccionamientos-masivos/crear'
+ */
+    const crearForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: crear.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:882
+ * @route '/inventario/fraccionamientos-masivos/crear'
+ */
+        crearForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: crear.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:882
+ * @route '/inventario/fraccionamientos-masivos/crear'
+ */
+        crearForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: crear.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    crear.form = crearForm
 /**
- * @see routes/web.php:869
+ * @see routes/web.php:883
  * @route '/inventario/fraccionamientos-masivos'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +85,7 @@ index.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:869
+ * @see routes/web.php:883
  * @route '/inventario/fraccionamientos-masivos'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -61,7 +93,7 @@ index.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:869
+ * @see routes/web.php:883
  * @route '/inventario/fraccionamientos-masivos'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -69,13 +101,46 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:869
+ * @see routes/web.php:883
  * @route '/inventario/fraccionamientos-masivos'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(options),
     method: 'head',
 })
+
+    /**
+ * @see routes/web.php:883
+ * @route '/inventario/fraccionamientos-masivos'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:883
+ * @route '/inventario/fraccionamientos-masivos'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:883
+ * @route '/inventario/fraccionamientos-masivos'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 const fraccionamientosMasivos = {
     crear,
 index,

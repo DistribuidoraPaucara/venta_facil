@@ -38,6 +38,9 @@ export interface DetalleLote {
     cantidad_disponible: number;
     cantidad_reservada: number;
     conversiones?: ConversionUnidad[];
+    // Presentes cuando la respuesta viene agrupada por producto (?agrupar=producto)
+    almacen_id?: number;
+    almacen_nombre?: string;
 }
 
 /**
@@ -63,6 +66,9 @@ export interface StockPorAlmacen {
     conversiones?: ConversionUnidad[]; // Conversiones disponibles
     // Detalles de lotes (para productos con múltiples lotes)
     detalles_lotes?: DetalleLote[];
+    // Con ?agrupar=producto: una fila por producto y el detalle de cada almacén
+    // (cada elemento tiene el formato producto+almacén de siempre)
+    almacenes?: StockPorAlmacen[];
 }
 
 /**
@@ -112,7 +118,7 @@ export interface ProductoMasMovido {
  */
 export interface DashboardPageProps {
     estadisticas: Estadisticas;
-    stock_por_almacen: StockPorAlmacen[];
+    stock_por_almacen?: StockPorAlmacen[]; // Ya no se envía desde el dashboard: el listado se pagina vía API
     movimientos_recientes: MovimientoReciente[];
     productos_mas_movidos: ProductoMasMovido[];
 }

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useClienteSearch } from '@/infrastructure/hooks/use-api-search';
 import ProductosTable, { DetalleProducto } from '@/presentation/components/ProductosTable';
 import EntregaSearchSelector from '@/presentation/components/entregas/EntregaSearchSelector';
+import QrCobroModal from '@/presentation/components/ventas/QrCobroModal';
 import InputSearch from '@/presentation/components/ui/input-search';
 import ModalCrearCliente from '@/presentation/components/ui/modal-crear-cliente';
 import SearchSelect, { SelectOption } from '@/presentation/components/ui/search-select';
@@ -328,6 +329,9 @@ export default function VentaForm() {
     // ✅ NUEVO (2026-05-02): Estados para desglose de pago (Efectivo + Transferencia/QR)
     const [montoEfectivo, setMontoEfectivo] = useState<number | ''>('');
     const [montoTransferencia, setMontoTransferencia] = useState<number | ''>('');
+
+    // ✅ NUEVO: Modal de QR de cobro (ayuda visual, no confirma el pago solo)
+    const [showQrCobroModal, setShowQrCobroModal] = useState(false);
 
     // ✅ NUEVO (2026-05-03): Auto-seleccionar tipo de pago y actualizar monto_pagado_inicial basado en montos de pago
     // ✅ CORREGIDO (2026-09-04): Ahora aplica a TODAS las empresas, no solo farmacias
@@ -2066,6 +2070,15 @@ export default function VentaForm() {
                                         placeholder="0.00"
                                     />
                                 </div>
+                                {/* ✅ NUEVO: Generar QR para mostrarle al cliente (ayuda visual, no confirma el pago solo) */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowQrCobroModal(true)}
+                                    disabled={(Number(montoTransferencia) || data.total) <= 0}
+                                    className="mt-1 w-full rounded-md border border-blue-300 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                                >
+                                    📱 Generar QR
+                                </button>
                             </div>
                         </div>
 
@@ -2212,6 +2225,14 @@ export default function VentaForm() {
                     })()}
                 </div>
             </form>
+
+            {/* Modal de QR de cobro (ayuda visual, no confirma el pago solo) */}
+            <QrCobroModal
+                isOpen={showQrCobroModal}
+                onClose={() => setShowQrCobroModal(false)}
+                monto={Number(montoTransferencia) || data.total}
+                monedaId={Number(data.moneda_id)}
+            />
 
             {/* Modal para crear cliente */}
             <ModalCrearCliente

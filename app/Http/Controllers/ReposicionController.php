@@ -45,66 +45,71 @@ class ReposicionController extends Controller
 
         $almacenDefecto = $almacenDestino?->id;
 
-        // Obtener productos cercanos al límite mínimo usando los nuevos límites por sector
-        $productosStockBajo = collect();
-
-        if ($almacenDefecto && $almacenPrincipal) {
-            // Obtener todos los límites de stock definidos para este almacén
-            $limites = StockLimite::where('almacen_id', $almacenDefecto)
-                ->with(['producto', 'producto.unidad', 'producto.conversiones' => fn($q) => $q->where('activo', true), 'sector'])
-                ->get()
-                ->groupBy('producto_id');
-
-            // Para cada producto con límites definidos, verificar si está cerca del mínimo
-            foreach ($limites as $productoId => $limitesProducto) {
-                $producto = $limitesProducto->first()->producto;
-
-                // Sumar cantidad disponible de TODOS los lotes en almacén destino
-                $totalDisponible = DB::table('stock_productos')
-                    ->where('producto_id', $productoId)
-                    ->where('almacen_id', $almacenDefecto)
-                    ->sum('cantidad_disponible');
-
-                // Obtener el límite mínimo más bajo para este producto
-                $stockMinimoRequerido = $limitesProducto->min('stock_minimo');
-
-                // Calcular threshold de advertencia (20% por encima del mínimo)
-                $umbralAdvertencia = $stockMinimoRequerido * 1.2;
-
-                // Verificar stock disponible en almacén principal
-                $stockPrincipal = DB::table('stock_productos')
-                    ->where('producto_id', $productoId)
-                    ->where('almacen_id', $almacenPrincipal->id)
-                    ->sum('cantidad_disponible');
-
-                // Si el stock está cerca del mínimo Y hay stock en principal, incluir en reposición
-                if ($totalDisponible <= $umbralAdvertencia && $stockPrincipal > 0) {
-                    $producto->stock_actual = $totalDisponible;
-                    $producto->stock_minimo_requerido = $stockMinimoRequerido;
-                    $producto->umbral_advertencia = $umbralAdvertencia;
-                    $producto->stock_principal = $stockPrincipal;
-
-                    // Obtener sector desde stock_limites
-                    $sector = $limitesProducto->first()->sector;
-                    $producto->sector = $sector;
-
-                    // Obtener stock máximo para calcular cantidad sugerida
-                    $stockMaximoRequerido = $limitesProducto->max('stock_maximo');
-                    $producto->stock_maximo_requerido = $stockMaximoRequerido;
-
-                    // Cantidad sugerida: mínimo entre (lo que falta para llegar al máximo, lo disponible en principal)
-                    $faltaParaLlenar = max(0, $stockMaximoRequerido - $totalDisponible);
-                    $cantidad_sugerida = min($faltaParaLlenar, $stockPrincipal);
-                    $producto->cantidad_sugerida = $cantidad_sugerida;
-
-                    $productosStockBajo->push($producto);
-                }
-            }
-        }
-
         return Inertia::render('reposiciones/Create', [
             'almacenes' => $almacenes,
-            'productosStockBajo' => $productosStockBajo->values(),
+            // Diferido: la página se abre de inmediato y esta consulta (recorre TODOS los
+            // productos con límites de stock) se pide aparte, en segundo plano.
+            'productosStockBajo' => Inertia::defer(function () use ($almacenDefecto, $almacenPrincipal) {
+                $productosStockBajo = collect();
+
+                if (!$almacenDefecto || !$almacenPrincipal) {
+                    return $productosStockBajo->values();
+                }
+
+                // Obtener todos los límites de stock definidos para este almacén
+                $limites = StockLimite::where('almacen_id', $almacenDefecto)
+                    ->with(['producto', 'producto.unidad', 'producto.conversiones' => fn($q) => $q->where('activo', true), 'sector'])
+                    ->get()
+                    ->groupBy('producto_id');
+
+                // Para cada producto con límites definidos, verificar si está cerca del mínimo
+                foreach ($limites as $productoId => $limitesProducto) {
+                    $producto = $limitesProducto->first()->producto;
+
+                    // Sumar cantidad disponible de TODOS los lotes en almacén destino
+                    $totalDisponible = DB::table('stock_productos')
+                        ->where('producto_id', $productoId)
+                        ->where('almacen_id', $almacenDefecto)
+                        ->sum('cantidad_disponible');
+
+                    // Obtener el límite mínimo más bajo para este producto
+                    $stockMinimoRequerido = $limitesProducto->min('stock_minimo');
+
+                    // Calcular threshold de advertencia (20% por encima del mínimo)
+                    $umbralAdvertencia = $stockMinimoRequerido * 1.2;
+
+                    // Verificar stock disponible en almacén principal
+                    $stockPrincipal = DB::table('stock_productos')
+                        ->where('producto_id', $productoId)
+                        ->where('almacen_id', $almacenPrincipal->id)
+                        ->sum('cantidad_disponible');
+
+                    // Si el stock está cerca del mínimo Y hay stock en principal, incluir en reposición
+                    if ($totalDisponible <= $umbralAdvertencia && $stockPrincipal > 0) {
+                        $producto->stock_actual = $totalDisponible;
+                        $producto->stock_minimo_requerido = $stockMinimoRequerido;
+                        $producto->umbral_advertencia = $umbralAdvertencia;
+                        $producto->stock_principal = $stockPrincipal;
+
+                        // Obtener sector desde stock_limites
+                        $sector = $limitesProducto->first()->sector;
+                        $producto->sector = $sector;
+
+                        // Obtener stock máximo para calcular cantidad sugerida
+                        $stockMaximoRequerido = $limitesProducto->max('stock_maximo');
+                        $producto->stock_maximo_requerido = $stockMaximoRequerido;
+
+                        // Cantidad sugerida: mínimo entre (lo que falta para llegar al máximo, lo disponible en principal)
+                        $faltaParaLlenar = max(0, $stockMaximoRequerido - $totalDisponible);
+                        $cantidad_sugerida = min($faltaParaLlenar, $stockPrincipal);
+                        $producto->cantidad_sugerida = $cantidad_sugerida;
+
+                        $productosStockBajo->push($producto);
+                    }
+                }
+
+                return $productosStockBajo->values();
+            }),
         ]);
     }
 
@@ -420,8 +425,8 @@ class ReposicionController extends Controller
                         'total' => $stockOrigen->cantidad,
                         'disponible' => $stockOrigen->cantidad_disponible,
                         'reservada' => $stockOrigen->cantidad_reservada,
-                        'total_disponible' => $totalesAntesDeSalida->total_disponible ?? 0,
-                        'total_reservada' => $totalesAntesDeSalida->total_reservada ?? 0,
+                        'total_disponible' => $totalesAntesDESalida->total_disponible ?? 0,
+                        'total_reservada' => $totalesAntesDESalida->total_reservada ?? 0,
                     ];
 
                     // Disminuir stock en almacén origen

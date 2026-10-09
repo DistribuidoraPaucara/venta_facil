@@ -180,6 +180,14 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         ]);
     })->middleware('permission:productos.manage')->name('productos.carga-masiva');
     Route::get('productos/historial-cargas', fn() => \Inertia\Inertia::render('productos/historial-cargas'))->middleware('permission:productos.manage')->name('productos.historial-cargas');
+
+    // Carga y descarga masiva de productos con planilla Excel (descargar → editar → subir)
+    Route::prefix('productos/importar-exportar')->name('productos.planilla.')->middleware('permission:productos.manage')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ProductoPlanillaController::class, 'index'])->name('index');
+        Route::get('descargar', [\App\Http\Controllers\ProductoPlanillaController::class, 'descargar'])->name('descargar');
+        Route::post('validar', [\App\Http\Controllers\ProductoPlanillaController::class, 'validar'])->name('validar');
+        Route::post('importar', [\App\Http\Controllers\ProductoPlanillaController::class, 'importar'])->name('importar');
+    });
     Route::get('productos/crear/moderno', [\App\Http\Controllers\ProductoController::class, 'createModerno'])->middleware('permission:productos.manage')->name('productos.create.moderno');
     Route::get('productos/paginados/listar', [\App\Http\Controllers\ProductoController::class, 'getPaginados'])->middleware('permission:productos.manage')->name('productos.paginados');
     Route::get('productos/filtros/datos', [\App\Http\Controllers\ProductoController::class, 'getFiltrosData'])->middleware('permission:productos.manage')->name('productos.filtros-data');
@@ -374,6 +382,7 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::patch('lotes-vencimientos/{lote}/actualizar-estado', [\App\Http\Controllers\LoteVencimientoController::class, 'actualizarEstado'])->name('lotes-vencimientos.actualizar-estado');
         Route::patch('lotes-vencimientos/{lote}/cantidad', [\App\Http\Controllers\LoteVencimientoController::class, 'actualizarCantidad'])->name('lotes-vencimientos.actualizar-cantidad');
         Route::get('lotes-vencimientos/export', [\App\Http\Controllers\LoteVencimientoController::class, 'export'])->name('lotes-vencimientos.export');
+        Route::delete('lotes-vencimientos/{stock}', [\App\Http\Controllers\LoteVencimientoController::class, 'darDeBaja'])->name('lotes-vencimientos.dar-de-baja');
 
         // Reportes Específicos
         Route::get('reportes', [\App\Http\Controllers\ReporteComprasController::class, 'index'])->name('reportes.index');
@@ -396,7 +405,7 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     Route::get('compras/{compra}/editar-lotes', [\App\Http\Controllers\CompraController::class, 'editarAsignarLotes'])->name('compras.editar-lotes');
     Route::post('compras/{compra}/guardar-lotes', [\App\Http\Controllers\CompraController::class, 'asignarLotes'])->name('compras.guardar-lotes');
 
-    Route::resource('compras', \App\Http\Controllers\CompraController::class)->except(['destroy']);
+    Route::resource('compras', \App\Http\Controllers\CompraController::class)->except(['destroy'])->where(['compra' => '[0-9]+']);
 
     // Keep nested details routes
     Route::resource('compras.detalles', \App\Http\Controllers\DetalleCompraController::class)->shallow();
@@ -474,6 +483,11 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     Route::post('ventas', [\App\Http\Controllers\VentaController::class, 'store'])
         ->middleware(['permission:ventas.create|ventas.manage', 'caja.abierta'])
         ->name('ventas.store');
+
+    // ✅ QR de cobro (ayuda visual para el cajero durante el checkout, no confirma pago solo)
+    Route::post('ventas/qr/generar', [\App\Http\Controllers\PagoQrController::class, 'generar'])
+        ->middleware(['permission:ventas.create|ventas.manage', 'caja.abierta'])
+        ->name('ventas.qr.generar');
 
     // ✨ NUEVO: Ruta para interfaz de venta de comidas/helados
     Route::get('ventas-resort', function () {

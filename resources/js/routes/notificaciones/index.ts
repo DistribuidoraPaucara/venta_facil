@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::index
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:69
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::index
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:69
+ * @route '/notificaciones'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::index
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:69
+ * @route '/notificaciones'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::index
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:69
+ * @route '/notificaciones'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::create
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:148
@@ -85,6 +120,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::create
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:148
+ * @route '/notificaciones/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::create
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:148
+ * @route '/notificaciones/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::create
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:148
+ * @route '/notificaciones/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::store
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:156
@@ -119,6 +189,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::store
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:156
+ * @route '/notificaciones'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::store
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:156
+ * @route '/notificaciones'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::show
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
@@ -181,6 +272,41 @@ show.head = (args: { notificacione: string | number } | [notificacione: string |
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::show
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
+ * @route '/notificaciones/{notificacione}'
+ */
+    const showForm = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::show
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
+ * @route '/notificaciones/{notificacione}'
+ */
+        showForm.get = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::show
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:191
+ * @route '/notificaciones/{notificacione}'
+ */
+        showForm.head = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::edit
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:202
@@ -243,6 +369,41 @@ edit.head = (args: { notificacione: string | number } | [notificacione: string |
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::edit
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:202
+ * @route '/notificaciones/{notificacione}/edit'
+ */
+    const editForm = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::edit
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:202
+ * @route '/notificaciones/{notificacione}/edit'
+ */
+        editForm.get = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::edit
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:202
+ * @route '/notificaciones/{notificacione}/edit'
+ */
+        editForm.head = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::update
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
@@ -305,6 +466,51 @@ update.patch = (args: { notificacione: string | number } | [notificacione: strin
     method: 'patch',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::update
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
+ * @route '/notificaciones/{notificacione}'
+ */
+    const updateForm = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::update
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
+ * @route '/notificaciones/{notificacione}'
+ */
+        updateForm.put = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::update
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:212
+ * @route '/notificaciones/{notificacione}'
+ */
+        updateForm.patch = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::destroy
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
@@ -358,6 +564,37 @@ destroy.delete = (args: { notificacione: string | number } | [notificacione: str
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::destroy
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
+ * @route '/notificaciones/{notificacione}'
+ */
+    const destroyForm = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::destroy
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:260
+ * @route '/notificaciones/{notificacione}'
+ */
+        destroyForm.delete = (args: { notificacione: string | number } | [notificacione: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\NotificacionRecurrenteController::enviar
  * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
@@ -415,6 +652,28 @@ enviar.post = (args: { notificacion: number | { id: number } } | [notificacion: 
     url: enviar.url(args, options),
     method: 'post',
 })
+
+    /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::enviar
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
+ * @route '/notificaciones/{notificacion}/enviar'
+ */
+    const enviarForm = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: enviar.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificacionRecurrenteController::enviar
+ * @see app/Http/Controllers/NotificacionRecurrenteController.php:315
+ * @route '/notificaciones/{notificacion}/enviar'
+ */
+        enviarForm.post = (args: { notificacion: number | { id: number } } | [notificacion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: enviar.url(args, options),
+            method: 'post',
+        })
+    
+    enviar.form = enviarForm
 const notificaciones = {
     index,
 create,

@@ -87,4 +87,25 @@ return [
         'timeout' => env('PDF_IMAGE_TIMEOUT', 60),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Pasarela de pago por QR (cobro de ventas)
+    |--------------------------------------------------------------------------
+    |
+    | driver: 'mock' (desarrollo, sin banco real) | 'bnb' (pendiente de
+    | implementar App\Services\Pago\BnbPaymentGateway cuando se tengan
+    | credenciales de QR Simple para comercios).
+    |
+    */
+    'payment_gateway' => [
+        'driver' => env('PAYMENT_GATEWAY_DRIVER', 'mock'),
+
+        'bnb' => [
+            'api_url'        => env('BNB_QR_API_URL'),
+            'usuario'        => env('BNB_QR_USUARIO'),
+            'password'       => env('BNB_QR_PASSWORD'),
+            'webhook_secret' => env('BNB_QR_WEBHOOK_SECRET'),
+        ],
+    ],
+
 ];

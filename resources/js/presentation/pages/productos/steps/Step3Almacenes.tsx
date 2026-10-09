@@ -72,7 +72,7 @@ export function validarYAjustarAlmacenes(almacenes: any[], stockLimites?: Record
             tiene_limites: stockLimites?.[almacen.almacen_id] ? 'SÍ' : 'NO',
             limites: stockLimites?.[almacen.almacen_id],
         });
-        const total = Number(almacen.cantidad ?? almacen.stock ?? 0);
+        const total = Number(almacen.stock ?? almacen.cantidad ?? 0);
         const disponible = Number(almacen.cantidad_disponible ?? 0);
         const reservada = Number(almacen.cantidad_reservada ?? 0);
         const suma = disponible + reservada;
@@ -224,98 +224,19 @@ export default function Step3Almacenes({
         }
     };
 
+    // ✨ Filas de límites: los existentes + almacenes asignados en lotes que aún no tienen límite (permite crear nuevos)
+    const filasLimites: Record<string, any> = { ...(stockLimites || {}) };
+    (data.almacenes || []).forEach((a: StockAlmacen) => {
+        if (!a.almacen_id) return;
+        const key = String(a.almacen_id);
+        if (!filasLimites[key]) {
+            filasLimites[key] = { sector_id: a.sector_id ?? data.globalSectorId };
+        }
+    });
+
     return (
         <div className="mt-2">
             <div className="w-full items-center justify-between gap-2 mt-4 space-y-6">
-                {/* SECCIÓN 3: CONFIGURAR LÍMITES DE STOCK POR ALMACÉN (TABLA) */}
-                <div className="relative">
-                    <h3 className="text-sm font-bold text-purple-900 dark:text-purple-200 mb-4">
-                        ⚙️ Configurar Límites de Stock por Almacén
-                    </h3>
-                    <div className="w-full">
-                        <table className="w-full text-sm">
-                            <thead className="border-b bg-base-100 dark:bg-base-900/40">
-                                <tr>
-                                    <th className="px-4 py-2 text-left font-semibold">ID</th>
-                                    <th className="px-4 py-2 text-left font-semibold">Almacén</th>
-                                    <th className="px-4 py-2 text-left font-semibold">Sector</th>
-                                    <th className="px-4 py-2 text-left font-semibold">Stock Mín.</th>
-                                    <th className="px-4 py-2 text-left font-semibold">Stock Máx.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {/* ✨ CAMBIO: Iterar sobre stock_limites (no duplicados) en lugar de almacenes */}
-                                {Object.entries(stockLimites || {}).map(([key, almacenLimites]: [string, any], idx: number) => {
-                                    const almacenId = almacenLimites.almacen_id || Number(key);
-
-                                    // Encontrar la opción correspondiente en almacenesOptions
-                                    const almacenOption = almacenesOptions.find((opt) => String(opt.value) === String(almacenId));
-                                    if (!almacenOption) return null; // Skip si no existe la opción
-
-                                    return (
-                                        <tr key={`${key}-${idx}`} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
-                                            <td className="px-4 py-3 font-medium">#{almacenOption.value}</td>
-                                            <td className="px-4 py-3 font-medium">{almacenOption.label}</td>
-                                            <td className="px-4 py-3">
-                                                <div className="relative" style={{ position: 'relative', zIndex: 50 }}>
-                                                    <SearchSelect
-                                                        id={`sector-limit-${key}`}
-                                                        placeholder="Seleccionar"
-                                                        value={almacenLimites.sector_id ? String(almacenLimites.sector_id) : ''}
-                                                        options={sectoresOptions[almacenId] || []}
-                                                        onChange={(value) => {
-                                                            const newLimites = { ...stockLimites };
-                                                            newLimites[key] = {
-                                                                ...almacenLimites,
-                                                                sector_id: value ? Number(value) : undefined,
-                                                            };
-                                                            setStockLimites(newLimites);
-                                                        }}
-                                                        allowClear={true}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <Input
-                                                    type="number"
-                                                    inputMode="decimal"
-                                                    step="0.01"
-                                                    value={almacenLimites.stock_minimo || ''}
-                                                    onChange={(e) => {
-                                                        const newLimites = { ...stockLimites };
-                                                        newLimites[key] = {
-                                                            ...almacenLimites,
-                                                            stock_minimo: e.target.value === '' ? undefined : Number(e.target.value),
-                                                        };
-                                                        setStockLimites(newLimites);
-                                                    }}
-                                                    className="h-8 text-xs border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
-                                                />
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <Input
-                                                    type="number"
-                                                    inputMode="decimal"
-                                                    step="0.01"
-                                                    value={almacenLimites.stock_maximo || ''}
-                                                    onChange={(e) => {
-                                                        const newLimites = { ...stockLimites };
-                                                        newLimites[key] = {
-                                                            ...almacenLimites,
-                                                            stock_maximo: e.target.value === '' ? undefined : Number(e.target.value),
-                                                        };
-                                                        setStockLimites(newLimites);
-                                                    }}
-                                                    className="h-8 text-xs border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
-                                                />
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
                 {/* SECCIÓN: ALMACENES Y STOCK (LOTES) */}
                 <div className="space-y-4 mt-2">
                     <div>
@@ -573,7 +494,102 @@ export default function Step3Almacenes({
                         })()}
                     </div>
                 </div>
+                {/* SECCIÓN 3: CONFIGURAR LÍMITES DE STOCK POR ALMACÉN (TABLA) */}
+                <div className="relative">
+                    <h3 className="text-sm font-bold text-purple-900 dark:text-purple-200 mb-4">
+                        ⚙️ Configurar Límites de Stock por Almacén
+                    </h3>
+                    <div className="w-full">
+                        <table className="w-full text-sm">
+                            <thead className="border-b bg-base-100 dark:bg-base-900/40">
+                                <tr>
+                                    <th className="px-4 py-2 text-left font-semibold">ID</th>
+                                    <th className="px-4 py-2 text-left font-semibold">Almacén</th>
+                                    <th className="px-4 py-2 text-left font-semibold">Sector</th>
+                                    <th className="px-4 py-2 text-left font-semibold">Stock Mín.</th>
+                                    <th className="px-4 py-2 text-left font-semibold">Stock Máx.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {/* ✨ Filas: límites existentes + almacenes asignados en lotes que aún no tienen límite (permite crear nuevos) */}
+                                {Object.keys(filasLimites).length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-4 py-3 text-sm text-muted-foreground">
+                                            Añada un almacén en la sección de lotes para configurar sus límites de stock.
+                                        </td>
+                                    </tr>
+                                )}
+                                {Object.entries(filasLimites).map(([key, almacenLimites]: [string, any], idx: number) => {
+                                    const almacenId = almacenLimites.almacen_id || Number(key);
 
+                                    // Encontrar la opción correspondiente en almacenesOptions
+                                    const almacenOption = almacenesOptions.find((opt) => String(opt.value) === String(almacenId));
+                                    if (!almacenOption) return null; // Skip si no existe la opción
+
+                                    return (
+                                        <tr key={`${key}-${idx}`} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
+                                            <td className="px-4 py-3 font-medium">#{almacenOption.value}</td>
+                                            <td className="px-4 py-3 font-medium">{almacenOption.label}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="relative" style={{ position: 'relative', zIndex: 50 }}>
+                                                    <SearchSelect
+                                                        id={`sector-limit-${key}`}
+                                                        placeholder="Seleccionar"
+                                                        value={almacenLimites.sector_id ? String(almacenLimites.sector_id) : ''}
+                                                        options={sectoresOptions[almacenId] || []}
+                                                        onChange={(value) => {
+                                                            const newLimites = { ...stockLimites };
+                                                            newLimites[key] = {
+                                                                ...almacenLimites,
+                                                                sector_id: value ? Number(value) : undefined,
+                                                            };
+                                                            setStockLimites(newLimites);
+                                                        }}
+                                                        allowClear={true}
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <Input
+                                                    type="number"
+                                                    inputMode="decimal"
+                                                    step="0.01"
+                                                    value={almacenLimites.stock_minimo || ''}
+                                                    onChange={(e) => {
+                                                        const newLimites = { ...stockLimites };
+                                                        newLimites[key] = {
+                                                            ...almacenLimites,
+                                                            stock_minimo: e.target.value === '' ? undefined : Number(e.target.value),
+                                                        };
+                                                        setStockLimites(newLimites);
+                                                    }}
+                                                    className="h-8 text-xs border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-100"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <Input
+                                                    type="number"
+                                                    inputMode="decimal"
+                                                    step="0.01"
+                                                    value={almacenLimites.stock_maximo || ''}
+                                                    onChange={(e) => {
+                                                        const newLimites = { ...stockLimites };
+                                                        newLimites[key] = {
+                                                            ...almacenLimites,
+                                                            stock_maximo: e.target.value === '' ? undefined : Number(e.target.value),
+                                                        };
+                                                        setStockLimites(newLimites);
+                                                    }}
+                                                    className="h-8 text-xs border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-100"
+                                                />
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 
             </div>
         </div>

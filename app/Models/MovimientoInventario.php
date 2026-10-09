@@ -126,6 +126,15 @@ class MovimientoInventario extends Model
         return $this->belongsTo(StockProducto::class, 'stock_producto_id');
     }
 
+    /**
+     * Igual que stockProducto() pero incluye lotes dados de baja (soft deleted).
+     * Solo para consultas de historial/lectura: NO usar para modificar stock.
+     */
+    public function stockProductoHistorico()
+    {
+        return $this->belongsTo(StockProducto::class, 'stock_producto_id')->withTrashed();
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -326,7 +335,7 @@ class MovimientoInventario extends Model
 
     public function scopePorProducto($query, $productoId)
     {
-        return $query->whereHas('stockProducto', function ($q) use ($productoId) {
+        return $query->whereHas('stockProductoHistorico', function ($q) use ($productoId) {
             $q->where('producto_id', $productoId);
         });
     }
@@ -340,7 +349,7 @@ class MovimientoInventario extends Model
         $busquedaNormalizada = strtolower($busqueda);
         $esNumero = is_numeric($busqueda);
 
-        return $query->whereHas('stockProducto.producto', function ($q) use ($busqueda, $busquedaNormalizada, $esNumero) {
+        return $query->whereHas('stockProductoHistorico.producto', function ($q) use ($busqueda, $busquedaNormalizada, $esNumero) {
             $q->where(function ($subQuery) use ($busqueda, $busquedaNormalizada, $esNumero) {
                 // Búsqueda por ID (si es número)
                 if ($esNumero) {
@@ -385,32 +394,32 @@ class MovimientoInventario extends Model
             $numeroInt = (int) $busqueda;
 
             // Contar resultados por ID
-            $resultadosPorId = (clone $query)->whereHas('stockProducto.producto', function ($q) use ($numeroInt) {
+            $resultadosPorId = (clone $query)->whereHas('stockProductoHistorico.producto', function ($q) use ($numeroInt) {
                 $q->where('id', $numeroInt);
             })->count();
 
             // Si encontramos por ID, retornar solo resultados por ID
             if ($resultadosPorId > 0) {
-                return $query->whereHas('stockProducto.producto', function ($q) use ($numeroInt) {
+                return $query->whereHas('stockProductoHistorico.producto', function ($q) use ($numeroInt) {
                     $q->where('id', $numeroInt);
                 });
             }
 
             // Si no encontró por ID, buscar por SKU (exacto, case-insensitive)
-            $resultadosPorSKU = (clone $query)->whereHas('stockProducto.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
+            $resultadosPorSKU = (clone $query)->whereHas('stockProductoHistorico.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
                 $q->where('sku', $busqueda)
                   ->orWhereRaw('LOWER(sku) = ?', [$busquedaNormalizada]);
             })->count();
 
             if ($resultadosPorSKU > 0) {
-                return $query->whereHas('stockProducto.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
+                return $query->whereHas('stockProductoHistorico.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
                     $q->where('sku', $busqueda)
                       ->orWhereRaw('LOWER(sku) = ?', [$busquedaNormalizada]);
                 });
             }
 
             // Si no encontró por SKU exacto, buscar en nombre y código de barras (parcial)
-            return $query->whereHas('stockProducto.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
+            return $query->whereHas('stockProductoHistorico.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
                 $q->where(function ($subQuery) use ($busqueda, $busquedaNormalizada) {
                     $subQuery->where('nombre', 'LIKE', '%' . $busqueda . '%')
                              ->orWhereRaw('LOWER(nombre) LIKE ?', ['%' . $busquedaNormalizada . '%']);
@@ -424,20 +433,20 @@ class MovimientoInventario extends Model
             });
         } else {
             // Si no es número, buscar por SKU exacto primero (case-insensitive)
-            $resultadosPorSKU = (clone $query)->whereHas('stockProducto.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
+            $resultadosPorSKU = (clone $query)->whereHas('stockProductoHistorico.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
                 $q->where('sku', $busqueda)
                   ->orWhereRaw('LOWER(sku) = ?', [$busquedaNormalizada]);
             })->count();
 
             if ($resultadosPorSKU > 0) {
-                return $query->whereHas('stockProducto.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
+                return $query->whereHas('stockProductoHistorico.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
                     $q->where('sku', $busqueda)
                       ->orWhereRaw('LOWER(sku) = ?', [$busquedaNormalizada]);
                 });
             }
 
             // Si no encontró por SKU exacto, buscar en nombre y código de barras (parcial)
-            return $query->whereHas('stockProducto.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
+            return $query->whereHas('stockProductoHistorico.producto', function ($q) use ($busqueda, $busquedaNormalizada) {
                 $q->where(function ($subQuery) use ($busqueda, $busquedaNormalizada) {
                     $subQuery->where('nombre', 'LIKE', '%' . $busqueda . '%')
                              ->orWhereRaw('LOWER(nombre) LIKE ?', ['%' . $busquedaNormalizada . '%']);
@@ -462,7 +471,7 @@ class MovimientoInventario extends Model
 
     public function scopePorAlmacen($query, $almacenId)
     {
-        return $query->whereHas('stockProducto', function ($q) use ($almacenId) {
+        return $query->whereHas('stockProductoHistorico', function ($q) use ($almacenId) {
             $q->where('almacen_id', $almacenId);
         });
     }

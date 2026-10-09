@@ -52,11 +52,11 @@ class AnalisisAbcController extends Controller
         // Resumen estadístico
         $resumen = AnalisisAbc::obtenerResumen($request->almacen_id, $ano);
 
-        return Inertia::render('Inventario/AnalisisABC/Index', [
+        return Inertia::render('inventario/AnalisisABC/Index', [
             'analisis'  => $analisis,
             'resumen'   => $resumen,
             'filtros'   => $request->only(['ano', 'mes', 'almacen_id', 'clasificacion_abc', 'clasificacion_xyz', 'buscar', 'order_by', 'order_direction']),
-            'almacenes' => Almacen::select('id', 'nombre')->get(),
+            'almacenes' => Almacen::porEmpresa()->select('id', 'nombre')->get(),
         ]);
     }
 
@@ -75,7 +75,7 @@ class AnalisisAbcController extends Controller
         // Recomendaciones automáticas
         $recomendaciones = $analisisAbc->recomendaciones;
 
-        return Inertia::render('Inventario/AnalisisABC/Show', [
+        return Inertia::render('inventario/AnalisisABC/Show', [
             'analisis'        => $analisisAbc,
             'historico'       => $historico,
             'recomendaciones' => $recomendaciones,
@@ -89,6 +89,13 @@ class AnalisisAbcController extends Controller
             'ano'        => 'required|integer|min:2020|max:' . (date('Y') + 1),
             'mes'        => 'nullable|integer|min:1|max:12',
         ]);
+
+        // ✅ El "exists" de arriba no valida que el almacén sea de la empresa del
+        // usuario (Almacen no tiene global scope automático) — sin esto, cualquier
+        // usuario podía pasar el almacen_id de otra empresa.
+        if ($request->filled('almacen_id') && ! Almacen::porEmpresa()->whereKey($request->almacen_id)->exists()) {
+            return back()->withErrors(['almacen_id' => 'El almacén seleccionado no pertenece a tu empresa']);
+        }
 
         $resultado = AnalisisAbc::calcularAnalisisABC(
             $request->almacen_id,
@@ -165,7 +172,7 @@ class AnalisisAbcController extends Controller
             ->with(['almacen'])
             ->get();
 
-        return Inertia::render('Inventario/AnalisisABC/Dashboard', [
+        return Inertia::render('inventario/AnalisisABC/Dashboard', [
             'resumen'                     => $resumen,
             'productos_clase_a'           => $productosClaseA,
             'productos_atencion_especial' => $productosAtencionEspecial,
@@ -208,10 +215,10 @@ class AnalisisAbcController extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        return Inertia::render('Inventario/AnalisisABC/ReporteRotacion', [
+        return Inertia::render('inventario/AnalisisABC/ReporteRotacion', [
             'productos' => $productos,
             'filtros'   => $request->only(['almacen_id', 'clasificacion', 'umbral_rotacion']),
-            'almacenes' => Almacen::select('id', 'nombre')->get(),
+            'almacenes' => Almacen::porEmpresa()->select('id', 'nombre')->get(),
         ]);
     }
 
@@ -234,12 +241,12 @@ class AnalisisAbcController extends Controller
         // Valor total del inventario obsoleto
         $valorTotal = $query->sum(DB::raw('stock_promedio * costo_promedio'));
 
-        return Inertia::render('Inventario/AnalisisABC/ReporteObsoletos', [
+        return Inertia::render('inventario/AnalisisABC/ReporteObsoletos', [
             'productos_obsoletos'  => $productosObsoletos,
             'valor_total_obsoleto' => $valorTotal,
             'dias_sin_venta'       => $diasSinVenta,
             'filtros'              => $request->only(['almacen_id', 'dias_sin_venta']),
-            'almacenes'            => Almacen::select('id', 'nombre')->get(),
+            'almacenes'            => Almacen::porEmpresa()->select('id', 'nombre')->get(),
         ]);
     }
 
@@ -327,6 +334,11 @@ class AnalisisAbcController extends Controller
             'mes'        => 'nullable|integer|min:1|max:12',
         ]);
 
+        // ✅ Mismo control que en calcular(): "exists" no valida que sea de tu empresa
+        if ($request->filled('almacen_id') && ! Almacen::porEmpresa()->whereKey($request->almacen_id)->exists()) {
+            return back()->withErrors(['almacen_id' => 'El almacén seleccionado no pertenece a tu empresa']);
+        }
+
         $query = AnalisisAbc::periodo($request->ano, $request->mes)
             ->with(['producto', 'almacen']);
 
@@ -363,7 +375,7 @@ class AnalisisAbcController extends Controller
             $nombreArchivo .= "_{$request->mes}";
         }
         if ($request->almacen_id) {
-            $almacen        = Almacen::find($request->almacen_id);
+            $almacen        = Almacen::porEmpresa()->find($request->almacen_id);
             $nombreArchivo .= "_" . Str::slug($almacen->nombre);
         }
 

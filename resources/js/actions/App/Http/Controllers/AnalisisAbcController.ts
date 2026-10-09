@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::index
  * @see app/Http/Controllers/AnalisisAbcController.php:14
@@ -42,9 +42,44 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::index
+ * @see app/Http/Controllers/AnalisisAbcController.php:14
+ * @route '/inventario/analisis-abc'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::index
+ * @see app/Http/Controllers/AnalisisAbcController.php:14
+ * @route '/inventario/analisis-abc'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::index
+ * @see app/Http/Controllers/AnalisisAbcController.php:14
+ * @route '/inventario/analisis-abc'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::dashboard
- * @see app/Http/Controllers/AnalisisAbcController.php:113
+ * @see app/Http/Controllers/AnalisisAbcController.php:120
  * @route '/inventario/analisis-abc/dashboard'
  */
 export const dashboard = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -59,7 +94,7 @@ dashboard.definition = {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::dashboard
- * @see app/Http/Controllers/AnalisisAbcController.php:113
+ * @see app/Http/Controllers/AnalisisAbcController.php:120
  * @route '/inventario/analisis-abc/dashboard'
  */
 dashboard.url = (options?: RouteQueryOptions) => {
@@ -68,7 +103,7 @@ dashboard.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::dashboard
- * @see app/Http/Controllers/AnalisisAbcController.php:113
+ * @see app/Http/Controllers/AnalisisAbcController.php:120
  * @route '/inventario/analisis-abc/dashboard'
  */
 dashboard.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -77,7 +112,7 @@ dashboard.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::dashboard
- * @see app/Http/Controllers/AnalisisAbcController.php:113
+ * @see app/Http/Controllers/AnalisisAbcController.php:120
  * @route '/inventario/analisis-abc/dashboard'
  */
 dashboard.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -85,6 +120,41 @@ dashboard.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::dashboard
+ * @see app/Http/Controllers/AnalisisAbcController.php:120
+ * @route '/inventario/analisis-abc/dashboard'
+ */
+    const dashboardForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: dashboard.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::dashboard
+ * @see app/Http/Controllers/AnalisisAbcController.php:120
+ * @route '/inventario/analisis-abc/dashboard'
+ */
+        dashboardForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: dashboard.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::dashboard
+ * @see app/Http/Controllers/AnalisisAbcController.php:120
+ * @route '/inventario/analisis-abc/dashboard'
+ */
+        dashboardForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: dashboard.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    dashboard.form = dashboardForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::show
  * @see app/Http/Controllers/AnalisisAbcController.php:63
@@ -152,6 +222,41 @@ show.head = (args: { analisisAbc: number | { id: number } } | [analisisAbc: numb
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::show
+ * @see app/Http/Controllers/AnalisisAbcController.php:63
+ * @route '/inventario/analisis-abc/{analisisAbc}'
+ */
+    const showForm = (args: { analisisAbc: number | { id: number } } | [analisisAbc: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::show
+ * @see app/Http/Controllers/AnalisisAbcController.php:63
+ * @route '/inventario/analisis-abc/{analisisAbc}'
+ */
+        showForm.get = (args: { analisisAbc: number | { id: number } } | [analisisAbc: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::show
+ * @see app/Http/Controllers/AnalisisAbcController.php:63
+ * @route '/inventario/analisis-abc/{analisisAbc}'
+ */
+        showForm.head = (args: { analisisAbc: number | { id: number } } | [analisisAbc: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::calcular
  * @see app/Http/Controllers/AnalisisAbcController.php:85
@@ -186,9 +291,30 @@ calcular.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::calcular
+ * @see app/Http/Controllers/AnalisisAbcController.php:85
+ * @route '/inventario/analisis-abc/calcular'
+ */
+    const calcularForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: calcular.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::calcular
+ * @see app/Http/Controllers/AnalisisAbcController.php:85
+ * @route '/inventario/analisis-abc/calcular'
+ */
+        calcularForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: calcular.url(options),
+            method: 'post',
+        })
+    
+    calcular.form = calcularForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::exportMethod
- * @see app/Http/Controllers/AnalisisAbcController.php:321
+ * @see app/Http/Controllers/AnalisisAbcController.php:328
  * @route '/inventario/analisis-abc/export'
  */
 export const exportMethod = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -203,7 +329,7 @@ exportMethod.definition = {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::exportMethod
- * @see app/Http/Controllers/AnalisisAbcController.php:321
+ * @see app/Http/Controllers/AnalisisAbcController.php:328
  * @route '/inventario/analisis-abc/export'
  */
 exportMethod.url = (options?: RouteQueryOptions) => {
@@ -212,7 +338,7 @@ exportMethod.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::exportMethod
- * @see app/Http/Controllers/AnalisisAbcController.php:321
+ * @see app/Http/Controllers/AnalisisAbcController.php:328
  * @route '/inventario/analisis-abc/export'
  */
 exportMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -221,7 +347,7 @@ exportMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::exportMethod
- * @see app/Http/Controllers/AnalisisAbcController.php:321
+ * @see app/Http/Controllers/AnalisisAbcController.php:328
  * @route '/inventario/analisis-abc/export'
  */
 exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -229,9 +355,44 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::exportMethod
+ * @see app/Http/Controllers/AnalisisAbcController.php:328
+ * @route '/inventario/analisis-abc/export'
+ */
+    const exportMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: exportMethod.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::exportMethod
+ * @see app/Http/Controllers/AnalisisAbcController.php:328
+ * @route '/inventario/analisis-abc/export'
+ */
+        exportMethodForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: exportMethod.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::exportMethod
+ * @see app/Http/Controllers/AnalisisAbcController.php:328
+ * @route '/inventario/analisis-abc/export'
+ */
+        exportMethodForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: exportMethod.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    exportMethod.form = exportMethodForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteRotacion
- * @see app/Http/Controllers/AnalisisAbcController.php:179
+ * @see app/Http/Controllers/AnalisisAbcController.php:186
  * @route '/inventario/analisis-abc/reportes/rotacion'
  */
 export const reporteRotacion = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -246,7 +407,7 @@ reporteRotacion.definition = {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteRotacion
- * @see app/Http/Controllers/AnalisisAbcController.php:179
+ * @see app/Http/Controllers/AnalisisAbcController.php:186
  * @route '/inventario/analisis-abc/reportes/rotacion'
  */
 reporteRotacion.url = (options?: RouteQueryOptions) => {
@@ -255,7 +416,7 @@ reporteRotacion.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteRotacion
- * @see app/Http/Controllers/AnalisisAbcController.php:179
+ * @see app/Http/Controllers/AnalisisAbcController.php:186
  * @route '/inventario/analisis-abc/reportes/rotacion'
  */
 reporteRotacion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -264,7 +425,7 @@ reporteRotacion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteRotacion
- * @see app/Http/Controllers/AnalisisAbcController.php:179
+ * @see app/Http/Controllers/AnalisisAbcController.php:186
  * @route '/inventario/analisis-abc/reportes/rotacion'
  */
 reporteRotacion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -272,9 +433,44 @@ reporteRotacion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::reporteRotacion
+ * @see app/Http/Controllers/AnalisisAbcController.php:186
+ * @route '/inventario/analisis-abc/reportes/rotacion'
+ */
+    const reporteRotacionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: reporteRotacion.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::reporteRotacion
+ * @see app/Http/Controllers/AnalisisAbcController.php:186
+ * @route '/inventario/analisis-abc/reportes/rotacion'
+ */
+        reporteRotacionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteRotacion.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::reporteRotacion
+ * @see app/Http/Controllers/AnalisisAbcController.php:186
+ * @route '/inventario/analisis-abc/reportes/rotacion'
+ */
+        reporteRotacionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteRotacion.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    reporteRotacion.form = reporteRotacionForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteObsoletos
- * @see app/Http/Controllers/AnalisisAbcController.php:218
+ * @see app/Http/Controllers/AnalisisAbcController.php:225
  * @route '/inventario/analisis-abc/reportes/obsoletos'
  */
 export const reporteObsoletos = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -289,7 +485,7 @@ reporteObsoletos.definition = {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteObsoletos
- * @see app/Http/Controllers/AnalisisAbcController.php:218
+ * @see app/Http/Controllers/AnalisisAbcController.php:225
  * @route '/inventario/analisis-abc/reportes/obsoletos'
  */
 reporteObsoletos.url = (options?: RouteQueryOptions) => {
@@ -298,7 +494,7 @@ reporteObsoletos.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteObsoletos
- * @see app/Http/Controllers/AnalisisAbcController.php:218
+ * @see app/Http/Controllers/AnalisisAbcController.php:225
  * @route '/inventario/analisis-abc/reportes/obsoletos'
  */
 reporteObsoletos.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -307,7 +503,7 @@ reporteObsoletos.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => 
 })
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::reporteObsoletos
- * @see app/Http/Controllers/AnalisisAbcController.php:218
+ * @see app/Http/Controllers/AnalisisAbcController.php:225
  * @route '/inventario/analisis-abc/reportes/obsoletos'
  */
 reporteObsoletos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -315,9 +511,44 @@ reporteObsoletos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::reporteObsoletos
+ * @see app/Http/Controllers/AnalisisAbcController.php:225
+ * @route '/inventario/analisis-abc/reportes/obsoletos'
+ */
+    const reporteObsoletosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: reporteObsoletos.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::reporteObsoletos
+ * @see app/Http/Controllers/AnalisisAbcController.php:225
+ * @route '/inventario/analisis-abc/reportes/obsoletos'
+ */
+        reporteObsoletosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteObsoletos.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::reporteObsoletos
+ * @see app/Http/Controllers/AnalisisAbcController.php:225
+ * @route '/inventario/analisis-abc/reportes/obsoletos'
+ */
+        reporteObsoletosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteObsoletos.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    reporteObsoletos.form = reporteObsoletosForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::apiCalcularAnalisis
- * @see app/Http/Controllers/AnalisisAbcController.php:247
+ * @see app/Http/Controllers/AnalisisAbcController.php:254
  * @route '/inventario/analisis-abc/api/calcular-analisis'
  */
 export const apiCalcularAnalisis = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -332,7 +563,7 @@ apiCalcularAnalisis.definition = {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::apiCalcularAnalisis
- * @see app/Http/Controllers/AnalisisAbcController.php:247
+ * @see app/Http/Controllers/AnalisisAbcController.php:254
  * @route '/inventario/analisis-abc/api/calcular-analisis'
  */
 apiCalcularAnalisis.url = (options?: RouteQueryOptions) => {
@@ -341,7 +572,7 @@ apiCalcularAnalisis.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::apiCalcularAnalisis
- * @see app/Http/Controllers/AnalisisAbcController.php:247
+ * @see app/Http/Controllers/AnalisisAbcController.php:254
  * @route '/inventario/analisis-abc/api/calcular-analisis'
  */
 apiCalcularAnalisis.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -349,9 +580,30 @@ apiCalcularAnalisis.post = (options?: RouteQueryOptions): RouteDefinition<'post'
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::apiCalcularAnalisis
+ * @see app/Http/Controllers/AnalisisAbcController.php:254
+ * @route '/inventario/analisis-abc/api/calcular-analisis'
+ */
+    const apiCalcularAnalisisForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: apiCalcularAnalisis.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::apiCalcularAnalisis
+ * @see app/Http/Controllers/AnalisisAbcController.php:254
+ * @route '/inventario/analisis-abc/api/calcular-analisis'
+ */
+        apiCalcularAnalisisForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: apiCalcularAnalisis.url(options),
+            method: 'post',
+        })
+    
+    apiCalcularAnalisis.form = apiCalcularAnalisisForm
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::apiRecomendaciones
- * @see app/Http/Controllers/AnalisisAbcController.php:284
+ * @see app/Http/Controllers/AnalisisAbcController.php:291
  * @route '/inventario/analisis-abc/api/recomendaciones'
  */
 export const apiRecomendaciones = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -366,7 +618,7 @@ apiRecomendaciones.definition = {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::apiRecomendaciones
- * @see app/Http/Controllers/AnalisisAbcController.php:284
+ * @see app/Http/Controllers/AnalisisAbcController.php:291
  * @route '/inventario/analisis-abc/api/recomendaciones'
  */
 apiRecomendaciones.url = (options?: RouteQueryOptions) => {
@@ -375,7 +627,7 @@ apiRecomendaciones.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::apiRecomendaciones
- * @see app/Http/Controllers/AnalisisAbcController.php:284
+ * @see app/Http/Controllers/AnalisisAbcController.php:291
  * @route '/inventario/analisis-abc/api/recomendaciones'
  */
 apiRecomendaciones.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -384,13 +636,49 @@ apiRecomendaciones.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
 })
 /**
 * @see \App\Http\Controllers\AnalisisAbcController::apiRecomendaciones
- * @see app/Http/Controllers/AnalisisAbcController.php:284
+ * @see app/Http/Controllers/AnalisisAbcController.php:291
  * @route '/inventario/analisis-abc/api/recomendaciones'
  */
 apiRecomendaciones.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: apiRecomendaciones.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\AnalisisAbcController::apiRecomendaciones
+ * @see app/Http/Controllers/AnalisisAbcController.php:291
+ * @route '/inventario/analisis-abc/api/recomendaciones'
+ */
+    const apiRecomendacionesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: apiRecomendaciones.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::apiRecomendaciones
+ * @see app/Http/Controllers/AnalisisAbcController.php:291
+ * @route '/inventario/analisis-abc/api/recomendaciones'
+ */
+        apiRecomendacionesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: apiRecomendaciones.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AnalisisAbcController::apiRecomendaciones
+ * @see app/Http/Controllers/AnalisisAbcController.php:291
+ * @route '/inventario/analisis-abc/api/recomendaciones'
+ */
+        apiRecomendacionesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: apiRecomendaciones.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    apiRecomendaciones.form = apiRecomendacionesForm
 const AnalisisAbcController = { index, dashboard, show, calcular, exportMethod, reporteRotacion, reporteObsoletos, apiCalcularAnalisis, apiRecomendaciones, export: exportMethod }
 
 export default AnalisisAbcController

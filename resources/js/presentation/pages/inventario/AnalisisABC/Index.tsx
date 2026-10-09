@@ -9,6 +9,8 @@ import { Head, usePage, Link } from '@inertiajs/react';
 import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import AppLayout from '@/layouts/app-layout';
 import { useAuth } from '@/application/hooks/use-auth';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import type { Paginator } from '@/domain/types/pagination';
 
 interface AnalisisItem {
@@ -144,9 +146,19 @@ export default function AnalisisAbcIndex() {
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <div className="flex items-center">
                                 <div className="flex-1">
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
-                                        Total de Productos
-                                    </p>
+                                    <div className="flex items-center gap-1.5">
+                                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                                            Total de Productos
+                                        </p>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                                Productos con al menos una venta registrada en el período analizado, sin importar su clasificación.
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
                                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
                                         {resumen.total_productos || 0}
                                     </p>
@@ -157,14 +169,26 @@ export default function AnalisisAbcIndex() {
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <div className="flex items-center">
                                 <div className="flex-1">
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
-                                        Productos Clase A
-                                    </p>
+                                    <div className="flex items-center gap-1.5">
+                                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                                            Productos Clase A
+                                        </p>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                                Alto valor: el grupo (normalmente pequeño) de productos que genera cerca del 80% del valor total de ventas.
+                                                Son tus productos críticos — nunca deberían quedarse sin stock, requieren revisión frecuente y stock de
+                                                seguridad alto.
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
                                     <p className="text-2xl font-bold text-red-600 mt-2">
                                         {resumen.productos_clase_a || 0}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                        {(resumen.porcentaje_clase_a || 0).toFixed(1)}% de valor
+                                        {(Number(resumen.porcentaje_clase_a) || 0).toFixed(1)}% de valor
                                     </p>
                                 </div>
                             </div>
@@ -173,9 +197,20 @@ export default function AnalisisAbcIndex() {
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <div className="flex items-center">
                                 <div className="flex-1">
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
-                                        Productos Clase B
-                                    </p>
+                                    <div className="flex items-center gap-1.5">
+                                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                                            Productos Clase B
+                                        </p>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                                Valor medio: representan el siguiente ~15% del valor de ventas. Merecen un control estándar — revisión
+                                                periódica, sin necesidad de la atención estricta de la Clase A.
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
                                     <p className="text-2xl font-bold text-yellow-600 mt-2">
                                         {resumen.productos_clase_b || 0}
                                     </p>
@@ -186,9 +221,21 @@ export default function AnalisisAbcIndex() {
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                             <div className="flex items-center">
                                 <div className="flex-1">
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
-                                        Productos Clase C
-                                    </p>
+                                    <div className="flex items-center gap-1.5">
+                                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                                            Productos Clase C
+                                        </p>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                                Bajo valor: el ~5% restante del valor de ventas, aunque suele ser el grupo con más productos distintos.
+                                                Requieren poco esfuerzo de control — minimizá su stock y evaluá descontinuar los que además tengan baja
+                                                rotación (clasificación Z).
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
                                     <p className="text-2xl font-bold text-green-600 mt-2">
                                         {resumen.productos_clase_c || 0}
                                     </p>
@@ -207,9 +254,9 @@ export default function AnalisisAbcIndex() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Producto
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Almacén
-                                    </th>
+                                    </th> */}
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Clasificación
                                     </th>
@@ -243,11 +290,11 @@ export default function AnalisisAbcIndex() {
                                                 </p>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        {/* <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm text-gray-900 dark:text-gray-100">
                                                 {item.almacen?.nombre}
                                             </span>
-                                        </td>
+                                        </td> */}
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex gap-2">
                                                 <span
@@ -268,17 +315,17 @@ export default function AnalisisAbcIndex() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm text-gray-900 dark:text-gray-100">
-                                                {(item.rotacion_inventario || 0).toFixed(2)}x
+                                                {(Number(item.rotacion_inventario) || 0).toFixed(2)}x
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm text-gray-900 dark:text-gray-100">
-                                                {(item.stock_promedio || 0).toFixed(2)}
+                                                {(Number(item.stock_promedio) || 0).toFixed(2)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                ${(item.ventas_valor || 0)?.toLocaleString('es-ES', {
+                                                Bs {(Number(item.ventas_valor) || 0).toLocaleString('es-ES', {
                                                     minimumFractionDigits: 2,
                                                     maximumFractionDigits: 2,
                                                 })}

@@ -20,6 +20,8 @@ use App\Observers\RutaObserver;
 use App\Observers\RutaDetalleObserver;
 use App\Services\Notifications\EntregaNotificationService;
 use App\Services\Notifications\DatabaseNotificationService;
+use App\Services\Pago\Contracts\PaymentGatewayInterface;
+use App\Services\Pago\MockPaymentGateway;
 use App\Services\WebSocket\EntregaWebSocketService;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -37,6 +39,18 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(DatabaseNotificationService::class),
                 $app->make(EntregaWebSocketService::class)
             );
+        });
+
+        // ✅ Pasarela de pago por QR: único punto donde se elige la implementación.
+        // Cambiar PAYMENT_GATEWAY_DRIVER=bnb en .env (y crear BnbPaymentGateway)
+        // el día que haya credenciales reales del banco — nada más se toca.
+        $this->app->singleton(PaymentGatewayInterface::class, function ($app) {
+            return match (config('services.payment_gateway.driver', 'mock')) {
+                'bnb'   => throw new \RuntimeException(
+                    'PAYMENT_GATEWAY_DRIVER=bnb pero App\\Services\\Pago\\BnbPaymentGateway todavía no existe.'
+                ),
+                default => new MockPaymentGateway(),
+            };
         });
     }
 

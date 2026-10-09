@@ -118,156 +118,7 @@ class InventarioController extends Controller
             ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa
             ->vencidos()->count();
 
-        // Stock por almacén - agrupado por producto+almacén con detalles de lotes
-        // Incluye productos con cantidad >= 0 (incluyendo 0) y todos los productos sin registros en stock_productos
-        $stockPorAlmacen = StockProducto::with([
-            'producto',
-            'producto.codigoPrincipal',
-            'almacen',
-            'producto.precios',
-            'producto.unidad',
-            'producto.conversiones.unidadDestino',
-        ])
-            ->whereHas('almacen', function ($q) use ($userEmpresaId) {
-                // ✅ CRÍTICO: Filtrar solo almacenes de la empresa del usuario
-                if ($userEmpresaId) {
-                    $q->where('empresa_id', $userEmpresaId);
-                }
-            })
-            ->whereHas('producto', function ($q) {
-                $q->where('activo', true); // Solo productos activos
-            })
-            ->withoutTrashed() // Excluir registros soft deleted
-            ->where('cantidad', '>=', 0) // Incluye cantidad 0 para ver productos sin movimiento
-            ->orderBy('almacen_id')
-            ->orderBy('producto_id')
-            ->get();
-
-        // Agrupar por producto_id + almacen_id
-        $stockAgrupado = [];
-        foreach ($stockPorAlmacen as $stock) {
-            $clave = $stock->producto_id . '_' . $stock->almacen_id;
-
-            if (! isset($stockAgrupado[$clave])) {
-                // Obtener precio de venta base
-                $precioVenta = 0;
-                if ($stock->producto) {
-                    $precioVentaObj = $stock->producto->precios?->firstWhere('es_precio_base', true);
-                    $precioVenta    = $precioVentaObj?->precio ?? $stock->producto->precio_venta ?? 0;
-                }
-
-                $stockAgrupado[$clave] = [
-                    'id'                        => null,
-                    'producto_id'               => $stock->producto_id,
-                    'almacen_id'                => $stock->almacen_id,
-                    'cantidad'                  => 0,
-                    'cantidad_disponible'       => 0,
-                    'cantidad_reservada'        => 0,
-                    'precio_venta'              => $precioVenta,
-                    'producto_nombre'           => $stock->producto?->nombre ?? 'Desconocido',
-                    'producto_codigo'           => $stock->producto?->codigo ?? '',
-                    'producto_codigo_barra'     => $stock->producto?->codigoPrincipal?->codigo ?? '',
-                    'producto_sku'              => $stock->producto?->sku ?? '',
-                    'almacen_nombre'            => $stock->almacen?->nombre ?? 'Desconocido',
-                    'es_fraccionado'            => (bool) $stock->producto?->es_fraccionado,
-                    'unidad_medida_nombre'      => $stock->producto?->unidad?->nombre ?? 'Unidades',
-                    'fecha_vencimiento_proximo' => null,
-                    'detalles_lotes'            => [],
-                ];
-            }
-
-            // Acumular cantidades
-            $stockAgrupado[$clave]['cantidad']            += $stock->cantidad;
-            $stockAgrupado[$clave]['cantidad_disponible'] += $stock->cantidad_disponible;
-            $stockAgrupado[$clave]['cantidad_reservada']  += $stock->cantidad_reservada;
-
-            // Procesar conversiones para productos fraccionados
-            $conversiones = [];
-            if ($stock->producto?->es_fraccionado && $stock->producto->conversiones) {
-                $conversiones = $stock->producto->conversiones->map(function ($conv) use ($stock) {
-                    return [
-                        'id'                     => $conv->id,
-                        'unidad_origen_id'       => $conv->unidad_origen_id,
-                        'unidad_destino_id'      => $conv->unidad_destino_id,
-                        'unidad_destino_nombre'  => $conv->unidadDestino?->nombre ?? '',
-                        'factor_conversion'      => $conv->factor_conversion,
-                        'cantidad_en_conversion' => round($stock->cantidad * $conv->factor_conversion, 2),
-                    ];
-                })->values()->toArray();
-            }
-
-            // Agregar detalle de lote
-            $stockAgrupado[$clave]['detalles_lotes'][] = [
-                'id'                  => $stock->id,
-                'lote'                => $stock->lote ?? 'Sin lote',
-                'fecha_vencimiento'   => $stock->fecha_vencimiento ? \Carbon\Carbon::parse($stock->fecha_vencimiento)->format('d/m/Y') : null,
-                'cantidad'            => $stock->cantidad,
-                'cantidad_disponible' => $stock->cantidad_disponible,
-                'cantidad_reservada'  => $stock->cantidad_reservada,
-                'conversiones'        => $conversiones,
-            ];
-
-            // Actualizar próximo vencimiento (el más cercano)
-            if ($stock->fecha_vencimiento) {
-                $fechaParsed = \Carbon\Carbon::parse($stock->fecha_vencimiento);
-
-                // ✅ CORREGIDO (2026-02-17): Inicializar si no existe + usar createFromFormat para parsear fechas formateadas
-                if (!isset($stockAgrupado[$clave]['fecha_vencimiento_proximo'])) {
-                    $stockAgrupado[$clave]['fecha_vencimiento_proximo'] = $fechaParsed->format('d/m/Y');
-                } else {
-                    // Usar createFromFormat para parsear fechas en formato d/m/Y (no parse que falla con este formato)
-                    $fechaProximoParsed = \Carbon\Carbon::createFromFormat('d/m/Y', $stockAgrupado[$clave]['fecha_vencimiento_proximo']);
-
-                    if ($fechaParsed < $fechaProximoParsed) {
-                        $stockAgrupado[$clave]['fecha_vencimiento_proximo'] = $fechaParsed->format('d/m/Y');
-                    }
-                }
-            }
-        }
-
-        // Convertir a Collection para las operaciones posteriores
-        $stockPorAlmacenCollection = collect($stockAgrupado);
-
-        // ✅ IMPORTANTE: Obtener SOLO productos de la empresa del usuario que NO aparecen en $stockPorAlmacen
-        // Esto incluye productos sin NINGÚN registro en stock_productos
-        $productosConStock = $stockPorAlmacenCollection->pluck('producto_id')->unique();
-        $productossinStock = Producto::where('activo', true)
-            ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Filtrar por empresa del usuario
-            ->whereNotIn('id', $productosConStock)
-            ->with(['codigoPrincipal', 'precios', 'unidad', 'conversiones.unidadDestino'])
-            ->orderBy('nombre')
-            ->get();
-
-        // Mapear productos sin stock con cantidad 0
-        $stockSinRegistros = $productossinStock->map(function ($producto) {
-            // Obtener precio de venta base
-            $precioVenta    = 0;
-            $precioVentaObj = $producto->precios?->firstWhere('es_precio_base', true);
-            $precioVenta    = $precioVentaObj?->precio ?? $producto->precio_venta ?? 0;
-
-            return [
-                'id'                        => null,
-                'producto_id'               => $producto->id,
-                'almacen_id'                => null,
-                'cantidad'                  => 0,
-                'cantidad_disponible'       => 0,
-                'cantidad_reservada'        => 0,
-                'precio_venta'              => $precioVenta,
-                'producto_nombre'           => $producto->nombre,
-                'producto_codigo'           => $producto->codigo ?? '',
-                'producto_codigo_barra'     => $producto->codigoPrincipal?->codigo ?? '',
-                'producto_sku'              => $producto->sku ?? '',
-                'almacen_nombre'            => 'Sin Stock',
-                'es_fraccionado'            => (bool) $producto->es_fraccionado,
-                'unidad_medida_nombre'      => $producto->unidad?->nombre ?? 'Unidades',
-                'fecha_vencimiento_proximo' => null,
-                'detalles_lotes'            => [],
-            ];
-        });
-
-        // Combinar stock existente con productos sin stock
-        // ✅ ORDENAMIENTO (2026-02-11): Ordenar SOLO por nombre de producto (alfabético)
-        $stockPorAlmacen = $stockPorAlmacenCollection->concat($stockSinRegistros)->sortBy('producto_nombre')->values()->toArray();
+        // El listado de stock ya no se carga aquí: StockYProductos lo pide paginado a /api/inventario/stock-filtrado
 
         // Movimientos recientes (últimos 7 días)
         // ✅ MEJORADO (2026-02-18): Incluir información de conversiones de unidades
@@ -377,7 +228,6 @@ class InventarioController extends Controller
                 'productos_proximos_vencer' => $productosProximosVencer,
                 'productos_vencidos'        => $productosVencidos,
             ],
-            'stock_por_almacen'     => $stockPorAlmacen,
             'movimientos_recientes' => $movimientosRecientes,
             'productos_mas_movidos' => $productosMasMovidos,
             'almacenes'             => $almacenesLista,
@@ -737,8 +587,8 @@ class InventarioController extends Controller
         // Construir query con filtros
         // ✅ MEJORADO (2026-02-18): Incluir información de conversiones de unidades
         $query = MovimientoInventario::with([
-            'stockProducto.producto:id,nombre,sku',
-            'stockProducto.almacen:id,nombre',
+            'stockProductoHistorico.producto:id,nombre,sku',
+            'stockProductoHistorico.almacen:id,nombre',
             'user:id,name,email',  // ✅ MODIFICADO: Agregar email
             'user.roles:id,name',  // ✅ NUEVO: Cargar roles del usuario
             'unidadVenta:id,nombre',  // ✅ NUEVO (2026-02-18): Relación para conversiones (unidad de venta)
@@ -789,7 +639,7 @@ class InventarioController extends Controller
         // ✅ CRÍTICO: Filtrar por empresa del usuario - Solo mostrar movimientos de su empresa
         $empresaUsuario = auth()->user()?->empresa;
         if ($empresaUsuario) {
-            $query->whereHas('stockProducto.producto', function ($q) use ($empresaUsuario) {
+            $query->whereHas('stockProductoHistorico.producto', function ($q) use ($empresaUsuario) {
                 $q->where('empresa_id', $empresaUsuario->id);
             });
         }
@@ -819,7 +669,7 @@ class InventarioController extends Controller
         // Mapear datos de movimientos
         $movimientos = $movimientosPaginados->map(function ($movimiento) {
             // ✅ Validar que stockProducto existe (puede ser null si se eliminó el lote)
-            $stockProducto = $movimiento->stockProducto;
+            $stockProducto = $movimiento->stockProductoHistorico;
 
             if (!$stockProducto) {
                 // Si el stock_producto fue eliminado, crear datos fallback
@@ -3245,8 +3095,16 @@ class InventarioController extends Controller
 
             $rango = $rangos[$rangoStock] ?? $rangos['todos'];
 
-            // Obtener lista de almacenes activos
-            $almacenes = Almacen::where('activo', true)->get();
+            // ✅ CRÍTICO: Filtrar todo por la empresa del usuario autenticado
+            $empresaId = auth()->user()?->empresa_id;
+            if (! $empresaId) {
+                return response()->json(['success' => false, 'message' => 'Usuario sin empresa asignada'], 403);
+            }
+
+            // Obtener lista de almacenes activos de la empresa
+            $almacenes = Almacen::where('activo', true)
+                ->where('empresa_id', $empresaId)
+                ->get();
 
             $stocks = [];
 
@@ -3255,14 +3113,17 @@ class InventarioController extends Controller
             // - Productos con registros en stock_productos
             // - Productos que NUNCA han tenido registros en stock_productos (sin stock)
             $productoQuery = Producto::with([
-                'stock' => fn($q) => $q->withoutTrashed(), // Excluir soft deleted
+                // Excluir soft deleted y solo stock en almacenes de la empresa
+                'stock' => fn($q) => $q->withoutTrashed()
+                    ->whereHas('almacen', fn($aq) => $aq->where('empresa_id', $empresaId)),
                 'stock.almacen',
                 'codigoPrincipal',
                 'precios',
                 'unidad',
                 'conversiones.unidadDestino',
             ])
-                ->where('activo', true); // Solo productos activos
+                ->where('activo', true) // Solo productos activos
+                ->where('empresa_id', $empresaId); // ✅ Solo productos de la empresa del usuario
 
             // Aplicar filtro de búsqueda solo si hay término de búsqueda
             if ($busqueda) {
@@ -3288,7 +3149,33 @@ class InventarioController extends Controller
                 });
             }
 
-            $productoQuery = $productoQuery->get();
+            // ✅ Paginación en SQL para el caso por defecto (orden por nombre, rango "todos", una fila por producto):
+            // solo se cargan y procesan los productos de la página. El resto de combinaciones filtra por
+            // cantidades de cada lote en PHP y sigue cargando todo para paginar al final.
+            $agruparPorProducto = $request->string('agrupar')->toString() === 'producto';
+            $paginador = null;
+
+            if ($agruparPorProducto && $ordenamiento === 'producto' && $rangoStock === 'todos') {
+                $stockEmpresa = fn($q) => $q->withoutTrashed()
+                    ->whereHas('almacen', fn($aq) => $aq->where('empresa_id', $empresaId))
+                    ->when($almacenId > 0, fn($aq) => $aq->where('almacen_id', $almacenId));
+
+                if ($soloConStock) {
+                    $productoQuery->whereHas('stock', fn($q) => $stockEmpresa($q)->where('cantidad', '>=', 1));
+                } else {
+                    // Mismo criterio que el bucle de abajo: lotes con cantidad >= 0, o productos sin ningún stock (filas virtuales en 0)
+                    $productoQuery->where(function ($q) use ($stockEmpresa, $empresaId) {
+                        $q->whereHas('stock', fn($sq) => $stockEmpresa($sq)->where('cantidad', '>=', 0))
+                            ->orWhereDoesntHave('stock', fn($sq) => $sq->withoutTrashed()
+                                ->whereHas('almacen', fn($aq) => $aq->where('empresa_id', $empresaId)));
+                    });
+                }
+
+                $paginador     = $productoQuery->orderBy('nombre')->orderBy('id')->paginate($perPage, ['*'], 'page', $page);
+                $productoQuery = $paginador->getCollection();
+            } else {
+                $productoQuery = $productoQuery->get();
+            }
 
             // Procesar productos encontrados
             foreach ($productoQuery as $producto) {
@@ -3435,6 +3322,20 @@ class InventarioController extends Controller
             // Convertir a array de valores
             $stockProductos = array_values($stockAgrupado);
 
+            // Formatear fecha de vencimiento de cada fila producto+almacén
+            $stockProductos = array_map(function ($item) {
+                if ($item['fecha_vencimiento_proximo'] instanceof \Carbon\Carbon) {
+                    $item['fecha_vencimiento_proximo'] = $item['fecha_vencimiento_proximo']->format('d/m/Y');
+                }
+                return $item;
+            }, $stockProductos);
+
+            // ✅ NUEVO: ?agrupar=producto → una fila por producto con el detalle de cada almacén.
+            // Cada elemento de 'almacenes' conserva el formato producto+almacén de siempre.
+            if ($agruparPorProducto) {
+                $stockProductos = $this->agruparStockPorProducto($stockProductos);
+            }
+
             // Ordenamiento
             usort($stockProductos, function ($a, $b) use ($ordenamiento) {
                 return match ($ordenamiento) {
@@ -3446,13 +3347,19 @@ class InventarioController extends Controller
                 };
             });
 
-            // Formatear fechas de vencimiento antes de devolver
-            $stockProductos = array_map(function ($item) {
-                if ($item['fecha_vencimiento_proximo'] instanceof \Carbon\Carbon) {
-                    $item['fecha_vencimiento_proximo'] = $item['fecha_vencimiento_proximo']->format('d/m/Y');
-                }
-                return $item;
-            }, $stockProductos);
+            // Ya paginado en SQL: devolver la página tal cual con los totales del paginador
+            if ($paginador) {
+                return response()->json([
+                    'success'      => true,
+                    'data'         => $stockProductos,
+                    'total'        => $paginador->total(),
+                    'per_page'     => $paginador->perPage(),
+                    'current_page' => $paginador->currentPage(),
+                    'last_page'    => $paginador->lastPage(),
+                    'from'         => $paginador->firstItem() ?? 0,
+                    'to'           => $paginador->lastItem() ?? 0,
+                ]);
+            }
 
             // ✅ NUEVO (2026-09-09): Aplicar paginación
             $totalRegistros = count($stockProductos);
@@ -3482,6 +3389,64 @@ class InventarioController extends Controller
                 'message' => 'Error al obtener stock filtrado: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Agrupa filas producto+almacén en una fila por producto.
+     * - cantidad/disponible/reservada: suma de todos los almacenes
+     * - fecha_vencimiento_proximo: la más cercana entre almacenes
+     * - almacenes: las filas producto+almacén originales (mismo formato de siempre)
+     * - detalles_lotes: todos los lotes, con el nombre de su almacén
+     */
+    private function agruparStockPorProducto(array $filas): array
+    {
+        $productos = [];
+
+        foreach ($filas as $fila) {
+            $pid = $fila['producto_id'];
+
+            if (! isset($productos[$pid])) {
+                $productos[$pid] = array_merge($fila, [
+                    'almacen_id'                => null,
+                    'almacen_nombre'            => '',
+                    'cantidad'                  => 0,
+                    'cantidad_disponible'       => 0,
+                    'cantidad_reservada'        => 0,
+                    'fecha_vencimiento_proximo' => null,
+                    'detalles_lotes'            => [],
+                    'almacenes'                 => [],
+                ]);
+            }
+
+            $productos[$pid]['cantidad']            += $fila['cantidad'];
+            $productos[$pid]['cantidad_disponible'] += $fila['cantidad_disponible'];
+            $productos[$pid]['cantidad_reservada']  += $fila['cantidad_reservada'];
+            $productos[$pid]['almacenes'][]          = $fila;
+
+            foreach ($fila['detalles_lotes'] as $lote) {
+                $productos[$pid]['detalles_lotes'][] = $lote + [
+                    'almacen_id'     => $fila['almacen_id'],
+                    'almacen_nombre' => $fila['almacen_nombre'],
+                ];
+            }
+
+            // Vencimiento más cercano entre almacenes (formato d/m/Y)
+            $fecha  = $fila['fecha_vencimiento_proximo'];
+            $actual = $productos[$pid]['fecha_vencimiento_proximo'];
+            if ($fecha && (! $actual
+                || \Carbon\Carbon::createFromFormat('d/m/Y', $fecha)->lt(\Carbon\Carbon::createFromFormat('d/m/Y', $actual)))) {
+                $productos[$pid]['fecha_vencimiento_proximo'] = $fecha;
+            }
+        }
+
+        foreach ($productos as &$producto) {
+            // Almacenes ordenados por nombre; el primero se usa para ordenar por "almacén"
+            usort($producto['almacenes'], fn ($a, $b) => strcmp((string) $a['almacen_nombre'], (string) $b['almacen_nombre']));
+            $producto['almacen_nombre'] = $producto['almacenes'][0]['almacen_nombre'] ?? '';
+        }
+        unset($producto);
+
+        return array_values($productos);
     }
 
     /**

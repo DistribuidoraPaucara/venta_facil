@@ -180,7 +180,7 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
     };
 
     const handleSort = (field: string) => {
-        const currentSortDir = filtros?.sort_by === field && filtros?.sort_dir === 'asc' ? 'desc' : 'asc';
+        const currentSortDir = filtros?.sort_by === field && filtros?.sort_order === 'asc' ? 'desc' : 'asc';
         ventasService.sort(field, currentSortDir);
     };
 
@@ -188,7 +188,7 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
         if (filtros?.sort_by !== field) {
             return '↕️';
         }
-        return filtros?.sort_dir === 'asc' ? '↑' : '↓';
+        return filtros?.sort_order === 'asc' ? '↑' : '↓';
     };
 
     // ✅ NUEVO: Icono diferencial para tipo de pago
@@ -249,6 +249,7 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
                             <option value={15}>15 por página</option>
                             <option value={25}>25 por página</option>
                             <option value={50}>50 por página</option>
+                            <option value={200}>200 por página</option>
                         </select>
                     </div>
                 </div>
@@ -299,12 +300,12 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
                             <TableHead className="px-2 py-2 text-left text-xs tracking-wider text-gray-500 uppercase dark:text-gray-300">
                                 🕐 Creada
                             </TableHead>
-                            <TableHead
+                            {/* <TableHead
                                 className="cursor-pointer px-2 py-2 text-left text-xs tracking-wider text-gray-500 uppercase hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700"
                                 onClick={() => handleSort('requiere_envio')}
                             >
                                 🚚 Est. Logisitico {getSortIcon('requiere_envio')}
-                            </TableHead>
+                            </TableHead> */}
                             <TableHead className="px-2 py-2 text-center">-</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -379,7 +380,7 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
                                             )}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="px-2 py-2">
+                                    {/* <TableCell className="px-2 py-2">
                                         <div className="flex flex-wrap items-start">
                                             {venta.requiere_envio ? (
                                                 <>
@@ -407,7 +408,7 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
                                                 </>
                                             )}
                                         </div>
-                                    </TableCell>
+                                    </TableCell> */}
 
                                     <TableCell className="px-2 py-2 text-center text-xs">
                                         <div className="flex items-center justify-end space-x-2">
@@ -563,7 +564,6 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
                                                                 Estado Logístico
                                                             </h4>
                                                             <div className="flex items-center space-x-3">
-                                                                {/* Badge mejorado del estado */}
                                                                 <EstadoVentaBadge
                                                                     estado={venta.estado_logistico || 'SIN_ENTREGA'}
                                                                     tamaño="md"

@@ -11,6 +11,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { edit as editarProducto } from '@/routes/productos';
 import { Button } from '@/presentation/components/ui/button';
 import { Card } from '@/presentation/components/ui/card';
 import {
@@ -285,7 +286,7 @@ export default function ActualizarStockMasivo() {
     const valor = parseFloat(cantidad);
     const unidad = unidadId || producto.unidad_medida_id;
 
-    if (!isNaN(valor) && valor > 0) {
+    if (!isNaN(valor) && valor !== 0) { // Permite negativos para restar stock
       const cantidadConvertida = calcularConversion(producto, valor, unidad);
       setCambiosTabla(prev => ({
         ...prev,
@@ -324,6 +325,16 @@ export default function ActualizarStockMasivo() {
 
     if (cambiosFiltrados.length === 0) {
       toast.error('No hay cambios para guardar');
+      return;
+    }
+
+    // Evitar que una resta deje el stock en negativo (el backend rechaza cantidad_nueva < 0)
+    const negativos = cambiosFiltrados.filter(c => c.cantidad_nueva < 0);
+    if (negativos.length > 0) {
+      const nombres = negativos
+        .map(c => productos.find(p => p.id === c.producto_id)?.nombre ?? `ID ${c.producto_id}`)
+        .join(', ');
+      toast.error(`No puedes restar más del stock actual en: ${nombres}`);
       return;
     }
 
@@ -524,7 +535,17 @@ export default function ActualizarStockMasivo() {
 
                         return (
                           <TableRow key={producto.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 text-xs md:text-sm">
-                            <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">#{producto.id}</TableCell>
+                            <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">
+                              <a
+                                href={editarProducto.url(producto.id)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Abrir edición del producto en otra pestaña"
+                                className="text-blue-600 hover:underline dark:text-blue-400"
+                              >
+                                #{producto.id}
+                              </a>
+                            </TableCell>
                             {/* <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">{producto.sku}</TableCell> */}
                             <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-mono px-2 md:px-4 hidden sm:table-cell">
                               {producto.codigo_barras ? (
@@ -570,7 +591,7 @@ export default function ActualizarStockMasivo() {
                                   ))}
                                 </select> */}
                               </div>
-                              {cambio.cantidad_convertida !== cambio.cantidad && cambio.cantidad > 0 && (
+                              {cambio.cantidad_convertida !== cambio.cantidad && cambio.cantidad !== 0 && (
                                 <div className="text-xs text-gray-500 dark:text-gray-400">
                                   = {cambio.cantidad_convertida.toFixed(2)} {producto.unidad_nombre}
                                 </div>

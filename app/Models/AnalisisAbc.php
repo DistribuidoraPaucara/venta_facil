@@ -13,9 +13,36 @@ class AnalisisAbc extends Model
 
     protected $table = 'analisis_abc';
 
+    /**
+     * ✅ MULTI-TENANCY: Filtrar automáticamente por empresa_id del usuario autenticado.
+     * Mismo patrón que Producto/Venta. Sin esto, cualquier usuario podía ver el
+     * análisis ABC/XYZ (ventas, ranking, rotación) de las demás empresas.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('empresa', function ($query) {
+            try {
+                if ($empresaId = app('tenant_id')) {
+                    $query->where('empresa_id', $empresaId);
+                    return;
+                }
+            } catch (\Exception $e) {
+                // tenant_id no existe
+            }
+
+            if (function_exists('auth') && auth()->check()) {
+                $empresaId = auth()->user()?->empresa_id;
+                if ($empresaId) {
+                    $query->where('empresa_id', $empresaId);
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'producto_id',
         'almacen_id',
+        'empresa_id',
         'periodo_ano',
         'periodo_mes',
         'clasificacion_abc',
@@ -78,6 +105,11 @@ class AnalisisAbc extends Model
     public function almacen(): BelongsTo
     {
         return $this->belongsTo(Almacen::class);
+    }
+
+    public function empresa(): BelongsTo
+    {
+        return $this->belongsTo(Empresa::class);
     }
 
     // Scopes
@@ -281,43 +313,69 @@ class AnalisisAbc extends Model
     }
 
     // Métodos estáticos para análisis masivo
-    public static function calcularAnalisisABC($almacenId = null, $ano = null, $mes = null)
+    /**
+     * ⚠️ Además de agregar el filtro por empresa, esta reescritura corrige columnas
+     * que ya no existen en el esquema actual y que hacían fallar el cálculo SIEMPRE
+     * (con cualquier empresa): `detalle_ventas.stock_producto_id` no existe (el
+     * detalle solo tiene `producto_id`), `ventas.fecha_venta` no existe (es `fecha`),
+     * y `stock_productos.stock_actual` no existe (es `cantidad`).
+     *
+     * Nota: como `detalle_ventas` no registra desde qué almacén salió el stock de
+     * esa venta, `$almacenId` solo acota de qué almacén se promedia el stock
+     * (stock_promedio), no qué ventas se cuentan — no hay forma de saber eso con
+     * el esquema actual sin agregar esa relación en otra parte del sistema.
+     */
+    public static function calcularAnalisisABC($almacenId = null, $ano = null, $mes = null, $empresaId = null)
     {
         $ano = $ano ?? date('Y');
+        $empresaId = $empresaId ?? auth()->user()?->empresa_id;
 
-        // Eliminar análisis previo del periodo
-        self::where('periodo_ano', $ano)
+        if (! $empresaId) {
+            return false; // No se puede calcular sin saber de qué empresa es
+        }
+
+        // Eliminar análisis previo del periodo, SOLO de esta empresa
+        // (sin esto, cualquier empresa recalculando borraba el análisis de las demás)
+        self::withoutGlobalScope('empresa')
+            ->where('empresa_id', $empresaId)
+            ->where('periodo_ano', $ano)
             ->where('periodo_mes', $mes)
-            ->when($almacenId, function($query) use ($almacenId) {
+            ->when($almacenId, function ($query) use ($almacenId) {
                 return $query->where('almacen_id', $almacenId);
             })
             ->delete();
 
-        // Obtener datos de ventas del periodo
+        // Stock promedio por producto, pre-agregado en subquery para no duplicar
+        // filas de venta al cruzar con stock_productos (que tiene varias filas
+        // por producto: una por almacén/lote).
+        $stockPorProducto = \DB::table('stock_productos')
+            ->select('producto_id', \DB::raw('AVG(cantidad) as stock_promedio'))
+            ->when($almacenId, fn($q) => $q->where('almacen_id', $almacenId))
+            ->groupBy('producto_id');
+
+        // Obtener datos de ventas del periodo, de ESTA empresa únicamente
         $query = \DB::table('detalle_ventas as dv')
                    ->join('ventas as v', 'dv.venta_id', '=', 'v.id')
-                   ->join('stock_productos as sp', 'dv.stock_producto_id', '=', 'sp.id')
-                   ->join('productos as p', 'sp.producto_id', '=', 'p.id')
-                   ->whereYear('v.fecha_venta', $ano);
+                   ->join('productos as p', 'dv.producto_id', '=', 'p.id')
+                   ->leftJoinSub($stockPorProducto, 'sp', function ($join) {
+                       $join->on('sp.producto_id', '=', 'dv.producto_id');
+                   })
+                   ->where('p.empresa_id', $empresaId)
+                   ->whereYear('v.fecha', $ano);
 
         if ($mes) {
-            $query->whereMonth('v.fecha_venta', $mes);
-        }
-
-        if ($almacenId) {
-            $query->where('sp.almacen_id', $almacenId);
+            $query->whereMonth('v.fecha', $mes);
         }
 
         $datosVentas = $query->select([
-                'sp.producto_id',
-                'sp.almacen_id',
+                'dv.producto_id',
                 \DB::raw('SUM(dv.cantidad) as total_cantidad'),
                 \DB::raw('SUM(dv.cantidad * dv.precio_unitario) as total_valor'),
-                \DB::raw('AVG(sp.stock_actual) as stock_promedio'),
+                \DB::raw('MAX(sp.stock_promedio) as stock_promedio'),
                 \DB::raw('AVG(dv.precio_unitario) as precio_promedio'),
-                \DB::raw('MAX(v.fecha_venta) as ultima_venta')
+                \DB::raw('MAX(v.fecha) as ultima_venta')
             ])
-            ->groupBy('sp.producto_id', 'sp.almacen_id')
+            ->groupBy('dv.producto_id')
             ->orderBy('total_valor', 'desc')
             ->get();
 
@@ -363,7 +421,8 @@ class AnalisisAbc extends Model
             // Crear registro de análisis
             $analisis = new self([
                 'producto_id' => $dato->producto_id,
-                'almacen_id' => $dato->almacen_id,
+                'almacen_id' => $almacenId, // Filtro usado para el stock_promedio (ver nota arriba del método)
+                'empresa_id' => $empresaId,
                 'periodo_ano' => $ano,
                 'periodo_mes' => $mes,
                 'clasificacion_abc' => $clasificacionABC,
@@ -373,7 +432,7 @@ class AnalisisAbc extends Model
                 'stock_promedio' => $dato->stock_promedio,
                 'costo_promedio' => $dato->precio_promedio * 0.7, // Estimar costo
                 'rotacion_inventario' => $rotacion,
-                'dias_cobertura' => min($diasCobertura, 9999),
+                'dias_cobertura' => (int) min($diasCobertura, 9999), // Columna es integer
                 'porcentaje_ventas_valor' => $porcentajeVentas,
                 'porcentaje_acumulado_valor' => $acumulado,
                 'ranking_ventas' => $ranking,

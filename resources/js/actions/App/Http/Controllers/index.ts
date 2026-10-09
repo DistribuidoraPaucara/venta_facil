@@ -65,6 +65,7 @@ import AlmacenPrestableController from './AlmacenPrestableController'
 import SectorController from './SectorController'
 import ConfiguracionGlobalController from './ConfiguracionGlobalController'
 import EmpresaController from './EmpresaController'
+import ProductoPlanillaController from './ProductoPlanillaController'
 import CodigoBarraController from './CodigoBarraController'
 import ReporteCodigosBarraController from './ReporteCodigosBarraController'
 import ReporteController from './ReporteController'
@@ -86,6 +87,7 @@ import ImpresionComprasController from './ImpresionComprasController'
 import DetalleCompraController from './DetalleCompraController'
 import DetalleVentaController from './DetalleVentaController'
 import CuentaPorCobrarController from './CuentaPorCobrarController'
+import PagoQrController from './PagoQrController'
 import DevolucionController from './DevolucionController'
 import ServicioController from './ServicioController'
 import ImpresionProformasController from './ImpresionProformasController'
@@ -191,6 +193,7 @@ AlmacenPrestableController,
 SectorController,
 ConfiguracionGlobalController,
 EmpresaController,
+ProductoPlanillaController,
 CodigoBarraController,
 ReporteCodigosBarraController,
 ReporteController,
@@ -212,6 +215,7 @@ ImpresionComprasController,
 DetalleCompraController,
 DetalleVentaController,
 CuentaPorCobrarController,
+PagoQrController,
 DevolucionController,
 ServicioController,
 ImpresionProformasController,

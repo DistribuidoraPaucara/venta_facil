@@ -43,10 +43,10 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
     const hayFiltrosActivos = Object.values(filtros).some((value) => value !== undefined && value !== null && value !== '');
 
     // Detectar si hay filtros avanzados activos
+    // ⚠️ fecha_desde/fecha_hasta quedan fuera: el backend las precarga con "hoy" por defecto
+    // y eso no debe forzar la apertura del panel de filtros avanzados al entrar a la pantalla.
     const hayFiltrosAvanzadosActivos = Boolean(
-        filtros.fecha_desde ||
-            filtros.fecha_hasta ||
-            filtros.monto_min ||
+        filtros.monto_min ||
             filtros.monto_max ||
             filtros.usuario_id ||
             filtros.tipo_pago_id || // ✅ NUEVO: Incluir tipo_pago_id
@@ -237,7 +237,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
     return (
         <div className="mb-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
             {/* Filtros básicos */}
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3 justify-between items-end">
                 {/* ID de venta o Número de venta (búsqueda combinada) */}
                 <div>
                     <FloatingInput
@@ -259,7 +259,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                 </div>
 
                 {/* Rango de IDs - Desde */}
-                <div>
+                {/* <div>
                     <FloatingInput
                         id="id_desde"
                         label="Folio Desde"
@@ -270,10 +270,10 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                         title="ID mínimo de la venta"
                         icon={<Hash className="h-4 w-4" />}
                     />
-                </div>
+                </div> */}
 
                 {/* Rango de IDs - Hasta */}
-                <div>
+                {/* <div>
                     <FloatingInput
                         id="id_hasta"
                         label="Folio Hasta"
@@ -284,7 +284,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                         title="ID máximo de la venta"
                         icon={<Hash className="h-4 w-4" />}
                     />
-                </div>
+                </div> */}
 
                 {/* Cliente - Búsqueda por múltiples campos */}
                 <div>
@@ -304,24 +304,28 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                         icon={<Search className="h-4 w-4" />}
                     />
                 </div>
-                <ToggleGroup
-                    options={datosSeguros.estados_documento
-                        .filter((est) => [3, 5].includes(Number(est.id))) // Solo Aprobadas (3) y Anuladas (5)
-                        .map((est) => ({
-                            value: est.id.toString(),
-                            label: est.nombre,
-                            icon: est.icono,
-                            color: est.color,
-                        }))}
-                    value={filtros.estado_documento_id?.toString() || ''}
-                    onChange={(value) => handleFiltroChange('estado_documento_id', value ? parseInt(value) : null)}
-                />
+                <div className="flex flex-col justify-center">
+                    <ToggleGroup
+                        label=""
+                        options={datosSeguros.estados_documento
+                            .filter((est) => [3, 5].includes(Number(est.id))) // Solo Aprobadas (3) y Anuladas (5)
+                            .map((est) => ({
+                                value: est.id.toString(),
+                                label: est.nombre,
+                                icon: est.icono,
+                                color: est.color,
+                            }))}
+                        value={filtros.estado_documento_id?.toString() || ''}
+                        onChange={(value) => handleFiltroChange('estado_documento_id', value ? parseInt(value) : null)}
+                        allowDeselect
+                    />
+                </div>
             </div>
 
             {/* Filtros avanzados */}
             {mostrarFiltrosAvanzados && (
                 <div className="mt-4 border-t border-gray-200 pt-4 dark:border-zinc-700">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 mt-2">
                         {/* Rango de fechas */}
                         <div>
                             <FloatingInput
@@ -362,7 +366,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                             </FloatingSelect>
                         </div>
                         {/* Estado */}
-                        <div>
+                        {/* <div>
                             <FloatingSelect
                                 id="estado_documento_id"
                                 label="📋 Estado"
@@ -376,7 +380,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                                     </option>
                                 ))}
                             </FloatingSelect>
-                        </div>
+                        </div> */}
                         {/* Rango de montos */}
                         <div>
                             <FloatingInput
@@ -405,7 +409,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                             />
                         </div>
                         {/* Tipo de Venta */}
-                        <div>
+                        {/* <div>
                             <FloatingSelect
                                 id="tipo_venta"
                                 label="🏪 Tipo de Venta"
@@ -416,9 +420,9 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                                 <option value="presencial">🏪 Presencial</option>
                                 <option value="delivery">🚚 Delivery</option>
                             </FloatingSelect>
-                        </div>
+                        </div> */}
                         {/* Usuario */}
-                        <div className="w-full">
+                        {/* <div className="w-full">
                             <FloatingSearchSelect
                                 id="usuario_id"
                                 label="👤 Usuario Creador"
@@ -431,9 +435,9 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                                 onChange={(value) => handleFiltroChange('usuario_id', value ? Number(value) : null)}
                                 allowClear={true}
                             />
-                        </div>
+                        </div> */}
                         {/* ✅ NUEVO (2026-03-01): Preventista */}
-                        <div>
+                        {/* <div>
                             <FloatingSearchSelect
                                 id="preventista_id"
                                 label="👤 Preventista"
@@ -446,7 +450,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                                 onChange={(value) => handleFiltroChange('preventista_id', value ? Number(value) : null)}
                                 allowClear={true}
                             />
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             )}

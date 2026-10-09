@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\AdicionVentaController::index
  * @see app/Http/Controllers/AdicionVentaController.php:20
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\AdicionVentaController::index
+ * @see app/Http/Controllers/AdicionVentaController.php:20
+ * @route '/api/adiciones-venta'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AdicionVentaController::index
+ * @see app/Http/Controllers/AdicionVentaController.php:20
+ * @route '/api/adiciones-venta'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AdicionVentaController::index
+ * @see app/Http/Controllers/AdicionVentaController.php:20
+ * @route '/api/adiciones-venta'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\AdicionVentaController::store
  * @see app/Http/Controllers/AdicionVentaController.php:44
@@ -76,6 +111,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\AdicionVentaController::store
+ * @see app/Http/Controllers/AdicionVentaController.php:44
+ * @route '/api/adiciones-venta'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\AdicionVentaController::store
+ * @see app/Http/Controllers/AdicionVentaController.php:44
+ * @route '/api/adiciones-venta'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\AdicionVentaController::destroy
  * @see app/Http/Controllers/AdicionVentaController.php:96
@@ -134,6 +190,37 @@ destroy.delete = (args: { adicion: number | { id: number } } | [adicion: number 
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\AdicionVentaController::destroy
+ * @see app/Http/Controllers/AdicionVentaController.php:96
+ * @route '/api/adiciones-venta/{adicion}'
+ */
+    const destroyForm = (args: { adicion: number | { id: number } } | [adicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\AdicionVentaController::destroy
+ * @see app/Http/Controllers/AdicionVentaController.php:96
+ * @route '/api/adiciones-venta/{adicion}'
+ */
+        destroyForm.delete = (args: { adicion: number | { id: number } } | [adicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\AdicionVentaController::productosDisponibles
  * @see app/Http/Controllers/AdicionVentaController.php:111
@@ -176,6 +263,42 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
     url: productosDisponibles.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\AdicionVentaController::productosDisponibles
+ * @see app/Http/Controllers/AdicionVentaController.php:111
+ * @route '/api/adiciones-venta/productos/disponibles'
+ */
+    const productosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: productosDisponibles.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\AdicionVentaController::productosDisponibles
+ * @see app/Http/Controllers/AdicionVentaController.php:111
+ * @route '/api/adiciones-venta/productos/disponibles'
+ */
+        productosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: productosDisponibles.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\AdicionVentaController::productosDisponibles
+ * @see app/Http/Controllers/AdicionVentaController.php:111
+ * @route '/api/adiciones-venta/productos/disponibles'
+ */
+        productosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: productosDisponibles.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    productosDisponibles.form = productosDisponiblesForm
 const AdicionVentaController = { index, store, destroy, productosDisponibles }
 
 export default AdicionVentaController

@@ -168,7 +168,7 @@ export default function AnalisisAbcShow() {
                                     Rotación Anual
                                 </p>
                                 <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                    {(analisis.rotacion_inventario || 0).toFixed(2)}x
+                                    {(Number(analisis.rotacion_inventario) || 0).toFixed(2)}x
                                 </p>
                             </div>
                         </div>
@@ -196,7 +196,7 @@ export default function AnalisisAbcShow() {
                             Stock Promedio
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                            {(analisis.stock_promedio || 0).toFixed(2)}
+                            {(Number(analisis.stock_promedio) || 0).toFixed(2)}
                         </p>
                     </div>
 
@@ -205,7 +205,7 @@ export default function AnalisisAbcShow() {
                             Cantidad Vendida
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                            {(analisis.ventas_cantidad || 0).toFixed(2)}
+                            {(Number(analisis.ventas_cantidad) || 0).toFixed(2)}
                         </p>
                     </div>
 
@@ -214,7 +214,7 @@ export default function AnalisisAbcShow() {
                             Valor Total Ventas
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                            ${(analisis.ventas_valor || 0)?.toLocaleString('es-ES', {
+                            Bs {(Number(analisis.ventas_valor) || 0).toLocaleString('es-ES', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                             })}
@@ -226,7 +226,7 @@ export default function AnalisisAbcShow() {
                             Precio de Venta
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                            ${analisis.producto?.precio_venta?.toLocaleString('es-ES', {
+                            Bs {(Number(analisis.producto?.precio_venta) || 0).toLocaleString('es-ES', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                             })}

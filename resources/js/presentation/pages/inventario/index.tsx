@@ -20,9 +20,10 @@ import EnlacesRapidos from '@/presentation/components/dashboard/EnlacesRapidos';
 
 interface PageProps extends InertiaPageProps {
     estadisticas: DashboardPageProps['estadisticas'];
-    stock_por_almacen: DashboardPageProps['stock_por_almacen'];
+    stock_por_almacen?: DashboardPageProps['stock_por_almacen'];
     movimientos_recientes: DashboardPageProps['movimientos_recientes'];
     productos_mas_movidos: DashboardPageProps['productos_mas_movidos'];
+    almacenes: Array<{ id: number; nombre: string }>;
 }
 
 const breadcrumbs = [
@@ -66,14 +67,14 @@ export default function Dashboard() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard de Inventario" />
+            <Head title="Inventario" />
 
             <div className="flex flex-col gap-6 p-2">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                            Dashboard de Inventario
+                            Inventario
                         </h2>
                         <p className=" text-sm text-gray-700 dark:text-gray-300">
                             Resumen general del estado de tu inventario
@@ -90,7 +91,7 @@ export default function Dashboard() {
                 /> */}
 
                 <StockYProductos
-                    stockPorAlmacen={props.stock_por_almacen}
+                    almacenes={props.almacenes ?? []}
                     productosMasMovidos={productosMasMovidos}
                 />
 

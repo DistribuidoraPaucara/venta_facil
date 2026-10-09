@@ -15,6 +15,8 @@ interface ToggleGroupProps {
     label?: string;
     required?: boolean;
     description?: string;
+    /** Permite volver a un estado "sin selección" haciendo click sobre la opción activa (útil en filtros) */
+    allowDeselect?: boolean;
 }
 
 export default function ToggleGroup({
@@ -25,6 +27,7 @@ export default function ToggleGroup({
     label,
     required = false,
     description,
+    allowDeselect = false,
 }: ToggleGroupProps) {
     // 🔍 DEBUG: Mostrar opciones y cambios en consola
     React.useEffect(() => {
@@ -42,23 +45,28 @@ export default function ToggleGroup({
     }, [options, value, label]);
 
     return (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
             {label && (
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {label} {required && <span className="text-red-500">*</span>}
                 </label>
             )}
 
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2">
                 {options.map((option) => {
                     const isSelected = value === option.value;
                     const bgColor = option.color || '#2563eb'; // Fallback a azul
-                    const bgColorOpacity = bgColor + '30'; // 30% opacity para fallback
 
                     const selectedStyle = {
                         backgroundColor: bgColor,
                         borderColor: bgColor,
-                        boxShadow: `0 10px 15px -3px ${bgColorOpacity}`,
+                        boxShadow: `0 6px 14px -4px ${bgColor}80`,
+                    } as React.CSSProperties;
+
+                    const unselectedStyle = {
+                        borderColor: `${bgColor}55`,
+                        color: bgColor,
+                        backgroundColor: `${bgColor}0d`,
                     } as React.CSSProperties;
 
                     return (
@@ -73,34 +81,28 @@ export default function ToggleGroup({
                                         color: option.color,
                                         icon: option.icon,
                                     });
-                                    onChange(option.value);
+                                    onChange(isSelected && allowDeselect ? '' : option.value);
                                 }
                             }}
                             disabled={disabled}
-                            style={isSelected ? selectedStyle : {}}
+                            style={isSelected ? selectedStyle : unselectedStyle}
                             className={`
-                                px-2 py-1 rounded-lg font-medium text-sm
-                                transition-all duration-200 ease-in-out
-                                border-2 flex items-center gap-2 whitespace-nowrap
-                                ${
-                                    isSelected
-                                        ? 'text-white shadow-lg'
-                                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
-                                }
-                                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}
-                                disabled:opacity-50 disabled:cursor-not-allowed
+                                inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5
+                                text-sm font-medium whitespace-nowrap
+                                transition-all duration-150 ease-out
+                                ${isSelected ? 'text-white shadow-sm' : 'hover:shadow-sm hover:brightness-95 dark:hover:brightness-110'}
+                                ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
                             `}
                         >
-                            {option.icon && <span className="text-lg">{option.icon}</span>}
+                            {isSelected && <span className="text-xs leading-none">●</span>}
+                            {option.icon && <span className="text-base leading-none">{option.icon}</span>}
                             {option.label}
                         </button>
                     );
                 })}
             </div>
 
-            {description && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 italic">{description}</p>
-            )}
+            {description && <p className="text-xs text-gray-500 italic dark:text-gray-400">{description}</p>}
         </div>
     );
 }

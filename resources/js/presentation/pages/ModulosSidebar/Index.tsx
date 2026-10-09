@@ -222,6 +222,7 @@ export default function Index({ modulos }: Props) {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>#</TableHead>
                                         <TableHead>Título</TableHead>
                                         <TableHead>Ruta</TableHead>
                                         <TableHead>Tipo</TableHead>
@@ -234,6 +235,9 @@ export default function Index({ modulos }: Props) {
                                 <TableBody>
                                     {modulosFiltrados.map((modulo) => (
                                         <TableRow key={modulo.id}>
+                                            <TableCell className="text-sm text-gray-500">
+                                                {modulo.id}
+                                            </TableCell>
                                             <TableCell className="font-medium">
                                                 {modulo.es_submenu && modulo.padre && (
                                                     <span className="text-gray-500 mr-2">

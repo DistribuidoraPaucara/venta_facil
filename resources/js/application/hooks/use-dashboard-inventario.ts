@@ -16,7 +16,7 @@ import type {
 
 interface UseDashboardInventarioOptions {
     estadisticas: DashboardPageProps['estadisticas'];
-    stock_por_almacen: DashboardPageProps['stock_por_almacen'];
+    stock_por_almacen?: DashboardPageProps['stock_por_almacen'];
     movimientos_recientes: DashboardPageProps['movimientos_recientes'];
     productos_mas_movidos: DashboardPageProps['productos_mas_movidos'];
 }

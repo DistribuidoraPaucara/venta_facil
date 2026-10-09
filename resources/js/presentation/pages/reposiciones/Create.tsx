@@ -1,10 +1,11 @@
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Deferred, Head, useForm, Link, router } from '@inertiajs/react';
 import { route } from '@/infrastructure/routing/routes';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
 import { Textarea } from '@/presentation/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import { ArrowLeft, Plus, Trash2, AlertCircle, AlertTriangle, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -47,7 +48,7 @@ interface Producto {
 
 interface Props {
   almacenes: Almacen[];
-  productosStockBajo: Producto[];
+  productosStockBajo?: Producto[];
 }
 
 interface Detalle {
@@ -55,7 +56,10 @@ interface Detalle {
   cantidad_solicitada: number;
 }
 
-function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
+function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoProp }: Props) {
+  // Prop diferida (Inertia::defer): llega undefined mientras el backend calcula
+  // el stock bajo de todos los productos en segundo plano.
+  const productosStockBajo = productosStockBajoProp ?? [];
   // Encontrar almacenes por nombre
   const almacenPrincipal = almacenes.find((a) =>
     a.nombre.toLowerCase().includes('principal')
@@ -316,7 +320,23 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
             </CardContent>
           </Card>
 
-          {/* Tabla de productos para reposición */}
+          {/* Tabla de productos para reposición (carga diferida: se pide aparte, sin bloquear la apertura de la página) */}
+          <Deferred
+            data="productosStockBajo"
+            fallback={
+              <Card>
+                <CardHeader>
+                  <CardTitle>Productos Cercanos al Límite Mínimo</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-8 justify-center">
+                    <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                    Calculando productos con stock bajo...
+                  </div>
+                </CardContent>
+              </Card>
+            }
+          >
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -363,7 +383,6 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                       <th className="text-left py-3 px-4">Producto</th>
                       <th className="text-left py-3 px-4">SKU</th>
                       <th className="text-center py-3 px-4">Sector</th>
-                      <th className="text-center py-3 px-4">Mín/Máx Sala</th>
                       <th className="text-center py-3 px-4">Stock en Sala</th>
                       <th className="text-center py-3 px-4">Stock en Dep.</th>
                       <th className="text-center py-3 px-4">Unidad Reposición</th>
@@ -406,11 +425,18 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                           <td className="py-3 px-4 text-center text-sm font-medium text-purple-600 dark:text-purple-400">
                             {producto.sector?.nombre || '-'}
                           </td>
-                          <td className="py-3 px-4 text-center text-sm">
-                            <div>{formatearNumero(producto.stock_minimo_requerido)}</div>
-                            <div className="text-gray-500 dark:text-gray-400">{formatearNumero(producto.stock_maximo_requerido)}</div>
+                          <td className="py-3 px-4 text-center font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help border-b border-dashed border-gray-400 dark:border-gray-500">
+                                  {formatearNumero(producto.stock_actual)}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Mín: {formatearNumero(producto.stock_minimo_requerido)} · Máx: {formatearNumero(producto.stock_maximo_requerido)}
+                              </TooltipContent>
+                            </Tooltip>
                           </td>
-                          <td className="py-3 px-4 text-center font-medium">{formatearNumero(producto.stock_actual)}</td>
                           <td className="py-3 px-4 text-center font-semibold text-green-600 dark:text-green-400">
                             {formatearNumero(producto.stock_principal)}
                           </td>
@@ -436,7 +462,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
                                     });
                                   }
                                 }}
-                                disabled={yaAgregado}
+                                disabled={!yaSeleccionado}
                                 className="text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 disabled:opacity-50"
                               >
                                 <option value="base">{obtenerUnidadBase(producto)}</option>
@@ -513,6 +539,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo }: Props) {
               </div>
             </CardContent>
           </Card>
+          </Deferred>
         </div>
 
         {/* Indicador de productos agregados */}

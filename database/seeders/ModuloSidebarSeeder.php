@@ -44,6 +44,7 @@ class ModuloSidebarSeeder extends Seeder
                     ['titulo' => 'Productos', 'ruta' => '/productos', 'icono' => 'Package', 'orden' => 1, 'permisos' => ['productos.manage']],
                     ['titulo' => 'Crear Producto', 'ruta' => '/productos/create', 'icono' => 'Plus', 'orden' => 2, 'permisos' => ['productos.manage']],
                     ['titulo' => 'Carga Masiva', 'ruta' => '/productos/carga-masiva', 'icono' => 'Upload', 'orden' => 3, 'permisos' => ['productos.manage']],
+                    ['titulo' => 'Importar / Exportar', 'ruta' => '/productos/importar-exportar', 'icono' => 'FileSpreadsheet', 'orden' => 3, 'permisos' => ['productos.manage']],
                     // ['titulo' => 'Historial de Cargas', 'ruta' => '/productos/historial-cargas', 'icono' => 'History', 'orden' => 4, 'permisos' => ['productos.manage']],
                     ['titulo' => 'Combos', 'ruta' => '/combos', 'icono' => 'BoxesIcon', 'orden' => 4, 'permisos' => ['productos.manage']],
                     ['titulo' => 'Categorías', 'ruta' => '/categorias', 'icono' => 'FolderTree', 'orden' => 5, 'permisos' => ['categorias.manage']],

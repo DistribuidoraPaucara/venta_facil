@@ -5,9 +5,7 @@ import { Button } from '@/presentation/components/ui/button';
 import { Badge } from '@/presentation/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/presentation/components/ui/table';
-import { Input } from '@/presentation/components/ui/input';
-import { Label } from '@/presentation/components/ui/label';
-import { Eye, EyeOff, Search, Plus, Trash2, Edit2, AlertTriangle, MoreVertical } from 'lucide-react';
+import { Eye, EyeOff, Plus, Trash2, Edit2, AlertTriangle, MoreVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   DropdownMenu,
@@ -18,8 +16,10 @@ import {
   DropdownMenuTrigger,
 } from '@/presentation/components/ui/dropdown-menu';
 import type { BreadcrumbItem } from '@/types';
-import type { ModuloSidebar } from '@/domain/entities/admin-permisos';
+import type { ModuloSidebar, FiltrosModulo } from '@/domain/entities/admin-permisos';
 import { modulosService } from '@/infrastructure/services/modulos.service';
+import { useFiltrarModulos, useExtraerDatos } from '@/infrastructure/hooks/modulos.hooks';
+import { ModulosFiltros } from '@/presentation/components/modulos-filtros';
 
 interface Props {
   modulos: ModuloSidebar[];
@@ -37,15 +37,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index({ modulos }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filtros, setFiltros] = useState<FiltrosModulo>({
+    busqueda: '',
+    tipo: 'todos',
+    estado: 'todos',
+    categoria: '',
+    rolRequerido: '',
+  });
   const [modulosList, setModulosList] = useState<ModuloSidebar[]>(modulos);
   const [loading, setLoading] = useState(false);
 
-  // Filtrar módulos por búsqueda
-  const modulosFiltrados = modulosList.filter((modulo) =>
-    modulo.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    modulo.ruta.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar módulos por búsqueda, tipo, estado, categoría y rol
+  const { categorias, rolesDisponibles } = useExtraerDatos(modulosList);
+  const modulosFiltrados = useFiltrarModulos(modulosList, filtros);
 
   // Toggle activo/inactivo
   const handleToggleActivo = async (modulo: ModuloSidebar) => {
@@ -164,30 +168,26 @@ export default function Index({ modulos }: Props) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Búsqueda */}
-              <div className="space-y-2">
-                <Label htmlFor="search">Buscar módulo</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    id="search"
-                    type="text"
-                    placeholder="Buscar por título o ruta..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
+              {/* Filtros */}
+              <ModulosFiltros
+                categorias={categorias}
+                rolesDisponibles={rolesDisponibles}
+                filtros={filtros}
+                onChange={setFiltros}
+                totalResultados={modulosFiltrados.length}
+                totalModulos={modulosList.length}
+              />
 
               {/* Tabla */}
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>#</TableHead>
                       <TableHead>Título</TableHead>
                       <TableHead>Ruta</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Estado</TableHead>
                       <TableHead>Ícono</TableHead>
                       <TableHead>Categoría</TableHead>
                       <TableHead>Orden</TableHead>
@@ -200,12 +200,15 @@ export default function Index({ modulos }: Props) {
                         <TableCell colSpan={8} className="py-8 text-center text-gray-500">
                           {modulosList.length === 0
                             ? 'No hay módulos registrados'
-                            : 'No se encontraron módulos que coincidan con la búsqueda'}
+                            : 'No se encontraron módulos que coincidan con los filtros'}
                         </TableCell>
                       </TableRow>
                     ) : (
                       modulosFiltrados.map((modulo) => (
                         <TableRow key={modulo.id}>
+                          <TableCell className="text-sm text-gray-500">
+                            {modulo.id}
+                          </TableCell>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               {modulo.es_submenu && (
@@ -221,6 +224,13 @@ export default function Index({ modulos }: Props) {
                             <Badge variant={modulo.es_submenu ? 'secondary' : 'default'}>
                               {modulo.es_submenu ? 'Submódulo' : 'Principal'}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {modulo.activo ? (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Activo</Badge>
+                            ) : (
+                              <Badge variant="secondary">Inactivo</Badge>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm">
                             {modulo.icono ? (
