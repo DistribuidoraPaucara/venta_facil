@@ -121,6 +121,12 @@ const ProductCard: React.FC<{
             <span>Oculto</span>
           </span>
         )}
+        {p.es_fraccionado && (
+          <span className="bg-blue-600/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span>✂️</span>
+            <span>Fraccionado</span>
+          </span>
+        )}
       </div>
       <div className="p-2 flex flex-col gap-1">
         <div className="space-y-0.5">
@@ -703,6 +709,17 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
         width: 'sm' as const
       },
       {
+        key: 'es_fraccionado',
+        label: 'Fraccionado',
+        type: 'boolean' as const,
+        placeholder: 'Todos',
+        options: [
+          { value: '1', label: 'Solo fraccionados' },
+          { value: '0', label: 'No fraccionados' },
+        ],
+        width: 'sm' as const
+      },
+      {
         key: 'sector_id',
         label: 'Sector',
         type: 'select' as const,
@@ -716,6 +733,7 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
       { value: 'nombre', label: 'Nombre' },
       { value: 'precio_base', label: 'Precio' },
       { value: 'stock_total', label: 'Stock' },
+      { value: 'es_fraccionado', label: 'Fraccionado' },
       { value: 'created_at', label: 'Fecha creación' },
       { value: 'updated_at', label: 'Última actualización' }
     ],

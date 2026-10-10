@@ -214,7 +214,7 @@ export default function ModernFilters({
                             id={fieldId}
                             placeholder={field.placeholder}
                             value={value !== undefined ? String(value) : ''}
-                            options={[
+                            options={field.options?.map(o => ({ value: String(o.value), label: o.label })) ?? [
                                 { value: '1', label: 'Activos' },
                                 { value: '0', label: 'Inactivos' },
                             ]}
@@ -441,7 +441,8 @@ export default function ModernFilters({
                             displayValue = option?.nombre || displayValue;
                             badgeColor = 'from-purple-100 to-purple-200 text-purple-800 border-purple-300 dark:from-purple-900/40 dark:to-purple-800/40 dark:text-purple-200 dark:border-purple-700';
                         } else if (field.type === 'boolean') {
-                            displayValue = value === '1' ? 'Activos' : 'Inactivos';
+                            displayValue = field.options?.find(o => String(o.value) === String(value))?.label
+                                ?? (value === '1' ? 'Activos' : 'Inactivos');
                             badgeColor = value === '1'
                                 ? 'from-green-100 to-green-200 text-green-800 border-green-300 dark:from-green-900/40 dark:to-green-800/40 dark:text-green-200 dark:border-green-700'
                                 : 'from-red-100 to-red-200 text-red-800 border-red-300 dark:from-red-900/40 dark:to-red-800/40 dark:text-red-200 dark:border-red-700';

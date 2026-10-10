@@ -7,7 +7,7 @@ import { Label } from '@/presentation/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import axios from 'axios';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Option {
     value: number | string;
@@ -68,32 +68,22 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
     const [productosDestino, setProductosDestino] = useState<Option[]>([]);
     const factorInputRef = useRef<HTMLInputElement>(null);
 
-    // Productos cachados (se cargan una sola vez al montar)
-    const [todosProductos, setTodosProductos] = useState<any[]>([]);
+    const [buscandoProductos, setBuscandoProductos] = useState(false);
+    // Evita que una respuesta lenta de una búsqueda anterior pise a la más reciente
+    const ultimaBusquedaRef = useRef(0);
     // ✨ NUEVO: Stock de productos destino
     const [stockProductosDestino, setStockProductosDestino] = useState<Record<number, number>>({});
 
-    // Cargar lista completa de productos al montar (ONCE)
+    // Stock de los productos destino que ya están en la tabla de conversiones
+    const destinoIdsKey = (data.conversiones || [])
+        .map((c: any) => c.producto_destino_id)
+        .filter(Boolean)
+        .join(',');
     useEffect(() => {
-        const cargarProductosIniciales = async () => {
-            try {
-                const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles');
-                if (response.data.success && response.data.data) {
-                    setTodosProductos(response.data.data);
-
-                    // ✨ NUEVO: Cargar stock de todos los productos
-                    const productIds = response.data.data.map((p: any) => p.id);
-                    if (productIds.length > 0) {
-                        cargarStockProductos(productIds);
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Error cargando productos iniciales:', error);
-            }
-        };
-
-        cargarProductosIniciales();
-    }, []); // Solo corre una vez al montar
+        if (destinoIdsKey) {
+            cargarStockProductos(destinoIdsKey.split(',').map(Number));
+        }
+    }, [destinoIdsKey]);
 
     // ✨ NUEVO: Cargar stock total de productos
     const cargarStockProductos = async (productIds: number[]) => {
@@ -111,26 +101,42 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
         }
     };
 
-    // Filtrar productos localmente (sin peticiones al servidor)
-    const handleBuscarProductoDestino = (termino: string) => {
+    const aOpcion = (prod: any): Option => ({
+        value: prod.id,
+        label: `#${prod.id}${prod.sku ? ` · ${prod.sku}` : ''} - ${prod.nombre}`,
+        description: prod.unidad_nombre,
+        meta: { unidad_id: prod.unidad_medida_id, nombre: prod.nombre },
+    });
+
+    const buscarProductos = async (termino: string): Promise<any[]> => {
+        const response = await axios.get('/api/inventario/fraccionamientos/productos/disponibles', {
+            params: { search: termino },
+        });
+        return response.data.success && Array.isArray(response.data.data) ? response.data.data : [];
+    };
+
+    // Búsqueda en servidor (sin límite de 50 productos precargados): ID, SKU, nombre o código de barras, sin distinguir mayúsculas
+    // useCallback: una referencia estable evita que el debounce del input se reinicie en cada render
+    const handleBuscarProductoDestino = useCallback(async (termino: string) => {
+        const busquedaId = ++ultimaBusquedaRef.current;
         if (!termino.trim()) {
             setProductosDestino([]);
             return;
         }
-
-        // Filtrado local - INSTANTÁNEO
-        const productosFiltrados = todosProductos.filter(
-            (prod: any) => prod.sku.toLowerCase().includes(termino.toLowerCase()) || prod.nombre.toLowerCase().includes(termino.toLowerCase()),
-        );
-
-        const opciones = productosFiltrados.map((prod: any) => ({
-            value: prod.id,
-            label: `${prod.sku} - ${prod.nombre}`,
-            description: prod.unidad_nombre,
-            meta: { unidad_id: prod.unidad_medida_id, nombre: prod.nombre },
-        }));
-        setProductosDestino(opciones);
-    };
+        setBuscandoProductos(true);
+        try {
+            const productos = await buscarProductos(termino.trim());
+            if (busquedaId === ultimaBusquedaRef.current) {
+                setProductosDestino(productos.map(aOpcion));
+            }
+        } catch (error) {
+            console.error('❌ Error buscando productos destino:', error);
+        } finally {
+            if (busquedaId === ultimaBusquedaRef.current) {
+                setBuscandoProductos(false);
+            }
+        }
+    }, []);
 
     const conversiones = data.conversiones || [];
 
@@ -300,16 +306,15 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
 
         // ✨ NUEVO: Cargar el producto destino en el dropdown si existe
         if (conversion.producto_destino_id) {
-            const productoDestino = todosProductos.find((p: any) => p.id === conversion.producto_destino_id);
-            if (productoDestino) {
-                const opcion: Option = {
-                    value: productoDestino.id,
-                    label: `${productoDestino.sku} - ${productoDestino.nombre}`,
-                    description: productoDestino.unidad_nombre,
-                    meta: { unidad_id: productoDestino.unidad_medida_id, nombre: productoDestino.nombre },
-                };
-                setProductosDestino([opcion]);
-            }
+            const destinoId = Number(conversion.producto_destino_id);
+            buscarProductos(String(destinoId))
+                .then((productos) => {
+                    const productoDestino = productos.find((p: any) => p.id === destinoId);
+                    if (productoDestino) {
+                        setProductosDestino([aOpcion(productoDestino)]);
+                    }
+                })
+                .catch((error) => console.error('❌ Error cargando producto destino:', error));
         }
     };
 
@@ -521,8 +526,8 @@ export default function Step3Conversiones({ data, unidadesOptions, unidadBase, s
                                     }
                                 }}
                                 onSearch={handleBuscarProductoDestino}
-                                placeholder="Busca SKU o nombre del producto (Ej: Coca 2Lts)..."
-                                loading={false}
+                                placeholder="Busca por ID, SKU, código o nombre (Ej: Coca 2Lts)..."
+                                loading={buscandoProductos}
                                 emptyText="Sin coincidencias. Intenta otro término."
                             />
                         </div>

@@ -105,10 +105,11 @@ class ProductoController extends Controller
         $sectorId    = $request->integer('sector_id'); // ✨ NUEVO: Filtro de sector
         $sinPrecio   = $request->boolean('sin_precio');
         $visibleApp  = $request->has('visible_app') ? $request->boolean('visible_app') : null; // ✨ NUEVO
+        $esFraccionado = $request->filled('es_fraccionado') ? $request->boolean('es_fraccionado') : null;
         $orderBy     = $request->string('order_by')->toString();
         $orderDir    = strtolower($request->string('order_dir')->toString()) === 'asc' ? 'asc' : 'desc';
 
-        $allowedOrder   = ['id' => 'productos.id', 'nombre' => 'productos.nombre', 'precio_base' => 'precio_base', 'fecha_creacion' => 'productos.fecha_creacion', 'stock_total' => 'stock_total_calc'];
+        $allowedOrder   = ['id' => 'productos.id', 'nombre' => 'productos.nombre', 'precio_base' => 'precio_base', 'fecha_creacion' => 'productos.fecha_creacion', 'stock_total' => 'stock_total_calc', 'es_fraccionado' => 'productos.es_fraccionado'];
         $orderColumnRaw = $allowedOrder[$orderBy] ?? 'productos.id';
 
         $userEmpresaId = auth()->user()?->empresa_id;
@@ -181,6 +182,7 @@ class ProductoController extends Controller
                 });
             })
             ->when($visibleApp !== null, fn($qq) => $qq->where('productos.visible_app', $visibleApp)) // ✨ NUEVO
+            ->when($esFraccionado !== null, fn($qq) => $qq->where('productos.es_fraccionado', $esFraccionado))
             ->when($sectorId, function ($qq) use ($sectorId) {
                 // ✨ NUEVO: Filtrar por sector mediante stock_limites
                 $qq->whereHas('stockLimites', function ($q) use ($sectorId) {
@@ -230,8 +232,13 @@ class ProductoController extends Controller
                     ];
                 })->values();
 
-                $stockTotal      = (int) ($producto->stock_total_calc ?? $producto->stock?->sum('cantidad') ?? 0);
-                $stockDisponible = (int) ($producto->stock_disponible_calc ?? 0);
+                // Fraccionados conservan decimales (ej. 2.5 kg); el resto se muestra en unidades enteras
+                $stockTotal      = (float) ($producto->stock_total_calc ?? $producto->stock?->sum('cantidad') ?? 0);
+                $stockDisponible = (float) ($producto->stock_disponible_calc ?? 0);
+                if (! $producto->es_fraccionado) {
+                    $stockTotal      = (int) $stockTotal;
+                    $stockDisponible = (int) $stockDisponible;
+                }
 
                 // Stock límites con sectores
                 $stockLimitesConSectores = $producto->stockLimites->map(function ($sl) {
@@ -265,6 +272,7 @@ class ProductoController extends Controller
                     'fecha_creacion'        => $producto->fecha_creacion,
                     'es_alquilable'         => $producto->es_alquilable,
                     'es_combo'              => (bool) $producto->es_combo,
+                    'es_fraccionado'        => (bool) $producto->es_fraccionado,
                     'capacidad'             => $producto->es_combo ? ComboStockService::calcularCapacidadCombos($producto->id) : null,
                     'categoria_id'          => $producto->categoria_id,
                     'marca_id'              => $producto->marca_id,
@@ -307,6 +315,7 @@ class ProductoController extends Controller
                 'sector_id'    => $sectorId ?: null, // ✨ NUEVO
                 'sin_precio'   => $sinPrecio ?: null,
                 'visible_app'  => $visibleApp, // ✨ NUEVO
+                'es_fraccionado' => $esFraccionado === null ? null : ($esFraccionado ? '1' : '0'), // formato del select booleano
                 'order_by'     => $orderBy ?: null,
                 'order_dir'    => $orderDir,
             ],
@@ -5489,7 +5498,7 @@ class ProductoController extends Controller
             $almacenId = auth()->user()->empresa->almacen_id ?? 1;
 
             $productos = Producto::query()
-                ->select(['id', 'sku', 'nombre', 'categoria_id', 'activo', 'unidad_medida_id'])
+                ->select(['id', 'sku', 'nombre', 'categoria_id', 'activo', 'unidad_medida_id', 'es_fraccionado'])
                 ->where('activo', true)
                 ->with([
                     'categoria:id,nombre',
@@ -5499,9 +5508,10 @@ class ProductoController extends Controller
                             ->select('producto_id', 'cantidad');
                     },
                     'conversiones' => function ($query) {
-                        $query->where('activo', true)->select('id', 'producto_id', 'unidad_destino_id', 'factor_conversion');
+                        $query->where('activo', true)->select('id', 'producto_id', 'producto_destino_id', 'unidad_destino_id', 'factor_conversion');
                     },
                     'conversiones.unidadDestino:id,nombre,codigo',
+                    'conversiones.productoDestino:id,nombre',
                     'codigosBarra' => function ($query) {
                         $query->where('activo', true)
                             ->orderByDesc('es_principal')
@@ -5523,6 +5533,7 @@ class ProductoController extends Controller
                         'sku' => $producto->sku,
                         'codigo_barras' => $codigoBarraPrincipal,
                         'nombre' => $producto->nombre,
+                        'es_fraccionado' => (bool) $producto->es_fraccionado,
                         'sector' => $sectorNombre,
                         'almacen_id' => $almacenId,
                         'almacen' => $almacenNombre,
@@ -5535,6 +5546,8 @@ class ProductoController extends Controller
                                 'unidad_destino_id' => $conv->unidad_destino_id,
                                 'unidad_destino_nombre' => $conv->unidadDestino?->nombre ?? 'UN',
                                 'factor_conversion' => $conv->factor_conversion,
+                                'producto_hijo_id' => $conv->producto_destino_id,
+                                'producto_hijo_nombre' => $conv->productoDestino?->nombre,
                             ];
                         })->toArray(),
                     ];

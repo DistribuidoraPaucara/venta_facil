@@ -12,7 +12,7 @@ import { useAuth } from '@/application/hooks/use-auth'; // ✅ NUEVO: Verificar 
 
 interface ProductosIndexProps {
   productos: Pagination<Producto>;
-  filters: { q?: string; categoria_id?: number | string | null; marca_id?: number | string | null; proveedor_id?: number | string | null; sector_id?: number | string | null; order_by?: string | null; order_dir?: string | null };
+  filters: { q?: string; categoria_id?: number | string | null; marca_id?: number | string | null; proveedor_id?: number | string | null; sector_id?: number | string | null; es_fraccionado?: '1' | '0' | null; order_by?: string | null; order_dir?: string | null };
   categorias?: { id: number; nombre: string }[];
   marcas?: { id: number; nombre: string }[];
   proveedores?: { id: number; nombre: string; razon_social?: string }[];

@@ -342,15 +342,24 @@ class FraccionamientoApiController extends Controller
                 ->select('id', 'nombre', 'sku', 'unidad_medida_id');
 
             // ✨ NUEVO: Filtrar por búsqueda si se proporciona
-            if ($search && strlen($search) >= 2) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nombre', 'LIKE', "%{$search}%")
-                      ->orWhere('sku', 'LIKE', "%{$search}%")
+            // ILIKE: en PostgreSQL LIKE distingue mayúsculas. Un término numérico también busca por ID exacto.
+            $esNumerico = ctype_digit((string) $search);
+            if ($search && (strlen($search) >= 2 || $esNumerico)) {
+                $query->where(function ($q) use ($search, $esNumerico) {
+                    if ($esNumerico) {
+                        $q->where('id', (int) (string) $search);
+                    }
+                    $q->orWhere('nombre', 'ILIKE', "%{$search}%")
+                      ->orWhere('sku', 'ILIKE', "%{$search}%")
                       // Buscar también en códigos de barras
                       ->orWhereHas('codigosBarra', function ($codigoQuery) use ($search) {
-                          $codigoQuery->where('codigo', 'LIKE', "%{$search}%");
+                          $codigoQuery->where('codigo', 'ILIKE', "%{$search}%");
                       });
                 });
+                // Coincidencia exacta de ID primero
+                if ($esNumerico) {
+                    $query->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [(int) (string) $search]);
+                }
             }
 
             $productos = $query->with([

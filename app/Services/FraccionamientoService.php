@@ -144,11 +144,11 @@ class FraccionamientoService
             MovimientoInventario::create([
                 'stock_producto_id' => $stockHijo->id,
                 'cantidad' => $cantidadHijo,
-                'cantidad_anterior' => $stockHijo->cantidad - $cantidadHijo, // Antes de la actualización
+                'cantidad_anterior' => $stockHijo->cantidad, // $stockHijo se leyó antes de la actualización
                 'cantidad_posterior' => $stockHijoActualizado->cantidad,
-                'cantidad_total_anterior' => $stockHijo->cantidad - $cantidadHijo,
+                'cantidad_total_anterior' => $stockHijo->cantidad,
                 'cantidad_total_posterior' => $stockHijoActualizado->cantidad,
-                'cantidad_disponible_anterior' => $stockHijo->cantidad_disponible - $cantidadHijo,
+                'cantidad_disponible_anterior' => $stockHijo->cantidad_disponible,
                 'cantidad_disponible_posterior' => $stockHijoActualizado->cantidad_disponible,
                 'cantidad_reservada_anterior' => $stockHijo->cantidad_reservada,
                 'cantidad_reservada_posterior' => $stockHijoActualizado->cantidad_reservada,

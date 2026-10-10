@@ -26,6 +26,7 @@ import { Badge } from '@/presentation/components/ui/badge';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
 import { Download, Upload, CheckCircle2, AlertCircle, Loader2, Save, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import FraccionarProductoModal from './components/fraccionar-producto-modal';
 
 interface ChangesPreview {
   producto_id: number;
@@ -41,6 +42,7 @@ interface Producto {
   sku: string;
   codigo_barras?: string;             // ✅ NUEVO - Código de barras
   nombre: string;
+  es_fraccionado?: boolean;
   sector: string;                     // ✅ NUEVO - Sector
   almacen?: string;                   // ✅ NUEVO - Almacén
   cantidad_total: number;
@@ -71,6 +73,8 @@ export default function ActualizarStockMasivo() {
   const [busqueda, setBusqueda] = useState('');
   const [sectorFiltro, setSectorFiltro] = useState('');
   const [almacenFiltro, setAlmacenFiltro] = useState('');
+  const [fraccionadoFiltro, setFraccionadoFiltro] = useState<'' | 'si' | 'no'>('');
+  const [productoAFraccionar, setProductoAFraccionar] = useState<Producto | null>(null);
   const [paginaActual, setPaginaActual] = useState(1);
   const [porPagina] = useState(15);
 
@@ -130,6 +134,11 @@ export default function ActualizarStockMasivo() {
       resultado = resultado.filter(p => p.almacen === almacenFiltro);
     }
 
+    // Filtrar por fraccionado
+    if (fraccionadoFiltro) {
+      resultado = resultado.filter(p => !!p.es_fraccionado === (fraccionadoFiltro === 'si'));
+    }
+
     // Filtrar por búsqueda (SKU, nombre, sector, almacén, código de barras)
     if (busqueda.trim()) {
       const busquedaLower = busqueda.toLowerCase();
@@ -143,7 +152,10 @@ export default function ActualizarStockMasivo() {
     }
 
     return resultado;
-  }, [productos, busqueda, sectorFiltro, almacenFiltro]);
+  }, [productos, busqueda, sectorFiltro, almacenFiltro, fraccionadoFiltro]);
+
+  // Índice para mostrar el stock de los productos hijos de un fraccionado
+  const productosPorId = useMemo(() => new Map(productos.map(p => [p.id, p])), [productos]);
 
   // Calcular productos paginados
   const totalPaginas = Math.ceil(productosFiltrados.length / porPagina);
@@ -154,7 +166,7 @@ export default function ActualizarStockMasivo() {
   // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [busqueda, sectorFiltro, almacenFiltro]);
+  }, [busqueda, sectorFiltro, almacenFiltro, fraccionadoFiltro]);
 
   // Cargar todos los productos
   const cargarProductos = async () => {
@@ -483,15 +495,25 @@ export default function ActualizarStockMasivo() {
                       </option>
                     ))}
                   </select>
+                  <select
+                    value={fraccionadoFiltro}
+                    onChange={(e) => setFraccionadoFiltro(e.target.value as '' | 'si' | 'no')}
+                    className="px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Fraccionados y no fraccionados</option>
+                    <option value="si">✂️ Solo fraccionados</option>
+                    <option value="no">No fraccionados</option>
+                  </select>
                 </div>
 
                 {/* Contador de resultados y paginación info */}
-                {(busqueda || sectorFiltro || almacenFiltro || productosFiltrados.length > 0) && (
+                {(busqueda || sectorFiltro || almacenFiltro || fraccionadoFiltro || productosFiltrados.length > 0) && (
                   <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs md:text-sm">
                     <div className="text-gray-600 dark:text-gray-400">
                       Mostrando {indiceInicio + 1}-{Math.min(indiceFin, productosFiltrados.length)} de {productosFiltrados.length} productos
                       {sectorFiltro && <span> • Sector: {sectorFiltro}</span>}
                       {almacenFiltro && <span> • Almacén: {almacenFiltro}</span>}
+                      {fraccionadoFiltro && <span> • {fraccionadoFiltro === 'si' ? 'Solo fraccionados' : 'No fraccionados'}</span>}
                     </div>
                     {totalPaginas > 1 && (
                       <div className="text-gray-600 dark:text-gray-400">
@@ -545,6 +567,17 @@ export default function ActualizarStockMasivo() {
                               >
                                 #{producto.id}
                               </a>
+                              {/* En pantallas chicas la columna Producto está oculta: indicar fraccionado junto al ID */}
+                              {producto.es_fraccionado && (
+                                <button
+                                  type="button"
+                                  onClick={() => setProductoAFraccionar(producto)}
+                                  className="md:hidden ml-1"
+                                  title="Fraccionar producto"
+                                >
+                                  ✂️
+                                </button>
+                              )}
                             </TableCell>
                             {/* <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">{producto.sku}</TableCell> */}
                             <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-mono px-2 md:px-4 hidden sm:table-cell">
@@ -554,7 +587,58 @@ export default function ActualizarStockMasivo() {
                                 <span className="text-gray-400 dark:text-gray-500">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden md:table-cell">{producto.nombre}</TableCell>
+                            <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden md:table-cell">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span>{producto.nombre}</span>
+                                {producto.es_fraccionado && (
+                                  <Badge className="text-[10px] md:text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" title="Admite cantidades con decimales">
+                                    ✂️ Fraccionado
+                                  </Badge>
+                                )}
+                                {producto.es_fraccionado && producto.conversiones?.some((c: any) => c.producto_hijo_id) && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 px-2 text-[10px] md:text-xs"
+                                    onClick={() => setProductoAFraccionar(producto)}
+                                  >
+                                    Fraccionar
+                                  </Button>
+                                )}
+                              </div>
+                              {/* Productos hijos: conversiones que apuntan a otro producto */}
+                              {producto.es_fraccionado && producto.conversiones?.some((c: any) => c.producto_hijo_id) && (
+                                <ul className="mt-1 space-y-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                                  {producto.conversiones
+                                    .filter((c: any) => c.producto_hijo_id)
+                                    .map((c: any) => {
+                                      const hijo = productosPorId.get(c.producto_hijo_id);
+                                      return (
+                                        <li key={c.id} className="flex flex-wrap items-center gap-1">
+                                          <span>↳</span>
+                                          <a
+                                            href={editarProducto.url(c.producto_hijo_id)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:underline dark:text-blue-400"
+                                          >
+                                            #{c.producto_hijo_id} {c.producto_hijo_nombre ?? hijo?.nombre ?? ''}
+                                          </a>
+                                          <span>
+                                            (1 {producto.unidad_nombre} = {Number(c.factor_conversion)} {c.unidad_destino_nombre})
+                                          </span>
+                                          {hijo && (
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                                              • Stock: {hijo.cantidad_total} {hijo.unidad_nombre}
+                                            </span>
+                                          )}
+                                        </li>
+                                      );
+                                    })}
+                                </ul>
+                              )}
+                            </TableCell>
                             <TableCell className="text-xs md:text-sm text-gray-600 dark:text-gray-300 px-2 md:px-4 hidden md:table-cell">
                               <Badge className="text-xs md:text-sm bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
                                 {producto.sector}
@@ -892,6 +976,12 @@ export default function ActualizarStockMasivo() {
           </AlertDescription>
         </Alert>
       </div>
+
+      <FraccionarProductoModal
+        producto={productoAFraccionar}
+        onClose={() => setProductoAFraccionar(null)}
+        onFraccionado={cargarProductos}
+      />
     </AppLayout>
   );
 }
