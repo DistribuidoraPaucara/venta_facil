@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Almacen;
 use App\Models\Producto;
 use App\Models\StockProducto;
 use App\Models\MovimientoInventario;
@@ -494,8 +495,8 @@ class ActualizarStockMasivoController extends Controller
         int $productoId,
         int $almacenId,
         string $loteFifo,
-        int $cantidadNueva,
-        int $stockActual
+        float $cantidadNueva,
+        float $stockActual
     ): ?StockProducto {
         $stocks = StockProducto::where('producto_id', $productoId)
             ->where('almacen_id', $almacenId)
@@ -603,11 +604,14 @@ class ActualizarStockMasivoController extends Controller
             'cambios.*.cantidad_nueva' => 'required|numeric|min:0',
             'cambios.*.unidad_id' => 'integer',
             'cambios.*.cantidad_original' => 'numeric',
+            'cambios.*.almacen_id' => 'nullable|integer',
         ]);
 
         try {
             return DB::transaction(function () use ($request) {
-                $almacenId = auth()->user()->empresa->almacen_id ?? 1;
+                $almacenDefecto = auth()->user()->empresa->almacen_id ?? 1;
+                // Solo se permite escribir en almacenes de la empresa del usuario
+                $almacenesPermitidos = Almacen::where('empresa_id', auth()->user()->empresa_id)->pluck('id')->push($almacenDefecto);
                 $registrosActualizados = 0;
                 $errores = [];
                 $movimientos = [];
@@ -619,6 +623,12 @@ class ActualizarStockMasivoController extends Controller
                         $cantidadNueva = (float) $cambio['cantidad_nueva'];
                         $unidadId = (int) ($cambio['unidad_id'] ?? 0);
                         $cantidadOriginal = (float) ($cambio['cantidad_original'] ?? 0);
+                        // Almacén de la fila editada (la pantalla muestra una fila por producto y almacén)
+                        $almacenId = (int) ($cambio['almacen_id'] ?? $almacenDefecto);
+                        if (! $almacenesPermitidos->contains($almacenId)) {
+                            $errores[] = "Producto ID $productoId: almacén $almacenId no permitido";
+                            continue;
+                        }
 
                         // Obtener producto
                         $producto = Producto::find($productoId);

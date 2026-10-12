@@ -25,6 +25,7 @@ export interface ProductoFraccionable {
   id: number;
   nombre: string;
   unidad_nombre: string;
+  almacen_id?: number;
   conversiones: ConversionHijo[];
 }
 
@@ -78,9 +79,10 @@ export default function FraccionarProductoModal({ producto, onClose, onFracciona
           (s: StockUbicacion) => s.sector_id && s.cantidad > 0,
         );
         setUbicaciones(conStock);
-        // Por defecto, la ubicación con más stock
-        const mayor = [...conStock].sort((a, b) => b.cantidad - a.cantidad)[0];
-        setStockId(mayor?.id ?? null);
+        // Por defecto, la ubicación con más stock (priorizando el almacén de la fila)
+        const ordenadas = [...conStock].sort((a, b) => b.cantidad - a.cantidad);
+        const preferida = ordenadas.find((u) => u.almacen_id === producto.almacen_id) ?? ordenadas[0];
+        setStockId(preferida?.id ?? null);
       })
       .catch(() => !cancelado && toast.error('Error al cargar el stock del producto'))
       .finally(() => !cancelado && setCargando(false));

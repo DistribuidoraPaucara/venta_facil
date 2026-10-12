@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\MovimientoFraccionamiento;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
+use App\Models\StockLimite;
 use App\Models\StockProducto;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -78,19 +79,22 @@ class FraccionamientoService
                 );
             }
 
-            // 3️⃣ Validar o crear stock del hijo
-            $stockHijo = StockProducto::where('producto_id', $productoHijoId)
-                ->where('almacen_id', $almacenId)
-                ->where('sector_id', $sectorId)
-                ->lockForUpdate()
-                ->first();
+            // 3️⃣ Reutilizar el stock del hijo en el almacén (sin lote ni vencimiento), aunque esté en otro sector.
+            // Antes se buscaba solo en el sector del padre y se duplicaba el registro "lote null".
+            $stockHijo = $this->buscarStockHijo($productoHijoId, $almacenId, $sectorId);
 
             if (!$stockHijo) {
+                // Sector configurado para el hijo en este almacén; si no tiene, el del padre
+                $sectorHijoId = StockLimite::where('producto_id', $productoHijoId)
+                    ->where('almacen_id', $almacenId)
+                    ->whereNotNull('sector_id')
+                    ->value('sector_id') ?? $sectorId;
+
                 // Crear registro de stock para el hijo
                 $stockHijo = StockProducto::create([
                     'producto_id' => $productoHijoId,
                     'almacen_id' => $almacenId,
-                    'sector_id' => $sectorId,
+                    'sector_id' => $sectorHijoId,
                     'cantidad' => 0,
                     'cantidad_disponible' => 0,
                     'cantidad_reservada' => 0,
@@ -201,6 +205,22 @@ class FraccionamientoService
      * @return void
      * @throws \Exception
      */
+    /**
+     * Registro de stock del hijo a reutilizar: sin lote ni vencimiento en el almacén,
+     * priorizando el sector indicado (el del padre). Bloquea la fila para la transacción.
+     */
+    private function buscarStockHijo(int $productoHijoId, int $almacenId, int $sectorId): ?StockProducto
+    {
+        return StockProducto::where('producto_id', $productoHijoId)
+            ->where('almacen_id', $almacenId)
+            ->where(fn($q) => $q->whereNull('lote')->orWhere('lote', ''))
+            ->whereNull('fecha_vencimiento')
+            ->orderByRaw('CASE WHEN sector_id = ? THEN 0 ELSE 1 END', [$sectorId]) // mismo sector primero
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->first();
+    }
+
     public function revertir(MovimientoFraccionamiento $movimiento): void
     {
         DB::transaction(function () use ($movimiento) {
@@ -216,11 +236,8 @@ class FraccionamientoService
                 ->lockForUpdate()
                 ->first();
 
-            $stockHijo = StockProducto::where('producto_id', $movimiento->producto_hijo_id)
-                ->where('almacen_id', $movimiento->almacen_id)
-                ->where('sector_id', $movimiento->sector_id)
-                ->lockForUpdate()
-                ->first();
+            // Mismo criterio que al fraccionar: el registro sin lote del hijo en el almacén
+            $stockHijo = $this->buscarStockHijo($movimiento->producto_hijo_id, $movimiento->almacen_id, $movimiento->sector_id);
 
             if (!$stockPadre || !$stockHijo) {
                 throw new \Exception('No se encontraron los registros de stock para revertir');

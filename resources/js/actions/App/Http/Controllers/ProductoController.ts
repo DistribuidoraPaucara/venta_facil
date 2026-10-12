@@ -753,7 +753,7 @@ listarApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     listarApi.form = listarApiForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockTotal
- * @see app/Http/Controllers/ProductoController.php:5792
+ * @see app/Http/Controllers/ProductoController.php:5816
  * @route '/api/productos/stock-total'
  */
 export const obtenerStockTotal = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -768,7 +768,7 @@ obtenerStockTotal.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockTotal
- * @see app/Http/Controllers/ProductoController.php:5792
+ * @see app/Http/Controllers/ProductoController.php:5816
  * @route '/api/productos/stock-total'
  */
 obtenerStockTotal.url = (options?: RouteQueryOptions) => {
@@ -777,7 +777,7 @@ obtenerStockTotal.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockTotal
- * @see app/Http/Controllers/ProductoController.php:5792
+ * @see app/Http/Controllers/ProductoController.php:5816
  * @route '/api/productos/stock-total'
  */
 obtenerStockTotal.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -786,7 +786,7 @@ obtenerStockTotal.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
 })
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockTotal
- * @see app/Http/Controllers/ProductoController.php:5792
+ * @see app/Http/Controllers/ProductoController.php:5816
  * @route '/api/productos/stock-total'
  */
 obtenerStockTotal.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -796,7 +796,7 @@ obtenerStockTotal.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
     /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockTotal
- * @see app/Http/Controllers/ProductoController.php:5792
+ * @see app/Http/Controllers/ProductoController.php:5816
  * @route '/api/productos/stock-total'
  */
     const obtenerStockTotalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -806,7 +806,7 @@ obtenerStockTotal.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockTotal
- * @see app/Http/Controllers/ProductoController.php:5792
+ * @see app/Http/Controllers/ProductoController.php:5816
  * @route '/api/productos/stock-total'
  */
         obtenerStockTotalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -815,7 +815,7 @@ obtenerStockTotal.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
         })
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerStockTotal
- * @see app/Http/Controllers/ProductoController.php:5792
+ * @see app/Http/Controllers/ProductoController.php:5816
  * @route '/api/productos/stock-total'
  */
         obtenerStockTotalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1409,7 +1409,7 @@ export const destroyApi = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:5749
+ * @see app/Http/Controllers/ProductoController.php:5773
  * @route '/api/app/productos/{producto}/imagenes'
  */
 export const uploadImagenApi = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1424,7 +1424,7 @@ uploadImagenApi.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:5749
+ * @see app/Http/Controllers/ProductoController.php:5773
  * @route '/api/app/productos/{producto}/imagenes'
  */
 uploadImagenApi.url = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -1457,7 +1457,7 @@ uploadImagenApi.url = (args: { producto: number | { id: number } } | [producto: 
 
 /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:5749
+ * @see app/Http/Controllers/ProductoController.php:5773
  * @route '/api/app/productos/{producto}/imagenes'
  */
 uploadImagenApi.post = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1467,7 +1467,7 @@ uploadImagenApi.post = (args: { producto: number | { id: number } } | [producto:
 
     /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:5749
+ * @see app/Http/Controllers/ProductoController.php:5773
  * @route '/api/app/productos/{producto}/imagenes'
  */
     const uploadImagenApiForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1477,7 +1477,7 @@ uploadImagenApi.post = (args: { producto: number | { id: number } } | [producto:
 
             /**
 * @see \App\Http\Controllers\ProductoController::uploadImagenApi
- * @see app/Http/Controllers/ProductoController.php:5749
+ * @see app/Http/Controllers/ProductoController.php:5773
  * @route '/api/app/productos/{producto}/imagenes'
  */
         uploadImagenApiForm.post = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1801,7 +1801,7 @@ obtenerProductosParaActualizarStock.head = (options?: RouteQueryOptions): RouteD
     obtenerProductosParaActualizarStock.form = obtenerProductosParaActualizarStockForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerSectoresDisponibles
- * @see app/Http/Controllers/ProductoController.php:5571
+ * @see app/Http/Controllers/ProductoController.php:5595
  * @route '/api/productos/sectores-disponibles'
  */
 export const obtenerSectoresDisponibles = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1816,7 +1816,7 @@ obtenerSectoresDisponibles.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerSectoresDisponibles
- * @see app/Http/Controllers/ProductoController.php:5571
+ * @see app/Http/Controllers/ProductoController.php:5595
  * @route '/api/productos/sectores-disponibles'
  */
 obtenerSectoresDisponibles.url = (options?: RouteQueryOptions) => {
@@ -1825,7 +1825,7 @@ obtenerSectoresDisponibles.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerSectoresDisponibles
- * @see app/Http/Controllers/ProductoController.php:5571
+ * @see app/Http/Controllers/ProductoController.php:5595
  * @route '/api/productos/sectores-disponibles'
  */
 obtenerSectoresDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1834,7 +1834,7 @@ obtenerSectoresDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<
 })
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerSectoresDisponibles
- * @see app/Http/Controllers/ProductoController.php:5571
+ * @see app/Http/Controllers/ProductoController.php:5595
  * @route '/api/productos/sectores-disponibles'
  */
 obtenerSectoresDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1844,7 +1844,7 @@ obtenerSectoresDisponibles.head = (options?: RouteQueryOptions): RouteDefinition
 
     /**
 * @see \App\Http\Controllers\ProductoController::obtenerSectoresDisponibles
- * @see app/Http/Controllers/ProductoController.php:5571
+ * @see app/Http/Controllers/ProductoController.php:5595
  * @route '/api/productos/sectores-disponibles'
  */
     const obtenerSectoresDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1854,7 +1854,7 @@ obtenerSectoresDisponibles.head = (options?: RouteQueryOptions): RouteDefinition
 
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerSectoresDisponibles
- * @see app/Http/Controllers/ProductoController.php:5571
+ * @see app/Http/Controllers/ProductoController.php:5595
  * @route '/api/productos/sectores-disponibles'
  */
         obtenerSectoresDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1863,7 +1863,7 @@ obtenerSectoresDisponibles.head = (options?: RouteQueryOptions): RouteDefinition
         })
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerSectoresDisponibles
- * @see app/Http/Controllers/ProductoController.php:5571
+ * @see app/Http/Controllers/ProductoController.php:5595
  * @route '/api/productos/sectores-disponibles'
  */
         obtenerSectoresDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1879,7 +1879,7 @@ obtenerSectoresDisponibles.head = (options?: RouteQueryOptions): RouteDefinition
     obtenerSectoresDisponibles.form = obtenerSectoresDisponiblesForm
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerAlmacenesDisponibles
- * @see app/Http/Controllers/ProductoController.php:5606
+ * @see app/Http/Controllers/ProductoController.php:5630
  * @route '/api/productos/almacenes-disponibles'
  */
 export const obtenerAlmacenesDisponibles = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1894,7 +1894,7 @@ obtenerAlmacenesDisponibles.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerAlmacenesDisponibles
- * @see app/Http/Controllers/ProductoController.php:5606
+ * @see app/Http/Controllers/ProductoController.php:5630
  * @route '/api/productos/almacenes-disponibles'
  */
 obtenerAlmacenesDisponibles.url = (options?: RouteQueryOptions) => {
@@ -1903,7 +1903,7 @@ obtenerAlmacenesDisponibles.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerAlmacenesDisponibles
- * @see app/Http/Controllers/ProductoController.php:5606
+ * @see app/Http/Controllers/ProductoController.php:5630
  * @route '/api/productos/almacenes-disponibles'
  */
 obtenerAlmacenesDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1912,7 +1912,7 @@ obtenerAlmacenesDisponibles.get = (options?: RouteQueryOptions): RouteDefinition
 })
 /**
 * @see \App\Http\Controllers\ProductoController::obtenerAlmacenesDisponibles
- * @see app/Http/Controllers/ProductoController.php:5606
+ * @see app/Http/Controllers/ProductoController.php:5630
  * @route '/api/productos/almacenes-disponibles'
  */
 obtenerAlmacenesDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1922,7 +1922,7 @@ obtenerAlmacenesDisponibles.head = (options?: RouteQueryOptions): RouteDefinitio
 
     /**
 * @see \App\Http\Controllers\ProductoController::obtenerAlmacenesDisponibles
- * @see app/Http/Controllers/ProductoController.php:5606
+ * @see app/Http/Controllers/ProductoController.php:5630
  * @route '/api/productos/almacenes-disponibles'
  */
     const obtenerAlmacenesDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1932,7 +1932,7 @@ obtenerAlmacenesDisponibles.head = (options?: RouteQueryOptions): RouteDefinitio
 
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerAlmacenesDisponibles
- * @see app/Http/Controllers/ProductoController.php:5606
+ * @see app/Http/Controllers/ProductoController.php:5630
  * @route '/api/productos/almacenes-disponibles'
  */
         obtenerAlmacenesDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1941,7 +1941,7 @@ obtenerAlmacenesDisponibles.head = (options?: RouteQueryOptions): RouteDefinitio
         })
             /**
 * @see \App\Http\Controllers\ProductoController::obtenerAlmacenesDisponibles
- * @see app/Http/Controllers/ProductoController.php:5606
+ * @see app/Http/Controllers/ProductoController.php:5630
  * @route '/api/productos/almacenes-disponibles'
  */
         obtenerAlmacenesDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1957,7 +1957,7 @@ obtenerAlmacenesDisponibles.head = (options?: RouteQueryOptions): RouteDefinitio
     obtenerAlmacenesDisponibles.form = obtenerAlmacenesDisponiblesForm
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:5641
+ * @see app/Http/Controllers/ProductoController.php:5665
  * @route '/api/productos/conversiones/comunes'
  */
 export const conversionesComunes = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1972,7 +1972,7 @@ conversionesComunes.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:5641
+ * @see app/Http/Controllers/ProductoController.php:5665
  * @route '/api/productos/conversiones/comunes'
  */
 conversionesComunes.url = (options?: RouteQueryOptions) => {
@@ -1981,7 +1981,7 @@ conversionesComunes.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:5641
+ * @see app/Http/Controllers/ProductoController.php:5665
  * @route '/api/productos/conversiones/comunes'
  */
 conversionesComunes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1990,7 +1990,7 @@ conversionesComunes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 })
 /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:5641
+ * @see app/Http/Controllers/ProductoController.php:5665
  * @route '/api/productos/conversiones/comunes'
  */
 conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2000,7 +2000,7 @@ conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
     /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:5641
+ * @see app/Http/Controllers/ProductoController.php:5665
  * @route '/api/productos/conversiones/comunes'
  */
     const conversionesComunesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2010,7 +2010,7 @@ conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
             /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:5641
+ * @see app/Http/Controllers/ProductoController.php:5665
  * @route '/api/productos/conversiones/comunes'
  */
         conversionesComunesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2019,7 +2019,7 @@ conversionesComunes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
         })
             /**
 * @see \App\Http\Controllers\ProductoController::conversionesComunes
- * @see app/Http/Controllers/ProductoController.php:5641
+ * @see app/Http/Controllers/ProductoController.php:5665
  * @route '/api/productos/conversiones/comunes'
  */
         conversionesComunesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

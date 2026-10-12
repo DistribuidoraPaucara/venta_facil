@@ -5495,7 +5495,12 @@ class ProductoController extends Controller
     public function obtenerProductosParaActualizarStock(Request $request): JsonResponse
     {
         try {
-            $almacenId = auth()->user()->empresa->almacen_id ?? 1;
+            $empresa          = auth()->user()->empresa;
+            $almacenDefecto   = $empresa->almacen_id ?? 1;
+            $almacenesEmpresa = Almacen::where('empresa_id', $empresa?->id)->pluck('nombre', 'id');
+            if (! $almacenesEmpresa->has($almacenDefecto)) {
+                $almacenesEmpresa[$almacenDefecto] = Almacen::find($almacenDefecto)?->nombre ?? 'Sin almacén';
+            }
 
             $productos = Producto::query()
                 ->select(['id', 'sku', 'nombre', 'categoria_id', 'activo', 'unidad_medida_id', 'es_fraccionado'])
@@ -5503,10 +5508,11 @@ class ProductoController extends Controller
                 ->with([
                     'categoria:id,nombre',
                     'unidad:id,nombre,codigo',
-                    'stock' => function ($query) use ($almacenId) {
-                        $query->where('almacen_id', $almacenId)
-                            ->select('producto_id', 'cantidad');
+                    // Stock de TODOS los almacenes (una fila por almacén en la pantalla)
+                    'stock' => function ($query) {
+                        $query->select('id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad');
                     },
+                    'stock.sector:id,nombre',
                     'conversiones' => function ($query) {
                         $query->where('activo', true)->select('id', 'producto_id', 'producto_destino_id', 'unidad_destino_id', 'factor_conversion');
                     },
@@ -5518,40 +5524,58 @@ class ProductoController extends Controller
                             ->select('id', 'producto_id', 'codigo', 'es_principal');
                     },
                     'stockLimites.sector:id,nombre',
-                    'stockLimites.almacen:id,nombre'
                 ])
                 ->orderBy('nombre')
                 ->get()
-                ->map(function ($producto) {
+                ->flatMap(function ($producto) use ($almacenesEmpresa, $almacenDefecto) {
                     $codigoBarraPrincipal = $producto->codigosBarra?->first()?->codigo;
-                    $sectorNombre = $producto->stockLimites?->first()?->sector?->nombre ?? 'Sin sector';
-                    $almacenId = $producto->stockLimites?->first()?->almacen_id;
-                    $almacenNombre = $producto->stockLimites?->first()?->almacen?->nombre ?? 'Sin almacén';
+                    $conversiones = $producto->conversiones->map(function ($conv) {
+                        return [
+                            'id' => $conv->id,
+                            'unidad_destino_id' => $conv->unidad_destino_id,
+                            'unidad_destino_nombre' => $conv->unidadDestino?->nombre ?? 'UN',
+                            'factor_conversion' => $conv->factor_conversion,
+                            'producto_hijo_id' => $conv->producto_destino_id,
+                            'producto_hijo_nombre' => $conv->productoDestino?->nombre,
+                        ];
+                    })->toArray();
 
-                    return [
-                        'id' => $producto->id,
-                        'sku' => $producto->sku,
-                        'codigo_barras' => $codigoBarraPrincipal,
-                        'nombre' => $producto->nombre,
-                        'es_fraccionado' => (bool) $producto->es_fraccionado,
-                        'sector' => $sectorNombre,
-                        'almacen_id' => $almacenId,
-                        'almacen' => $almacenNombre,
-                        'cantidad_total' => $producto->stock->sum('cantidad') ?? 0,
-                        'unidad_medida_id' => $producto->unidad_medida_id,
-                        'unidad_nombre' => $producto->unidad?->nombre ?? 'UN',
-                        'conversiones' => $producto->conversiones->map(function ($conv) {
-                            return [
-                                'id' => $conv->id,
-                                'unidad_destino_id' => $conv->unidad_destino_id,
-                                'unidad_destino_nombre' => $conv->unidadDestino?->nombre ?? 'UN',
-                                'factor_conversion' => $conv->factor_conversion,
-                                'producto_hijo_id' => $conv->producto_destino_id,
-                                'producto_hijo_nombre' => $conv->productoDestino?->nombre,
-                            ];
-                        })->toArray(),
-                    ];
-                });
+                    // Almacenes donde el producto tiene registro (stock o límite), aunque esté en 0.
+                    // Sin ningún registro: se muestra en el almacén por defecto para poder cargarle stock.
+                    $almacenIds = $producto->stock->pluck('almacen_id')
+                        ->merge($producto->stockLimites->pluck('almacen_id'))
+                        ->filter(fn($id) => $almacenesEmpresa->has($id))
+                        ->unique()
+                        ->values();
+                    if ($almacenIds->isEmpty()) {
+                        $almacenIds = collect([$almacenDefecto]);
+                    }
+
+                    return $almacenIds->map(function ($almacenId) use ($producto, $almacenesEmpresa, $codigoBarraPrincipal, $conversiones) {
+                        $stocks   = $producto->stock->where('almacen_id', $almacenId);
+                        $sectores = $stocks->pluck('sector.nombre')
+                            ->merge($producto->stockLimites->where('almacen_id', $almacenId)->pluck('sector.nombre'))
+                            ->filter()
+                            ->unique()
+                            ->implode(', ');
+
+                        return [
+                            'id' => $producto->id,
+                            'sku' => $producto->sku,
+                            'codigo_barras' => $codigoBarraPrincipal,
+                            'nombre' => $producto->nombre,
+                            'es_fraccionado' => (bool) $producto->es_fraccionado,
+                            'sector' => $sectores ?: 'Sin sector',
+                            'almacen_id' => (int) $almacenId,
+                            'almacen' => $almacenesEmpresa[$almacenId] ?? 'Sin almacén',
+                            'cantidad_total' => (float) $stocks->sum('cantidad'),
+                            'unidad_medida_id' => $producto->unidad_medida_id,
+                            'unidad_nombre' => $producto->unidad?->nombre ?? 'UN',
+                            'conversiones' => $conversiones,
+                        ];
+                    });
+                })
+                ->values();
 
             return response()->json([
                 'success' => true,

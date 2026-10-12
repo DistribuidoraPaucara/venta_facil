@@ -44,6 +44,7 @@ interface Producto {
   nombre: string;
   es_fraccionado?: boolean;
   sector: string;                     // ✅ NUEVO - Sector
+  almacen_id: number;
   almacen?: string;                   // ✅ NUEVO - Almacén
   cantidad_total: number;
   unidad_medida_id: number;           // ✅ NUEVO
@@ -57,9 +58,12 @@ interface CambioTabla {
   cantidad_convertida: number;
 }
 
+// Clave por fila: un producto aparece una vez por almacén
 interface TablaEdicion {
-  [key: number]: CambioTabla;
+  [filaKey: string]: CambioTabla;
 }
+
+const filaKey = (p: { id: number; almacen_id: number }) => `${p.id}-${p.almacen_id}`;
 
 export default function ActualizarStockMasivo() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -155,7 +159,7 @@ export default function ActualizarStockMasivo() {
   }, [productos, busqueda, sectorFiltro, almacenFiltro, fraccionadoFiltro]);
 
   // Índice para mostrar el stock de los productos hijos de un fraccionado
-  const productosPorId = useMemo(() => new Map(productos.map(p => [p.id, p])), [productos]);
+  const filasPorKey = useMemo(() => new Map(productos.map(p => [filaKey(p), p])), [productos]);
 
   // Calcular productos paginados
   const totalPaginas = Math.ceil(productosFiltrados.length / porPagina);
@@ -291,9 +295,8 @@ export default function ActualizarStockMasivo() {
   };
 
   // ✅ Manejar cambio de cantidad/unidad en la tabla
-  const handleCambioTabla = (productoId: number, cantidad: string, unidadId?: number) => {
-    const producto = productos.find(p => p.id === productoId);
-    if (!producto) return;
+  const handleCambioTabla = (producto: Producto, cantidad: string, unidadId?: number) => {
+    const key = filaKey(producto);
 
     const valor = parseFloat(cantidad);
     const unidad = unidadId || producto.unidad_medida_id;
@@ -302,7 +305,7 @@ export default function ActualizarStockMasivo() {
       const cantidadConvertida = calcularConversion(producto, valor, unidad);
       setCambiosTabla(prev => ({
         ...prev,
-        [productoId]: {
+        [key]: {
           cantidad: valor,
           unidad_id: unidad,
           cantidad_convertida: cantidadConvertida
@@ -311,7 +314,7 @@ export default function ActualizarStockMasivo() {
     } else if (cantidad === '' || cantidad === '-') {
       setCambiosTabla(prev => ({
         ...prev,
-        [productoId]: {
+        [key]: {
           cantidad: 0,
           unidad_id: unidad,
           cantidad_convertida: 0
@@ -325,10 +328,11 @@ export default function ActualizarStockMasivo() {
     // Filtrar solo los cambios con incremento diferente a 0
     const cambiosFiltrados = Object.entries(cambiosTabla)
       .filter(([, cambio]) => cambio.cantidad !== 0)
-      .map(([productoId, cambio]) => {
-        const producto = productos.find(p => p.id === parseInt(productoId, 10));
+      .map(([key, cambio]) => {
+        const producto = filasPorKey.get(key)!;
         return {
-          producto_id: parseInt(productoId, 10),
+          producto_id: producto.id,
+          almacen_id: producto.almacen_id,
           cantidad_nueva: (producto?.cantidad_total || 0) + cambio.cantidad_convertida,
           unidad_id: cambio.unidad_id,
           cantidad_original: cambio.cantidad,
@@ -344,7 +348,7 @@ export default function ActualizarStockMasivo() {
     const negativos = cambiosFiltrados.filter(c => c.cantidad_nueva < 0);
     if (negativos.length > 0) {
       const nombres = negativos
-        .map(c => productos.find(p => p.id === c.producto_id)?.nombre ?? `ID ${c.producto_id}`)
+        .map(c => `${productos.find(p => p.id === c.producto_id)?.nombre ?? `ID ${c.producto_id}`} (${filasPorKey.get(`${c.producto_id}-${c.almacen_id}`)?.almacen ?? ''})`)
         .join(', ');
       toast.error(`No puedes restar más del stock actual en: ${nombres}`);
       return;
@@ -547,16 +551,17 @@ export default function ActualizarStockMasivo() {
                     </TableHeader>
                     <TableBody>
                       {productosPaginados.map((producto) => {
-                        const tienesCambio = producto.id in cambiosTabla;
+                        const key = filaKey(producto);
+                        const tienesCambio = key in cambiosTabla;
                         const unidadBase = producto.unidad_medida_id || 1;
-                        const cambio = cambiosTabla[producto.id] || { cantidad: 0, unidad_id: unidadBase, cantidad_convertida: 0 };
+                        const cambio = cambiosTabla[key] || { cantidad: 0, unidad_id: unidadBase, cantidad_convertida: 0 };
                         const stockFinal = producto.cantidad_total + cambio.cantidad_convertida;
                         const unidadActual = cambio.unidad_id === producto.unidad_medida_id
                           ? producto.unidad_nombre
                           : producto.conversiones?.find((c: any) => c.unidad_destino_id === cambio.unidad_id)?.unidad_destino_nombre || producto.unidad_nombre;
 
                         return (
-                          <TableRow key={producto.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 text-xs md:text-sm">
+                          <TableRow key={key} className="hover:bg-gray-50 dark:hover:bg-gray-800 text-xs md:text-sm">
                             <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">
                               <a
                                 href={editarProducto.url(producto.id)}
@@ -582,7 +587,9 @@ export default function ActualizarStockMasivo() {
                             {/* <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-medium px-2 md:px-4">{producto.sku}</TableCell> */}
                             <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white font-mono px-2 md:px-4 hidden sm:table-cell">
                               {producto.codigo_barras ? (
-                                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">{producto.codigo_barras}</span>
+                                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs text-[10px]">
+                                  {producto.codigo_barras}
+                                </span>
                               ) : (
                                 <span className="text-gray-400 dark:text-gray-500">—</span>
                               )}
@@ -590,11 +597,11 @@ export default function ActualizarStockMasivo() {
                             <TableCell className="text-xs md:text-sm text-gray-900 dark:text-white px-2 md:px-4 hidden md:table-cell">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <span>{producto.nombre}</span>
-                                {producto.es_fraccionado && (
+                                {/* {producto.es_fraccionado && (
                                   <Badge className="text-[10px] md:text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" title="Admite cantidades con decimales">
                                     ✂️ Fraccionado
                                   </Badge>
-                                )}
+                                )} */}
                                 {producto.es_fraccionado && producto.conversiones?.some((c: any) => c.producto_hijo_id) && (
                                   <Button
                                     type="button"
@@ -603,7 +610,7 @@ export default function ActualizarStockMasivo() {
                                     className="h-6 px-2 text-[10px] md:text-xs"
                                     onClick={() => setProductoAFraccionar(producto)}
                                   >
-                                    Fraccionar
+                                    Fraccionar ✂️
                                   </Button>
                                 )}
                               </div>
@@ -613,7 +620,8 @@ export default function ActualizarStockMasivo() {
                                   {producto.conversiones
                                     .filter((c: any) => c.producto_hijo_id)
                                     .map((c: any) => {
-                                      const hijo = productosPorId.get(c.producto_hijo_id);
+                                      // Stock del hijo en el mismo almacén de la fila
+                                      const hijo = filasPorKey.get(`${c.producto_hijo_id}-${producto.almacen_id}`);
                                       return (
                                         <li key={c.id} className="flex flex-wrap items-center gap-1">
                                           <span>↳</span>
@@ -640,12 +648,12 @@ export default function ActualizarStockMasivo() {
                               )}
                             </TableCell>
                             <TableCell className="text-xs md:text-sm text-gray-600 dark:text-gray-300 px-2 md:px-4 hidden md:table-cell">
-                              <Badge className="text-xs md:text-sm bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                              <Badge className="text-[10px] md:text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
                                 {producto.sector}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs md:text-sm text-gray-600 dark:text-gray-300 px-2 md:px-4 hidden lg:table-cell">
-                              <Badge className="text-xs md:text-sm bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                              <Badge className="text-[10px] md:text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
                                 {producto.almacen}
                               </Badge>
                             </TableCell>
@@ -659,12 +667,12 @@ export default function ActualizarStockMasivo() {
                                   step="any"
                                   placeholder="0"
                                   value={tienesCambio && cambio.cantidad !== 0 ? cambio.cantidad : ''}
-                                  onChange={(e) => handleCambioTabla(producto.id, e.target.value, cambio.unidad_id)}
+                                  onChange={(e) => handleCambioTabla(producto, e.target.value, cambio.unidad_id)}
                                   className="w-12 md:w-16 px-1 md:px-2 py-1 text-xs md:text-sm text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 {/* <select
                                   value={String(cambio.unidad_id || unidadBase)}
-                                  onChange={(e) => handleCambioTabla(producto.id, String(cambio.cantidad), Number(e.target.value))}
+                                  onChange={(e) => handleCambioTabla(producto, String(cambio.cantidad), Number(e.target.value))}
                                   className="px-1 md:px-2 py-1 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                   <option value={producto.unidad_medida_id}>{producto.unidad_nombre}</option>
