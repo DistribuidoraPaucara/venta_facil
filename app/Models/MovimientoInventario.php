@@ -512,7 +512,7 @@ class MovimientoInventario extends Model
      */
     public static function registrar(
         StockProducto $stockProducto,
-        int $cantidadMovimiento,
+        float $cantidadMovimiento,
         string $tipo,
         ?string $observacion = null,
         ?string $numeroDocumento = null,
@@ -637,7 +637,7 @@ class MovimientoInventario extends Model
      */
     public static function registrarStockProducto(
         StockProducto $stockProducto,
-        int $cantidadMovimiento,
+        float $cantidadMovimiento,
         string $tipo,
         ?string $observacion = null,
         ?string $numeroDocumento = null,

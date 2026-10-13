@@ -796,6 +796,8 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
         Route::get('sectores-disponibles', [ProductoController::class, 'obtenerSectoresDisponibles']);
         Route::get('almacenes-disponibles', [ProductoController::class, 'obtenerAlmacenesDisponibles']);
         Route::get('conversiones/comunes', [ProductoController::class, 'conversionesComunes']);
+        // Eliminar un lote (registro de stock_productos) vacío, ej. duplicados con lote null
+        Route::delete('stock/{stockProducto}', [ProductoController::class, 'eliminarStockProducto'])->middleware('permission:productos.edit');
         Route::get('{producto}', [ProductoController::class, 'showApi']);
         Route::put('{producto}', [ProductoController::class, 'updateApi']);
         Route::delete('{producto}', [ProductoController::class, 'destroyApi']);
@@ -2055,6 +2057,10 @@ Route::prefix('actualizar-stock-masivo')->middleware('auth')->group(function () 
 
 // ✅ NUEVO: Endpoint para actualizar stock desde tabla editable
 Route::post('/inventario/actualizar-stock-tabla', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'actualizarStockTabla'])->middleware('auth')->name('api.inventario.actualizar-stock-tabla');
+// Transferencia inmediata de un producto entre almacenes desde Actualizar Stock Masivo
+Route::post('/inventario/transferir-producto', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'transferirProducto'])
+    ->middleware(['auth', 'permission:inventario.transferencias.crear'])
+    ->name('api.inventario.transferir-producto');
 
 // ✅ NUEVO (2026-08-12): API para Descargar Logs
 Route::middleware(['auth:sanctum,web'])->group(function () {

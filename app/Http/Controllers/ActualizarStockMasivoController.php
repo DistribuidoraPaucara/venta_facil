@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Almacen;
+use App\Services\TransferenciaProductoService;
 use App\Models\Producto;
 use App\Models\StockProducto;
 use App\Models\MovimientoInventario;
@@ -737,6 +738,69 @@ class ActualizarStockMasivoController extends Controller
                 'success' => false,
                 'error' => 'Error al procesar cambios: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Transferir un producto a otro almacén desde la tabla (inmediata: queda como transferencia RECIBIDA)
+     *
+     * POST /api/inventario/transferir-producto
+     */
+    public function transferirProducto(Request $request, TransferenciaProductoService $transferenciaService)
+    {
+        $data = $request->validate([
+            'stock_producto_id'  => 'required|integer|exists:stock_productos,id',
+            'almacen_destino_id' => 'required|integer|exists:almacenes,id',
+            'cantidad'           => 'required|numeric|gt:0',
+            'observaciones'      => 'nullable|string|max:500',
+            // Transferir unidades del producto hijo (stock_producto_id es el del paquete; cantidad en unidades del hijo)
+            'conversion_id'      => 'nullable|integer',
+            'usar_sueltas'       => 'nullable|boolean',
+        ]);
+
+        try {
+            if (! empty($data['conversion_id'])) {
+                $resultado = $transferenciaService->transferirUnidadesHijo(
+                    (int) $data['stock_producto_id'],
+                    (int) $data['conversion_id'],
+                    (int) $data['almacen_destino_id'],
+                    (float) $data['cantidad'],
+                    (bool) ($data['usar_sueltas'] ?? true)
+                );
+                $transferencia = $resultado['transferencia'];
+                $detalle       = $resultado['paquetes_abiertos'] > 0
+                    ? " (se abrieron {$resultado['paquetes_abiertos']} paquete(s))"
+                    : ' (con unidades sueltas)';
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Transferencia {$transferencia->numero} realizada{$detalle}",
+                    'data'    => [
+                        'id'                 => $transferencia->id,
+                        'numero'             => $transferencia->numero,
+                        'fraccionamiento_id' => $resultado['fraccionamiento']?->id,
+                        'paquetes_abiertos'  => $resultado['paquetes_abiertos'],
+                        'sueltas_usadas'     => $resultado['sueltas_usadas'],
+                    ],
+                ]);
+            }
+
+            $transferencia = $transferenciaService->transferir(
+                (int) $data['stock_producto_id'],
+                (int) $data['almacen_destino_id'],
+                (float) $data['cantidad'],
+                $data['observaciones'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => "Transferencia {$transferencia->numero} realizada",
+                'data'    => ['id' => $transferencia->id, 'numero' => $transferencia->numero],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error al transferir producto', ['error' => $e->getMessage(), 'request' => $data]);
+
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 

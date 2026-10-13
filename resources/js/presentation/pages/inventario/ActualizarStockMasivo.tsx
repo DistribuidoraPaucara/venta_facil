@@ -24,9 +24,10 @@ import {
 } from '@/presentation/components/ui/table';
 import { Badge } from '@/presentation/components/ui/badge';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
-import { Download, Upload, CheckCircle2, AlertCircle, Loader2, Save, Search, X } from 'lucide-react';
+import { Download, Upload, CheckCircle2, AlertCircle, Loader2, Save, Search, X, ArrowRightLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import FraccionarProductoModal from './components/fraccionar-producto-modal';
+import TransferirProductoModal, { type StockRegistro } from './components/transferir-producto-modal';
 
 interface ChangesPreview {
   producto_id: number;
@@ -50,6 +51,7 @@ interface Producto {
   unidad_medida_id: number;           // ✅ NUEVO
   unidad_nombre: string;              // ✅ NUEVO
   conversiones: any[];                // ✅ NUEVO
+  stocks?: StockRegistro[];           // Registros de stock (sector/lote) de este almacén
 }
 
 interface CambioTabla {
@@ -79,6 +81,8 @@ export default function ActualizarStockMasivo() {
   const [almacenFiltro, setAlmacenFiltro] = useState('');
   const [fraccionadoFiltro, setFraccionadoFiltro] = useState<'' | 'si' | 'no'>('');
   const [productoAFraccionar, setProductoAFraccionar] = useState<Producto | null>(null);
+  const [productoATransferir, setProductoATransferir] = useState<Producto | null>(null);
+  const [almacenesEmpresa, setAlmacenesEmpresa] = useState<{ id: number; nombre: string }[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [porPagina] = useState(15);
 
@@ -181,6 +185,7 @@ export default function ActualizarStockMasivo() {
 
       if (data.success) {
         setProductos(data.data || []);
+        setAlmacenesEmpresa(data.almacenes || []);
       } else {
         toast.error('Error al cargar productos');
       }
@@ -658,7 +663,19 @@ export default function ActualizarStockMasivo() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs md:text-sm text-right text-gray-900 dark:text-white font-semibold px-1 md:px-4">
-                              {producto.cantidad_total} {producto.unidad_nombre}
+                              <div className="flex items-center justify-end gap-1.5">
+                                <span>{producto.cantidad_total} {producto.unidad_nombre}</span>
+                                {almacenesEmpresa.length > 1 && producto.cantidad_total > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setProductoATransferir(producto)}
+                                    className="p-1 rounded text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                    title="Transferir a otro almacén"
+                                  >
+                                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="text-right px-1 md:px-4 space-y-1">
                               <div className="flex gap-1">
@@ -989,6 +1006,14 @@ export default function ActualizarStockMasivo() {
         producto={productoAFraccionar}
         onClose={() => setProductoAFraccionar(null)}
         onFraccionado={cargarProductos}
+      />
+
+      <TransferirProductoModal
+        producto={productoATransferir}
+        almacenes={almacenesEmpresa}
+        filaDe={(productoId, almacenId) => filasPorKey.get(`${productoId}-${almacenId}`)}
+        onClose={() => setProductoATransferir(null)}
+        onTransferido={cargarProductos}
       />
     </AppLayout>
   );

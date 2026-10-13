@@ -69,6 +69,42 @@ class ProductoController extends Controller
         return self::$tipoPrecioVentaCache;
     }
 
+    /**
+     * DELETE /api/productos/stock/{stockProducto}
+     * Elimina (soft delete) un registro de stock_productos vacío, ej. un lote duplicado.
+     * Soft delete: movimientos_inventario conserva su referencia (FK) y el historial queda intacto.
+     */
+    public function eliminarStockProducto(StockProducto $stockProducto): JsonResponse
+    {
+        // El scope de empresa de Producto impide eliminar stock de otra empresa
+        $producto = Producto::find($stockProducto->producto_id);
+        if (! $producto) {
+            return ApiResponse::error('Registro de stock no encontrado', 404);
+        }
+
+        $cantidad   = (float) $stockProducto->cantidad;
+        $disponible = (float) $stockProducto->cantidad_disponible;
+        $reservada  = (float) $stockProducto->cantidad_reservada;
+        if ($cantidad != 0 || $disponible != 0 || $reservada != 0) {
+            return ApiResponse::error(
+                "No se puede eliminar: el lote aún tiene stock (total {$cantidad}, disponible {$disponible}, reservada {$reservada}). Déjalo en 0 antes de eliminarlo.",
+                422
+            );
+        }
+
+        $stockProducto->delete();
+
+        Log::info('🗑️ StockProducto eliminado (soft delete)', [
+            'stock_producto_id' => $stockProducto->id,
+            'producto_id'       => $stockProducto->producto_id,
+            'almacen_id'        => $stockProducto->almacen_id,
+            'lote'              => $stockProducto->lote,
+            'user_id'           => auth()->id(),
+        ]);
+
+        return ApiResponse::success(['id' => $stockProducto->id], 'Lote eliminado');
+    }
+
     public function historialPrecios(Producto $producto): JsonResponse
     {
         $producto->load(['precios' => function ($q) {
@@ -1108,10 +1144,11 @@ class ProductoController extends Controller
 
         // ✨ NUEVO: Cargar stock_limites por almacén para Section 3
         $stockLimites = StockLimite::where('producto_id', $producto->id)
-            ->get(['almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo'])
+            ->get(['id', 'almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo'])
             ->keyBy('almacen_id')
             ->map(function ($limites) {
                 return [
+                    'id'           => $limites->id,
                     'sector_id'    => $limites->sector_id,
                     'stock_minimo' => (int) $limites->stock_minimo,
                     'stock_maximo' => (int) $limites->stock_maximo,
@@ -1477,7 +1514,10 @@ class ProductoController extends Controller
 
                         // Si viene el ID del frontend, usarlo para búsqueda directa (más eficiente y seguro)
                         if ($stockIdFromFrontend) {
-                            $stockExistente = StockProducto::withTrashed()->find($stockIdFromFrontend);
+                            // Solo stock de ESTE producto (evita modificar un stock ajeno si llega un id equivocado)
+                            $stockExistente = StockProducto::withTrashed()
+                                ->where('producto_id', $producto->id)
+                                ->find($stockIdFromFrontend);
                             Log::info('✅ Búsqueda por ID:', [
                                 'stock_id'   => $stockIdFromFrontend,
                                 'encontrado' => $stockExistente ? 'SÍ' : 'NO',
@@ -5510,7 +5550,7 @@ class ProductoController extends Controller
                     'unidad:id,nombre,codigo',
                     // Stock de TODOS los almacenes (una fila por almacén en la pantalla)
                     'stock' => function ($query) {
-                        $query->select('id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad');
+                        $query->select('id', 'producto_id', 'almacen_id', 'sector_id', 'lote', 'fecha_vencimiento', 'cantidad', 'cantidad_disponible');
                     },
                     'stock.sector:id,nombre',
                     'conversiones' => function ($query) {
@@ -5572,6 +5612,15 @@ class ProductoController extends Controller
                             'unidad_medida_id' => $producto->unidad_medida_id,
                             'unidad_nombre' => $producto->unidad?->nombre ?? 'UN',
                             'conversiones' => $conversiones,
+                            // Registros de stock de este almacén (para transferir desde un lote/sector concreto)
+                            'stocks' => $stocks->map(fn($s) => [
+                                'id' => $s->id,
+                                'sector' => $s->sector?->nombre,
+                                'lote' => $s->lote,
+                                'fecha_vencimiento' => $s->fecha_vencimiento ? \Illuminate\Support\Carbon::parse($s->fecha_vencimiento)->format('Y-m-d') : null,
+                                'cantidad' => (float) $s->cantidad,
+                                'cantidad_disponible' => (float) $s->cantidad_disponible,
+                            ])->values()->toArray(),
                         ];
                     });
                 })
@@ -5580,6 +5629,8 @@ class ProductoController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $productos,
+                // Almacenes de la empresa (destinos posibles de una transferencia)
+                'almacenes' => $almacenesEmpresa->map(fn($nombre, $id) => ['id' => (int) $id, 'nombre' => $nombre])->values(),
             ]);
         } catch (\Exception $e) {
             Log::error('❌ Error obtienendo productos para actualizar stock', [

@@ -2,6 +2,7 @@ import type { CodigoBarra, Imagen, Precio, ProductoFormData, ProductoFormPagePro
 import type { Id } from '@/domain/entities/shared';
 import NotificationService from '@/infrastructure/services/notification.service';
 import productosService from '@/infrastructure/services/productos.service';
+import { edit as editarProducto } from '@/routes/productos';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/presentation/components/ui/tabs';
@@ -1164,9 +1165,14 @@ export default function ProductoForm({
                                                                         conv.producto_destino?.nombre || `ID: ${conv.producto_destino_id}`;
                                                                     const stockHijo = stockProductosHijos[conv.producto_destino_id] || 0;
                                                                     return (
-                                                                        <div
-                                                                            key={idx}
-                                                                            className={`rounded border p-1 shadow-sm ${
+                                                                        // Abre la edición del producto hijo en otra pestaña
+                                                                        <a
+                                                                            key={conv.id ?? idx}
+                                                                            href={editarProducto.url(conv.producto_destino_id)}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            title={`Editar ${nombreHijo} en otra pestaña`}
+                                                                            className={`block rounded border p-1 shadow-sm transition hover:shadow-md hover:ring-2 hover:ring-cyan-400/50 ${
                                                                                 stockHijo > 0
                                                                                     ? 'border-cyan-200 bg-cyan-50 dark:border-cyan-700 dark:bg-cyan-950/30'
                                                                                     : 'border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-950/30'
@@ -1179,9 +1185,11 @@ export default function ProductoForm({
                                                                                         : 'text-red-700 dark:text-red-300'
                                                                                 }`}
                                                                             >
-                                                                                <div>{nombreHijo} : 📦{formatearNumero(stockHijo)}</div>
+                                                                                <div>
+                                                                                    {nombreHijo} : 📦{formatearNumero(stockHijo)} <span className="opacity-60">↗</span>
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
+                                                                        </a>
                                                                     );
                                                                 })}
                                                         </div>

@@ -5,7 +5,9 @@ import { Input } from '@/presentation/components/ui/input';
 import { Label } from '@/presentation/components/ui/label';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/presentation/components/ui/tooltip';
-import { HelpCircle } from 'lucide-react';
+import NotificationService from '@/infrastructure/services/notification.service';
+import axios from 'axios';
+import { HelpCircle, Loader2, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface Option {
@@ -137,6 +139,32 @@ export default function Step3Almacenes({
     const [loadingSectores, setLoadingSectores] = useState<Record<number | string, boolean>>({});
 
     const [expandedAlmacenes, setExpandedAlmacenes] = useState<boolean>(true);
+    const [eliminandoId, setEliminandoId] = useState<number | null>(null);
+
+    // Eliminar un lote: los nuevos (sin id) solo se quitan del formulario; los guardados se eliminan en el
+    // servidor por su stock_productos.id (soft delete, solo si está en 0) para limpiar duplicados.
+    const eliminarLote = async (a: StockAlmacen, i: number) => {
+        if (!a.id) {
+            await removeAlmacen(i);
+            return;
+        }
+        const ok = await NotificationService.confirm(
+            `¿Eliminar el lote #${a.id}${a.lote ? ` (${a.lote})` : ' (sin lote)'}? Solo se puede eliminar si su stock está en 0. Su historial de movimientos se conserva.`,
+            { confirmText: 'Eliminar', cancelText: 'Cancelar' },
+        );
+        if (!ok) return;
+
+        setEliminandoId(a.id);
+        try {
+            await axios.delete(`/api/productos/stock/${a.id}`);
+            setData('almacenes', (data.almacenes || []).filter((x: StockAlmacen) => x.id !== a.id));
+            NotificationService.success(`Lote #${a.id} eliminado`);
+        } catch (error: any) {
+            NotificationService.error(error?.response?.data?.message ?? 'Error al eliminar el lote');
+        } finally {
+            setEliminandoId(null);
+        }
+    };
 
     // ✨ Estado local para stock_limites (separado de data)
     const [stockLimites, setStockLimites] = useState<Record<number | string, any>>({});
@@ -257,9 +285,11 @@ export default function Step3Almacenes({
                             <div className="text-sm text-muted-foreground">No hay entradas. Añada al menos un almacén si desea controlar stock.</div>
                         )}
                         {expandedAlmacenes && (() => {
-                            const almacenesPorId = new Map<string | number, { nombre: string; lotes: StockAlmacen[] }>();
+                            // Cada lote guarda su índice REAL en data.almacenes: setAlmacen/handleAlmacenChange trabajan con ese índice.
+                            // Antes se usaba el índice dentro del grupo, y al escribir en un lote nuevo se modificaba otro ya existente.
+                            const almacenesPorId = new Map<string | number, { nombre: string; lotes: { a: StockAlmacen; idx: number }[] }>();
 
-                            (data.almacenes || []).forEach((a: StockAlmacen) => {
+                            (data.almacenes || []).forEach((a: StockAlmacen, idx: number) => {
                                 const key = String(a.almacen_id || 0);
                                 if (!almacenesPorId.has(key)) {
                                     const almacenOption = almacenesOptions.find(o => String(o.value) === key);
@@ -268,19 +298,20 @@ export default function Step3Almacenes({
                                         lotes: []
                                     });
                                 }
-                                almacenesPorId.get(key)!.lotes.push(a);
+                                almacenesPorId.get(key)!.lotes.push({ a, idx });
                             });
 
                             return (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {Array.from(almacenesPorId.values()).map((grupo, groupIdx) => (
-                                        <div key={groupIdx} className="space-y-3">
+                                    {Array.from(almacenesPorId.entries()).map(([almacenKey, grupo]) => (
+                                        <div key={`almacen-${almacenKey}`} className="space-y-3">
                                             <h3 className="font-semibold text-sm bg-gradient-to-r from-amber-100 to-amber-50 dark:from-amber-900 dark:to-amber-950 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-700">
                                                 📦 {grupo.nombre}
                                             </h3>
                                             <div className="space-y-3">
-                                                {grupo.lotes.map((a: StockAlmacen, i: number) => (
-                                                    <div key={i} className="p-1 border rounded-lg bg-slate-50 dark:bg-slate-900/30 space-y-3 md:space-y-2">
+                                                {grupo.lotes.map(({ a, idx: i }) => (
+                                                    // key estable: id de stock_productos; los lotes nuevos (sin id) usan su posición
+                                                    <div key={a.id ? `stock-${a.id}` : `nuevo-${i}`} className="p-1 border rounded-lg bg-slate-50 dark:bg-slate-900/30 space-y-3 md:space-y-2">
                                                         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-3">
                                                             <div>
                                                                 <div className="flex items-center gap-1 mb-1">
@@ -295,6 +326,16 @@ export default function Step3Almacenes({
                                                                             Selecciona el almacén donde se guarda este lote
                                                                         </TooltipContent>
                                                                     </Tooltip>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => eliminarLote(a, i)}
+                                                                        disabled={eliminandoId === a.id}
+                                                                        className="ml-auto p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/30 disabled:opacity-50"
+                                                                        title={a.id ? `Eliminar lote #${a.id} (debe estar en 0)` : 'Quitar este lote'}
+                                                                        aria-label="Eliminar lote"
+                                                                    >
+                                                                        {eliminandoId === a.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                                    </button>
                                                                 </div>
                                                                 <SearchSelect
                                                                     id={`almacen-select-${i}`}
@@ -519,7 +560,7 @@ export default function Step3Almacenes({
                                         </td>
                                     </tr>
                                 )}
-                                {Object.entries(filasLimites).map(([key, almacenLimites]: [string, any], idx: number) => {
+                                {Object.entries(filasLimites).map(([key, almacenLimites]: [string, any]) => {
                                     const almacenId = almacenLimites.almacen_id || Number(key);
 
                                     // Encontrar la opción correspondiente en almacenesOptions
@@ -527,11 +568,13 @@ export default function Step3Almacenes({
                                     if (!almacenOption) return null; // Skip si no existe la opción
 
                                     return (
-                                        <tr key={`${key}-${idx}`} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
+                                        <tr key={almacenLimites.id ? `limite-${almacenLimites.id}` : `limite-nuevo-${key}`} className="border-b hover:bg-purple-100/50 dark:hover:bg-purple-900/20">
                                             <td className="px-4 py-3 font-medium">#{almacenOption.value}</td>
                                             <td className="px-4 py-3 font-medium">{almacenOption.label}</td>
                                             <td className="px-4 py-3">
-                                                <div className="relative" style={{ position: 'relative', zIndex: 50 }}>
+                                                {/* Sin z-index fijo: con el mismo z en cada fila, la fila siguiente tapaba la lista desplegable.
+                                                    Solo la celda en uso (con foco) sube por encima del resto. */}
+                                                <div className="relative focus-within:z-[60]">
                                                     <SearchSelect
                                                         id={`sector-limit-${key}`}
                                                         placeholder="Seleccionar"

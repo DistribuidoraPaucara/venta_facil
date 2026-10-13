@@ -209,7 +209,7 @@ class FraccionamientoService
      * Registro de stock del hijo a reutilizar: sin lote ni vencimiento en el almacén,
      * priorizando el sector indicado (el del padre). Bloquea la fila para la transacción.
      */
-    private function buscarStockHijo(int $productoHijoId, int $almacenId, int $sectorId): ?StockProducto
+    public function buscarStockHijo(int $productoHijoId, int $almacenId, int $sectorId): ?StockProducto
     {
         return StockProducto::where('producto_id', $productoHijoId)
             ->where('almacen_id', $almacenId)
