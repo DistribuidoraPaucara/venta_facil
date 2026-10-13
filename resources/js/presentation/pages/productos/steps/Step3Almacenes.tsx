@@ -148,17 +148,33 @@ export default function Step3Almacenes({
             await removeAlmacen(i);
             return;
         }
+        const descripcion = `#${a.id}${a.lote ? ` (${a.lote})` : ' (sin lote)'}`;
+        const cantidad = Number(a.stock ?? 0);
+        const reservada = Number(a.cantidad_reservada ?? 0);
+
+        // Lo reservado pertenece a proformas/pedidos: el servidor no lo elimina ni forzando
+        if (reservada !== 0) {
+            NotificationService.error(
+                `No se puede eliminar el lote ${descripcion}: tiene ${reservada} unidad(es) reservada(s) para proformas o pedidos. Libera la reserva primero.`,
+            );
+            return;
+        }
+
+        const tieneStock = cantidad !== 0;
         const ok = await NotificationService.confirm(
-            `¿Eliminar el lote #${a.id}${a.lote ? ` (${a.lote})` : ' (sin lote)'}? Solo se puede eliminar si su stock está en 0. Su historial de movimientos se conserva.`,
-            { confirmText: 'Eliminar', cancelText: 'Cancelar' },
+            tieneStock
+                ? `⚠️ El lote ${descripcion} todavía tiene ${cantidad} en stock. Al eliminarlo se registrará una SALIDA DE AJUSTE por ${cantidad} y ese stock dejará de estar disponible. Esta acción no se puede deshacer. ¿Eliminar de todas formas?`
+                : `¿Eliminar el lote ${descripcion}? Su historial de movimientos se conserva.`,
+            { confirmText: tieneStock ? 'Eliminar con stock' : 'Eliminar', cancelText: 'Cancelar' },
         );
         if (!ok) return;
 
         setEliminandoId(a.id);
         try {
-            await axios.delete(`/api/productos/stock/${a.id}`);
+            // forzar: el servidor deja el lote en 0 con una SALIDA_AJUSTE antes de eliminarlo
+            const response = await axios.delete(`/api/productos/stock/${a.id}`, { params: tieneStock ? { forzar: 1 } : {} });
             setData('almacenes', (data.almacenes || []).filter((x: StockAlmacen) => x.id !== a.id));
-            NotificationService.success(`Lote #${a.id} eliminado`);
+            NotificationService.success(response.data?.message ?? `Lote #${a.id} eliminado`);
         } catch (error: any) {
             NotificationService.error(error?.response?.data?.message ?? 'Error al eliminar el lote');
         } finally {
@@ -331,7 +347,7 @@ export default function Step3Almacenes({
                                                                         onClick={() => eliminarLote(a, i)}
                                                                         disabled={eliminandoId === a.id}
                                                                         className="ml-auto p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/30 disabled:opacity-50"
-                                                                        title={a.id ? `Eliminar lote #${a.id} (debe estar en 0)` : 'Quitar este lote'}
+                                                                        title={a.id ? `Eliminar lote #${a.id}` : 'Quitar este lote'}
                                                                         aria-label="Eliminar lote"
                                                                     >
                                                                         {eliminandoId === a.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}

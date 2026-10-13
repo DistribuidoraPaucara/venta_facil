@@ -74,7 +74,7 @@ class ProductoController extends Controller
      * Elimina (soft delete) un registro de stock_productos vacío, ej. un lote duplicado.
      * Soft delete: movimientos_inventario conserva su referencia (FK) y el historial queda intacto.
      */
-    public function eliminarStockProducto(StockProducto $stockProducto): JsonResponse
+    public function eliminarStockProducto(Request $request, StockProducto $stockProducto): JsonResponse
     {
         // El scope de empresa de Producto impide eliminar stock de otra empresa
         $producto = Producto::find($stockProducto->producto_id);
@@ -85,24 +85,61 @@ class ProductoController extends Controller
         $cantidad   = (float) $stockProducto->cantidad;
         $disponible = (float) $stockProducto->cantidad_disponible;
         $reservada  = (float) $stockProducto->cantidad_reservada;
-        if ($cantidad != 0 || $disponible != 0 || $reservada != 0) {
+        // forzar=true: permite eliminar un lote con stock, dejándolo antes en 0 con una SALIDA_AJUSTE
+        $forzar     = $request->boolean('forzar');
+
+        // Lo reservado pertenece a proformas/pedidos: nunca se elimina de forma forzada
+        if ($reservada != 0) {
+            return ApiResponse::error(
+                "No se puede eliminar: el lote tiene {$reservada} unidad(es) reservada(s) para proformas o pedidos. Libera la reserva primero.",
+                422
+            );
+        }
+
+        if (($cantidad != 0 || $disponible != 0) && ! $forzar) {
             return ApiResponse::error(
                 "No se puede eliminar: el lote aún tiene stock (total {$cantidad}, disponible {$disponible}, reservada {$reservada}). Déjalo en 0 antes de eliminarlo.",
                 422
             );
         }
 
-        $stockProducto->delete();
+        try {
+            DB::transaction(function () use ($stockProducto, $cantidad) {
+                // Registrar la salida del stock que tenía para que el inventario y el historial cuadren
+                if ($cantidad != 0) {
+                    MovimientoInventario::registrar(
+                        StockProducto::lockForUpdate()->findOrFail($stockProducto->id),
+                        -$cantidad,
+                        MovimientoInventario::TIPO_SALIDA_AJUSTE,
+                        "Eliminación del lote #{$stockProducto->id}" . ($stockProducto->lote ? " ({$stockProducto->lote})" : ' (sin lote)'),
+                        null,
+                        auth()->id(),
+                        referenciaTipo: 'eliminacion_lote',
+                        referenciaId: $stockProducto->id
+                    );
+                }
+
+                $stockProducto->delete();
+            });
+        } catch (\Exception $e) {
+            Log::error('❌ Error al eliminar lote', ['stock_producto_id' => $stockProducto->id, 'error' => $e->getMessage()]);
+
+            return ApiResponse::error('No se pudo eliminar el lote: ' . $e->getMessage(), 422);
+        }
 
         Log::info('🗑️ StockProducto eliminado (soft delete)', [
             'stock_producto_id' => $stockProducto->id,
             'producto_id'       => $stockProducto->producto_id,
             'almacen_id'        => $stockProducto->almacen_id,
             'lote'              => $stockProducto->lote,
+            'cantidad_ajustada' => $cantidad,
             'user_id'           => auth()->id(),
         ]);
 
-        return ApiResponse::success(['id' => $stockProducto->id], 'Lote eliminado');
+        return ApiResponse::success(
+            ['id' => $stockProducto->id, 'cantidad_ajustada' => $cantidad],
+            $cantidad != 0 ? "Lote eliminado (se registró la salida de {$cantidad})" : 'Lote eliminado'
+        );
     }
 
     public function historialPrecios(Producto $producto): JsonResponse
@@ -2607,6 +2644,63 @@ class ProductoController extends Controller
     }
 
     /**
+     * Detecta lotes duplicados en stock_productos antes de guardar (app móvil: storeApi/updateApi).
+     * Duplicado = mismo almacén + mismo lote (null y '' cuentan como "sin lote") + misma fecha de vencimiento:
+     *  1) repetido dentro de la misma petición, o
+     *  2) (al actualizar) una entrada SIN id que coincide con un registro existente, que debería editarse.
+     * Devuelve el mensaje de advertencia o null si no hay duplicados.
+     */
+    private function detectarLotesDuplicados(array $almacenes, ?Producto $producto = null): ?string
+    {
+        $nombreAlmacen = fn(int $id) => Almacen::find($id)?->nombre ?? "Almacén {$id}";
+        $describir = function (int $almacenId, ?string $lote, ?string $vence) use ($nombreAlmacen) {
+            return $nombreAlmacen($almacenId) . ($lote ? " (lote {$lote}" : ' (sin lote')
+                . ($vence ? ", vence {$vence})" : ')');
+        };
+
+        $vistos = [];
+        foreach ($almacenes as $a) {
+            if (empty($a['almacen_id'])) {
+                continue;
+            }
+            $almacenId = (int) $a['almacen_id'];
+            $lote      = isset($a['lote']) && trim((string) $a['lote']) !== '' ? trim((string) $a['lote']) : null;
+            $vence     = ! empty($a['fecha_vencimiento']) ? substr((string) $a['fecha_vencimiento'], 0, 10) : null;
+            $clave     = $almacenId . '|' . ($lote ?? '') . '|' . ($vence ?? '');
+
+            if (isset($vistos[$clave])) {
+                return "Estás duplicando el lote: {$describir($almacenId, $lote, $vence)} está agregado más de una vez. "
+                    . 'Edita la cantidad del existente en lugar de agregar otro.';
+            }
+            $vistos[$clave] = true;
+
+            // Entrada nueva (sin id) que ya existe en la base de datos
+            if ($producto && empty($a['id'])) {
+                $existente = StockProducto::where('producto_id', $producto->id)
+                    ->where('almacen_id', $almacenId)
+                    ->when(
+                        $lote === null,
+                        fn($q) => $q->where(fn($w) => $w->whereNull('lote')->orWhere('lote', '')),
+                        fn($q) => $q->where('lote', $lote)
+                    )
+                    ->when(
+                        $vence === null,
+                        fn($q) => $q->whereNull('fecha_vencimiento'),
+                        fn($q) => $q->whereDate('fecha_vencimiento', $vence)
+                    )
+                    ->first();
+
+                if ($existente) {
+                    return "Estás duplicando el lote: el producto ya tiene {$describir($almacenId, $lote, $vence)} "
+                        . "(registro #{$existente->id}). Edita ese lote en lugar de agregar uno nuevo.";
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * API: Crear producto
      */
     public function storeApi(Request $request): JsonResponse
@@ -2637,6 +2731,14 @@ class ProductoController extends Controller
             'almacenes.*.stock_minimo'    => ['nullable', 'integer', 'min:0'],
             'almacenes.*.stock_maximo'    => ['nullable', 'integer', 'min:0'],
         ]);
+
+        if ($advertencia = $this->detectarLotesDuplicados($data['almacenes'] ?? [])) {
+            return response()->json([
+                'success' => false,
+                'message' => $advertencia,
+                'errors'  => ['almacenes' => [$advertencia]],
+            ], 422);
+        }
 
         try {
             $producto = DB::transaction(function () use ($data, $request) {
@@ -2898,6 +3000,14 @@ class ProductoController extends Controller
             'almacenes.*.stock_minimo'    => ['nullable', 'integer', 'min:0'],
             'almacenes.*.stock_maximo'    => ['nullable', 'integer', 'min:0'],
         ]);
+
+        if ($advertencia = $this->detectarLotesDuplicados($data['almacenes'] ?? [], $producto)) {
+            return response()->json([
+                'success' => false,
+                'message' => $advertencia,
+                'errors'  => ['almacenes' => [$advertencia]],
+            ], 422);
+        }
 
         try {
             // Remover campos que no van a productos table

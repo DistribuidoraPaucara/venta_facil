@@ -1142,7 +1142,12 @@ class Producto extends Model
             return $cantidad;
         }
 
-        return $this->convertirCantidad($cantidad, $unidadOrigenId, $this->unidad_medida_id);
+        try {
+            return $this->convertirCantidad($cantidad, $unidadOrigenId, $this->unidad_medida_id);
+        } catch (\Exception $e) {
+            // Sin conversión configurada → 1 a 1 en la unidad del producto (misma regla que en ventas)
+            return $cantidad;
+        }
     }
 
     /**

@@ -375,6 +375,7 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     Route::get('/app/productos/{producto}', [ProductoController::class, 'showApi']);
     Route::put('/app/productos/{producto}', [ProductoController::class, 'updateApi']);  // Actualizar
     Route::delete('/app/productos/{producto}', [ProductoController::class, 'destroyApi']); // Eliminar
+    Route::delete('/app/productos/stock/{stockProducto}', [ProductoController::class, 'eliminarStockProducto']); // Eliminar lote vacío (soft delete)
     Route::post('/app/productos/{producto}/imagenes', [ProductoController::class, 'uploadImagenApi']); // ✅ Subir imagen
 
     // ==========================================

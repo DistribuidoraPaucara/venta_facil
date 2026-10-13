@@ -802,7 +802,15 @@ export default function VentaForm() {
 
         // ✅ NUEVO (2026-09-06): Determinar unidad_venta_id inicial basándose en el precio recomendado
         // Si el precio recomendado tiene unidad_medida_id, usarla. Si no, usar unidad_medida_id del producto
-        const unidadVentaInicial = precioRecomendado?.unidad_medida_id || unidadBaseProducto;
+        // ⚠️ Solo si esa unidad es válida para el producto (su unidad base o una conversión activa):
+        // un precio guardado con una unidad vieja (ej. "Unidad" en un producto que ahora es "CAJETILLA")
+        // hacía que el backend rechazara la venta por "No existe conversión configurada".
+        const unidadPrecio = precioRecomendado?.unidad_medida_id;
+        const unidadPrecioValida =
+            !!unidadPrecio &&
+            (unidadPrecio === unidadBaseProducto ||
+                conversiones.some((c: any) => c.unidad_destino_id === unidadPrecio && c.activo !== false));
+        const unidadVentaInicial = unidadPrecioValida ? unidadPrecio : unidadBaseProducto;
 
         // ✅ IMPORTANTE: Siempre iniciar con cantidad=1, sin conversión automática
         // La conversión ocurre solo cuando el usuario cambia el tipo de precio manualmente

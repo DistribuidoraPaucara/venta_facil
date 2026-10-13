@@ -165,38 +165,8 @@ class UpdateVentaRequest extends FormRequest
                     $producto = \App\Models\Producto::find($detalle['producto_id'] ?? null);
 
                     if ($producto) {
-                        $unidadId = $detalle['unidad_medida_id'] ?? $producto->unidad_medida_id;
-
-                        // Si NO es fraccionado y la unidad es diferente a la base
-                        if (!$producto->es_fraccionado && $unidadId != $producto->unidad_medida_id) {
-                            $validator->errors()->add(
-                                "detalles.{$index}.unidad_medida_id",
-                                "El producto '{$producto->nombre}' no es fraccionado y solo puede venderse en su unidad base"
-                            );
-                        }
-
-                        // Si ES fraccionado, validar que existe conversión
-                        if ($producto->es_fraccionado && $unidadId != $producto->unidad_medida_id) {
-                            $existe = \App\Models\ConversionUnidadProducto::where('producto_id', $producto->id)
-                                ->where(function($q) use ($unidadId, $producto) {
-                                    $q->where(function($q2) use ($unidadId, $producto) {
-                                        $q2->where('unidad_base_id', $producto->unidad_medida_id)
-                                           ->where('unidad_destino_id', $unidadId);
-                                    })->orWhere(function($q2) use ($unidadId, $producto) {
-                                        $q2->where('unidad_base_id', $unidadId)
-                                           ->where('unidad_destino_id', $producto->unidad_medida_id);
-                                    });
-                                })
-                                ->where('activo', true)
-                                ->exists();
-
-                            if (!$existe) {
-                                $validator->errors()->add(
-                                    "detalles.{$index}.unidad_medida_id",
-                                    "No existe conversión de unidad configurada para el producto '{$producto->nombre}'"
-                                );
-                            }
-                        }
+                        // Sin restricción de unidad: cada presentación (paquete, cajetilla...) es un producto propio.
+                        // Si la unidad no tiene conversión, VentaDistribucionService/StockService venden 1 a 1 en la unidad del producto.
                     }
                 }
             }

@@ -87,19 +87,21 @@ class VentaDistribucionService
             ->where('activo', true)
             ->first();
 
-        // Si NO hay conversión pero se solicita en unidad diferente → ERROR
+        // Sin conversión para esa unidad → vender 1 a 1 en la unidad del producto (no bloquear la venta).
+        // Cada presentación (paquete, cajetilla...) es su propio producto; la unidad del precio puede ser un resto.
         if (!$conversion) {
-            Log::error('❌ [VentaDistribucionService] Conversión no encontrada', [
+            Log::warning('⚠️ [VentaDistribucionService] Sin conversión: se vende 1 a 1 en la unidad del producto', [
                 'producto_id' => $producto->id,
                 'producto_nombre' => $producto->nombre,
                 'unidad_venta_id' => $unidadVentaId,
                 'unidad_almacenamiento_id' => $producto->unidad_medida_id,
             ]);
 
-            throw new Exception(
-                "No existe conversión configurada para el producto '{$producto->nombre}' " .
-                "de la unidad de venta a la unidad de almacenamiento"
-            );
+            return [
+                'cantidad_consumir' => $cantidadSolicitada,
+                'conversion_aplicada' => false,
+                'factor' => null,
+            ];
         }
 
         // 🔷 PASO 5: Convertir cantidad de unidad de venta a unidad de almacenamiento
