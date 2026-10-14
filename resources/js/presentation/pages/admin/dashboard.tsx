@@ -23,6 +23,7 @@ import { AlertasStock } from '@/presentation/components/dashboard/alertas-stock'
 import { ProductosMasVendidos } from '@/presentation/components/dashboard/productos-mas-vendidos';
 import { PeriodSelector } from '@/presentation/components/dashboard/period-selector';
 import { AlertCircle, TrendingDown } from 'lucide-react';
+import CalendarioVencimientos, { type CuentaCalendario, type LoteCalendario } from '@/presentation/pages/compras/lotes-vencimientos/components/calendario-vencimientos';
 
 interface AdminDashboardProps {
     metricas: {
@@ -104,6 +105,9 @@ interface AdminDashboardProps {
     }>;
     totalCuentasVencidas?: number;
     totalMontoVencido?: number;
+    calendario?: LoteCalendario[];
+    cuentasCalendario?: CuentaCalendario[];
+    mesCalendario?: string;
     periodo: string;
     titulo: string;
     descripcion: string;
@@ -129,6 +133,9 @@ export default function AdminDashboard({
     cuentasVencidas = [],
     totalCuentasVencidas = 0,
     totalMontoVencido = 0,
+    calendario = [],
+    cuentasCalendario = [],
+    mesCalendario = new Date().toISOString().slice(0, 7),
     periodo: initialPeriodo = 'mes_actual',
     titulo = 'Dashboard Administrativo',
     descripcion = 'Resumen completo del sistema',
@@ -164,7 +171,7 @@ export default function AdminDashboard({
         setPeriodo(newPeriod);
         setLoading(true);
 
-        router.get('/admin/dashboard', { periodo: newPeriod }, {
+        router.get('/admin/dashboard', { periodo: newPeriod, mes: mesCalendario }, {
             preserveScroll: true,
             onFinish: () => setLoading(false),
         });
@@ -203,6 +210,17 @@ export default function AdminDashboard({
                     <PeriodSelector
                         value={periodo}
                         onChange={handlePeriodChange}
+                    />
+                </div>
+
+                {/* Calendario de vencimientos de lotes */}
+                <div className="rounded-lg border bg-card p-4">
+                    <CalendarioVencimientos
+                        lotes={calendario}
+                        cuentas={cuentasCalendario}
+                        mes={mesCalendario}
+                        ruta="/admin/dashboard"
+                        filtros={{ periodo }}
                     />
                 </div>
 
@@ -291,81 +309,16 @@ export default function AdminDashboard({
                     </div>
                 )}
 
-                {/* Métricas principales */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <MetricCard
-                        title="Ventas Totales"
-                        value={safeMetricas.ventas.total}
-                        subtitle={`${safeMetricas.ventas.cantidad} ventas`}
-                        change={safeMetricas.ventas.cambio_porcentual}
-                        icon={DollarSign}
-                        loading={loading}
-                    />
-                    <MetricCard
-                        title="Compras Totales"
-                        value={safeMetricas.compras.total}
-                        subtitle={`${safeMetricas.compras.cantidad} compras`}
-                        change={safeMetricas.compras.cambio_porcentual}
-                        icon={ShoppingCart}
-                        loading={loading}
-                    />
-                    <MetricCard
-                        title="Valor Inventario"
-                        value={safeMetricas.inventario.valor_inventario}
-                        subtitle={`${safeMetricas.inventario.total_productos} productos`}
-                        icon={Package}
-                        loading={loading}
-                    />
-                    <MetricCard
-                        title="Saldo en Caja"
-                        value={safeMetricas.caja.saldo}
-                        subtitle={`${safeMetricas.caja.total_movimientos} movimientos`}
-                        change={
-                            safeMetricas.caja.ingresos === 0 && safeMetricas.caja.egresos === 0 ? 0 :
-                                safeMetricas.caja.ingresos > safeMetricas.caja.egresos ?
-                                    safeMetricas.caja.ingresos > 0 ? ((safeMetricas.caja.ingresos - safeMetricas.caja.egresos) / safeMetricas.caja.ingresos) * 100 : 0 :
-                                    safeMetricas.caja.egresos > 0 ? -((safeMetricas.caja.egresos - safeMetricas.caja.ingresos) / safeMetricas.caja.egresos) * 100 : 0
-                        }
-                        icon={Wallet}
-                        loading={loading}
-                    />
-                </div>
-
-                {/* Métricas secundarias */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <MetricCard
-                        title="Clientes Activos"
-                        value={safeMetricas.clientes.activos}
-                        subtitle={`${safeMetricas.clientes.nuevos} nuevos`}
-                        icon={Users}
-                        loading={loading}
-                    />
-                    <MetricCard
-                        title="Proformas Aprobadas"
-                        value={`${safeMetricas.proformas.tasa_aprobacion}%`}
-                        subtitle={`${safeMetricas.proformas.aprobadas}/${safeMetricas.proformas.total} total`}
-                        icon={FileText}
-                        loading={loading}
-                    />
-                    <MetricCard
-                        title="Stock Total"
-                        value={safeMetricas.inventario.stock_total}
-                        subtitle={`${safeMetricas.inventario.productos_sin_stock} sin stock`}
-                        icon={Activity}
-                        loading={loading}
-                    />
-                </div>
-
                 {/* Gráficos y datos detallados */}
                 <div className="grid gap-6 lg:grid-cols-2">
                     {/* Gráfico de ventas */}
-                    <ChartWrapper
+                    {/* <ChartWrapper
                         title="Evolución de Ventas"
                         type="line"
                         data={safeGraficoVentas}
                         loading={loading}
                         className="lg:col-span-2"
-                    />
+                    /> */}
 
                     {/* Ventas por canal */}
                     <ChartWrapper
@@ -389,6 +342,7 @@ export default function AdminDashboard({
                     loading={loading}
                 />
 
+                
 
             </div>
         </AppLayout>

@@ -13,7 +13,7 @@ import {
     startOfWeek,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, ImageOff, CalendarDays, Trash2, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageOff, CalendarDays, Trash2, ExternalLink, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Button } from '@/presentation/components/ui/button';
 import { Badge } from '@/presentation/components/ui/badge';
@@ -32,10 +32,22 @@ export interface LoteCalendario {
     estado_vencimiento: 'VIGENTE' | 'PROXIMO_VENCER' | 'VENCIDO' | 'CRITICO' | 'SIN_VENCIMIENTO';
 }
 
+export interface CuentaCalendario {
+    id: number;
+    cliente_nombre: string;
+    saldo_pendiente: number;
+    fecha_vencimiento: string;
+    referencia_documento: string | null;
+    estado: string;
+    vencida: boolean;
+}
+
 interface Props {
     lotes: LoteCalendario[];
+    cuentas?: CuentaCalendario[]; // cuentas por cobrar que vencen en el mes (opcional)
     mes: string; // YYYY-MM
-    filtros: Record<string, string | undefined>;
+    filtros?: Record<string, string | undefined>;
+    ruta?: string; // página que recarga el calendario al cambiar de mes
     onDarDeBaja?: (id: number, lote: string, onDone?: () => void) => void;
 }
 
@@ -49,6 +61,15 @@ const colorEstado: Record<LoteCalendario['estado_vencimiento'], string> = {
     VENCIDO: 'border-red-500',
     SIN_VENCIMIENTO: 'border-gray-300',
 };
+
+// Cuentas por cobrar: rojo si ya venció, azul si aún está por vencer
+const colorCuenta = (c: CuentaCalendario) =>
+    c.vencida
+        ? 'border-red-500 bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-200'
+        : 'border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-200';
+
+const formatBs =(monto: number) =>
+    `Bs. ${monto.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // Evita que el modal se cierre al hacer clic en el toast de confirmación (se renderiza fuera del modal)
 export const ignorarClicEnToast = (e: Event) => {
@@ -71,7 +92,7 @@ function ImagenProducto({ url, alt, className }: { url: string | null; alt: stri
     return <img src={url} alt={alt} loading="lazy" onError={() => setError(true)} className={`${className} object-cover`} />;
 }
 
-export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaja }: Props) {
+export default function CalendarioVencimientos({ lotes, cuentas, mes, filtros = {}, ruta = '/compras/lotes-vencimientos', onDarDeBaja }: Props) {
     const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
 
     const fechaMes = useMemo(() => parse(mes, 'yyyy-MM', new Date()), [mes]);
@@ -94,6 +115,14 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
         return mapa;
     }, [lotes]);
 
+    const cuentasPorDia = useMemo(() => {
+        const mapa: Record<string, CuentaCalendario[]> = {};
+        (cuentas ?? []).forEach((c) => {
+            (mapa[c.fecha_vencimiento] ??= []).push(c);
+        });
+        return mapa;
+    }, [cuentas]);
+
     const cambiarMes = (delta: number) => {
         const nuevoMes = format(addMonths(fechaMes, delta), 'yyyy-MM');
         irAMes(nuevoMes);
@@ -104,14 +133,15 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
         Object.entries(filtros).forEach(([k, v]) => {
             if (v) params[k] = v;
         });
-        router.get('/compras/lotes-vencimientos', params, {
+        router.get(ruta, params, {
             preserveState: true,
             preserveScroll: true,
-            only: ['calendario', 'mesCalendario'],
+            only: ['calendario', 'mesCalendario', ...(cuentas ? ['cuentasCalendario'] : [])],
         });
     };
 
     const lotesDelDia = diaSeleccionado ? lotesPorDia[diaSeleccionado] ?? [] : [];
+    const cuentasDelDia = diaSeleccionado ? cuentasPorDia[diaSeleccionado] ?? [] : [];
 
     return (
         <div>
@@ -123,7 +153,9 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
                             Calendario de Vencimientos
                         </CardTitle>
                         <CardDescription>
-                            {lotes.length} lote{lotes.length !== 1 ? 's' : ''} vence{lotes.length !== 1 ? 'n' : ''} este mes
+                            {lotes.length} lote{lotes.length !== 1 ? 's' : ''}
+                            {cuentas && ` y ${cuentas.length} cuenta${cuentas.length !== 1 ? 's' : ''} por cobrar`}
+                            {' '}vence{lotes.length + (cuentas?.length ?? 0) !== 1 ? 'n' : ''} este mes
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -156,6 +188,10 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
                     {dias.map((dia) => {
                         const clave = format(dia, 'yyyy-MM-dd');
                         const delDia = lotesPorDia[clave] ?? [];
+                        const cuentasDia = cuentasPorDia[clave] ?? [];
+                        const totalDia = delDia.length + cuentasDia.length;
+                        const lotesVisibles = delDia.slice(0, MAX_POR_DIA);
+                        const cuentasVisibles = cuentasDia.slice(0, MAX_POR_DIA - lotesVisibles.length);
                         const esDelMes = isSameMonth(dia, fechaMes);
                         const hoy = isToday(dia);
 
@@ -163,11 +199,11 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
                             <button
                                 type="button"
                                 key={clave}
-                                disabled={delDia.length === 0}
+                                disabled={totalDia === 0}
                                 onClick={() => setDiaSeleccionado(clave)}
                                 className={`min-h-28 p-1.5 text-left align-top transition-colors flex flex-col gap-1
                                     ${esDelMes ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-950 opacity-50'}
-                                    ${delDia.length > 0 ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950' : 'cursor-default'}`}
+                                    ${totalDia > 0 ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950' : 'cursor-default'}`}
                             >
                                 <div className="flex items-center justify-between">
                                     <span
@@ -177,14 +213,14 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
                                     >
                                         {format(dia, 'd')}
                                     </span>
-                                    {delDia.length > 0 && (
+                                    {totalDia > 0 && (
                                         <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                                            {delDia.length}
+                                            {totalDia}
                                         </Badge>
                                     )}
                                 </div>
 
-                                {delDia.slice(0, MAX_POR_DIA).map((l) => (
+                                {lotesVisibles.map((l) => (
                                     <div
                                         key={l.id}
                                         className={`flex items-center gap-1 rounded border-l-4 bg-gray-50 dark:bg-gray-800 p-0.5 ${colorEstado[l.estado_vencimiento]}`}
@@ -198,9 +234,23 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
                                     </div>
                                 ))}
 
-                                {delDia.length > MAX_POR_DIA && (
+                                {cuentasVisibles.map((c) => (
+                                    <div
+                                        key={`cxc-${c.id}`}
+                                        className={`flex items-center gap-1 rounded border-l-4 p-0.5 ${colorCuenta(c)}`}
+                                        title={`${c.cliente_nombre} · ${formatBs(c.saldo_pendiente)}`}
+                                    >
+                                        <Wallet className="h-4 w-4 shrink-0" />
+                                        <div className="min-w-0 text-[10px] leading-tight">
+                                            <div className="truncate font-medium">{c.cliente_nombre}</div>
+                                            <div className="truncate font-mono">{formatBs(c.saldo_pendiente)}</div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {totalDia > MAX_POR_DIA && (
                                     <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">
-                                        +{delDia.length - MAX_POR_DIA} más
+                                        +{totalDia - MAX_POR_DIA} más
                                     </span>
                                 )}
                             </button>
@@ -216,11 +266,52 @@ export default function CalendarioVencimientos({ lotes, mes, filtros, onDarDeBaj
                             {diaSeleccionado && format(parse(diaSeleccionado, 'yyyy-MM-dd', new Date()), "EEEE d 'de' MMMM yyyy", { locale: es })}
                         </DialogTitle>
                         <DialogDescription>
-                            {lotesDelDia.length} lote{lotesDelDia.length !== 1 ? 's' : ''} vence{lotesDelDia.length !== 1 ? 'n' : ''} este día
+                            {lotesDelDia.length} lote{lotesDelDia.length !== 1 ? 's' : ''}
+                            {cuentas && ` y ${cuentasDelDia.length} cuenta${cuentasDelDia.length !== 1 ? 's' : ''} por cobrar`}
+                            {' '}vence{lotesDelDia.length + cuentasDelDia.length !== 1 ? 'n' : ''} este día
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+                        {cuentasDelDia.length > 0 && (
+                            <h4 className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                <Wallet className="h-4 w-4" />
+                                Cuentas por cobrar
+                                <span className="ml-auto font-mono">
+                                    {formatBs(cuentasDelDia.reduce((s, c) => s + c.saldo_pendiente, 0))}
+                                </span>
+                            </h4>
+                        )}
+                        {cuentasDelDia.map((c) => (
+                            <div key={`cxc-${c.id}`} className={`flex items-center gap-3 rounded-lg border border-l-4 p-2 ${colorCuenta(c)}`}>
+                                <div className="min-w-0 flex-1">
+                                    <div className="truncate font-medium">{c.cliente_nombre}</div>
+                                    <div className="text-sm opacity-80">
+                                        Ref.:{' '}
+                                        <a
+                                            href={`/ventas/cuentas-por-cobrar/${c.id}/show`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="Ver cuenta por cobrar (nueva pestaña)"
+                                            className="inline-flex items-center gap-0.5 font-bold text-blue-600 hover:underline dark:text-blue-400"
+                                        >
+                                            {c.referencia_documento ?? `#${c.id}`}
+                                            <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                    </div>
+                                </div>
+                                <div className="flex shrink-0 flex-col items-end gap-1">
+                                    <span className="font-mono font-bold">{formatBs(c.saldo_pendiente)}</span>
+                                    <Badge variant="outline" className="text-[10px]">
+                                        {c.vencida ? 'VENCIDA' : c.estado}
+                                    </Badge>
+                                </div>
+                            </div>
+                        ))}
+
+                        {cuentasDelDia.length > 0 && lotesDelDia.length > 0 && (
+                            <h4 className="pt-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Lotes</h4>
+                        )}
                         {lotesDelDia.map((l) => (
                             <div key={l.id} className={`flex items-center gap-3 rounded-lg border border-l-4 p-2 ${colorEstado[l.estado_vencimiento]}`}>
                                 <ImagenProducto url={l.imagen_url} alt={l.producto_nombre ?? ''} className="h-16 w-16 shrink-0 rounded-md" />

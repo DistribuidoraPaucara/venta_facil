@@ -144,7 +144,7 @@ historialCargas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     historialCargas.form = historialCargasForm
 /**
 * @see \App\Http\Controllers\ProductoController::paginados
- * @see app/Http/Controllers/ProductoController.php:5175
+ * @see app/Http/Controllers/ProductoController.php:5187
  * @route '/productos/paginados/listar'
  */
 export const paginados = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -159,7 +159,7 @@ paginados.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::paginados
- * @see app/Http/Controllers/ProductoController.php:5175
+ * @see app/Http/Controllers/ProductoController.php:5187
  * @route '/productos/paginados/listar'
  */
 paginados.url = (options?: RouteQueryOptions) => {
@@ -168,7 +168,7 @@ paginados.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::paginados
- * @see app/Http/Controllers/ProductoController.php:5175
+ * @see app/Http/Controllers/ProductoController.php:5187
  * @route '/productos/paginados/listar'
  */
 paginados.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -177,7 +177,7 @@ paginados.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProductoController::paginados
- * @see app/Http/Controllers/ProductoController.php:5175
+ * @see app/Http/Controllers/ProductoController.php:5187
  * @route '/productos/paginados/listar'
  */
 paginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -187,7 +187,7 @@ paginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProductoController::paginados
- * @see app/Http/Controllers/ProductoController.php:5175
+ * @see app/Http/Controllers/ProductoController.php:5187
  * @route '/productos/paginados/listar'
  */
     const paginadosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -197,7 +197,7 @@ paginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProductoController::paginados
- * @see app/Http/Controllers/ProductoController.php:5175
+ * @see app/Http/Controllers/ProductoController.php:5187
  * @route '/productos/paginados/listar'
  */
         paginadosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -206,7 +206,7 @@ paginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProductoController::paginados
- * @see app/Http/Controllers/ProductoController.php:5175
+ * @see app/Http/Controllers/ProductoController.php:5187
  * @route '/productos/paginados/listar'
  */
         paginadosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -222,7 +222,7 @@ paginados.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     paginados.form = paginadosForm
 /**
 * @see \App\Http\Controllers\ProductoController::filtrosData
- * @see app/Http/Controllers/ProductoController.php:5293
+ * @see app/Http/Controllers/ProductoController.php:5305
  * @route '/productos/filtros/datos'
  */
 export const filtrosData = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -237,7 +237,7 @@ filtrosData.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::filtrosData
- * @see app/Http/Controllers/ProductoController.php:5293
+ * @see app/Http/Controllers/ProductoController.php:5305
  * @route '/productos/filtros/datos'
  */
 filtrosData.url = (options?: RouteQueryOptions) => {
@@ -246,7 +246,7 @@ filtrosData.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ProductoController::filtrosData
- * @see app/Http/Controllers/ProductoController.php:5293
+ * @see app/Http/Controllers/ProductoController.php:5305
  * @route '/productos/filtros/datos'
  */
 filtrosData.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -255,7 +255,7 @@ filtrosData.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ProductoController::filtrosData
- * @see app/Http/Controllers/ProductoController.php:5293
+ * @see app/Http/Controllers/ProductoController.php:5305
  * @route '/productos/filtros/datos'
  */
 filtrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -265,7 +265,7 @@ filtrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ProductoController::filtrosData
- * @see app/Http/Controllers/ProductoController.php:5293
+ * @see app/Http/Controllers/ProductoController.php:5305
  * @route '/productos/filtros/datos'
  */
     const filtrosDataForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -275,7 +275,7 @@ filtrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ProductoController::filtrosData
- * @see app/Http/Controllers/ProductoController.php:5293
+ * @see app/Http/Controllers/ProductoController.php:5305
  * @route '/productos/filtros/datos'
  */
         filtrosDataForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -284,7 +284,7 @@ filtrosData.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ProductoController::filtrosData
- * @see app/Http/Controllers/ProductoController.php:5293
+ * @see app/Http/Controllers/ProductoController.php:5305
  * @route '/productos/filtros/datos'
  */
         filtrosDataForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

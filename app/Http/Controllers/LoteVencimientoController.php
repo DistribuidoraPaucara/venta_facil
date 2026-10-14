@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MovimientoInventario;
 use App\Models\StockProducto;
+use App\Services\Stock\CalendarioVencimientosService;
 use App\Services\Stock\MovimientoStockService;
 use App\Models\Producto;
 use App\Models\Almacen;
@@ -14,7 +15,7 @@ use Inertia\Inertia;
 
 class LoteVencimientoController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, CalendarioVencimientosService $calendarioService)
     {
         // ✅ MODIFICADO: Filtrar por empresa del usuario autenticado
         $empresaId = Auth::user()->empresa_id;
@@ -123,45 +124,13 @@ class LoteVencimientoController extends Controller
         ];
 
         // Calendario: lotes que vencen en el mes seleccionado (?mes=YYYY-MM)
-        try {
-            $mes = \Carbon\Carbon::createFromFormat('Y-m', (string) $request->get('mes', now()->format('Y-m')))->startOfMonth();
-        } catch (\Throwable $e) {
-            $mes = now()->startOfMonth();
-        }
-
-        $calendario = StockProducto::with([
-                'producto:id,nombre,sku',
-                'producto.codigoPrincipal:id,producto_id,codigo',
-                'producto.imagenes:id,producto_id,url,es_principal,orden',
-                'almacen:id,nombre',
-            ])
-            ->whereNotNull('lote')
-            ->whereHas('almacen', function ($q) use ($empresaId) {
-                $q->where('empresa_id', $empresaId);
-            })
-            ->whereBetween('fecha_vencimiento', [$mes->toDateString(), $mes->copy()->endOfMonth()->toDateString()])
-            ->when($request->producto_id, fn ($q) => $q->where('producto_id', $request->producto_id))
-            ->when($request->almacen_id, fn ($q) => $q->where('almacen_id', $request->almacen_id))
-            ->orderBy('fecha_vencimiento')
-            ->get()
-            ->map(function ($stock) {
-                $imagenes = $stock->producto?->imagenes ?? collect();
-                $imagen   = $imagenes->firstWhere('es_principal', true) ?? $imagenes->sortBy('orden')->first();
-
-                return [
-                    'id'                => $stock->id,
-                    'producto_id'       => $stock->producto_id,
-                    'producto_nombre'   => $stock->producto?->nombre,
-                    'sku'               => $stock->producto?->sku ?? $stock->producto?->codigoPrincipal?->codigo,
-                    'imagen_url'        => $imagen?->url,
-                    'lote'              => $stock->lote,
-                    'almacen'           => $stock->almacen?->nombre,
-                    'cantidad'          => $stock->cantidad,
-                    'fecha_vencimiento' => $stock->fecha_vencimiento?->toDateString(),
-                    'estado_vencimiento' => $this->determinarEstadoVencimiento($stock),
-                ];
-            })
-            ->values();
+        $mes = $calendarioService->resolverMes($request->get('mes'));
+        $calendario = $calendarioService->obtener(
+            $empresaId,
+            $mes,
+            $request->producto_id ? (int) $request->producto_id : null,
+            $request->almacen_id ? (int) $request->almacen_id : null,
+        );
 
         return Inertia::render('compras/lotes-vencimientos/index', [
             'calendario'    => $calendario,
@@ -200,23 +169,7 @@ class LoteVencimientoController extends Controller
      */
     private function determinarEstadoVencimiento(StockProducto $stock): string
     {
-        if ($stock->estaVencido()) {
-            return 'VENCIDO';
-        }
-
-        if ($stock->proximoVencer(7)) {
-            return 'CRITICO';
-        }
-
-        if ($stock->proximoVencer(30)) {
-            return 'PROXIMO_VENCER';
-        }
-
-        if ($stock->fecha_vencimiento) {
-            return 'VIGENTE';
-        }
-
-        return 'SIN_VENCIMIENTO';
+        return CalendarioVencimientosService::determinarEstadoVencimiento($stock);
     }
 
     /**

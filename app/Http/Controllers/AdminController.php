@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\DashboardService;
+use App\Services\Stock\CalendarioVencimientosService;
 use App\Models\CuentaPorCobrar;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class AdminController extends Controller
         private DashboardService $dashboardService
     ) {}
 
-    public function dashboard(Request $request)
+    public function dashboard(Request $request, CalendarioVencimientosService $calendarioService)
     {
         $user = Auth::user();
         $periodo = $request->get('periodo', 'ultimos_30_dias');
@@ -59,6 +60,35 @@ class AdminController extends Controller
         $totalCuentasVencidas = $cuentasVencidas->count();
         $totalMontoVencido = $cuentasVencidas->sum('saldo_pendiente');
 
+        // 📅 Calendario de vencimientos de lotes (?mes=YYYY-MM)
+        $mesCalendario = $calendarioService->resolverMes($request->get('mes'));
+        $calendario = $calendarioService->obtener($empresaId, $mesCalendario);
+
+        // 📅 Cuentas por cobrar pendientes que vencen en el mes del calendario
+        $cuentasCalendario = CuentaPorCobrar::with(['cliente:id,nombre'])
+            ->pendientes()
+            ->whereNotIn('estado', ['PAGADO', 'ANULADO'])
+            ->whereBetween('fecha_vencimiento', [
+                $mesCalendario->toDateString(),
+                $mesCalendario->copy()->endOfMonth()->toDateString(),
+            ])
+            ->where(function ($q) use ($userIds) {
+                $q->whereIn('usuario_id', $userIds)
+                  ->orWhereNull('usuario_id');
+            })
+            ->orderBy('fecha_vencimiento')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'cliente_nombre' => $c->cliente?->nombre ?? 'Sin cliente',
+                'saldo_pendiente' => (float) $c->saldo_pendiente,
+                'fecha_vencimiento' => $c->fecha_vencimiento?->toDateString(),
+                'referencia_documento' => $c->referencia_documento,
+                'estado' => $c->estado,
+                'vencida' => $c->fecha_vencimiento?->lt(today()) ?? false,
+            ])
+            ->values();
+
         return Inertia::render('admin/dashboard', [
             'metricas' => $metricas,
             'graficoVentas' => $graficoVentas,
@@ -68,6 +98,9 @@ class AdminController extends Controller
             'cuentasVencidas' => $cuentasVencidas,
             'totalCuentasVencidas' => $totalCuentasVencidas,
             'totalMontoVencido' => $totalMontoVencido,
+            'calendario' => $calendario,
+            'cuentasCalendario' => $cuentasCalendario,
+            'mesCalendario' => $mesCalendario->format('Y-m'),
             'periodo' => $periodo,
             'titulo' => 'Dashboard Administrativo',
             'descripcion' => 'Resumen completo del sistema',

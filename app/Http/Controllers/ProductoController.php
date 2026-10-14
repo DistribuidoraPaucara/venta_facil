@@ -3433,7 +3433,7 @@ class ProductoController extends Controller
     public function buscarApi(Request $request): JsonResponse
     {
         $q                = $request->string('q');
-        $limite           = $request->integer('limite', 10);
+        $limite           = min(max($request->integer('limite', 10), 1), 100); // Tope de seguridad: 100
         $tipoBusqueda     = $request->string('tipo_busqueda', 'parcial');   // ✅ exacta o parcial
         $tipo             = $request->string('tipo', 'venta');              // ✅ 'venta' o 'compra'
         $clienteId        = $request->integer('cliente_id', null);          // ✅ NUEVO: Cliente para filtrar tipos_precio
@@ -3633,6 +3633,18 @@ class ProductoController extends Controller
                         });
                 }
             })
+            // Relevancia: nombre exacto > empieza con el texto > alguna palabra empieza con el texto > contiene
+            ->orderByRaw(
+                'CASE
+                    WHEN LOWER(nombre) = ? THEN 0
+                    WHEN LOWER(nombre) LIKE ? THEN 1
+                    WHEN LOWER(nombre) LIKE ? THEN 2
+                    ELSE 3
+                END',
+                [$searchLower, "$searchLower%", "% $searchLower%"]
+            )
+            // Desempate: nombre más corto = más parecido a lo buscado ("BLACK 330ml" antes que "Black Erva Sab. ...")
+            ->orderByRaw('CHAR_LENGTH(nombre) ASC')
             ->orderBy('id', 'desc')
             ->limit($limite)
             ->get();

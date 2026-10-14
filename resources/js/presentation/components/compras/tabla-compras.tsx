@@ -289,7 +289,7 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                     <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                         {comprasSeguras.map((compra) => (
                             <tr key={compra.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="px-2 py-4 text-center text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white">
+                                <td className="px-2 py-2 text-center text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white">
                                     #{compra.id}
                                 </td>
                                 {/* <td className="px-2 py-4 text-xs font-mono whitespace-nowrap text-gray-900 dark:text-white">
@@ -311,16 +311,16 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                     </span>
                                 </td>
 
-                                <td className="px-2 py-4 text-xs whitespace-nowrap text-gray-900 dark:text-white">
+                                <td className="px-2 py-2 text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <p className="text-xs font-medium">{compra.proveedor?.nombre ?? 'Sin proveedor'}</p>
                                 </td>
-                                <td className="px-2 py-4 text-xs whitespace-nowrap text-gray-900 dark:text-white">
+                                <td className="px-2 py-2 text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <p className="text-xs text-gray-400">
                                         {compra.usuario?.name}
                                     </p>
                                 </td>
 
-                                <td className="px-2 py-4 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
+                                <td className="px-2 py-2 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <div className="font-mono text-xs">
                                         {/* ✅ NUEVO (2026-09-09): Mostrar solo decimales necesarios */}
                                         <div className="font-semibold">
@@ -352,7 +352,7 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                         <span className="text-xs text-gray-400">Sin tipo</span>
                                     )} */}
                                 </td>
-                                <td className="px-2 py-4 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
+                                <td className="px-2 py-2 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <div className="font-medium">
                                         {new Date(compra.created_at).toLocaleString('es-ES', {
                                             year: 'numeric',
@@ -365,7 +365,7 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                     </div>
                                 </td>
 
-                                <td className="px-2 py-4 text-right text-sm font-medium whitespace-nowrap">
+                                <td className="px-2 py-2 text-right text-sm font-medium whitespace-nowrap">
                                     {/* ✅ NUEVO (2026-09-09): Menú dropdown de acciones */}
                                     <AccionesCompraDropdown
                                         compra={compra}

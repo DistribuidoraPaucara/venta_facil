@@ -4,6 +4,9 @@ import { NotificationService } from '@/infrastructure/services/notification.serv
 import type { Producto } from '@/domain/entities/ventas';
 import Fuse from 'fuse.js';
 
+// Máximo de productos por búsqueda en API (el backend también lo limita a 100)
+const LIMITE_BUSQUEDA_API = '100';
+
 interface UseProductSearchProps {
     tipo: 'compra' | 'venta';
     almacen_id?: number;
@@ -445,7 +448,7 @@ export function useProductSearch({
 
                     const params = new URLSearchParams({
                         q: term,
-                        limite: '10',
+                        limite: LIMITE_BUSQUEDA_API,
                         tipo: tipo
                     });
 
@@ -463,7 +466,7 @@ export function useProductSearch({
                     console.log('📡 [useProductSearch] URL:', url);
                     console.log('📦 [useProductSearch] Parámetros:', {
                         q: term,
-                        limite: '10',
+                        limite: LIMITE_BUSQUEDA_API,
                         tipo: tipo,
                         almacen_id: almacen_id,
                         cliente_id: cliente_id,

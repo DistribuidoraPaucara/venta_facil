@@ -232,7 +232,7 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
 
                 {/* ✅ Mostrar resultados solo si hay búsqueda realizada */}
                 {showSuggestions && (productosDisponibles.length > 0 || searchError || (productSearch && !isLoading && productosDisponibles.length === 0)) && (
-                    <div className="mt-1 max-h-[300px] overflow-y-auto border border-gray-200 dark:border-zinc-600 rounded-md">
+                    <div className="mt-1 max-h-[60vh] overflow-y-auto border border-gray-200 dark:border-zinc-600 rounded-md">
                         {/* ✅ ESTADO: Cargando */}
                         {isLoading && (
                             <div className="px-2.5 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-center">
@@ -251,8 +251,8 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                         {!isLoading && productosDisponibles.length > 0 && (
                             <>
                                 <table className="w-full border-collapse">
-                                    {/* ✅ ENCABEZADO: Tabla */}
-                                    <thead>
+                                    {/* ✅ ENCABEZADO: Tabla (fijo al hacer scroll) */}
+                                    <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900">
                                         <tr className={`border-b-2 ${tipo === 'compra'
                                             ? 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 border-red-200 dark:border-red-800'
                                             : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-green-200 dark:border-green-800'
@@ -288,7 +288,7 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                                                 </div>
                                             </th>
                                         </tr>
-                                        <tr className="border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50">
+                                        <tr className="border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800">
                                             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Producto</th>
                                             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Código</th>
                                             <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">
