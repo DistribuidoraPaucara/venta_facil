@@ -1062,40 +1062,7 @@ class ProductoController extends Controller
         ];
 
         // Cargar conversiones de unidad
-        $payload['conversiones'] = $producto->conversiones()
-            ->with([
-                'unidadBase:id,nombre,codigo',
-                'unidadDestino:id,nombre,codigo',
-                'productoDestino:id,nombre,sku' // ✨ NUEVO: Cargar producto destino (hijo)
-            ])
-            ->get()
-            ->map(function ($conv) {
-                return [
-                    'id'                      => $conv->id,
-                    'unidad_base_id'          => $conv->unidad_base_id,
-                    'unidad_destino_id'       => $conv->unidad_destino_id,
-                    'producto_destino_id'     => $conv->producto_destino_id,
-                    'factor_conversion'       => (float) $conv->factor_conversion,
-                    'nombre_cuando_se_vende_como' => $conv->nombre_cuando_se_vende_como, // ✨ NUEVO (2026-09-06)
-                    'activo'                  => (bool) $conv->activo,
-                    'es_conversion_principal' => (bool) $conv->es_conversion_principal,
-                    'unidad_base'             => $conv->unidadBase ? [
-                        'id'     => $conv->unidadBase->id,
-                        'nombre' => $conv->unidadBase->nombre,
-                        'codigo' => $conv->unidadBase->codigo,
-                    ] : null,
-                    'unidad_destino'          => $conv->unidadDestino ? [
-                        'id'     => $conv->unidadDestino->id,
-                        'nombre' => $conv->unidadDestino->nombre,
-                        'codigo' => $conv->unidadDestino->codigo,
-                    ] : null,
-                    'producto_destino'        => $conv->productoDestino ? [ // ✨ NUEVO: Incluir datos del producto destino
-                        'id'   => $conv->productoDestino->id,
-                        'nombre' => $conv->productoDestino->nombre,
-                        'sku'  => $conv->productoDestino->sku,
-                    ] : null,
-                ];
-            })->toArray();
+        $payload['conversiones'] = $this->conversionesParaRespuesta($producto);
 
         $payload['es_fraccionado'] = (bool) $producto->es_fraccionado;
         $payload['es_combo']       = (bool) $producto->es_combo;
@@ -2635,12 +2602,166 @@ class ProductoController extends Controller
                 'sector'           => $sl->sector ? ['id' => $sl->sector->id, 'nombre' => $sl->sector->nombre] : null,
             ])->toArray() : [],
 
+            // Fraccionamiento: conversiones de unidad y productos hijo
+            'es_fraccionado'      => (bool) $producto->es_fraccionado,
+            'conversiones'        => $this->conversionesParaRespuesta($producto),
+
             // ✅ NUEVO: Campos de COMBO
             'es_combo'            => (bool) $producto->es_combo,
             'combo_items'         => $producto->comboItems ? $producto->comboItems->map(fn($item) => $item->toArray())->toArray() : [],
             'combo_grupos'        => $producto->comboGrupos ? $producto->comboGrupos->map(fn($grupo) => $grupo->toArray())->toArray() : [],
             'capacidad'           => $capacidadCombo,
         ]);
+    }
+
+    /**
+     * Reglas de validación de conversiones de unidad (fraccionamiento) para la app móvil.
+     * Mismo formato que el formulario web (StoreProductoRequest/UpdateProductoRequest).
+     */
+    private function reglasConversionesApi(): array
+    {
+        return [
+            'es_fraccionado'                             => ['sometimes', 'boolean'],
+            'conversiones'                               => ['nullable', 'array'],
+            'conversiones.*.unidad_base_id'              => ['required', 'integer', 'exists:unidades_medida,id'],
+            'conversiones.*.unidad_destino_id'           => ['required', 'integer', 'exists:unidades_medida,id'],
+            'conversiones.*.producto_destino_id'         => ['nullable', 'integer', 'exists:productos,id'],
+            'conversiones.*.factor_conversion'           => ['required', 'numeric', 'gt:0'],
+            'conversiones.*.nombre_cuando_se_vende_como' => ['nullable', 'string', 'max:255'],
+            'conversiones.*.activo'                      => ['nullable', 'boolean'],
+            'conversiones.*.es_conversion_principal'     => ['nullable', 'boolean'],
+        ];
+    }
+
+    /**
+     * Valida las reglas de negocio de las conversiones (las mismas que aplica la web).
+     * Solo actúa si la petición trae `es_fraccionado`: las versiones de la app que no
+     * lo envían no tocan las conversiones existentes.
+     *
+     * @return string|null Mensaje de error, o null si es válido
+     */
+    private function validarConversionesApi(array $data, ?int $unidadProductoId, ?int $productoId = null): ?string
+    {
+        if (! array_key_exists('es_fraccionado', $data) || ! $data['es_fraccionado']) {
+            return null;
+        }
+
+        $conversiones = $data['conversiones'] ?? [];
+        if (empty($conversiones)) {
+            return 'Un producto fraccionado debe tener al menos una conversión de unidad.';
+        }
+
+        $pares       = [];
+        $principales = 0;
+        $destinosIds = [];
+        foreach ($conversiones as $conv) {
+            $baseId    = (int) $conv['unidad_base_id'];
+            $destinoId = (int) $conv['unidad_destino_id'];
+
+            if ($unidadProductoId && $baseId !== $unidadProductoId) {
+                return 'La unidad base de las conversiones debe ser la unidad de medida del producto.';
+            }
+            if ($baseId === $destinoId) {
+                return 'La unidad destino no puede ser igual a la unidad base.';
+            }
+            if (in_array("{$baseId}-{$destinoId}", $pares, true)) {
+                return 'No pueden existir dos conversiones con el mismo par de unidades.';
+            }
+            $pares[] = "{$baseId}-{$destinoId}";
+
+            if (! empty($conv['producto_destino_id'])) {
+                if ($productoId && (int) $conv['producto_destino_id'] === $productoId) {
+                    return 'Un producto no puede fraccionarse en sí mismo.';
+                }
+                $destinosIds[] = (int) $conv['producto_destino_id'];
+            }
+            if (! empty($conv['es_conversion_principal'])) {
+                $principales++;
+            }
+        }
+
+        if ($principales !== 1) {
+            return 'Debe haber exactamente una conversión marcada como principal.';
+        }
+
+        // Los productos hijo deben pertenecer a la misma empresa
+        $destinosIds = array_unique($destinosIds);
+        if ($destinosIds) {
+            $empresaId = auth()->user()?->empresa_id;
+            $propios   = Producto::whereIn('id', $destinosIds)->where('empresa_id', $empresaId)->count();
+            if ($propios !== count($destinosIds)) {
+                return 'El producto destino seleccionado no es válido.';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Reemplaza las conversiones del producto (igual que el update web: borra y recrea).
+     * No hace nada si la petición no trae `es_fraccionado`.
+     */
+    private function guardarConversionesApi(Producto $producto, array $data): void
+    {
+        if (! array_key_exists('es_fraccionado', $data)) {
+            return;
+        }
+
+        DB::transaction(function () use ($producto, $data) {
+            $producto->conversiones()->delete();
+
+            $esFraccionado = (bool) $data['es_fraccionado'];
+            if ($esFraccionado) {
+                foreach ($data['conversiones'] ?? [] as $conv) {
+                    \App\Models\ConversionUnidadProducto::create([
+                        'producto_id'                 => $producto->id,
+                        'unidad_base_id'              => $conv['unidad_base_id'],
+                        'unidad_destino_id'           => $conv['unidad_destino_id'],
+                        'producto_destino_id'         => $conv['producto_destino_id'] ?? null,
+                        'factor_conversion'           => $conv['factor_conversion'],
+                        'nombre_cuando_se_vende_como' => $conv['nombre_cuando_se_vende_como'] ?? null,
+                        'activo'                      => $conv['activo'] ?? true,
+                        'es_conversion_principal'     => $conv['es_conversion_principal'] ?? false,
+                    ]);
+                }
+            }
+
+            $producto->update(['es_fraccionado' => $esFraccionado]);
+        });
+    }
+
+    /**
+     * Conversiones del producto con unidades y producto destino (hijo), para las respuestas.
+     */
+    private function conversionesParaRespuesta(Producto $producto): array
+    {
+        return $producto->conversiones()
+            ->with([
+                'unidadBase:id,nombre,codigo',
+                'unidadDestino:id,nombre,codigo',
+                'productoDestino:id,nombre,sku',
+            ])
+            ->get()
+            ->map(fn($conv) => [
+                'id'                          => $conv->id,
+                'unidad_base_id'              => $conv->unidad_base_id,
+                'unidad_destino_id'           => $conv->unidad_destino_id,
+                'producto_destino_id'         => $conv->producto_destino_id,
+                'factor_conversion'           => (float) $conv->factor_conversion,
+                'nombre_cuando_se_vende_como' => $conv->nombre_cuando_se_vende_como,
+                'activo'                      => (bool) $conv->activo,
+                'es_conversion_principal'     => (bool) $conv->es_conversion_principal,
+                'unidad_base'                 => $conv->unidadBase
+                    ? ['id' => $conv->unidadBase->id, 'nombre' => $conv->unidadBase->nombre, 'codigo' => $conv->unidadBase->codigo]
+                    : null,
+                'unidad_destino'              => $conv->unidadDestino
+                    ? ['id' => $conv->unidadDestino->id, 'nombre' => $conv->unidadDestino->nombre, 'codigo' => $conv->unidadDestino->codigo]
+                    : null,
+                'producto_destino'            => $conv->productoDestino
+                    ? ['id' => $conv->productoDestino->id, 'nombre' => $conv->productoDestino->nombre, 'sku' => $conv->productoDestino->sku]
+                    : null,
+            ])
+            ->toArray();
     }
 
     /**
@@ -2730,13 +2851,24 @@ class ProductoController extends Controller
             'almacenes.*.fecha_vencimiento' => ['nullable', 'date'],
             'almacenes.*.stock_minimo'    => ['nullable', 'integer', 'min:0'],
             'almacenes.*.stock_maximo'    => ['nullable', 'integer', 'min:0'],
-        ]);
+        ] + $this->reglasConversionesApi());
 
         if ($advertencia = $this->detectarLotesDuplicados($data['almacenes'] ?? [])) {
             return response()->json([
                 'success' => false,
                 'message' => $advertencia,
                 'errors'  => ['almacenes' => [$advertencia]],
+            ], 422);
+        }
+
+        // Sin unidad, el producto se crea con "UN" (ver abajo): validar contra esa
+        $unidadProductoId = (int) ($data['unidad_medida_id']
+            ?? UnidadMedida::where('codigo', 'UN')->where('activo', true)->value('id'));
+        if ($error = $this->validarConversionesApi($data, $unidadProductoId ?: null)) {
+            return response()->json([
+                'success' => false,
+                'message' => $error,
+                'errors'  => ['conversiones' => [$error]],
             ], 422);
         }
 
@@ -2758,7 +2890,7 @@ class ProductoController extends Controller
 
                 // 🔥 Remover campos que no van a la tabla productos
                 $dataProducto = $data;
-                unset($dataProducto['codigos'], $dataProducto['codigos_barra']);
+                unset($dataProducto['codigos'], $dataProducto['codigos_barra'], $dataProducto['conversiones']);
 
                 // 🔥 FIX: Aplicar sanitize a campos nullable para permitir eliminación
                 $dataProducto['descripcion'] = $sanitize($dataProducto['descripcion'] ?? null);
@@ -2921,6 +3053,9 @@ class ProductoController extends Controller
                     }
                 }
 
+                // Conversiones de unidad / fraccionamiento (si la app las envía)
+                $this->guardarConversionesApi($producto, $data);
+
                 return $producto;
             });
 
@@ -2999,7 +3134,7 @@ class ProductoController extends Controller
             'almacenes.*.fecha_vencimiento' => ['nullable', 'date'],
             'almacenes.*.stock_minimo'    => ['nullable', 'integer', 'min:0'],
             'almacenes.*.stock_maximo'    => ['nullable', 'integer', 'min:0'],
-        ]);
+        ] + $this->reglasConversionesApi());
 
         if ($advertencia = $this->detectarLotesDuplicados($data['almacenes'] ?? [], $producto)) {
             return response()->json([
@@ -3009,10 +3144,25 @@ class ProductoController extends Controller
             ], 422);
         }
 
+        $unidadProductoId = (int) ($data['unidad_medida_id'] ?? $producto->unidad_medida_id);
+        if ($error = $this->validarConversionesApi($data, $unidadProductoId ?: null, $producto->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => $error,
+                'errors'  => ['conversiones' => [$error]],
+            ], 422);
+        }
+
         try {
             // Remover campos que no van a productos table
             $dataProducto = $data;
-            unset($dataProducto['codigos'], $dataProducto['codigos_barra'], $dataProducto['codigos_vacío_intencional']);
+            unset(
+                $dataProducto['codigos'],
+                $dataProducto['codigos_barra'],
+                $dataProducto['codigos_vacío_intencional'],
+                $dataProducto['conversiones'],
+                $dataProducto['es_fraccionado'], // lo maneja guardarConversionesApi
+            );
 
             $producto->update($dataProducto);
 
@@ -3298,6 +3448,9 @@ class ProductoController extends Controller
                     'almacenes_procesados' => count($data['almacenes']),
                 ]);
             }
+
+            // Conversiones de unidad / fraccionamiento (si la app las envía)
+            $this->guardarConversionesApi($producto, $data);
 
             // ✅ Cargar relaciones necesarias incluyendo stock
             $producto = $producto->fresh([

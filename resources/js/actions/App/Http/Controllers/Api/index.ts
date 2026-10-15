@@ -10,6 +10,7 @@ import ChoferPreferenciaController from './ChoferPreferenciaController'
 import TipoMermaController from './TipoMermaController'
 import EstadoMermaController from './EstadoMermaController'
 import SectorController from './SectorController'
+import FraccionamientoApiController from './FraccionamientoApiController'
 import CatalogosApiController from './CatalogosApiController'
 import CategoriaApiController from './CategoriaApiController'
 import StockDisponiblePdfController from './StockDisponiblePdfController'
@@ -18,7 +19,6 @@ import ReservaProformaController from './ReservaProformaController'
 import EntregaController from './EntregaController'
 import ApiVentaController from './ApiVentaController'
 import PagoVentaController from './PagoVentaController'
-import FraccionamientoApiController from './FraccionamientoApiController'
 import FraccionamientoMasivoApiController from './FraccionamientoMasivoApiController'
 import TipoOperacionController from './TipoOperacionController'
 import PrecioRangoProductoController from './PrecioRangoProductoController'
@@ -58,6 +58,7 @@ ChoferPreferenciaController,
 TipoMermaController,
 EstadoMermaController,
 SectorController,
+FraccionamientoApiController,
 CatalogosApiController,
 CategoriaApiController,
 StockDisponiblePdfController,
@@ -66,7 +67,6 @@ ReservaProformaController,
 EntregaController,
 ApiVentaController,
 PagoVentaController,
-FraccionamientoApiController,
 FraccionamientoMasivoApiController,
 TipoOperacionController,
 PrecioRangoProductoController,
