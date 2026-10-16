@@ -5820,6 +5820,23 @@ class ProductoController extends Controller
             $productos = Producto::query()
                 ->select(['id', 'sku', 'nombre', 'categoria_id', 'activo', 'unidad_medida_id', 'es_fraccionado'])
                 ->where('activo', true)
+                // Filtros opcionales (app móvil). Sin ellos la web recibe el listado completo, como siempre.
+                ->when($request->filled('ids'), fn($q) => $q->whereIn(
+                    'id',
+                    array_map('intval', explode(',', (string) $request->input('ids')))
+                ))
+                ->when($request->filled('search'), function ($q) use ($request) {
+                    $termino = trim((string) $request->input('search'));
+                    $q->where(function ($w) use ($termino) {
+                        if (ctype_digit($termino)) {
+                            $w->where('id', (int) $termino);
+                        }
+                        $w->orWhere('nombre', 'ILIKE', "%{$termino}%")
+                            ->orWhere('sku', 'ILIKE', "%{$termino}%")
+                            ->orWhereHas('codigosBarra', fn($c) => $c->where('codigo', 'ILIKE', "%{$termino}%"));
+                    });
+                })
+                ->when($request->filled('limite'), fn($q) => $q->limit(min(100, max(1, (int) $request->input('limite')))))
                 ->with([
                     'categoria:id,nombre',
                     'unidad:id,nombre,codigo',
@@ -5890,6 +5907,7 @@ class ProductoController extends Controller
                             // Registros de stock de este almacén (para transferir desde un lote/sector concreto)
                             'stocks' => $stocks->map(fn($s) => [
                                 'id' => $s->id,
+                                'sector_id' => $s->sector_id,
                                 'sector' => $s->sector?->nombre,
                                 'lote' => $s->lote,
                                 'fecha_vencimiento' => $s->fecha_vencimiento ? \Illuminate\Support\Carbon::parse($s->fecha_vencimiento)->format('Y-m-d') : null,

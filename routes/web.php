@@ -1004,6 +1004,15 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
             Route::get('/', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'index'])->name('index');
         });
 
+        // Editor de productos tipo planilla: datos, precios, límites y stock (ajuste) en una tabla
+        Route::prefix('editor-productos')->name('editor-productos.')
+            ->middleware(['permission:inventario.ajuste.form', 'permission:productos.edit'])
+            ->group(function () {
+                Route::get('/', [\App\Http\Controllers\EditorProductosController::class, 'index'])->name('index');
+                Route::get('datos', [\App\Http\Controllers\EditorProductosController::class, 'datos'])->name('datos');
+                Route::post('guardar', [\App\Http\Controllers\EditorProductosController::class, 'guardar'])->name('guardar');
+            });
+
         // Rutas para gestión de reservas de inventario
         Route::prefix('reservas')->name('reservas.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Inventario\ReservaProformaController::class, 'index'])->middleware('permission:inventario.reservas.index')->name('index');

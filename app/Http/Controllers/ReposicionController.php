@@ -7,6 +7,8 @@ use App\Models\ReposicionDetalle;
 use App\Models\Almacen;
 use App\Models\Producto;
 use App\Models\StockLimite;
+use App\Helpers\ApiResponse;
+use App\Services\ReposicionSugeridaService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +16,15 @@ use Illuminate\Support\Facades\Log;
 
 class ReposicionController extends Controller
 {
+    /**
+     * API (app móvil): qué reponer de ALMACÉN PRINCIPAL a SALA DE VENTAS, qué comprar
+     * para el almacén y qué comprar directo para sala (productos sin límite en principal).
+     */
+    public function sugerenciasApi(ReposicionSugeridaService $service): \Illuminate\Http\JsonResponse
+    {
+        return ApiResponse::success($service->calcular((int) auth()->user()->empresa_id));
+    }
+
     public function index()
     {
         $this->authorize('viewAny', Reposicion::class);

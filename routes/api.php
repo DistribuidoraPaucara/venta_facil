@@ -371,6 +371,14 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     Route::get('/app/productos/filtros', [ProductoController::class, 'filtros']);
     Route::get('/app/productos/buscar', [ProductoController::class, 'buscarApi']);
     Route::get('/app/productos/listar', [ProductoController::class, 'listarApi']);
+    // Reposición sala de ventas ← almacén principal y compras sugeridas (desde stock_limites)
+    Route::get('/app/inventario/reposicion-sugerida', [\App\Http\Controllers\ReposicionController::class, 'sugerenciasApi'])
+        ->middleware('permission:inventario.reposiciones.index');
+    // Stock por almacén/sector/lote, transferencias y fraccionamiento (app móvil)
+    Route::get('/app/inventario/productos-stock', [ProductoController::class, 'obtenerProductosParaActualizarStock']);
+    Route::post('/app/inventario/transferir', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'transferirProducto'])
+        ->middleware('permission:inventario.transferencias.crear');
+    Route::post('/app/inventario/fraccionar', [\App\Http\Controllers\ActualizarStockMasivoController::class, 'fraccionarApp']);
     // Productos candidatos a hijo de un fraccionamiento (misma búsqueda que la web, autenticada con token)
     Route::get('/app/fraccionamientos/productos-disponibles', [FraccionamientoApiController::class, 'productosDisponibles']);
     Route::get('/productos/stock-total', [ProductoController::class, 'obtenerStockTotal']); // ✨ NUEVO: Stock total de múltiples productos

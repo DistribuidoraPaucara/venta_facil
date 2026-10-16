@@ -18,6 +18,7 @@ import configuracionStock from './configuracion-stock'
 import mermas from './mermas'
 import inicial from './inicial'
 import actualizarStockMasivo from './actualizar-stock-masivo'
+import editorProductos from './editor-productos'
 import reservas from './reservas'
 /**
 * @see \App\Http\Controllers\InventarioController::index
@@ -669,6 +670,7 @@ configuracionStock,
 mermas,
 inicial,
 actualizarStockMasivo,
+editorProductos,
 reservas,
 }
 

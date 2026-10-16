@@ -746,6 +746,72 @@ class ActualizarStockMasivoController extends Controller
      *
      * POST /api/inventario/transferir-producto
      */
+    /**
+     * Fraccionar desde la app móvil. A diferencia de POST /inventario/fraccionamientos
+     * (que confía en lo que manda la web), aquí el producto hijo y la cantidad resultante
+     * salen de la conversión registrada, y el almacén debe ser de la empresa del usuario.
+     */
+    public function fraccionarApp(Request $request, \App\Services\FraccionamientoService $fraccionamientoService)
+    {
+        $data = $request->validate([
+            'producto_padre_id' => 'required|integer',
+            'conversion_id'     => 'required|integer',
+            'cantidad_padre'    => 'required|numeric|gt:0',
+            'almacen_id'        => 'required|integer',
+            'sector_id'         => 'required|integer|exists:sectores,id',
+        ]);
+
+        // Global scope de empresa: un producto de otra empresa no se encuentra
+        $padre      = Producto::findOrFail($data['producto_padre_id']);
+        $conversion = \App\Models\ConversionUnidadProducto::where('id', $data['conversion_id'])
+            ->where('producto_id', $padre->id)
+            ->where('activo', true)
+            ->whereNotNull('producto_destino_id')
+            ->first();
+        $almacenValido = Almacen::where('id', $data['almacen_id'])
+            ->where('empresa_id', auth()->user()->empresa_id)
+            ->exists();
+
+        if (! $conversion || ! $almacenValido) {
+            return response()->json([
+                'success' => false,
+                'message' => ! $conversion
+                    ? 'El producto no tiene esa conversión a un producto hijo'
+                    : 'Almacén no válido para su empresa',
+            ], 422);
+        }
+
+        $cantidadPadre = (float) $data['cantidad_padre'];
+        $cantidadHijo  = round($cantidadPadre * (float) $conversion->factor_conversion, 6);
+
+        try {
+            $movimiento = $fraccionamientoService->fraccionar(
+                $padre->id,
+                $cantidadPadre,
+                (int) $conversion->producto_destino_id,
+                $cantidadHijo,
+                (int) $data['almacen_id'],
+                (int) $data['sector_id'],
+                'fraccionamiento_manual',
+                'Fraccionado desde la app'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fraccionamiento realizado',
+                'data'    => [
+                    'id'             => $movimiento->id,
+                    'cantidad_padre' => $cantidadPadre,
+                    'cantidad_hijo'  => $cantidadHijo,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error al fraccionar desde la app', ['error' => $e->getMessage(), 'request' => $data]);
+
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
     public function transferirProducto(Request $request, TransferenciaProductoService $transferenciaService)
     {
         $data = $request->validate([

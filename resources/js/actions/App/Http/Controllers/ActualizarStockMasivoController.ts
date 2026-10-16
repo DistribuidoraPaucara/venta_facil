@@ -1,5 +1,176 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
 /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/app/inventario/transferir'
+ */
+const transferirProducto375720fc796bd8ef540d99fbcb5ef295 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: transferirProducto375720fc796bd8ef540d99fbcb5ef295.url(options),
+    method: 'post',
+})
+
+transferirProducto375720fc796bd8ef540d99fbcb5ef295.definition = {
+    methods: ["post"],
+    url: '/api/app/inventario/transferir',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/app/inventario/transferir'
+ */
+transferirProducto375720fc796bd8ef540d99fbcb5ef295.url = (options?: RouteQueryOptions) => {
+    return transferirProducto375720fc796bd8ef540d99fbcb5ef295.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/app/inventario/transferir'
+ */
+transferirProducto375720fc796bd8ef540d99fbcb5ef295.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: transferirProducto375720fc796bd8ef540d99fbcb5ef295.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/app/inventario/transferir'
+ */
+    const transferirProducto375720fc796bd8ef540d99fbcb5ef295Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: transferirProducto375720fc796bd8ef540d99fbcb5ef295.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/app/inventario/transferir'
+ */
+        transferirProducto375720fc796bd8ef540d99fbcb5ef295Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: transferirProducto375720fc796bd8ef540d99fbcb5ef295.url(options),
+            method: 'post',
+        })
+    
+    transferirProducto375720fc796bd8ef540d99fbcb5ef295.form = transferirProducto375720fc796bd8ef540d99fbcb5ef295Form
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/inventario/transferir-producto'
+ */
+const transferirProductof02481ed4fa81a1c704e503ca9ea26c2 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: transferirProductof02481ed4fa81a1c704e503ca9ea26c2.url(options),
+    method: 'post',
+})
+
+transferirProductof02481ed4fa81a1c704e503ca9ea26c2.definition = {
+    methods: ["post"],
+    url: '/api/inventario/transferir-producto',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/inventario/transferir-producto'
+ */
+transferirProductof02481ed4fa81a1c704e503ca9ea26c2.url = (options?: RouteQueryOptions) => {
+    return transferirProductof02481ed4fa81a1c704e503ca9ea26c2.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/inventario/transferir-producto'
+ */
+transferirProductof02481ed4fa81a1c704e503ca9ea26c2.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: transferirProductof02481ed4fa81a1c704e503ca9ea26c2.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/inventario/transferir-producto'
+ */
+    const transferirProductof02481ed4fa81a1c704e503ca9ea26c2Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: transferirProductof02481ed4fa81a1c704e503ca9ea26c2.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/inventario/transferir-producto'
+ */
+        transferirProductof02481ed4fa81a1c704e503ca9ea26c2Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: transferirProductof02481ed4fa81a1c704e503ca9ea26c2.url(options),
+            method: 'post',
+        })
+    
+    transferirProductof02481ed4fa81a1c704e503ca9ea26c2.form = transferirProductof02481ed4fa81a1c704e503ca9ea26c2Form
+
+export const transferirProducto = {
+    '/api/app/inventario/transferir': transferirProducto375720fc796bd8ef540d99fbcb5ef295,
+    '/api/inventario/transferir-producto': transferirProductof02481ed4fa81a1c704e503ca9ea26c2,
+}
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::fraccionarApp
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:754
+ * @route '/api/app/inventario/fraccionar'
+ */
+export const fraccionarApp = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: fraccionarApp.url(options),
+    method: 'post',
+})
+
+fraccionarApp.definition = {
+    methods: ["post"],
+    url: '/api/app/inventario/fraccionar',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::fraccionarApp
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:754
+ * @route '/api/app/inventario/fraccionar'
+ */
+fraccionarApp.url = (options?: RouteQueryOptions) => {
+    return fraccionarApp.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::fraccionarApp
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:754
+ * @route '/api/app/inventario/fraccionar'
+ */
+fraccionarApp.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: fraccionarApp.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::fraccionarApp
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:754
+ * @route '/api/app/inventario/fraccionar'
+ */
+    const fraccionarAppForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: fraccionarApp.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::fraccionarApp
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:754
+ * @route '/api/app/inventario/fraccionar'
+ */
+        fraccionarAppForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: fraccionarApp.url(options),
+            method: 'post',
+        })
+    
+    fraccionarApp.form = fraccionarAppForm
+/**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::descargarPlantilla
  * @see app/Http/Controllers/ActualizarStockMasivoController.php:56
  * @route '/api/actualizar-stock-masivo/descargar-plantilla'
@@ -243,61 +414,6 @@ actualizarStockTabla.post = (options?: RouteQueryOptions): RouteDefinition<'post
     
     actualizarStockTabla.form = actualizarStockTablaForm
 /**
-* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:749
- * @route '/api/inventario/transferir-producto'
- */
-export const transferirProducto = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: transferirProducto.url(options),
-    method: 'post',
-})
-
-transferirProducto.definition = {
-    methods: ["post"],
-    url: '/api/inventario/transferir-producto',
-} satisfies RouteDefinition<["post"]>
-
-/**
-* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:749
- * @route '/api/inventario/transferir-producto'
- */
-transferirProducto.url = (options?: RouteQueryOptions) => {
-    return transferirProducto.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:749
- * @route '/api/inventario/transferir-producto'
- */
-transferirProducto.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: transferirProducto.url(options),
-    method: 'post',
-})
-
-    /**
-* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:749
- * @route '/api/inventario/transferir-producto'
- */
-    const transferirProductoForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: transferirProducto.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
- * @see app/Http/Controllers/ActualizarStockMasivoController.php:749
- * @route '/api/inventario/transferir-producto'
- */
-        transferirProductoForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: transferirProducto.url(options),
-            method: 'post',
-        })
-    
-    transferirProducto.form = transferirProductoForm
-/**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::index
  * @see app/Http/Controllers/ActualizarStockMasivoController.php:44
  * @route '/inventario/actualizar-stock-masivo'
@@ -375,6 +491,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     index.form = indexForm
-const ActualizarStockMasivoController = { descargarPlantilla, procesarArchivo, procesarCSV, actualizarStockTabla, transferirProducto, index }
+const ActualizarStockMasivoController = { transferirProducto, fraccionarApp, descargarPlantilla, procesarArchivo, procesarCSV, actualizarStockTabla, index }
 
 export default ActualizarStockMasivoController

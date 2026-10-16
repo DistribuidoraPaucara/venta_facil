@@ -7,6 +7,8 @@ import PermissionController from './PermissionController'
 import NotificacionRecurrenteController from './NotificacionRecurrenteController'
 import TipoOperacionCajaController from './TipoOperacionCajaController'
 import ProductoController from './ProductoController'
+import ReposicionController from './ReposicionController'
+import ActualizarStockMasivoController from './ActualizarStockMasivoController'
 import UnidadMedidaController from './UnidadMedidaController'
 import MarcaController from './MarcaController'
 import VentaController from './VentaController'
@@ -45,7 +47,6 @@ import PrestamoEventoController from './PrestamoEventoController'
 import PrestamoProveedorController from './PrestamoProveedorController'
 import ReportesController from './ReportesController'
 import Prestamos from './Prestamos'
-import ActualizarStockMasivoController from './ActualizarStockMasivoController'
 import RecetaController from './RecetaController'
 import ProduccionController from './ProduccionController'
 import ProduccionMasivaController from './ProduccionMasivaController'
@@ -100,10 +101,10 @@ import ImpresionMovimientosController from './ImpresionMovimientosController'
 import ImpresionProductosVendidosController from './ImpresionProductosVendidosController'
 import FraccionamientoController from './FraccionamientoController'
 import TipoAjusteInventarioController from './TipoAjusteInventarioController'
-import ReposicionController from './ReposicionController'
 import ComprasController from './ComprasController'
 import ConfiguracionStockController from './ConfiguracionStockController'
 import InventarioInicialController from './InventarioInicialController'
+import EditorProductosController from './EditorProductosController'
 import ReservaStockController from './ReservaStockController'
 import Inventario from './Inventario'
 import Presentacion from './Presentacion'
@@ -135,6 +136,8 @@ PermissionController,
 NotificacionRecurrenteController,
 TipoOperacionCajaController,
 ProductoController,
+ReposicionController,
+ActualizarStockMasivoController,
 UnidadMedidaController,
 MarcaController,
 VentaController,
@@ -173,7 +176,6 @@ PrestamoEventoController,
 PrestamoProveedorController,
 ReportesController,
 Prestamos,
-ActualizarStockMasivoController,
 RecetaController,
 ProduccionController,
 ProduccionMasivaController,
@@ -228,10 +230,10 @@ ImpresionMovimientosController,
 ImpresionProductosVendidosController,
 FraccionamientoController,
 TipoAjusteInventarioController,
-ReposicionController,
 ComprasController,
 ConfiguracionStockController,
 InventarioInicialController,
+EditorProductosController,
 ReservaStockController,
 Inventario,
 Presentacion,

@@ -78,6 +78,7 @@ class ModuloSidebarSeeder extends Seeder
                     ['titulo' => 'Mermas', 'ruta' => '/inventario/mermas', 'icono' => 'Package2', 'orden' => 6, 'permisos' => ['inventario.mermas.index']],
                     ['titulo' => 'Ajustes', 'ruta' => '/inventario/ajuste', 'icono' => 'Settings', 'orden' => 7, 'permisos' => ['inventario.ajuste.form']],
                     ['titulo' => 'Actualizar Stock Masivo', 'ruta' => '/inventario/actualizar-stock-masivo', 'icono' => 'FileUp', 'orden' => 8, 'permisos' => ['inventario.ajuste.form']],
+                    ['titulo' => 'Editor de Productos', 'ruta' => '/inventario/editor-productos', 'icono' => 'Table', 'orden' => 8, 'permisos' => ['inventario.ajuste.form']],
                     ['titulo' => 'Tipos de Ajuste', 'ruta' => '/inventario/tipos-ajuste-inventario', 'icono' => 'Sliders', 'orden' => 9, 'permisos' => ['inventario.tipos-ajuste.index']],
                     ['titulo' => 'Reportes', 'ruta' => '/inventario/reportes', 'icono' => 'FileText', 'orden' => 10, 'permisos' => ['reportes.inventario.stock-actual']],
                 ],
