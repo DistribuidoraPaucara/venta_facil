@@ -28,6 +28,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 
 // Helper functions
@@ -39,8 +40,33 @@ const formatCurrency = (amount: number): string => {
     }).format(amount);
 };
 
-const formatDate = (date: string): string => {
-    return new Date(date).toLocaleDateString('es-BO');
+// Las fechas sin hora ("2026-11-04" o "2026-11-04T00:00:00.000000Z") se leen como fecha local:
+// con new Date() se toman como UTC y en Bolivia (UTC−4) saldrían un día antes.
+const fechaLocal = (date: string): Date => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ]00:00:00(?:\.0+)?Z?)?$/.exec(date);
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(date);
+};
+
+const formatDate = (date?: string | null): string => {
+    if (!date) return '—';
+    return fechaLocal(date).toLocaleDateString('es-BO');
+};
+
+// Situación del vencimiento en lenguaje simple (pagadas y anuladas no muestran urgencia)
+const situacionVencimiento = (cuenta: { estado: string; saldo_pendiente: number; fecha_vencimiento: string }): { texto: string; clase: string } => {
+    const estado = (cuenta.estado || '').toUpperCase();
+    if (estado === 'ANULADO') return { texto: 'Anulada', clase: 'text-gray-500' };
+    if (estado === 'PAGADO' || Number(cuenta.saldo_pendiente) <= 0) return { texto: 'Cobrada', clase: 'text-green-700 dark:text-green-400' };
+    if (!cuenta.fecha_vencimiento) return { texto: 'Sin fecha', clase: 'text-gray-500' };
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const dias = Math.round((fechaLocal(cuenta.fecha_vencimiento).getTime() - hoy.getTime()) / 86_400_000);
+
+    if (dias < 0) return { texto: `Vencida hace ${-dias} ${-dias === 1 ? 'día' : 'días'}`, clase: 'font-semibold text-red-600 dark:text-red-400' };
+    if (dias === 0) return { texto: 'Vence hoy', clase: 'font-semibold text-amber-600 dark:text-amber-400' };
+    if (dias <= 7) return { texto: `Vence en ${dias} ${dias === 1 ? 'día' : 'días'}`, clase: 'text-amber-600 dark:text-amber-400' };
+    return { texto: `Vence en ${dias} días`, clase: 'text-gray-500 dark:text-gray-400' };
 };
 
 interface Cliente {
@@ -70,6 +96,8 @@ interface CuentaPorCobrar {
     cliente_id: number;
     monto_original: number;
     saldo_pendiente: number;
+    referencia_documento?: string;
+    created_at?: string;
     fecha_vencimiento: string;
     dias_vencido: number;
     estado: string;
@@ -151,21 +179,50 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
     // ✅ NUEVO: Estado para controlar el menú popup
     const [menuAbiertoId, setMenuAbiertoId] = useState<number | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const menuBotonRef = useRef<HTMLButtonElement | null>(null);
+    // El menú se dibuja en <body> con posición fija: dentro de la tabla (que tiene scroll) quedaba cortado en las últimas filas
+    const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null);
 
-    // ✅ NUEVO: Cerrar menú al hacer click fuera
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setMenuAbiertoId(null);
-            }
-        };
-
-        if (menuAbiertoId !== null) {
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => {
-                document.removeEventListener('mousedown', handleClickOutside);
-            };
+    const abrirMenu = (cuentaId: number, boton: HTMLButtonElement) => {
+        if (menuAbiertoId === cuentaId) {
+            setMenuAbiertoId(null);
+            return;
         }
+        menuBotonRef.current = boton;
+        const rect = boton.getBoundingClientRect();
+        const ANCHO = 192; // w-48
+        const ALTO = 140; // alto aproximado del menú (3 opciones)
+        const haciaArriba = window.innerHeight - rect.bottom < ALTO + 8 && rect.top > ALTO + 8;
+        setMenuPos({
+            // hacia arriba se ancla por abajo, así queda pegado al botón aunque el menú tenga menos opciones
+            ...(haciaArriba ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+            left: Math.max(8, Math.min(rect.right - ANCHO, window.innerWidth - ANCHO - 8)),
+        });
+        setMenuAbiertoId(cuentaId);
+    };
+
+    // ✅ NUEVO: Cerrar menú al hacer click fuera, con Esc, o al hacer scroll / cambiar el tamaño (la posición quedaría desfasada)
+    useEffect(() => {
+        if (menuAbiertoId === null) return;
+
+        const cerrar = () => setMenuAbiertoId(null);
+        const handleClickOutside = (event: MouseEvent) => {
+            const objetivo = event.target as Node;
+            if (menuRef.current?.contains(objetivo) || menuBotonRef.current?.contains(objetivo)) return;
+            cerrar();
+        };
+        const handleEsc = (event: KeyboardEvent) => event.key === 'Escape' && cerrar();
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleEsc);
+        window.addEventListener('scroll', cerrar, true);
+        window.addEventListener('resize', cerrar);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleEsc);
+            window.removeEventListener('scroll', cerrar, true);
+            window.removeEventListener('resize', cerrar);
+        };
     }, [menuAbiertoId]);
 
     // Estados para anular pagos
@@ -241,7 +298,17 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
         router.get('/ventas/cuentas-por-cobrar');
     };
 
-    const handleAbrirModalPago = (cuenta: CuentaPorCobrar) => {
+    // Reporte PDF con los filtros ya aplicados al listado (los del servidor, no los que aún se están editando)
+    const imprimirReporte = () => {
+        const params = new URLSearchParams({ accion: 'stream' });
+        Object.entries(cuentasPorCobrar.filtros || {}).forEach(([clave, valor]) => {
+            if (valor === undefined || valor === null || valor === '' || valor === false || valor === 'false') return;
+            params.set(clave, String(valor));
+        });
+        window.open(`/ventas/cuentas-por-cobrar/reporte?${params.toString()}`, '_blank');
+    };
+
+    const handleAbrirModalPago =(cuenta: CuentaPorCobrar) => {
         // Cargar cuentas del cliente ANTES de abrir el modal
         cargarCuentasDelCliente(cuenta.cliente_id);
 
@@ -451,61 +518,6 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
         );
     };
 
-    // ✅ MEJORADO: Función para obtener color y icono de urgencia según días vencido
-    const getUrgenciaInfo = (diasVencido: number) => {
-        if (diasVencido > 30) {
-            return {
-                variant: 'destructive' as const,
-                bgColor: 'bg-red-100 dark:bg-red-900/30',
-                textColor: 'text-red-800 dark:text-red-200',
-                borderColor: 'border-red-300 dark:border-red-700',
-                icon: AlertTriangle,
-                label: `${diasVencido} días vencido`,
-            };
-        }
-        if (diasVencido > 15) {
-            return {
-                variant: 'default' as const,
-                bgColor: 'bg-amber-100 dark:bg-amber-900/30',
-                textColor: 'text-amber-800 dark:text-amber-200',
-                borderColor: 'border-amber-300 dark:border-amber-700',
-                icon: AlertCircle,
-                label: `${diasVencido} días`,
-            };
-        }
-        if (diasVencido > 0) {
-            return {
-                variant: 'default' as const,
-                bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-                textColor: 'text-yellow-800 dark:text-yellow-200',
-                borderColor: 'border-yellow-300 dark:border-yellow-700',
-                icon: Clock,
-                label: `${diasVencido} días`,
-            };
-        }
-        return {
-            variant: 'default' as const,
-            bgColor: 'bg-green-100 dark:bg-green-900/30',
-            textColor: 'text-green-800 dark:text-green-200',
-            borderColor: 'border-green-300 dark:border-green-700',
-            icon: CheckCircle2,
-            label: 'Al día',
-        };
-    };
-
-    // ✅ Componente para renderizar Badge de urgencia
-    const UrgenciaBadgeComponent = ({ diasVencido }: { diasVencido: number }) => {
-        const info = getUrgenciaInfo(diasVencido);
-        const IconComponent = info.icon;
-        
-        return (
-            <span className={`text-xs rounded-full inline-flex items-start gap-1 px-2 py-1 ${info.bgColor} ${info.textColor} ${info.borderColor}`}>
-                <IconComponent className="h-4 w-4" />
-                <span>{info.label}</span>
-            </span>
-        );
-    };
-
     // ✅ MEJORADO: Función para mostrar el estado del pago con iconos
     const getEstadoPagoBadgeInfo = (estado?: string) => {
         if (!estado) return null;
@@ -609,7 +621,7 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
         >
             <Head title="Cuentas por Cobrar" />
 
-            <div className="space-y-6 p-4">
+            <div className="space-y-2 p-2">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
@@ -623,7 +635,7 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                 </div>
 
                 {/* Estadísticas Rápidas */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
                     <div className="flex items-center rounded-lg bg-white p-2 shadow dark:bg-gray-800">
                         <div className="rounded-lg bg-blue-100 p-1 dark:bg-blue-900/20">
                             <CreditCard className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -669,7 +681,7 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
 
                 {/* Filtros */}
                 <div className="border-t border-gray-200 p-2 dark:border-gray-700">
-                    <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Buscar</label>
                             <Input
@@ -705,7 +717,7 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
                             <Select
                                 value={filtros.estado || 'all'}
                                 onValueChange={(value) => handleFiltroChange('estado', value === 'all' ? '' : value)}
@@ -726,12 +738,8 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                     </div>
 
                     {/* Rango de Fechas de Vencimiento */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">Rango de Fecha de Vencimiento</label>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 rounded-lg border border-blue-200 bg-blue-50 p-4 md:grid-cols-3 dark:border-blue-900/30 dark:bg-blue-950/20">
+                    <div className="space-y-2 mt-2">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                             {/* Fecha Desde */}
                             <div className="space-y-2">
                                 <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -798,26 +806,26 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                                 </div>
                             </div>
                         </div>
-
-                        {/* Indicador de rango activo */}
-                        {/* {filtros.fecha_vencimiento_desde && filtros.fecha_vencimiento_hasta && (
-                            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900/30 dark:bg-green-950/20">
-                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                <span className="text-sm text-green-700 dark:text-green-300">
-                                    Filtrando: {new Date(filtros.fecha_vencimiento_desde).toLocaleDateString('es-BO')} →{' '}
-                                    {new Date(filtros.fecha_vencimiento_hasta).toLocaleDateString('es-BO')}
-                                </span>
-                            </div>
-                        )} */}
                     </div>
 
                     <div className="mt-2 flex justify-between gap-3">
                         <Button onClick={limpiarFiltros} variant="outline">
                             🔄 Limpiar Filtros
                         </Button>
-                        <Button onClick={handleBusqueda} className="bg-blue-600 px-8 text-white hover:bg-blue-700">
-                            🔍 Buscar
-                        </Button>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={imprimirReporte}
+                                variant="outline"
+                                className="flex items-center gap-2"
+                                title="PDF con todas las cuentas que cumplen los filtros aplicados (sin paginar)"
+                            >
+                                <Printer className="h-4 w-4" />
+                                Imprimir reporte ({cuentasPorCobrar.cuentas_por_cobrar.total})
+                            </Button>
+                            <Button onClick={handleBusqueda} className="bg-blue-600 px-8 text-white hover:bg-blue-700">
+                                🔍 Buscar
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -826,80 +834,69 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                     <div className="overflow-y-auto overflow-x-visible rounded-lg border border-gray-200 shadow dark:border-gray-700">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
-                                <tr>
-                                    <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Folio
+                                <tr className="text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                                    <th className="px-2 py-2 text-left" title="Número de la cuenta por cobrar">
+                                        Cuenta
                                     </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Venta
-                                    </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Cliente
-                                    </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Monto O.
-                                    </th>
-                                    <th className=" py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Saldo
-                                    </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Creación
-                                    </th>
-                                    
-                                    <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Estado
-                                    </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Vencimiento
-                                    </th>
-                                    {/* dias de retraso */}
-                                    <th className="px-2 py-2 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        Días Vencido
-                                    </th>
-                                    <th className="px-2 py-2 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                                        -
-                                    </th>
+                                    <th className="px-2 py-2 text-left">Venta / Ref.</th>
+                                    <th className="px-2 py-2 text-left">Cliente</th>
+                                    <th className="px-2 py-2 text-left">Emisión</th>
+                                    <th className="px-2 py-2 text-left">Vence</th>
+                                    <th className="px-2 py-2 text-right">Original</th>
+                                    <th className="px-2 py-2 text-right">Cobrado</th>
+                                    <th className="px-2 py-2 text-right">Saldo</th>
+                                    <th className="px-2 py-2 text-center">Estado</th>
+                                    <th className="px-2 py-2 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                                {cuentasPorCobrar.cuentas_por_cobrar.data.map((cuenta) => (
+                                {cuentasPorCobrar.cuentas_por_cobrar.data.map((cuenta) => {
+                                    const situacion = situacionVencimiento(cuenta);
+                                    const cliente = cuenta.cliente || cuenta.venta?.cliente;
+                                    return (
                                     <React.Fragment key={cuenta.id}>
-                                        <tr className={`${getRowColorClass(cuenta.dias_vencido, cuenta.estado)} transition-colors duration-200`}>
-                                            <td className="px-2 py-2 text-center">#{cuenta.id}</td>
-                                            <td className="px-2 py-2 text-center">
-                                                <div className="text-sm text-gray-900 dark:text-white">
-                                                    {cuenta.venta && <p>#{cuenta.venta?.id}</p>}
-                                                    <p>{cuenta?.referencia_documento}</p>
-                                                </div>
+                                        <tr className={`${getRowColorClass(cuenta.dias_vencido, cuenta.estado)} text-sm transition-colors duration-200`}>
+                                            <td className="px-2 py-2 whitespace-nowrap text-gray-900 dark:text-white">#{cuenta.id}</td>
+                                            <td className="px-2 py-2 whitespace-nowrap">
+                                                {cuenta.venta_id ? (
+                                                    <a
+                                                        href={`/ventas/${cuenta.venta_id}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                                        title="Ver la venta en otra pestaña"
+                                                    >
+                                                        {cuenta.venta?.numero || `Venta #${cuenta.venta_id}`}
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">Crédito manual</span>
+                                                )}
+                                                {cuenta.referencia_documento && (
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">{cuenta.referencia_documento}</div>
+                                                )}
                                             </td>
-                                            <td className="px-2 py-2 text-left">
-                                                <div className="text-sm text-gray-900 dark:text-white">
-                                                    {/* ✅ CORREGIDO: Mostrar cliente directo o cliente de venta */}
-                                                    {cuenta.cliente?.nombre || cuenta.venta?.cliente?.nombre || 'Sin cliente'}
-                                                </div>
+                                            <td className="px-2 py-2 text-gray-900 dark:text-white">
+                                                {cliente?.nombre || 'Sin cliente'}
+                                                {cliente?.codigo_cliente && (
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">{cliente.codigo_cliente}</div>
+                                                )}
                                             </td>
-                                            <td className="px-2 py-2 text-left">
-                                                <p className="text-xs font-medium text-gray-900 dark:text-white">
-                                                    {formatCurrency(cuenta.monto_original)}
-                                                </p>
+                                            <td className="px-2 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">{formatDate(cuenta.created_at)}</td>
+                                            <td className="px-2 py-2 whitespace-nowrap">
+                                                <div className="text-gray-900 dark:text-white">{formatDate(cuenta.fecha_vencimiento)}</div>
+                                                <div className={`text-xs ${situacion.clase}`}>{situacion.texto}</div>
                                             </td>
-                                            <td className="px-2 py-2 text-left">
-                                                <p className="text-left font-medium text-yellow-500 dark:text-yellow-400">{formatCurrency(cuenta.saldo_pendiente)}</p>
+                                            <td className="px-2 py-2 text-right whitespace-nowrap text-gray-700 dark:text-gray-300">
+                                                {formatCurrency(Number(cuenta.monto_original))}
                                             </td>
-                                            <td className="px-2 py-2 text-center">
-                                                <p className="text-sm text-gray-900 text-xs dark:text-white">{formatDate(cuenta.created_at)}</p>
+                                            <td className="px-2 py-2 text-right whitespace-nowrap text-green-700 dark:text-green-400">
+                                                {formatCurrency(Number(cuenta.monto_original) - Number(cuenta.saldo_pendiente))}
                                             </td>
-                                            
-                                            <td className="px-2 py-2 text-center text-xs">
-                                                <div className="text-xs">
-                                                    <EstadoBadgeComponent estado={cuenta.estado} />
-                                                </div>
+                                            <td className="px-2 py-2 text-right font-semibold whitespace-nowrap text-gray-900 dark:text-white">
+                                                {formatCurrency(Number(cuenta.saldo_pendiente))}
                                             </td>
-                                            <td className="px-2 py-2 text-center text-xs">
-                                                <p className="text-sm text-gray-900 text-xs dark:text-white">{formatDate(cuenta.fecha_vencimiento)}</p>                                                
-                                            </td>
-                                            <td className="px-2 py-2 text-center text-xs">
-                                                {cuenta.estado.toUpperCase() !== 'anulado'.toUpperCase() && cuenta.estado.toUpperCase() !== 'PAGADO'.toUpperCase() && <UrgenciaBadgeComponent diasVencido={cuenta.dias_vencido} />}
+                                            <td className="px-2 py-2 text-center whitespace-nowrap">
+                                                <EstadoBadgeComponent estado={cuenta.estado} />
                                             </td>
                                             <td className="px-2 py-2 text-right text-sm font-medium text-center">
                                                 <div className="flex justify-end space-x-1">
@@ -925,10 +922,14 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                                                         <Printer className="h-4 w-4" />
                                                     </Button>
                                                     {/* ✅ NUEVO: Menú popup con opciones adicionales */}
-                                                    <div className="relative" ref={menuAbiertoId === cuenta.id ? menuRef : null}>
-                                                        {/* Menú Popup */}
-                                                        {menuAbiertoId === cuenta.id && (
-                                                            <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                                                    <div>
+                                                        {/* Menú Popup (en <body>, posición fija junto al botón) */}
+                                                        {menuAbiertoId === cuenta.id && menuPos && createPortal(
+                                                            <div
+                                                                ref={menuRef}
+                                                                style={{ position: 'fixed', ...menuPos }}
+                                                                className="z-[60] w-48 rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
+                                                            >
                                                                 <div className="py-1">
                                                                     {/* Opción: Ver Detalles */}
                                                                     <button
@@ -970,13 +971,15 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                                                                         </button>
                                                                     )}
                                                                 </div>
-                                                            </div>
+                                                            </div>,
+                                                            document.body,
                                                         )}
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={() => setMenuAbiertoId(menuAbiertoId === cuenta.id ? null : cuenta.id)}
+                                                            onClick={(e) => abrirMenu(cuenta.id, e.currentTarget)}
                                                             title="Más opciones"
+                                                            aria-expanded={menuAbiertoId === cuenta.id}
                                                         >
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
@@ -1066,7 +1069,8 @@ const CuentasPorCobrarIndex: React.FC<Props> = ({ cuentasPorCobrar }) => {
                                             </tr>
                                         )}
                                     </React.Fragment>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

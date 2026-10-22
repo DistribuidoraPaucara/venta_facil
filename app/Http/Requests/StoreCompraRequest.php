@@ -29,6 +29,7 @@ class StoreCompraRequest extends FormRequest
             'estado_documento_id'          => 'required|exists:estados_documento,id',
             'moneda_id'                    => 'required|exists:monedas,id',
             'tipo_pago_id'                 => 'nullable|exists:tipos_pago,id',
+            'fecha_vencimiento_credito'    => 'nullable|date|after_or_equal:fecha', // solo aplica si el pago es a crédito
             'almacen_id'                   => 'required|exists:almacenes,id',
             'detalles'                     => 'required|array|min:1',
             'detalles.*.producto_id'       => 'required|exists:productos,id',

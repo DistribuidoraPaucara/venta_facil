@@ -7,8 +7,11 @@ use App\Models\ReposicionDetalle;
 use App\Models\Almacen;
 use App\Models\Producto;
 use App\Models\StockLimite;
+use App\Models\StockProducto;
+use App\Models\MovimientoInventario;
 use App\Helpers\ApiResponse;
 use App\Services\ReposicionSugeridaService;
+use App\Services\TransferenciaProductoService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +72,14 @@ class ReposicionController extends Controller
 
                 // Obtener todos los límites de stock definidos para este almacén
                 $limites = StockLimite::where('almacen_id', $almacenDefecto)
-                    ->with(['producto', 'producto.unidad', 'producto.conversiones' => fn($q) => $q->where('activo', true), 'sector'])
+                    ->with([
+                        'producto',
+                        // Códigos de barra activos, el principal primero
+                        'producto.codigosBarra' => fn($q) => $q->where('activo', true)
+                            ->orderByDesc('es_principal')
+                            ->select('id', 'producto_id', 'codigo', 'es_principal'),
+                        'sector',
+                    ])
                     ->get()
                     ->groupBy('producto_id');
 
@@ -81,6 +91,7 @@ class ReposicionController extends Controller
                     $totalDisponible = DB::table('stock_productos')
                         ->where('producto_id', $productoId)
                         ->where('almacen_id', $almacenDefecto)
+                        ->whereNull('deleted_at')
                         ->sum('cantidad_disponible');
 
                     // Obtener el límite mínimo más bajo para este producto
@@ -93,6 +104,7 @@ class ReposicionController extends Controller
                     $stockPrincipal = DB::table('stock_productos')
                         ->where('producto_id', $productoId)
                         ->where('almacen_id', $almacenPrincipal->id)
+                        ->whereNull('deleted_at')
                         ->sum('cantidad_disponible');
 
                     // Si el stock está cerca del mínimo Y hay stock en principal, incluir en reposición
@@ -124,7 +136,7 @@ class ReposicionController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, TransferenciaProductoService $transferenciaService)
     {
         $this->authorize('create', Reposicion::class);
 
@@ -162,134 +174,10 @@ class ReposicionController extends Controller
                 ]);
             }
 
-            // ✅ PROCESAR AUTOMÁTICAMENTE: Descontar origen, incrementar destino, registrar movimientos
+            // ✅ PROCESAR AUTOMÁTICAMENTE: mover el stock lote por lote (primero el que vence antes)
+            $reposicion->load(['almacenOrigen', 'almacenDestino']);
             foreach ($reposicion->detalles as $detalle) {
-                $cantidad = $detalle->cantidad_solicitada;
-                $productoId = $detalle->producto_id;
-                $almacenOrigenId = $reposicion->almacen_origen_id;
-                $almacenDestinoId = $reposicion->almacen_destino_id;
-
-                // === SALIDA DEL ALMACÉN ORIGEN ===
-                $stockOrigen = DB::table('stock_productos')
-                    ->where('producto_id', $productoId)
-                    ->where('almacen_id', $almacenOrigenId)
-                    ->first();
-
-                if ($stockOrigen && $stockOrigen->cantidad_disponible >= $cantidad) {
-                    $totalesAntesDeSalida = DB::table('stock_productos')
-                        ->where('producto_id', $productoId)
-                        ->where('almacen_id', $almacenOrigenId)
-                        ->selectRaw('SUM(cantidad_disponible) as total_disponible, SUM(cantidad_reservada) as total_reservada')
-                        ->first();
-
-                    $cantidadAnteriorOrigen = [
-                        'total' => $stockOrigen->cantidad,
-                        'disponible' => $stockOrigen->cantidad_disponible,
-                        'reservada' => $stockOrigen->cantidad_reservada,
-                        'total_disponible' => $totalesAntesDeSalida->total_disponible ?? 0,
-                        'total_reservada' => $totalesAntesDeSalida->total_reservada ?? 0,
-                    ];
-
-                    DB::table('stock_productos')
-                        ->where('id', $stockOrigen->id)
-                        ->update([
-                            'cantidad_disponible' => DB::raw('cantidad_disponible - ' . $cantidad),
-                            'cantidad' => DB::raw('cantidad - ' . $cantidad),
-                        ]);
-
-                    $stockOrigenDespues = DB::table('stock_productos')->where('id', $stockOrigen->id)->first();
-                    $totalesDespuesDeSalida = DB::table('stock_productos')
-                        ->where('producto_id', $productoId)
-                        ->where('almacen_id', $almacenOrigenId)
-                        ->selectRaw('SUM(cantidad_disponible) as total_disponible, SUM(cantidad_reservada) as total_reservada')
-                        ->first();
-
-                    DB::table('movimientos_inventario')->insert([
-                        'stock_producto_id' => $stockOrigen->id,
-                        'cantidad_total_anterior' => $cantidadAnteriorOrigen['total'],
-                        'cantidad_total_posterior' => $stockOrigenDespues->cantidad,
-                        'cantidad_disponible_anterior' => $cantidadAnteriorOrigen['disponible'],
-                        'cantidad_disponible_posterior' => $stockOrigenDespues->cantidad_disponible,
-                        'cantidad_reservada_anterior' => $cantidadAnteriorOrigen['reservada'],
-                        'cantidad_reservada_posterior' => $stockOrigenDespues->cantidad_reservada,
-                        'disponible_total_anterior' => $cantidadAnteriorOrigen['total_disponible'],
-                        'disponible_total_posterior' => $totalesDespuesDeSalida->total_disponible ?? 0,
-                        'reservada_total_anterior' => $cantidadAnteriorOrigen['total_reservada'],
-                        'reservada_total_posterior' => $totalesDespuesDeSalida->total_reservada ?? 0,
-                        'cantidad' => -$cantidad,
-                        'tipo' => 'SALIDA_REPOSICION',
-                        'observacion' => 'Reposición a ' . $reposicion->almacenDestino->nombre,
-                        'numero_documento' => $reposicion->numero,
-                        'referencia_tipo' => 'REPOSICION',
-                        'referencia_id' => $reposicion->id,
-                        'user_id' => auth()->id(),
-                        'fecha' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    // === ENTRADA AL ALMACÉN DESTINO ===
-                    $stockDestino = DB::table('stock_productos')
-                        ->where('producto_id', $productoId)
-                        ->where('almacen_id', $almacenDestinoId)
-                        ->first();
-
-                    if ($stockDestino) {
-                        $totalesAntesDeEntrada = DB::table('stock_productos')
-                            ->where('producto_id', $productoId)
-                            ->where('almacen_id', $almacenDestinoId)
-                            ->selectRaw('SUM(cantidad_disponible) as total_disponible, SUM(cantidad_reservada) as total_reservada')
-                            ->first();
-
-                        $cantidadAnteriorDestino = [
-                            'total' => $stockDestino->cantidad,
-                            'disponible' => $stockDestino->cantidad_disponible,
-                            'reservada' => $stockDestino->cantidad_reservada,
-                            'total_disponible' => $totalesAntesDeEntrada->total_disponible ?? 0,
-                            'total_reservada' => $totalesAntesDeEntrada->total_reservada ?? 0,
-                        ];
-
-                        DB::table('stock_productos')
-                            ->where('id', $stockDestino->id)
-                            ->update([
-                                'cantidad_disponible' => DB::raw('cantidad_disponible + ' . $cantidad),
-                                'cantidad' => DB::raw('cantidad + ' . $cantidad),
-                            ]);
-
-                        $stockDestinoDespues = DB::table('stock_productos')->where('id', $stockDestino->id)->first();
-                        $totalesDespuesDeEntrada = DB::table('stock_productos')
-                            ->where('producto_id', $productoId)
-                            ->where('almacen_id', $almacenDestinoId)
-                            ->selectRaw('SUM(cantidad_disponible) as total_disponible, SUM(cantidad_reservada) as total_reservada')
-                            ->first();
-
-                        DB::table('movimientos_inventario')->insert([
-                            'stock_producto_id' => $stockDestino->id,
-                            'cantidad_total_anterior' => $cantidadAnteriorDestino['total'],
-                            'cantidad_total_posterior' => $stockDestinoDespues->cantidad,
-                            'cantidad_disponible_anterior' => $cantidadAnteriorDestino['disponible'],
-                            'cantidad_disponible_posterior' => $stockDestinoDespues->cantidad_disponible,
-                            'cantidad_reservada_anterior' => $cantidadAnteriorDestino['reservada'],
-                            'cantidad_reservada_posterior' => $stockDestinoDespues->cantidad_reservada,
-                            'disponible_total_anterior' => $cantidadAnteriorDestino['total_disponible'],
-                            'disponible_total_posterior' => $totalesDespuesDeEntrada->total_disponible ?? 0,
-                            'reservada_total_anterior' => $cantidadAnteriorDestino['total_reservada'],
-                            'reservada_total_posterior' => $totalesDespuesDeEntrada->total_reservada ?? 0,
-                            'cantidad' => $cantidad,
-                            'tipo' => 'ENTRADA_REPOSICION',
-                            'observacion' => 'Reposición desde ' . $reposicion->almacenOrigen->nombre,
-                            'numero_documento' => $reposicion->numero,
-                            'referencia_tipo' => 'REPOSICION',
-                            'referencia_id' => $reposicion->id,
-                            'user_id' => auth()->id(),
-                            'fecha' => now(),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                } else {
-                    throw new \Exception("Stock insuficiente en almacén origen para producto ID {$productoId}");
-                }
+                $this->moverStockPorLotes($reposicion, $detalle->producto_id, (float) $detalle->cantidad_solicitada, $transferenciaService);
             }
 
             DB::commit();
@@ -298,6 +186,70 @@ class ReposicionController extends Controller
             DB::rollBack();
             Log::error('Error creando reposición: ' . $e->getMessage());
             return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Mueve la cantidad del almacén origen al destino repartiéndola entre los lotes del origen
+     * (FEFO: primero el que vence antes, los sin vencimiento al final). Cada lote entra en
+     * destino al MISMO lote (se crea si no existe) y registra su propio movimiento.
+     */
+    private function moverStockPorLotes(
+        Reposicion $reposicion,
+        int $productoId,
+        float $cantidad,
+        TransferenciaProductoService $transferenciaService
+    ): void {
+        $lotes = StockProducto::where('producto_id', $productoId)
+            ->where('almacen_id', $reposicion->almacen_origen_id)
+            ->where('cantidad_disponible', '>', 0)
+            ->orderByRaw('CASE WHEN fecha_vencimiento IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('fecha_vencimiento')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        $disponible = (float) $lotes->sum('cantidad_disponible');
+        if ($disponible < $cantidad) {
+            $nombre = Producto::whereKey($productoId)->value('nombre') ?? "ID {$productoId}";
+            throw new \Exception(
+                "Stock insuficiente en {$reposicion->almacenOrigen->nombre} para '{$nombre}'. " .
+                "Disponible: {$disponible}, solicitado: {$cantidad}"
+            );
+        }
+
+        $pendiente = $cantidad;
+        foreach ($lotes as $lote) {
+            if ($pendiente <= 0) {
+                break;
+            }
+
+            $mover = min($pendiente, (float) $lote->cantidad_disponible);
+            $stockDestino = $transferenciaService->obtenerOCrearStockDestino($lote, $reposicion->almacen_destino_id);
+
+            MovimientoInventario::registrar(
+                $lote,
+                -$mover,
+                'SALIDA_REPOSICION',
+                'Reposición a ' . $reposicion->almacenDestino->nombre,
+                $reposicion->numero,
+                auth()->id(),
+                referenciaTipo: 'REPOSICION',
+                referenciaId: $reposicion->id
+            );
+
+            MovimientoInventario::registrar(
+                $stockDestino,
+                $mover,
+                'ENTRADA_REPOSICION',
+                'Reposición desde ' . $reposicion->almacenOrigen->nombre,
+                $reposicion->numero,
+                auth()->id(),
+                referenciaTipo: 'REPOSICION',
+                referenciaId: $reposicion->id
+            );
+
+            $pendiente -= $mover;
         }
     }
 

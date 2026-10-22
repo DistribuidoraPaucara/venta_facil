@@ -65,29 +65,7 @@ class AdminController extends Controller
         $calendario = $calendarioService->obtener($empresaId, $mesCalendario);
 
         // 📅 Cuentas por cobrar pendientes que vencen en el mes del calendario
-        $cuentasCalendario = CuentaPorCobrar::with(['cliente:id,nombre'])
-            ->pendientes()
-            ->whereNotIn('estado', ['PAGADO', 'ANULADO'])
-            ->whereBetween('fecha_vencimiento', [
-                $mesCalendario->toDateString(),
-                $mesCalendario->copy()->endOfMonth()->toDateString(),
-            ])
-            ->where(function ($q) use ($userIds) {
-                $q->whereIn('usuario_id', $userIds)
-                  ->orWhereNull('usuario_id');
-            })
-            ->orderBy('fecha_vencimiento')
-            ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'cliente_nombre' => $c->cliente?->nombre ?? 'Sin cliente',
-                'saldo_pendiente' => (float) $c->saldo_pendiente,
-                'fecha_vencimiento' => $c->fecha_vencimiento?->toDateString(),
-                'referencia_documento' => $c->referencia_documento,
-                'estado' => $c->estado,
-                'vencida' => $c->fecha_vencimiento?->lt(today()) ?? false,
-            ])
-            ->values();
+        $cuentasCalendario = $this->dashboardService->getCuentasCalendario($empresaId, $mesCalendario);
 
         return Inertia::render('admin/dashboard', [
             'metricas' => $metricas,

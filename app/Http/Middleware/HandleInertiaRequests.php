@@ -116,6 +116,11 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             // ✅ Estado de caja disponible en todas las páginas
             'caja_status' => $cajaStatus,
+            // Mensajes de ->with('success' | 'error') del redirect anterior (los leen compras/create y Cajas/Index)
+            'flash' => fn() => [
+                'success' => $request->session()->get('success'),
+                'error'   => $request->session()->get('error'),
+            ],
         ];
     }
 

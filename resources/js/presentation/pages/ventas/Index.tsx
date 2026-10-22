@@ -77,6 +77,10 @@ export default function VentasIndex() {
         if (nuevosFiltros.sort_by) params.append('sort_by', nuevosFiltros.sort_by);
         if (nuevosFiltros.sort_order) params.append('sort_order', nuevosFiltros.sort_order);
 
+        // Sin fechas = todas las fechas. Sin esto, buscar sin filtros (o Limpiar) volvía a "solo hoy",
+        // que el backend aplica solo cuando no se pidió nada explícitamente (primera carga)
+        if (!nuevosFiltros.fecha_desde && !nuevosFiltros.fecha_hasta) params.append('todas', '1');
+
         const queryString = params.toString();
         const url = queryString ? `/ventas?${queryString}` : '/ventas';
 

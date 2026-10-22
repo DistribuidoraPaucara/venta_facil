@@ -62,12 +62,20 @@ class CompraController extends Controller
             'tipo_pago_id'        => ['nullable', 'exists:tipos_pago,id'],
             'fecha_desde'         => ['nullable', 'date'],
             'fecha_hasta'         => ['nullable', 'date'],
+            'almacen_id'          => ['nullable', 'integer'],
+            'producto'            => ['nullable', 'string', 'max:100'], // nombre, SKU o código de barras
+            'sin_proveedor'       => ['nullable', 'boolean'],
             'per_page'            => ['nullable', 'integer', 'min:10', 'max:100'],
-            'sort_by'             => ['nullable', 'string', 'in:numero,fecha,proveedor,total,created_at'],
+            // id/estado/usuario: la tabla ya ordenaba por esas columnas y la validación las rechazaba
+            'sort_by'             => ['nullable', 'string', 'in:id,numero,fecha,proveedor,estado,usuario,total,created_at'],
             'sort_dir'            => ['nullable', 'string', 'in:asc,desc'],
         ]);
 
-        $query = Compra::with(['proveedor', 'usuario', 'estadoDocumento', 'moneda', 'tipoPago']);
+        $query = Compra::with(['proveedor', 'usuario', 'estadoDocumento', 'moneda', 'tipoPago', 'almacen:id,nombre'])
+            ->withCount([
+                'detalles',
+                'detalles as detalles_sin_precio_count' => fn($q) => $q->where('precio_unitario', '<=', 0),
+            ]);
 
         // ✅ FIJO (2026-09-09): Filtrar por TODOS los almacenes de la empresa del usuario
         // Un usuario puede crear compras en cualquier almacén de su empresa
@@ -103,8 +111,28 @@ class CompraController extends Controller
             $query->where('proveedor_id', $filtros['proveedor_id']);
         }
 
-        if (! empty($filtros['estado_documento_id'])) {
-            $query->where('estado_documento_id', $filtros['estado_documento_id']);
+        // Borradores todavía sin proveedor
+        if (! empty($filtros['sin_proveedor'])) {
+            $query->whereNull('proveedor_id');
+        }
+
+        if (! empty($filtros['almacen_id'])) {
+            $query->where('almacen_id', (int) $filtros['almacen_id']);
+        }
+
+        // Compras que incluyen un producto (por nombre, SKU o código de barras activo)
+        if (! empty($filtros['producto'])) {
+            $termino = trim($filtros['producto']);
+            $query->whereHas('detalles.producto', function ($p) use ($termino) {
+                $p->where(function ($w) use ($termino) {
+                    if (ctype_digit($termino)) {
+                        $w->where('productos.id', (int) $termino);
+                    }
+                    $w->orWhere('productos.nombre', 'ilike', "%{$termino}%")
+                        ->orWhere('productos.sku', 'ilike', "%{$termino}%")
+                        ->orWhereHas('codigosBarra', fn($c) => $c->where('activo', true)->where('codigo', 'ilike', "%{$termino}%"));
+                });
+            });
         }
 
         if (! empty($filtros['moneda_id'])) {
@@ -124,17 +152,32 @@ class CompraController extends Controller
             $query->whereDate('fecha', '<=', $filtros['fecha_hasta']);
         }
 
-        // Ordenamiento
+        // Cantidad por estado con los demás filtros aplicados (para las pestañas de estado)
+        $conteoEstados = (clone $query)->toBase()
+            ->reorder()
+            ->select('estado_documento_id', DB::raw('COUNT(*) AS cantidad'))
+            ->groupBy('estado_documento_id')
+            ->pluck('cantidad', 'estado_documento_id');
+
+        if (! empty($filtros['estado_documento_id'])) {
+            $query->where('estado_documento_id', $filtros['estado_documento_id']);
+        }
+
+        // Ordenamiento (columnas calificadas: con los joins "id" o "created_at" serían ambiguas)
         $sortBy  = $filtros['sort_by'] ?? 'created_at';
         $sortDir = $filtros['sort_dir'] ?? 'desc';
 
-        if ($sortBy === 'proveedor') {
-            $query->leftJoin('proveedores', 'compras.proveedor_id', '=', 'proveedores.id')
-                ->orderBy('proveedores.nombre', $sortDir)
-                ->select('compras.*');
-        } else {
-            $query->orderBy($sortBy, $sortDir);
-        }
+        match ($sortBy) {
+            'proveedor' => $query->leftJoin('proveedores', 'compras.proveedor_id', '=', 'proveedores.id')
+                ->orderBy('proveedores.nombre', $sortDir),
+            'estado'    => $query->leftJoin('estados_documento', 'compras.estado_documento_id', '=', 'estados_documento.id')
+                ->orderBy('estados_documento.nombre', $sortDir),
+            'usuario'   => $query->leftJoin('users', 'compras.usuario_id', '=', 'users.id')
+                ->orderBy('users.name', $sortDir),
+            default     => $query->orderBy("compras.{$sortBy}", $sortDir),
+        };
+        // withCount() ya deja "compras.*" como columnas: un select() aquí borraría los conteos de detalles
+        $query->orderBy('compras.id', 'desc');
 
         // Paginación
         $perPage = $filtros['per_page'] ?? 15;
@@ -145,12 +188,16 @@ class CompraController extends Controller
 
         // Datos para filtros - Mostrar todos los elementos activos disponibles
         $datosParaFiltros = [
+            // Solo los de la empresa (antes listaba los proveedores de todas las empresas)
             'proveedores' => Proveedor::where('activo', true)
+                ->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId))
                 ->orderBy('nombre')
                 ->get(['id', 'nombre']),
             'estados'     => EstadoDocumento::where('activo', true)
                 ->orderBy('nombre')
-                ->get(['id', 'nombre']),
+                ->get(['id', 'codigo', 'nombre'])
+                ->map(fn($e) => [...$e->toArray(), 'cantidad' => (int) ($conteoEstados[$e->id] ?? 0)]),
+            'almacenes'   => \App\Models\Almacen::where('empresa_id', $empresaId)->orderBy('nombre')->get(['id', 'nombre']),
             'monedas'     => Moneda::where('activo', true)
                 ->orderBy('codigo')
                 ->get(['id', 'codigo', 'simbolo']),
@@ -171,7 +218,8 @@ class CompraController extends Controller
         // Debug inicial
         Log::info('CompraController::create - MÉTODO EJECUTADO');
 
-        $tipos_pago = TipoPago::orderBy('nombre')->get(['id', 'codigo', 'nombre']);
+        // es_credito: el formulario muestra el vencimiento de la cuenta por pagar solo para crédito
+        $tipos_pago = TipoPago::orderBy('nombre')->get(['id', 'codigo', 'nombre', 'es_credito']);
         Log::info('CompraController::create - tipos_pago obtenidos', [
             'count' => $tipos_pago->count(),
             'data'  => $tipos_pago->toArray(),
@@ -263,11 +311,98 @@ class CompraController extends Controller
         return Inertia::render('compras/create', $data);
     }
 
+    /**
+     * Almacenes de la empresa del usuario. Una compra puede ser de CUALQUIERA de ellos (igual que en index()):
+     * filtrar solo por empresa.almacen_id hacía que las compras del almacén principal aparecieran en el
+     * listado pero dieran 404 al verlas, editarlas o anularlas.
+     */
+    private function almacenesEmpresa(): array
+    {
+        $empresaId = auth()->user()?->empresa_id;
+
+        return $empresaId
+            ? \App\Models\Almacen::where('empresa_id', $empresaId)->pluck('id')->all()
+            : [auth()->user()?->empresa?->almacen_id ?? 1];
+    }
+
+    /**
+     * POST compras/{compra}/duplicar: crea una compra nueva en BORRADOR con los mismos productos,
+     * cantidades y precios. No copia lote, vencimiento ni N° de factura (son de la mercadería original);
+     * el proveedor solo si sigue activo y se omiten los productos inactivos. En BORRADOR no mueve stock
+     * ni registra pago: eso ocurre al aprobarla.
+     */
+    public function duplicar($id)
+    {
+        $original = Compra::with(['detalles.producto:id,nombre,activo', 'proveedor:id,activo'])
+            ->whereIn('almacen_id', $this->almacenesEmpresa())
+            ->findOrFail($id);
+
+        $detallesValidos = $original->detalles->filter(fn($d) => $d->producto?->activo);
+        $omitidos        = $original->detalles->reject(fn($d) => $d->producto?->activo)
+            ->map(fn($d) => $d->producto?->nombre ?? "#{$d->producto_id}");
+
+        if ($detallesValidos->isEmpty()) {
+            return back()->withErrors(['error' => "No se puede duplicar {$original->numero}: ninguno de sus productos está activo."]);
+        }
+
+        $estadoBorrador = EstadoDocumento::where('codigo', 'BORRADOR')->value('id');
+        $subtotal       = round($detallesValidos->sum(fn($d) => (float) $d->subtotal), 2);
+        $descuento      = min((float) $original->descuento, $subtotal);
+        $impuesto       = (float) $original->impuesto;
+        $observaciones  = mb_substr(trim("Duplicada de {$original->numero}. " . ($original->observaciones ?? '')), 0, 500);
+
+        $copia = DB::transaction(function () use ($original, $detallesValidos, $estadoBorrador, $subtotal, $descuento, $impuesto, $observaciones) {
+            // Mismo formato de número que store(): COMP{fecha}-{id}
+            $copia = Compra::create([
+                'numero'              => 'TMP-' . uniqid(),
+                'fecha'               => now(),
+                'subtotal'            => $subtotal,
+                'descuento'           => $descuento,
+                'impuesto'            => $impuesto,
+                'total'               => round($subtotal - $descuento + $impuesto, 2),
+                'observaciones'       => $observaciones,
+                'proveedor_id'        => $original->proveedor?->activo ? $original->proveedor_id : null,
+                'usuario_id'          => Auth::id(),
+                'estado_documento_id' => $estadoBorrador,
+                'moneda_id'           => $original->moneda_id,
+                'tipo_pago_id'        => $original->tipo_pago_id,
+                'almacen_id'          => $original->almacen_id,
+            ]);
+            $copia->update(['numero' => 'COMP' . $copia->created_at->format('Ymd') . '-' . $copia->id]);
+
+            $copia->detalles()->createMany($detallesValidos->map(fn($d) => [
+                'producto_id'      => $d->producto_id,
+                'cantidad'         => $d->cantidad,
+                'precio_unitario'  => $d->precio_unitario,
+                'descuento'        => $d->descuento ?? 0,
+                'subtotal'         => $d->subtotal,
+                'unidad_medida_id' => $d->unidad_medida_id,
+            ])->values()->all());
+
+            return $copia;
+        });
+
+        Log::info('📄 [CompraController] Compra duplicada en BORRADOR', [
+            'original_id' => $original->id,
+            'copia_id'    => $copia->id,
+            'productos'   => $detallesValidos->count(),
+            'omitidos'    => $omitidos->values()->all(),
+            'user_id'     => Auth::id(),
+        ]);
+
+        $mensaje = "Compra {$original->numero} duplicada como borrador {$copia->numero}.";
+        if (! $copia->proveedor_id && $original->proveedor_id) {
+            $mensaje .= ' El proveedor original está inactivo: elija uno antes de aprobar.';
+        }
+        if ($omitidos->isNotEmpty()) {
+            $mensaje .= ' Se omitieron productos inactivos: ' . $omitidos->implode(', ') . '.';
+        }
+
+        return redirect()->route('compras.edit', $copia->id)->with('success', $mensaje);
+    }
+
     public function show($id)
     {
-        // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
-        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
-
         $compra = Compra::with([
             'proveedor',
             'usuario',
@@ -276,9 +411,12 @@ class CompraController extends Controller
             'tipoPago',
             'detalles.producto.codigosBarra',
             'detalles.producto.prestables',
-            'almacen'
+            'detalles.producto.unidad:id,nombre,codigo',
+            'detalles.unidadMedida:id,nombre,codigo',
+            'almacen',
+            'cuentaPorPagar', // compras a crédito: saldo y vencimiento en el detalle
         ])
-        ->where('almacen_id', $almacenIdUsuario)
+        ->whereIn('almacen_id', $this->almacenesEmpresa())
         ->findOrFail($id);
 
         // ✅ NUEVO 2026-03-24: Cargar movimientos de inventario para cada detalle
@@ -315,10 +453,14 @@ class CompraController extends Controller
                 'producto' => $detalle->producto,
                 'prestables' => $prestables,
                 'cantidad' => $detalle->cantidad,
+                // Unidad en que se compró (la del detalle; si no tiene, la del producto)
+                'unidad' => $detalle->unidadMedida ?? $detalle->producto?->unidad,
                 'precio_unitario' => $detalle->precio_unitario,
+                'descuento' => $detalle->descuento ?? 0,
                 'subtotal' => $detalle->subtotal,
                 'lote' => $detalle->lote,
-                'fecha_vencimiento' => $detalle->fecha_vencimiento,
+                // Solo la fecha (Y-m-d): como datetime, el navegador la corría un día por la zona horaria
+                'fecha_vencimiento' => $detalle->fecha_vencimiento?->format('Y-m-d'),
                 'cantidad_anterior' => $movimiento?->cantidad_anterior ?? null,
                 'cantidad_posterior' => $movimiento?->cantidad_posterior ?? null,
             ];
@@ -352,9 +494,6 @@ class CompraController extends Controller
 
     public function edit($id)
     {
-        // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
-        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
-
         // ✅ NUEVO 2026-03-06: Cargar detalles con producto y sus relaciones (marca, unidad, codigosBarra, stock)
         $compra = Compra::with([
             'detalles.producto.marca:id,nombre',
@@ -368,7 +507,7 @@ class CompraController extends Controller
             'usuario',
             'almacen'
         ])
-        ->where('almacen_id', $almacenIdUsuario)
+        ->whereIn('almacen_id', $this->almacenesEmpresa())
         ->findOrFail($id);
 
         Log::info('CompraController::edit() - Compra cargada', [
@@ -453,7 +592,7 @@ class CompraController extends Controller
                 'estadoDocumento' => $compra->estadoDocumento?->toArray(),
                 'detalles'        => $detallesMapeados, // ✅ NUEVO 2026-03-06: Usar detalles mapeados
             ],
-            'tipos_pago'  => TipoPago::orderBy('nombre')->get(['id', 'codigo', 'nombre']),
+            'tipos_pago'  => TipoPago::orderBy('nombre')->get(['id', 'codigo', 'nombre', 'es_credito']),
             'proveedores' => Proveedor::where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'email']),
             'productos'   => Producto::with([
                 'precios'      => function ($query) {
@@ -642,6 +781,15 @@ class CompraController extends Controller
                     ]);
                     throw $e;
                 }
+
+                // El costo de los productos pasa a ser el de esta compra (igual que al aprobar un borrador en update())
+                $productosConCambio = (new DetectarCambiosPrecioService())->procesarCompraAprobada($compra);
+                if (! empty($productosConCambio)) {
+                    Log::info('Precios de costo actualizados al crear la compra aprobada', [
+                        'compra_numero'        => $compra->numero,
+                        'productos_con_cambio' => count($productosConCambio),
+                    ]);
+                }
             }
 
             // ✅ NUEVO: Manejo de compras a CRÉDITO vs CONTADO
@@ -656,18 +804,9 @@ class CompraController extends Controller
                 'estado_documento' => $compra->estadoDocumento?->nombre,
             ]);
 
-            // ✅ Si es APROBADO o FACTURADO, procesar el pago
+            // ✅ Si es APROBADO o FACTURADO: a crédito se crea su cuenta por pagar (no hace nada si no es crédito)
             if ($compra->estado_documento_id == $estadoAprobado?->id || $compra->estado_documento_id == $estadoRecibido?->id) {
-                if ($esCredito) {
-                    // 1️⃣ COMPRA A CRÉDITO: Crear CuentaPorPagar
-                    $this->crearCuentaPorPagar($compra, $data['total']);
-
-                    Log::info('CompraController::store() - Compra creada a CRÉDITO - CuentaPorPagar registrada', [
-                        'compra_numero'   => $compra->numero,
-                        'total'           => $data['total'],
-                        'almacen_id'      => $data['almacen_id'] ?? null,
-                    ]);
-                }
+                $this->sincronizarCuentaPorPagar($compra);
             }
 
             DB::commit();
@@ -955,7 +1094,9 @@ class CompraController extends Controller
             }
 
             // ✅ CUARTO: Detectar cambios de estado importantes
-            $cambioAAprobado = $estadoAnterior == $estadoBorrador?->id &&
+            // Desde BORRADOR o PENDIENTE (la transición PENDIENTE → APROBADO está permitida y antes no
+            // registraba stock, costo ni cuenta por pagar)
+            $cambioAAprobado = in_array($estadoAnterior, array_filter([$estadoBorrador?->id, $estadoPendiente?->id])) &&
             $compra->estado_documento_id == $estadoAprobado?->id;
             $cambioARecibido = $estadoAnterior != $estadoRecibido?->id &&
             $compra->estado_documento_id == $estadoRecibido?->id;
@@ -1013,21 +1154,9 @@ class CompraController extends Controller
                     'nota'                 => 'Movimientos AGRUPADOS por producto (no por lote)',
                 ]);
 
-                // 2️⃣ ✨ NUEVO: Registrar CuentaPorPagar si es CRÉDITO
+                // 2️⃣ Cuenta por pagar si es a crédito (la sincronización final, antes del commit, la crea)
                 $compra->load('tipoPago');
                 $esCredito = $compra->tipoPago?->es_credito ?? false;
-
-                if ($esCredito) {
-                    // COMPRA A CRÉDITO: Crear CuentaPorPagar
-                    $this->crearCuentaPorPagar($compra, $data['total']);
-
-                    Log::info("Compra {$compra->numero} cambió a APROBADO - CuentaPorPagar registrada", [
-                        'compra_id'      => $compra->id,
-                        'tipo_pago'      => $compra->tipoPago?->nombre,
-                        'total'          => $data['total'],
-                        'escenario'      => $escenario,
-                    ]);
-                }
 
                 // 3️⃣ ✨ NUEVO: Detectar cambios de precio de costo
                 $servicioPrecios    = new DetectarCambiosPrecioService();
@@ -1136,6 +1265,12 @@ class CompraController extends Controller
                 ]);
             }
 
+            // Compra aprobada/facturada: su cuenta por pagar debe reflejar el tipo de pago, el total y el
+            // vencimiento actuales (la crea al aprobar a crédito, la ajusta si se editó, la quita si dejó de ser crédito)
+            if (in_array($compra->fresh()->estado_documento_id, array_filter([$estadoAprobado?->id, $estadoRecibido?->id]))) {
+                $this->sincronizarCuentaPorPagar($compra->fresh());
+            }
+
             // ✅ DEBUG 2026-03-19: Verificar estado final antes de commit
             Log::info('🟢 CompraController::update() - ANTES DE COMMIT', [
                 'compra_id'            => $compra->id,
@@ -1168,9 +1303,8 @@ class CompraController extends Controller
 
     public function destroy($id)
     {
-        // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
-        $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
-        $compra = Compra::where('almacen_id', $almacenIdUsuario)->findOrFail($id);
+        // ✅ CRÍTICO: Validar que la compra pertenezca a un almacén de la empresa del usuario
+        $compra = Compra::whereIn('almacen_id', $this->almacenesEmpresa())->findOrFail($id);
 
         try {
             DB::beginTransaction();
@@ -1398,12 +1532,9 @@ class CompraController extends Controller
 
             $motivo = $request->input('motivo', 'Sin motivo especificado');
 
-            // ✅ CRÍTICO: Validar que la compra pertenezca al almacén del usuario
-            $almacenIdUsuario = auth()->user()?->empresa?->almacen_id ?? 1;
-
-            // 2. Cargar compra
+            // 2. Cargar compra (de cualquier almacén de la empresa del usuario)
             $compra = Compra::with(['detalles.producto', 'cuentaPorPagar.pagos', 'estadoDocumento'])
-                ->where('almacen_id', $almacenIdUsuario)
+                ->whereIn('almacen_id', $this->almacenesEmpresa())
                 ->findOrFail($id);
 
             Log::info('🟠 [ANULAR COMPRA] COMPRA ENCONTRADA', [
@@ -1703,37 +1834,80 @@ class CompraController extends Controller
      * @param Compra $compra
      * @param float $monto Monto total de la compra
      */
-    private function crearCuentaPorPagar(Compra $compra, float $monto): void
+    /** Días de crédito por defecto si la compra no trae fecha_vencimiento_credito. */
+    private const DIAS_CREDITO_POR_DEFECTO = 7;
+
+    /**
+     * Deja la cuenta por pagar de una compra APROBADA/FACTURADA de acuerdo con su tipo de pago y su total.
+     * Idempotente (se puede llamar en cada guardado):
+     * - A crédito sin cuenta → la crea (vencimiento: fecha_vencimiento_credito o fecha + 7 días).
+     * - A crédito con cuenta → actualiza total, saldo (total − pagado) y vencimiento; si el nuevo total es
+     *   menor a lo ya pagado, lo rechaza.
+     * - Ya no es a crédito → elimina la cuenta, salvo que tenga pagos (entonces lo rechaza).
+     * Lo pagado se calcula como monto_original − saldo_pendiente (es lo que mueven pagar/anular pago).
+     *
+     * @throws \Exception con un mensaje para el usuario (la transacción del llamador se revierte)
+     */
+    private function sincronizarCuentaPorPagar(Compra $compra): void
     {
-        try {
-            $fechaVencimiento = $compra->fecha->addDays(7);
+        $compra->load(['tipoPago', 'proveedor', 'cuentaPorPagar']);
+        $cuenta    = $compra->cuentaPorPagar;
+        $esCredito = (bool) $compra->tipoPago?->es_credito;
+        $total     = round((float) $compra->total, 2);
+        $pagado    = $cuenta ? round((float) $cuenta->monto_original - (float) $cuenta->saldo_pendiente, 2) : 0.0;
 
-            $cuentaPorPagar = CuentaPorPagar::create([
-                'compra_id'           => $compra->id,
-                'monto_original'      => $monto,
-                'saldo_pendiente'     => $monto,
-                'fecha_vencimiento'   => $fechaVencimiento,
-                'dias_vencido'        => 0,
-                'estado'              => 'PENDIENTE',
-                'observaciones'       => "Compra #{$compra->numero} - Proveedor: {$compra->proveedor?->nombre}",
-            ]);
-
-            Log::info('CuentaPorPagar creada para compra a crédito', [
-                'compra_id'              => $compra->id,
-                'compra_numero'          => $compra->numero,
-                'cuenta_por_pagar_id'    => $cuentaPorPagar->id,
-                'monto'                  => $monto,
-                'fecha_vencimiento'      => $fechaVencimiento,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error al crear CuentaPorPagar para compra', [
-                'compra_id'   => $compra->id,
-                'compra_numero' => $compra->numero,
-                'error'       => $e->getMessage(),
-            ]);
-
-            throw new \Exception('Error al registrar cuenta por pagar: ' . $e->getMessage());
+        if (! $esCredito) {
+            if ($cuenta) {
+                if ($pagado > 0) {
+                    throw new \Exception(
+                        "La compra {$compra->numero} tiene pagos registrados (Bs " . number_format($pagado, 2) . ') en su cuenta por pagar: '
+                        . 'no se puede cambiar a un tipo de pago que no sea crédito. Anule los pagos primero.'
+                    );
+                }
+                $cuenta->delete();
+                Log::info('CuentaPorPagar eliminada: la compra dejó de ser a crédito', ['compra_id' => $compra->id]);
+            }
+            return;
         }
+
+        if ($total + 0.0001 < $pagado) {
+            throw new \Exception(
+                "El nuevo total de la compra (Bs " . number_format($total, 2) . ') es menor a lo ya pagado '
+                . '(Bs ' . number_format($pagado, 2) . '). Anule pagos antes de reducir la compra.'
+            );
+        }
+
+        $saldo = round($total - $pagado, 2);
+        $datos = [
+            'monto_original'       => $total,
+            'monto_total'          => $total,
+            'monto_pagado'         => $pagado,
+            'saldo_pendiente'      => $saldo,
+            'fecha_vencimiento'    => $compra->fecha_vencimiento_credito
+                ?? $compra->fecha->copy()->addDays(self::DIAS_CREDITO_POR_DEFECTO),
+            'estado'               => $saldo <= 0 ? 'PAGADO' : ($pagado > 0 ? 'PARCIAL' : 'PENDIENTE'),
+            'referencia_documento' => $compra->numero,
+            'observaciones'        => "Compra #{$compra->numero} - Proveedor: " . ($compra->proveedor?->nombre ?? 'sin proveedor'),
+        ];
+
+        if ($cuenta) {
+            $cuenta->update($datos);
+        } else {
+            $cuenta = CuentaPorPagar::create($datos + [
+                'compra_id'    => $compra->id,
+                'dias_vencido' => 0,
+                'usuario_id'   => Auth::id(),
+            ]);
+        }
+
+        Log::info('CuentaPorPagar sincronizada con la compra', [
+            'compra_id'           => $compra->id,
+            'cuenta_por_pagar_id' => $cuenta->id,
+            'total'               => $total,
+            'pagado'              => $pagado,
+            'saldo'               => $saldo,
+            'vence'               => (string) $datos['fecha_vencimiento'],
+        ]);
     }
 
     /**

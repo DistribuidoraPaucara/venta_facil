@@ -24,10 +24,12 @@ class Compra extends Model
         'moneda_id',
         'tipo_pago_id',
         'almacen_id',
+        'fecha_vencimiento_credito', // vencimiento de la cuenta por pagar (compras a crédito)
     ];
 
     protected $casts = [
         'fecha' => 'datetime',
+        'fecha_vencimiento_credito' => 'date:Y-m-d', // como fecha sola: con hora, el navegador podía correrla un día
     ];
 
     // Relaciones

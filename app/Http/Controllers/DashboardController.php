@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\DashboardService;
+use App\Services\Stock\CalendarioVencimientosService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -18,7 +19,7 @@ class DashboardController extends Controller
      * Renderiza solo los widgets permitidos según roles/permisos del usuario
      * Con compatibilidad backward para el dashboard anterior
      */
-    public function index(Request $request)
+    public function index(Request $request, CalendarioVencimientosService $calendarioService)
     {
         $user = Auth::user();
         $periodo = $request->get('periodo', 'mes_actual');
@@ -55,6 +56,11 @@ class DashboardController extends Controller
         // Obtener cuentas por cobrar vencidas
         $cuentasVencidasData = $this->dashboardService->getCuentasVencidas(10);
 
+        // 📅 Calendario de vencimientos de lotes y cuentas (?mes=YYYY-MM)
+        $mesCalendario = $calendarioService->resolverMes($request->get('mes'));
+        $calendario = $calendarioService->obtener($user->empresa_id, $mesCalendario);
+        $cuentasCalendario = $this->dashboardService->getCuentasCalendario($user->empresa_id, $mesCalendario);
+
         return Inertia::render('dashboard', [
             // Datos por módulo (nuevo sistema)
             'datosModulos' => $datosModulos,
@@ -74,6 +80,9 @@ class DashboardController extends Controller
             'cuentasVencidas' => $cuentasVencidasData['cuentas'],
             'totalCuentasVencidas' => $cuentasVencidasData['total_cuentas'],
             'totalMontoVencido' => $cuentasVencidasData['total_monto'],
+            'calendario' => $calendario,
+            'cuentasCalendario' => $cuentasCalendario,
+            'mesCalendario' => $mesCalendario->format('Y-m'),
             'titulo' => 'Dashboard',
             'descripcion' => 'Resumen general de tu empresa',
         ]);

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/compone
 import { Input } from '@/presentation/components/ui/input';
 import { Textarea } from '@/presentation/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
-import { ArrowLeft, Plus, Trash2, AlertCircle, AlertTriangle, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, AlertCircle, AlertTriangle, CheckCircle, XCircle, Loader, Search, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface Almacen {
@@ -14,14 +14,10 @@ interface Almacen {
   nombre: string;
 }
 
-interface Conversion {
+interface CodigoBarra {
   id: number;
-  unidad_base_id: number;
-  unidad_destino_id: number;
-  factor_conversion: number;
-  nombre_cuando_se_vende_como?: string;
-  unidadBase?: { nombre: string };
-  unidadDestino?: { nombre: string };
+  codigo: string;
+  es_principal: boolean;
 }
 
 interface Sector {
@@ -33,7 +29,6 @@ interface Producto {
   id: number;
   nombre: string;
   sku: string;
-  unidad?: { nombre: string };
   stock?: { cantidad_disponible: number };
   stock_actual?: number;
   stock_minimo_requerido?: number;
@@ -42,8 +37,7 @@ interface Producto {
   stock_principal?: number;
   cantidad_sugerida?: number;
   sector?: Sector;
-  es_fraccionado?: boolean;
-  conversiones?: Conversion[];
+  codigos_barra?: CodigoBarra[];
 }
 
 interface Props {
@@ -76,43 +70,51 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
   });
 
   const [cantidadesPorProducto, setCantidadesPorProducto] = useState<Record<number, number>>({});
-  const [unidadesReposicion, setUnidadesReposicion] = useState<Record<number, 'base' | 'conversion'>>({});
   const [productosSeleccionados, setProductosSeleccionados] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'criticos' | 'alerta' | 'seleccionados'>('todos');
+  const [filtroSector, setFiltroSector] = useState('');
 
-  // Auto-seleccionar productos con cantidad sugerida > 0 (solo una vez)
+  // Al llegar los productos: cargar la cantidad sugerida de TODOS (así "Seleccionar todos"
+  // muestra lo mismo que se envía) y auto-seleccionar los que tienen sugerencia > 0
   useEffect(() => {
-    const productosParaSeleccionar = productosStockBajo.filter(
-      (producto) =>
-        producto.cantidad_sugerida &&
-        producto.cantidad_sugerida > 0
-    );
+    if (!productosStockBajoProp) return;
 
-    if (productosParaSeleccionar.length > 0 && productosSeleccionados.size === 0) {
-      const nuevosSeleccionados = new Set<number>();
-      const nuevasCantidades: Record<number, number> = {};
+    const nuevasCantidades: Record<number, number> = {};
+    const nuevosSeleccionados = new Set<number>();
 
-      productosParaSeleccionar.forEach((p) => {
-        nuevosSeleccionados.add(p.id);
-        nuevasCantidades[p.id] = Math.floor(p.cantidad_sugerida || 0);
-      });
+    productosStockBajoProp.forEach((p) => {
+      const sugerida = Math.floor(Number(p.cantidad_sugerida ?? 0));
+      nuevasCantidades[p.id] = sugerida;
+      if (sugerida > 0) nuevosSeleccionados.add(p.id);
+    });
 
-      setProductosSeleccionados(nuevosSeleccionados);
-      setCantidadesPorProducto(nuevasCantidades);
-    }
-  }, [productosStockBajo]);
+    setCantidadesPorProducto(nuevasCantidades);
+    setProductosSeleccionados(nuevosSeleccionados);
+  }, [productosStockBajoProp]);
+
+  const obtenerCantidad = (producto: Producto) => cantidadesPorProducto[producto.id] ?? 0;
+
+  const validarFila = (producto: Producto): string | null => {
+    const cantidad = obtenerCantidad(producto);
+    if (cantidad <= 0) return 'La cantidad debe ser mayor a 0';
+    if (!Number.isInteger(cantidad)) return 'La cantidad debe ser un número entero';
+    if (cantidad > Number(producto.stock_principal ?? 0)) return 'Supera el stock disponible en depósito';
+    return null;
+  };
 
   // Sincronizar detalles con productos seleccionados
   useEffect(() => {
-    const nuevosDetalles = Array.from(productosSeleccionados).map((productoId) => {
-      const producto = productosStockBajo.find((p) => p.id === productoId);
-      const cantidad = cantidadesPorProducto[productoId] || producto?.cantidad_sugerida || 1;
-      return {
-        producto_id: productoId,
-        cantidad_solicitada: Math.floor(Number(cantidad)),
-      };
-    });
-    setData('detalles', nuevosDetalles);
+    setData(
+      'detalles',
+      productosStockBajo
+        .filter((p) => productosSeleccionados.has(p.id))
+        .map((p) => ({
+          producto_id: p.id,
+          cantidad_solicitada: obtenerCantidad(p),
+        }))
+    );
   }, [productosSeleccionados, cantidadesPorProducto]);
 
   const toggleProductoSeleccionado = (productoId: number) => {
@@ -125,25 +127,27 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
     setProductosSeleccionados(nuevoSeleccionados);
   };
 
+  // Seleccionar/deseleccionar actúan solo sobre las filas visibles con los filtros actuales
   const seleccionarTodos = () => {
-    const todosLosIds = new Set(productosStockBajo.map((p) => p.id));
-    setProductosSeleccionados(todosLosIds);
+    const nuevoSeleccionados = new Set(productosSeleccionados);
+    productosFiltrados.forEach((p) => nuevoSeleccionados.add(p.id));
+    setProductosSeleccionados(nuevoSeleccionados);
   };
 
   const deseleccionarTodos = () => {
-    setProductosSeleccionados(new Set());
-  };
-
-  const actualizarCantidad = (index: number, cantidad: number) => {
-    const nuevoDetalles = [...data.detalles];
-    nuevoDetalles[index].cantidad_solicitada = cantidad;
-    setData('detalles', nuevoDetalles);
+    const nuevoSeleccionados = new Set(productosSeleccionados);
+    productosFiltrados.forEach((p) => nuevoSeleccionados.delete(p.id));
+    setProductosSeleccionados(nuevoSeleccionados);
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (data.detalles.length === 0) {
       setToast({ type: 'error', message: 'Debe seleccionar al menos un producto' });
+      return;
+    }
+    if (cantidadErrores > 0) {
+      setToast({ type: 'error', message: `Hay ${cantidadErrores} producto(s) con cantidades inválidas` });
       return;
     }
 
@@ -161,30 +165,6 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
         setToast({ type: 'error', message: `❌ ${mensaje}` });
       },
     });
-  };
-
-  const obtenerUnidadBase = (producto: Producto) => {
-    return producto.unidad?.nombre || 'Unidad';
-  };
-
-  const obtenerUnidadConversion = (producto: Producto) => {
-    if (!producto.conversiones || producto.conversiones.length === 0) return null;
-    const primera = producto.conversiones[0];
-    return primera.nombre_cuando_se_vende_como || primera.unidadDestino?.nombre;
-  };
-
-  const calcularCantidadEnOtraUnidad = (producto: Producto, cantidad: number, haciaConversion: boolean) => {
-    if (!producto.conversiones || producto.conversiones.length === 0) return cantidad;
-    const conversion = producto.conversiones[0];
-    if (!conversion) return cantidad;
-
-    if (haciaConversion) {
-      // De base a conversión: multiplicar
-      return Math.round(cantidad * parseFloat(conversion.factor_conversion.toString()));
-    } else {
-      // De conversión a base: dividir
-      return Math.round(cantidad / parseFloat(conversion.factor_conversion.toString()));
-    }
   };
 
   const formatearNumero = (num: number | string | undefined): string => {
@@ -206,6 +186,73 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
     // Si tiene decimales, redondea a 2 decimales máximo
     return parseFloat(n.toFixed(2));
   };
+
+  const productosElegidos = productosStockBajo.filter((p) => productosSeleccionados.has(p.id));
+  const erroresPorProducto: Record<number, string> = {};
+  productosElegidos.forEach((p) => {
+    const error = validarFila(p);
+    if (error) erroresPorProducto[p.id] = error;
+  });
+  const cantidadErrores = Object.keys(erroresPorProducto).length;
+
+  // ===== Filtros de la tabla =====
+  const normalizar = (texto: string) =>
+    texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+  const esCritico = (p: Producto) => Number(p.stock_actual ?? 0) < Number(p.stock_minimo_requerido ?? 0);
+
+  // Qué tan lejos está del mínimo (menor = más urgente)
+  const nivelStock = (p: Producto) => {
+    const minimo = Number(p.stock_minimo_requerido ?? 0);
+    return minimo > 0 ? Number(p.stock_actual ?? 0) / minimo : Infinity;
+  };
+
+  const sectores = Array.from(
+    new Set(productosStockBajo.map((p) => p.sector?.nombre).filter((s): s is string => !!s))
+  ).sort((a, b) => a.localeCompare(b));
+
+  // Búsqueda y sector se aplican primero, para que los contadores de las pestañas los reflejen
+  const termino = normalizar(busqueda.trim());
+  const productosBuscados = productosStockBajo.filter((p) => {
+    if (filtroSector && p.sector?.nombre !== filtroSector) return false;
+    if (!termino) return true;
+    const codigos = (p.codigos_barra ?? []).map((c) => c.codigo).join(' ');
+    return normalizar(`${p.nombre} ${p.sku ?? ''} ${p.id} ${codigos}`).includes(termino);
+  });
+
+  const conteos = {
+    todos: productosBuscados.length,
+    criticos: productosBuscados.filter(esCritico).length,
+    alerta: productosBuscados.filter((p) => !esCritico(p)).length,
+    seleccionados: productosBuscados.filter((p) => productosSeleccionados.has(p.id)).length,
+  };
+
+  const productosFiltrados = productosBuscados
+    .filter((p) => {
+      if (filtroEstado === 'criticos') return esCritico(p);
+      if (filtroEstado === 'alerta') return !esCritico(p);
+      if (filtroEstado === 'seleccionados') return productosSeleccionados.has(p.id);
+      return true;
+    })
+    .sort((a, b) => nivelStock(a) - nivelStock(b));
+
+  const hayFiltros = termino !== '' || filtroSector !== '' || filtroEstado !== 'todos';
+  const seleccionadosOcultos = productosElegidos.filter((p) => !productosFiltrados.some((f) => f.id === p.id)).length;
+  const todosVisiblesSeleccionados =
+    productosFiltrados.length > 0 && productosFiltrados.every((p) => productosSeleccionados.has(p.id));
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setFiltroSector('');
+    setFiltroEstado('todos');
+  };
+
+  const pestanas = [
+    { valor: 'todos', etiqueta: 'Todos', conteo: conteos.todos },
+    { valor: 'criticos', etiqueta: 'Críticos', conteo: conteos.criticos },
+    { valor: 'alerta', etiqueta: 'Alerta', conteo: conteos.alerta },
+    { valor: 'seleccionados', etiqueta: 'Seleccionados', conteo: conteos.seleccionados },
+  ] as const;
 
   return (
     <>
@@ -253,7 +300,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
               <CardTitle>Datos de la Reposición</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={submit} className="space-y-6">
+              <form id="form-reposicion" onSubmit={submit} className="space-y-6">
                 {/* Almacenes */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -305,17 +352,6 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
                     rows={3}
                   />
                 </div> */}
-
-                {/* Botones */}
-                <div className="flex gap-2 justify-end">
-                  <Link href={route('reposiciones.index')}>
-                    <Button variant="outline" disabled={processing}>Cancelar</Button>
-                  </Link>
-                  <Button type="submit" disabled={processing || data.detalles.length === 0} className="flex items-center gap-2">
-                    {processing && <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />}
-                    {processing ? 'Procesando...' : 'Crear Reposición'}
-                  </Button>
-                </div>
               </form>
             </CardContent>
           </Card>
@@ -365,6 +401,62 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
                   </Button>
                 </div>
               </div>
+
+              {/* Filtros */}
+              <div className="mt-4 flex flex-col gap-3">
+                <div className="flex flex-col gap-2 md:flex-row">
+                  <div className="relative flex-1">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                      placeholder="Buscar por nombre, SKU, código de barra o ID..."
+                      className="pl-9"
+                    />
+                  </div>
+                  <select
+                    value={filtroSector}
+                    onChange={(e) => setFiltroSector(e.target.value)}
+                    className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm md:w-56"
+                  >
+                    <option value="">Todos los sectores</option>
+                    {sectores.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {pestanas.map((pestana) => (
+                    <button
+                      key={pestana.valor}
+                      type="button"
+                      onClick={() => setFiltroEstado(pestana.valor)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        filtroEstado === pestana.valor
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {pestana.etiqueta} ({pestana.conteo})
+                    </button>
+                  ))}
+                  {hayFiltros && (
+                    <button
+                      type="button"
+                      onClick={limpiarFiltros}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Limpiar filtros
+                    </button>
+                  )}
+                  <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+                    Ordenado por urgencia (más lejos del mínimo primero)
+                  </span>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -374,44 +466,70 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
                       <th className="text-center py-3 px-4 w-12">
                         <input
                           type="checkbox"
-                          checked={productosSeleccionados.size === productosStockBajo.length && productosStockBajo.length > 0}
+                          checked={todosVisiblesSeleccionados}
                           onChange={(e) => e.target.checked ? seleccionarTodos() : deseleccionarTodos()}
                           className="w-4 h-4 cursor-pointer"
                         />
                       </th>
                       <th className="text-left py-3 px-4">ID</th>
                       <th className="text-left py-3 px-4">Producto</th>
-                      <th className="text-left py-3 px-4">SKU</th>
+                      <th className="text-left py-3 px-4">SKU / Código de barra</th>
                       <th className="text-center py-3 px-4">Sector</th>
-                      <th className="text-center py-3 px-4">Stock en Sala</th>
-                      <th className="text-center py-3 px-4">Stock en Dep.</th>
-                      <th className="text-center py-3 px-4">Unidad Reposición</th>
+                      <th className="text-center py-3 px-4">
+                        Sala
+                        <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">actual → final</span>
+                      </th>
+                      <th className="text-center py-3 px-4">
+                        Mín / Máx
+                        <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">límites en sala</span>
+                      </th>
+                      <th className="text-center py-3 px-4">
+                        Depósito
+                        <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">actual → final</span>
+                      </th>
                       <th className="text-right py-3 px-4">Cantidad a Reponer</th>
-                      <th className="text-center py-3 px-4">Stock Final Sala</th>
-                      <th className="text-center py-3 px-4">Stock Final Dep.</th>
                       <th className="text-center py-3 px-4">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {productosStockBajo.map((producto) => {
+                    {productosFiltrados.length === 0 && (
+                      <tr>
+                        <td colSpan={10} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                          {productosStockBajo.length === 0
+                            ? 'No hay productos que requieran reposición'
+                            : 'Ningún producto coincide con los filtros'}
+                        </td>
+                      </tr>
+                    )}
+                    {productosFiltrados.map((producto) => {
                       const isCritico = (producto.stock_actual ?? 0) < (producto.stock_minimo_requerido ?? 0);
                       const isAdvertencia = (producto.stock_actual ?? 0) <= (producto.umbral_advertencia ?? 0);
                       const yaSeleccionado = productosSeleccionados.has(producto.id);
-                      const detalleAgregado = data.detalles.find((d) => d.producto_id === producto.id);
-                      const cantidadAgregada = detalleAgregado?.cantidad_solicitada ?? 0;
+                      const cantidad = yaSeleccionado ? obtenerCantidad(producto) : 0;
+                      const mostrarFinal = cantidad > 0;
+                      const stockFinalDeposito = Number(producto.stock_principal ?? 0) - cantidad;
+                      const stockActual = Number(producto.stock_actual ?? 0);
+                      const stockFinalSala = stockActual + cantidad;
+                      const minimo = Number(producto.stock_minimo_requerido ?? 0);
+                      const maximo = Number(producto.stock_maximo_requerido ?? 0);
+                      const superaMaximo = mostrarFinal && maximo > 0 && stockFinalSala > maximo;
+                      const porcentaje = (valor: number) => (maximo > 0 ? Math.min(100, Math.max(0, (valor / maximo) * 100)) : 0);
 
                       return (
                         <tr
                           key={producto.id}
-                          className={`border-b ${
-                            isCritico
-                              ? 'bg-red-50 dark:bg-red-950'
-                              : isAdvertencia
-                              ? 'bg-yellow-50 dark:bg-yellow-950'
-                              : ''
-                          } ${yaSeleccionado ? '' : 'opacity-50'}`}
+                          className={`border-b hover:bg-gray-50 dark:hover:bg-gray-800/50 ${yaSeleccionado ? '' : 'opacity-50'}`}
                         >
-                          <td className="py-3 px-4 text-center w-12">
+                          {/* El estado se marca con un borde de color a la izquierda, no con el fondo de toda la fila */}
+                          <td
+                            className={`py-3 px-4 text-center w-12 border-l-4 ${
+                              isCritico
+                                ? 'border-l-red-400 dark:border-l-red-500/70'
+                                : isAdvertencia
+                                ? 'border-l-amber-300 dark:border-l-amber-500/60'
+                                : 'border-l-transparent'
+                            }`}
+                          >
                             <input
                               type="checkbox"
                               checked={yaSeleccionado}
@@ -419,67 +537,113 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
                               className="w-4 h-4 cursor-pointer"
                             />
                           </td>
-                          <td className="py-3 px-4">#{producto.id}</td>
+                          <td className="py-3 px-4">
+                            <a
+                              href={`/productos/${producto.id}/edit`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Editar producto en otra pestaña"
+                              className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
+                            >
+                              #{producto.id}
+                              <ExternalLink size={12} />
+                            </a>
+                          </td>
                           <td className="py-3 px-4">{producto.nombre}</td>
-                          <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{producto.sku}</td>
+                          <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                            <div>{producto.sku}</div>
+                            {(() => {
+                              const codigos = producto.codigos_barra ?? [];
+                              if (codigos.length === 0) {
+                                return <div className="text-xs text-gray-400 dark:text-gray-500">Sin código de barra</div>;
+                              }
+                              const [principal, ...otros] = codigos;
+                              return (
+                                <div className="flex items-center gap-1 text-xs font-mono">
+                                  <span>{principal.codigo}</span>
+                                  {otros.length > 0 && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="cursor-help rounded bg-gray-200 dark:bg-gray-700 px-1 font-sans text-gray-700 dark:text-gray-300">
+                                          +{otros.length}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <div className="font-mono text-xs">
+                                          {otros.map((c) => (
+                                            <div key={c.id}>{c.codigo}</div>
+                                          ))}
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </td>
                           <td className="py-3 px-4 text-center text-sm font-medium text-purple-600 dark:text-purple-400">
                             {producto.sector?.nombre || '-'}
                           </td>
-                          <td className="py-3 px-4 text-center font-medium">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help border-b border-dashed border-gray-400 dark:border-gray-500">
-                                  {formatearNumero(producto.stock_actual)}
+                          <td className="py-3 px-4 text-center font-medium whitespace-nowrap">
+                            <span>{formatearNumero(producto.stock_actual)}</span>
+                            {mostrarFinal && (
+                              <>
+                                <span className="mx-1 text-gray-400 dark:text-gray-500">→</span>
+                                <span
+                                  className={`font-semibold ${
+                                    superaMaximo ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'
+                                  }`}
+                                  title={superaMaximo ? 'Supera el stock máximo de la sala' : undefined}
+                                >
+                                  {formatearNumero(stockFinalSala)}
                                 </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Mín: {formatearNumero(producto.stock_minimo_requerido)} · Máx: {formatearNumero(producto.stock_maximo_requerido)}
-                              </TooltipContent>
-                            </Tooltip>
+                              </>
+                            )}
+                            {/* Barra: stock actual y lo que se repone, sobre la escala 0 → máximo; la línea marca el mínimo */}
+                            {maximo > 0 && (
+                              <div className="relative mx-auto mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                                <div
+                                  className={`absolute inset-y-0 left-0 ${isCritico ? 'bg-red-400' : 'bg-amber-400'}`}
+                                  style={{ width: `${porcentaje(stockActual)}%` }}
+                                />
+                                {mostrarFinal && (
+                                  <div
+                                    className="absolute inset-y-0 bg-blue-500"
+                                    style={{
+                                      left: `${porcentaje(stockActual)}%`,
+                                      width: `${porcentaje(stockFinalSala) - porcentaje(stockActual)}%`,
+                                    }}
+                                  />
+                                )}
+                                <div
+                                  className="absolute inset-y-0 w-0.5 bg-gray-700 dark:bg-gray-200"
+                                  style={{ left: `${porcentaje(minimo)}%` }}
+                                />
+                              </div>
+                            )}
                           </td>
-                          <td className="py-3 px-4 text-center font-semibold text-green-600 dark:text-green-400">
-                            {formatearNumero(producto.stock_principal)}
+                          <td className="py-3 px-4 text-center whitespace-nowrap text-gray-700 dark:text-gray-300">
+                            <span title="Stock mínimo">{formatearNumero(minimo)}</span>
+                            <span className="mx-1 text-gray-400 dark:text-gray-500">/</span>
+                            <span title="Stock máximo">{formatearNumero(maximo)}</span>
                           </td>
-                          
-                          <td className="py-3 px-4 text-center">
-                            {producto.es_fraccionado && producto.conversiones && producto.conversiones.length > 0 ? (
-                              <select
-                                value={unidadesReposicion[producto.id] ?? 'base'}
-                                onChange={(e) => {
-                                  const nuevoTipo = e.target.value as 'base' | 'conversion';
-                                  setUnidadesReposicion({
-                                    ...unidadesReposicion,
-                                    [producto.id]: nuevoTipo,
-                                  });
-                                  // Recalcular cantidad
-                                  const cantidadActual = cantidadesPorProducto[producto.id] ?? 0;
-                                  if (cantidadActual > 0) {
-                                    const esConversionActual = unidadesReposicion[producto.id] === 'conversion';
-                                    const nuevaCantidad = calcularCantidadEnOtraUnidad(producto, cantidadActual, !esConversionActual);
-                                    setCantidadesPorProducto({
-                                      ...cantidadesPorProducto,
-                                      [producto.id]: nuevaCantidad,
-                                    });
-                                  }
-                                }}
-                                disabled={!yaSeleccionado}
-                                className="text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded px-2 py-1 disabled:opacity-50"
-                              >
-                                <option value="base">{obtenerUnidadBase(producto)}</option>
-                                <option value="conversion">{obtenerUnidadConversion(producto)}</option>
-                              </select>
-                            ) : (
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
-                                {obtenerUnidadBase(producto)}
-                              </span>
+                          <td className="py-3 px-4 text-center font-medium whitespace-nowrap">
+                            <span>{formatearNumero(producto.stock_principal)}</span>
+                            {mostrarFinal && (
+                              <>
+                                <span className="mx-1 text-gray-400 dark:text-gray-500">→</span>
+                                <span className={`font-semibold ${stockFinalDeposito >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  {formatearNumero(Math.round(stockFinalDeposito * 100) / 100)}
+                                </span>
+                              </>
                             )}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <input
                               type="number"
-                              step="0.01"
+                              step="1"
                               min="0"
-                              value={formatearCantidad(cantidadesPorProducto[producto.id] ?? producto.cantidad_sugerida ?? 0)}
+                              value={formatearCantidad(cantidadesPorProducto[producto.id] ?? 0)}
                               onChange={(e) =>
                                 setCantidadesPorProducto({
                                   ...cantidadesPorProducto,
@@ -488,47 +652,32 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
                               }
                               disabled={!yaSeleccionado}
                               className={`w-24 border rounded px-2 py-1 text-right font-semibold ${
-                                yaSeleccionado
-                                  ? 'border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
-                                  : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                                !yaSeleccionado
+                                  ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                                  : erroresPorProducto[producto.id]
+                                  ? 'border-red-500 dark:border-red-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
+                                  : 'border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
                               }`}
                             />
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            {yaSeleccionado && (cantidadesPorProducto[producto.id] ?? 0) > 0 ? (
-                              <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                {formatearNumero(Number(producto.stock_actual ?? 0) + (cantidadesPorProducto[producto.id] ?? 0))}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-500">-</span>
+                            {yaSeleccionado && erroresPorProducto[producto.id] && (
+                              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{erroresPorProducto[producto.id]}</p>
                             )}
                           </td>
                           <td className="py-3 px-4 text-center">
-                            {(() => {
-                              const cantidadActual = yaSeleccionado ? (cantidadesPorProducto[producto.id] ?? 0) : 0;
-                              const stockFinal = Number(producto.stock_principal ?? 0) - cantidadActual;
-                              return cantidadActual > 0 && yaSeleccionado ? (
-                                <span className={`font-semibold ${stockFinal >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                  {formatearNumero(Math.round(stockFinal * 100) / 100)}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 dark:text-gray-500">-</span>
-                              );
-                            })()}
-                          </td>
-                          <td className="py-3 px-4 text-center">
                             {isCritico ? (
-                              <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold text-xs">
-                                <AlertCircle size={14} />
-                                CRÍTICO
+                              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/15 dark:text-red-300">
+                                <AlertCircle size={12} />
+                                Crítico
                               </span>
                             ) : isAdvertencia ? (
-                              <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400 font-semibold text-xs">
-                                <AlertTriangle size={14} />
-                                ALERTA
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                                <AlertTriangle size={12} />
+                                Alerta
                               </span>
                             ) : (
-                              <span className="text-green-600 dark:text-green-400 font-semibold text-xs">OK</span>
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/15 dark:text-green-300">
+                                OK
+                              </span>
                             )}
                           </td>
                         </tr>
@@ -542,14 +691,39 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
           </Deferred>
         </div>
 
-        {/* Indicador de productos agregados */}
-        {data.detalles.length > 0 && (
-          <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-sm font-semibold text-green-800 dark:text-green-200">
-              ✅ {data.detalles.length} producto(s) seleccionado(s) para reabastecer
+        {/* Barra de acciones fija: resumen + botones siempre a la vista mientras se cargan cantidades */}
+        <div className="sticky bottom-0 z-10 mx-2 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-lg">
+          <div className="text-sm">
+            <p className="font-semibold text-gray-900 dark:text-gray-100">
+              {productosElegidos.length} de {productosStockBajo.length} producto(s) seleccionado(s) para reponer
             </p>
+            {seleccionadosOcultos > 0 && (
+              <p className="mt-1 text-gray-600 dark:text-gray-400">
+                {seleccionadosOcultos} seleccionado(s) no visible(s) por los filtros: también se van a reponer
+              </p>
+            )}
+            {cantidadErrores > 0 && (
+              <p className="mt-1 flex items-center gap-1 text-red-600 dark:text-red-400">
+                <AlertCircle size={14} />
+                {cantidadErrores} producto(s) con problemas: revise las cantidades marcadas en rojo
+              </p>
+            )}
           </div>
-        )}
+          <div className="flex gap-2">
+            <Link href={route('reposiciones.index')}>
+              <Button variant="outline" disabled={processing}>Cancelar</Button>
+            </Link>
+            <Button
+              type="submit"
+              form="form-reposicion"
+              disabled={processing || data.detalles.length === 0 || cantidadErrores > 0}
+              className="flex items-center gap-2"
+            >
+              {processing && <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+              {processing ? 'Procesando...' : 'Crear Reposición'}
+            </Button>
+          </div>
+        </div>
       </div>
     </>
   );

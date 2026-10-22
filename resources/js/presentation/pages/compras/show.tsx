@@ -1,20 +1,17 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import AppLayout from '@/layouts/app-layout';
-import { formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/application/hooks/use-auth';
-import { useExport } from '@/infrastructure/hooks/use-export';
-import { compraToExportData, getDefaultCompraExportOptions } from '@/lib/export-helpers';
-import { ExportButtons } from '@/presentation/components/Export/ExportButtons';
 import { PrintableContent } from '@/presentation/components/Export/PrintableContent';
-import { ArrowLeft, Edit, Printer, Package, User, Calendar, FileText, Hash, CreditCard, Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Calendar, Copy, CreditCard, Edit, ExternalLink, FileText, Package, Printer, User, Warehouse } from 'lucide-react';
+import { duplicarCompra } from '@/presentation/components/compras/duplicar-compra';
 import { toast } from 'react-toastify';
 import AnularCompraModal from '@/presentation/components/compras/AnularCompraModal';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 
 // Importar tipos del domain
-import type { Compra } from '@/domain/entities/compras';
+import type { Compra, DetalleCompra } from '@/domain/entities/compras';
 import type { EstadoDocumento } from '@/domain/entities/estados-documento';
 
 interface PageProps extends InertiaPageProps {
@@ -64,34 +61,102 @@ const formatCurrencySmartDecimal = (value: number | string | null | undefined, s
     return symbol + formattedInt;
 };
 
-const getEstadoColor = (estado?: EstadoDocumento) => {
-    if (!estado) return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+/**
+ * Fecha en hora LOCAL. Una fecha sola ('2026-12-29', como el vencimiento) new Date() la toma como medianoche
+ * UTC y en Bolivia (UTC−4) se mostraba el día anterior: se arma con año/mes/día locales. Si trae hora
+ * ('2026-10-21T04:00:00Z'), new Date() ya la convierte bien a la hora local.
+ */
+const fechaLocal = (valor?: string | null): Date | null => {
+    if (!valor) return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(valor);
+};
 
-    switch (estado.nombre.toLowerCase()) {
-        case 'pendiente':
-            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-        case 'completada':
-        case 'aprobada':
-            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-        case 'cancelada':
-            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+const formatearFecha = (valor?: string | null, opciones: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' }) => {
+    const fecha = fechaLocal(valor);
+    return fecha ? fecha.toLocaleDateString('es-ES', opciones) : '-';
+};
+
+// Días desde hoy hasta la fecha (negativo = ya pasó)
+const diasHasta = (valor?: string | null): number | null => {
+    const fecha = fechaLocal(valor);
+    if (!fecha) return null;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    return Math.round((fecha.getTime() - hoy.getTime()) / 86_400_000);
+};
+
+// Colores por CÓDIGO de estado (los nombres son "Aprobado", "Anulado"…: comparar con "aprobada" no coincidía)
+const getEstadoColor = (estado?: EstadoDocumento) => {
+    switch (estado?.codigo) {
+        case 'BORRADOR':
+            return 'bg-slate-100 text-slate-700 ring-1 ring-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600';
+        case 'PENDIENTE':
+            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
+        case 'APROBADO':
+            return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
+        case 'FACTURADO':
+            return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
+        case 'ANULADO':
+        case 'CANCELADO':
+            return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
         default:
             return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
 };
 
+// Estilos de botón comunes (antes cada botón tenía tamaño y mayúsculas distintos)
+const botonBase =
+    'inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50';
+
+function Dato({ icono: Icono, etiqueta, children }: { icono: typeof User; etiqueta: string; children: ReactNode }) {
+    return (
+        <div className="flex items-start gap-3">
+            <Icono className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" />
+            <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{etiqueta}</dt>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-white">{children}</dd>
+            </div>
+        </div>
+    );
+}
+
 export default function CompraShow() {
     const { props } = usePage<PageProps>();
     const { can } = useAuth();
-    const { isExporting, exportToPDF, exportToExcel, exportToCSV, print, error } = useExport();
     const compra = props.compra;
     const printableRef = useRef<HTMLDivElement>(null);
     const [mostrarModalAnular, setMostrarModalAnular] = useState(false);
     const [isAnulando, setIsAnulando] = useState(false);
     const [outputModal, setOutputModal] = useState(false);
+    const [duplicando, setDuplicando] = useState(false);
+
+    const simbolo = compra.moneda?.simbolo || 'Bs';
+    const dinero = (valor: number | string | null | undefined) => formatCurrencySmartDecimal(valor, `${simbolo} `);
+    const detalles: DetalleCompra[] = compra.detalles || [];
+    const codigoEstado = compra.estado_documento?.codigo;
 
     // Verificar si la compra está APROBADA
-    const esAprobada = compra.estado_documento?.nombre?.toLowerCase() === 'aprobada' || compra.estado_documento?.codigo === 'APROBADO';
+    const esAprobada = codigoEstado === 'APROBADO';
+    const esBorrador = codigoEstado === 'BORRADOR';
+    // Editable solo en BORRADOR o PENDIENTE (el backend rechaza editar facturadas, anuladas y canceladas)
+    const puedeEditar = can('compras.update') && !esAprobada && !['FACTURADO', 'ANULADO', 'CANCELADO'].includes(codigoEstado ?? '');
+
+    const descuentoLineas = detalles.reduce((sum, d) => sum + (Number(d.descuento) || 0), 0);
+
+    // Cuenta por pagar (si la compra es a crédito y está aprobada)
+    const cuenta = compra.cuenta_por_pagar ?? null;
+    const pagadoCuenta = cuenta ? Number(cuenta.monto_original) - Number(cuenta.saldo_pendiente) : 0;
+    const diasVencimiento = cuenta ? diasHasta(String(cuenta.fecha_vencimiento).slice(0, 10)) : null;
+    const vencida = !!cuenta && cuenta.estado !== 'PAGADO' && diasVencimiento !== null && diasVencimiento < 0;
+
+    // Qué le falta a un borrador para poder aprobarse
+    const sinPrecio = detalles.filter((d) => Number(d.precio_unitario) <= 0).length;
+    const pendientesBorrador = [
+        !compra.proveedor ? 'elegir el proveedor' : null,
+        sinPrecio > 0 ? `completar ${sinPrecio} precio(s)` : null,
+        detalles.length === 0 ? 'agregar productos' : null,
+    ].filter(Boolean) as string[];
 
     const handleAnularCompra = async (motivo?: string) => {
         setIsAnulando(true);
@@ -125,467 +190,431 @@ export default function CompraShow() {
         }
     };
 
-    // Preparar datos para exportación
-    const exportData = compraToExportData(compra);
-    const defaultExportOptions = getDefaultCompraExportOptions(compra);
-
-    const handleExport = async (format: 'pdf' | 'excel' | 'csv') => {
-        try {
-            switch (format) {
-                case 'pdf':
-                    await exportToPDF(exportData, defaultExportOptions);
-                    break;
-                case 'excel':
-                    await exportToExcel(exportData, defaultExportOptions);
-                    break;
-                case 'csv':
-                    await exportToCSV(exportData, defaultExportOptions);
-                    break;
-            }
-        } catch (err) {
-            console.error(`Error exportando a ${format}:`, err);
-        }
-    };
-
-    const handlePrint = async () => {
-        try {
-            await print('printable-content', defaultExportOptions);
-        } catch (err) {
-            console.error('Error imprimiendo:', err);
-        }
-    };
-
     return (
         <AppLayout breadcrumbs={[
             { title: 'Compras', href: '/compras' },
-            { title: `Compra ${compra.numero}`, href: '#' }
+            { title: `Compra #${compra.id}`, href: '#' }
         ]}>
-            <Head title={`Compra ${compra.numero}`} />
+            <Head title={`Compra #${compra.id}`} />
 
-            {/* Header mejorado */}
-            <div className="flex items-center justify-between mb-6 p-4">
-                <div className="flex items-center space-x-4">
-                    <Link
-                        href="/compras"
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                        <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    </Link>
-                    <div>
-                        <div className="flex items-center space-x-3">
-                            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                                Folio #{compra.id} | {compra.numero}
-                            </h1>
-                            <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getEstadoColor(compra.estado_documento)}`}>
-                                {compra.estado_documento?.nombre || 'Sin estado'}
-                            </span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Creada el {compra.created_at ? new Date(compra.created_at).toLocaleDateString('es-ES', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            }) : 'Fecha no disponible'}
-                        </p>
+            {/* Encabezado */}
+            <div className="flex flex-wrap items-start justify-between gap-3 p-2">
+                <div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Compra #{compra.id}</h1>
+                        <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-sm text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                            {compra.numero}
+                        </span>
+                        <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${getEstadoColor(compra.estado_documento)}`}>
+                            {compra.estado_documento?.nombre || 'Sin estado'}
+                        </span>
                     </div>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Creada el{' '}
+                        {compra.created_at
+                            ? new Date(compra.created_at).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                              })
+                            : 'fecha no disponible'}
+                        {compra.usuario?.name ? ` por ${compra.usuario.name}` : ''}
+                    </p>
                 </div>
 
-                <div className="flex gap-3">
-                    {/* Botón Exportar/Imprimir */}
+                <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setOutputModal(true)}
-                        className="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                        className={`${botonBase} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700`}
                         title="Exportar/Imprimir documento"
                     >
                         <Printer className="h-4 w-4" />
-                        Exportar
+                        Imprimir / Exportar
                     </button>
 
-                    {/* Botón Editar - Solo si NO está aprobada */}
-                    {can('compras.update') && !esAprobada && (
-                        <Link
-                            href={`/compras/${compra.id}/edit`}
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
+                    {/* Duplicar: compra nueva en borrador con los mismos productos, cantidades y precios */}
+                    {can('compras.store') && (
+                        <button
+                            onClick={() => {
+                                setDuplicando(true);
+                                duplicarCompra(compra.id, () => setDuplicando(false));
+                            }}
+                            disabled={duplicando}
+                            title="Crear una compra nueva en borrador con los mismos productos, cantidades y precios"
+                            className={`${botonBase} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700`}
                         >
-                            <Edit className="h-4 w-4 mr-2" />
+                            <Copy className="h-4 w-4" />
+                            {duplicando ? 'Duplicando…' : 'Duplicar'}
+                        </button>
+                    )}
+
+                    {/* Editar: mientras no esté aprobada ni anulada */}
+                    {puedeEditar && (
+                        <Link href={`/compras/${compra.id}/edit`} className={`${botonBase} bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500`}>
+                            <Edit className="h-4 w-4" />
                             Editar
                         </Link>
                     )}
 
-                    {/* Botón Anular - Solo si está aprobada */}
+                    {/* Anular: solo si está aprobada */}
                     {can('compras.update') && esAprobada && (
                         <button
                             onClick={() => setMostrarModalAnular(true)}
                             disabled={isAnulando}
-                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150 disabled:opacity-50"
+                            className={`${botonBase} bg-red-600 text-white hover:bg-red-700 focus:ring-red-500`}
                         >
-                            <AlertCircle className="h-4 w-4 mr-2" />
+                            <AlertCircle className="h-4 w-4" />
                             {isAnulando ? 'Anulando...' : 'Anular'}
                         </button>
                     )}
                 </div>
             </div>
 
-            <div className="space-y-6 px-6">
-                {/* Información General - Card Principal Consolidado */}
-                <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                    {/* SECCIÓN 1: Información General de la Compra */}
-                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                            <FileText className="h-5 w-5 mr-2" />
-                            Información General
-                        </h3>
-                    </div>
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <dl className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div className="flex items-start space-x-3">
-                                <Hash className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Número de Compra
-                                    </dt>
-                                    <dd className="mt-1 text-sm text-gray-900 dark:text-white font-mono">
-                                        {compra.numero}
-                                    </dd>
-                                </div>
+            <div className="space-y-3 px-2 pb-4">
+                {/* Aviso de borrador: qué falta para aprobarla (no mueve stock hasta aprobarse) */}
+                {esBorrador && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+                        <div className="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-200">
+                            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                            <div>
+                                <p className="font-semibold">Compra en borrador: todavía no ingresó stock ni se registró el pago.</p>
+                                <p className="text-amber-800 dark:text-amber-300">
+                                    {pendientesBorrador.length > 0
+                                        ? `Antes de aprobarla falta ${pendientesBorrador.join(', ')}.`
+                                        : 'Está lista para aprobarse.'}
+                                </p>
                             </div>
-
-                            <div className="flex items-start space-x-3">
-                                <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Fecha de Compra
-                                    </dt>
-                                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                        {new Date(compra.fecha).toLocaleDateString('es-ES', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}
-                                    </dd>
-                                </div>
-                            </div>
-
-                            {compra.numero_factura && (
-                                <div className="flex items-start space-x-3">
-                                    <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                            Número de Factura
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                            <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-xs">
-                                                {compra.numero_factura}
-                                            </span>
-                                        </dd>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* <div className="flex items-start space-x-3">
-                                <CreditCard className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Moneda
-                                    </dt>
-                                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                        <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">
-                                            {compra.moneda ? `${compra.moneda.codigo} - ${compra.moneda.nombre}` : 'Moneda no especificada'}
-                                        </span>
-                                    </dd>
-                                </div>
-                            </div> */}
-
-                            <div className="flex items-start space-x-3">
-                                <User className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Registrado por
-                                    </dt>
-                                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                        {compra.usuario?.name || 'Usuario no especificado'}
-                                    </dd>
-                                </div>
-                            </div>
-
-                            {compra.observaciones && (
-                                <div className="md:col-span-2 flex items-start space-x-3">
-                                    <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
-                                    <div className="flex-1">
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                            Observaciones
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                                                {compra.observaciones}
-                                            </div>
-                                        </dd>
-                                    </div>
-                                </div>
-                            )}
-                            {compra.proveedor?.nombre && (
-                                <div className="flex items-start space-x-3">
-                                <User className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Proveedor
-                                    </dt>
-                                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                        {compra.proveedor.nombre}
-                                    </dd>
-                                </div>
-                            </div>
-                        )}
-                        </dl>
-                    </div>
-
-                    {/* SECCIÓN 2: Proveedor */}
-                    {/* <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-md font-medium text-gray-900 dark:text-white flex items-center">
-                            <User className="h-5 w-5 mr-2" />
-                            Proveedor: 
-                        </h3>
-                        
-                    </div> */}
-                    {/* <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <div className="space-y-2">
-                            {compra.proveedor?.razon_social && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Razón Social:</span>
-                                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs">
-                                        {compra.proveedor.razon_social}
-                                    </span>
-                                </div>
-                            )}
-
-                            {compra.proveedor?.nit && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">NIT:</span>
-                                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs font-mono">
-                                        {compra.proveedor.nit}
-                                    </span>
-                                </div>
-                            )}
-
-                            {compra.proveedor?.telefono && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Tel:</span>
-                                    <a href={`tel:${compra.proveedor.telefono}`} className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs hover:underline">
-                                        {compra.proveedor.telefono}
-                                    </a>
-                                </div>
-                            )}
-
-                            {compra.proveedor?.email && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Email:</span>
-                                    <a href={`mailto:${compra.proveedor.email}`} className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs hover:underline truncate">
-                                        {compra.proveedor.email}
-                                    </a>
-                                </div>
-                            )}
                         </div>
-                    </div> */}
-
-                    {/* SECCIÓN 3: Resumen Financiero */}
-                    {/* <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-xs font-medium text-gray-900 dark:text-white flex items-center">
-                            <CreditCard className="h-5 w-5 mr-2" />
-                            Resumen Financiero
-                        </h3>
-                    </div> */}
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <dl className="space-y-4">
-                            {compra.descuento > 0 && (
-                                <div className="flex justify-between text-sm">
-                                    <dt className="text-gray-600 dark:text-gray-400">Descuento:</dt>
-                                    <dd className="font-mono text-red-600 dark:text-red-400">
-                                        -{formatCurrencySmartDecimal(compra.descuento, compra.moneda?.simbolo || '$')}
-                                    </dd>
-                                </div>
-                            )}
-
-                            <div className="border-t pt-4">
-                                <div className="flex justify-between">
-                                    <dt className="text-base font-semibold text-gray-900 dark:text-white">Total:</dt>
-                                    <dd className="text-base font-bold font-mono text-gray-900 dark:text-white">
-                                        {formatCurrencySmartDecimal(compra.total, compra.moneda?.simbolo || '$')}
-                                    </dd>
-                                </div>
-                            </div>
-                        </dl>
+                        {puedeEditar && (
+                            <Link href={`/compras/${compra.id}/edit`} className={`${botonBase} bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400`}>
+                                <Edit className="h-4 w-4" />
+                                {pendientesBorrador.length > 0 ? 'Completar y aprobar' : 'Revisar y aprobar'}
+                            </Link>
+                        )}
                     </div>
+                )}
 
-                    {/* SECCIÓN 4: Información de Auditoría */}
-                    {/* <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                            <Calendar className="h-5 w-5 mr-2" />
-                            Información de Auditoría
-                        </h3>
-                    </div>
-                    <div className="p-6">
-                        <dl className="space-y-4">
-                            <div>
-                                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Creada
-                                </dt>
-                                <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                    {compra.created_at ? new Date(compra.created_at).toLocaleString('es-ES', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    }) : 'Fecha no disponible'}
-                                </dd>
-                            </div>
-
-                            <div>
-                                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Última modificación
-                                </dt>
-                                <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                                    {compra.updated_at ? new Date(compra.updated_at).toLocaleString('es-ES', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    }) : 'Fecha no disponible'}
-                                </dd>
-                            </div>
-                        </dl>
-                    </div> */}
-                </div>
-
-                    {/* Detalles de productos mejorados */}
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-                        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                            <h3 className="text-gray-900 dark:text-white flex items-center">
-                                <Package className="h-5 w-5 mr-2" />
-                                Productos ({compra.detalles?.length || 0})
+                <div className="grid gap-3 lg:grid-cols-3">
+                    {/* Información general */}
+                    <div className="rounded-lg bg-white shadow lg:col-span-2 dark:bg-gray-800">
+                        <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                            <h3 className="flex items-center text-base font-medium text-gray-900 dark:text-white">
+                                <FileText className="mr-2 h-5 w-5" />
+                                Información general
                             </h3>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
-                                <thead className="bg-gray-50 dark:bg-gray-700">
+                        <dl className="grid grid-cols-1 gap-5 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <Dato icono={Calendar} etiqueta="Fecha de compra">
+                                {formatearFecha(compra.fecha, { year: 'numeric', month: 'long', day: 'numeric' })}
+                            </Dato>
+
+                            <Dato icono={User} etiqueta="Proveedor">
+                                {compra.proveedor ? (
+                                    // Abre la edición del proveedor en otra pestaña
+                                    <a
+                                        href={`/proveedores/${compra.proveedor.id}/edit`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Editar proveedor en otra pestaña"
+                                        className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                    >
+                                        {compra.proveedor.nombre}
+                                        <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                ) : (
+                                    <span className="font-medium text-amber-600 dark:text-amber-400">Sin proveedor</span>
+                                )}
+                            </Dato>
+
+                            <Dato icono={Warehouse} etiqueta="Almacén de destino">
+                                {compra.almacen?.nombre ?? <span className="text-gray-400">-</span>}
+                            </Dato>
+
+                            <Dato icono={CreditCard} etiqueta="Pago">
+                                {compra.tipo_pago?.nombre ?? <span className="text-gray-400">Sin tipo de pago</span>}
+                                <span className="text-gray-500 dark:text-gray-400"> · {compra.moneda?.nombre ?? simbolo}</span>
+                            </Dato>
+
+                            <Dato icono={FileText} etiqueta="N° de factura">
+                                {compra.numero_factura ? (
+                                    <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-gray-700">{compra.numero_factura}</span>
+                                ) : (
+                                    <span className="text-gray-400">Sin factura</span>
+                                )}
+                            </Dato>
+
+                            <Dato icono={User} etiqueta="Registrado por">
+                                {compra.usuario?.name || <span className="text-gray-400">No especificado</span>}
+                            </Dato>
+
+                            {compra.observaciones && (
+                                <div className="sm:col-span-2 xl:col-span-3">
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Observaciones</dt>
+                                    <dd className="mt-1 rounded-lg bg-gray-50 p-3 text-sm text-gray-900 dark:bg-gray-700 dark:text-white">
+                                        {compra.observaciones}
+                                    </dd>
+                                </div>
+                            )}
+                        </dl>
+                    </div>
+
+                    {/* Resumen de importes */}
+                    <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+                        <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                            <h3 className="text-base font-medium text-gray-900 dark:text-white">Resumen</h3>
+                        </div>
+                        <dl className="space-y-2 p-4 text-sm">
+                            <div className="flex justify-between">
+                                <dt className="text-gray-600 dark:text-gray-400">Productos</dt>
+                                <dd className="font-medium text-gray-900 dark:text-white">{detalles.length}</dd>
+                            </div>
+                            {/* Suma de descuentos por producto (ya restados del subtotal) */}
+                            {descuentoLineas > 0 && (
+                                <>
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-600 dark:text-gray-400">Importe bruto</dt>
+                                        <dd className="font-mono text-gray-900 dark:text-white">{dinero(Number(compra.subtotal) + descuentoLineas)}</dd>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-600 dark:text-gray-400">Desc. por productos</dt>
+                                        <dd className="font-mono text-green-600 dark:text-green-400">−{dinero(descuentoLineas)}</dd>
+                                    </div>
+                                </>
+                            )}
+                            <div className="flex justify-between">
+                                <dt className="text-gray-600 dark:text-gray-400">Subtotal</dt>
+                                <dd className="font-mono text-gray-900 dark:text-white">{dinero(compra.subtotal)}</dd>
+                            </div>
+                            {Number(compra.descuento) > 0 && (
+                                <div className="flex justify-between">
+                                    <dt className="text-gray-600 dark:text-gray-400">Descuento general</dt>
+                                    <dd className="font-mono text-red-600 dark:text-red-400">-{dinero(compra.descuento)}</dd>
+                                </div>
+                            )}
+                            {Number(compra.impuesto) > 0 && (
+                                <div className="flex justify-between">
+                                    <dt className="text-gray-600 dark:text-gray-400">Impuesto</dt>
+                                    <dd className="font-mono text-gray-900 dark:text-white">+{dinero(compra.impuesto)}</dd>
+                                </div>
+                            )}
+                            <div className="flex items-baseline justify-between border-t border-gray-200 pt-3 dark:border-gray-700">
+                                <dt className="text-base font-semibold text-gray-900 dark:text-white">Total</dt>
+                                <dd className="font-mono text-2xl font-bold text-gray-900 dark:text-white">{dinero(compra.total)}</dd>
+                            </div>
+                            {sinPrecio > 0 && (
+                                <p className="pt-1 text-xs text-amber-600 dark:text-amber-400">
+                                    {sinPrecio} producto(s) sin precio: el total todavía no es el real.
+                                </p>
+                            )}
+
+                            {/* Cuenta por pagar (compra a crédito aprobada) */}
+                            {cuenta && (
+                                <div className="mt-3 space-y-1.5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300">
+                                            Cuenta por pagar
+                                        </span>
+                                        <span
+                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                cuenta.estado === 'PAGADO'
+                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                                    : vencida
+                                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                                                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                                            }`}
+                                        >
+                                            {cuenta.estado === 'PAGADO' ? 'Pagada' : vencida ? 'Vencida' : cuenta.estado === 'PARCIAL' ? 'Pago parcial' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-600 dark:text-gray-400">Pagado</dt>
+                                        <dd className="font-mono text-gray-900 dark:text-white">{dinero(pagadoCuenta)}</dd>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="font-medium text-gray-700 dark:text-gray-300">Saldo</dt>
+                                        <dd className="font-mono font-bold text-gray-900 dark:text-white">{dinero(cuenta.saldo_pendiente)}</dd>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-600 dark:text-gray-400">Vence</dt>
+                                        <dd className={vencida ? 'font-medium text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}>
+                                            {formatearFecha(cuenta.fecha_vencimiento)}
+                                            {diasVencimiento !== null && cuenta.estado !== 'PAGADO' && (
+                                                <span className="ml-1 text-xs">
+                                                    ({diasVencimiento < 0 ? `hace ${Math.abs(diasVencimiento)} día(s)` : diasVencimiento === 0 ? 'hoy' : `en ${diasVencimiento} día(s)`})
+                                                </span>
+                                            )}
+                                        </dd>
+                                    </div>
+                                    <Link
+                                        href={`/compras/cuentas-por-pagar/${cuenta.id}/show`}
+                                        className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                    >
+                                        {cuenta.estado === 'PAGADO' ? 'Ver pagos' : 'Registrar pago / ver pagos'}
+                                        <ExternalLink className="h-3 w-3" />
+                                    </Link>
+                                </div>
+                            )}
+                            {/* A crédito pero todavía sin aprobar: avisar cuándo se crea la cuenta */}
+                            {!cuenta && compra.tipo_pago?.es_credito && !esAprobada && (
+                                <p className="mt-3 text-xs text-amber-700 dark:text-amber-400">
+                                    Compra a crédito: la cuenta por pagar se crea al aprobarla
+                                    {compra.fecha_vencimiento_credito ? ` (vencerá el ${formatearFecha(compra.fecha_vencimiento_credito)})` : ''}.
+                                </p>
+                            )}
+                        </dl>
+                    </div>
+                </div>
+
+                {/* Productos */}
+                <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+                    <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                        <h3 className="flex items-center text-base font-medium text-gray-900 dark:text-white">
+                            <Package className="mr-2 h-5 w-5" />
+                            Productos ({detalles.length})
+                        </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
+                            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                                <tr>
+                                    <th className="px-3 py-2 text-left font-medium">ID</th>
+                                    <th className="px-3 py-2 text-left font-medium">Producto</th>
+                                    <th className="px-3 py-2 text-right font-medium">Cantidad</th>
+                                    <th className="px-3 py-2 text-right font-medium">Precio unit.</th>
+                                    <th className="px-3 py-2 text-right font-medium">Subtotal</th>
+                                    <th className="px-3 py-2 text-center font-medium">Lote</th>
+                                    <th className="px-3 py-2 text-center font-medium">Vencimiento</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                                {detalles.length === 0 && (
                                     <tr>
-                                        <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            ID
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Nombre
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            SKU
-                                        </th>
-                                        {/* <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Códigos de Barra
-                                        </th> */}
-                                        <th className="px-3 py-2 text-center font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Cantidad
-                                        </th>
-                                        <th className="px-3 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Precio Unit.
-                                        </th>
-                                        <th className="px-3 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Subtotal
-                                        </th>
-                                        {/* <th className="px-3 py-2 text-center font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Stock Ant.
-                                        </th>
-                                        <th className="px-3 py-2 text-center font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Stock Post.
-                                        </th> */}
-                                        <th className="px-3 py-2 text-center font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Lote
-                                        </th>
-                                        <th className="px-3 py-2 text-center font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Vencimiento
-                                        </th>
+                                        <td colSpan={7} className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                                            Esta compra no tiene productos.
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    {(compra.detalles || []).map((detalle) => (
-                                        <tr key={detalle.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <td className="px-3 py-2 text-gray-900 dark:text-white">
-                                                <div className="font-medium">#{detalle.producto.id}</div>
+                                )}
+                                {detalles.map((detalle) => {
+                                    const producto = detalle.producto as any;
+                                    const codigos: { id: number; codigo: string; es_principal?: boolean }[] = [...(producto?.codigos_barra ?? [])].sort(
+                                        (a, b) => Number(!!b.es_principal) - Number(!!a.es_principal),
+                                    );
+                                    const [principal, ...otros] = codigos;
+                                    const sinPrecioFila = Number(detalle.precio_unitario) <= 0;
+                                    const dias = diasHasta(detalle.fecha_vencimiento);
+
+                                    return (
+                                        <tr
+                                            key={detalle.id}
+                                            className={sinPrecioFila ? 'bg-amber-50/70 dark:bg-amber-950/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}
+                                        >
+                                            <td className="px-3 py-2 align-top">
+                                                {/* Abre la edición del producto en otra pestaña */}
+                                                <a
+                                                    href={`/productos/${detalle.producto_id}/edit`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Editar producto en otra pestaña"
+                                                    className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                                >
+                                                    #{detalle.producto_id}
+                                                    <ExternalLink className="h-3 w-3" />
+                                                </a>
                                             </td>
-                                            <td >
-                                                <div className="text-gray-500 dark:text-gray-400 text-xs">
-                                                    {detalle.producto.nombre}
+                                            <td className="px-3 py-2 align-top">
+                                                <div className="font-medium text-gray-900 dark:text-white">
+                                                    {producto?.nombre ?? `Producto #${detalle.producto_id}`}
+                                                </div>
+                                                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-gray-500 dark:text-gray-400">
+                                                    {producto?.sku && <span className="font-mono">SKU {producto.sku}</span>}
+                                                    {principal && (
+                                                        <span className="font-mono">
+                                                            ▮▯ {principal.codigo}
+                                                            {otros.length > 0 && (
+                                                                <span
+                                                                    title={`Otros códigos de barras:\n${otros.map((c) => c.codigo).join('\n')}`}
+                                                                    className="ml-1 cursor-help rounded bg-gray-200 px-1 font-sans text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                                                                >
+                                                                    +{otros.length}
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
-                                            <td className="px-3 py-2 text-gray-900 dark:text-white font-mono text-xs">
-                                                {detalle.producto.sku || '-'}
-                                            </td>
-                                            {/* <td className="px-3 py-2 text-gray-900 dark:text-white text-xs">
-                                                {detalle.producto.codigosBarra && detalle.producto.codigosBarra.length > 0 ? (
-                                                    <div className="space-y-1">
-                                                        {detalle.producto.codigosBarra.map((codigo) => (
-                                                            <div key={codigo.id} className="font-mono">
-                                                                {codigo.codigo}
-                                                                {codigo.es_principal && (
-                                                                    <span className="ml-1 inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 rounded text-xs">
-                                                                        Principal
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
-                                            </td> */}
-                                            <td className="px-3 py-2 text-center text-gray-900 dark:text-white font-mono">
+                                            <td className="whitespace-nowrap px-3 py-2 text-right align-top font-mono text-gray-900 dark:text-white">
                                                 {formatDecimal(detalle.cantidad)}
-                                            </td>
-                                            <td className="px-3 py-2 text-right text-gray-900 dark:text-white font-mono">
-                                                {formatCurrencySmartDecimal(detalle.precio_unitario, compra.moneda?.simbolo || '$')}
-                                            </td>
-                                            <td className="px-3 py-2 text-right text-gray-900 dark:text-white font-mono font-semibold">
-                                                {formatCurrencySmartDecimal(detalle.subtotal, compra.moneda?.simbolo || '$')}
-                                            </td>
-                                            {/* <td className="px-3 py-2 text-center text-gray-900 dark:text-white font-mono">
-                                                {detalle.cantidad_anterior !== null ? (
-                                                    <span>{formatDecimal(detalle.cantidad_anterior)}</span>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
+                                                {detalle.unidad?.nombre && (
+                                                    <span className="ml-1 font-sans text-xs text-gray-500 dark:text-gray-400">{detalle.unidad.nombre}</span>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-2 text-center text-gray-900 dark:text-white font-mono">
-                                                {detalle.cantidad_posterior !== null ? (
-                                                    <span>{formatDecimal(detalle.cantidad_posterior)}</span>
+                                            <td className="whitespace-nowrap px-3 py-2 text-right align-top font-mono">
+                                                {sinPrecioFila ? (
+                                                    <span className="font-sans text-xs font-medium text-amber-600 dark:text-amber-400">Sin precio</span>
                                                 ) : (
-                                                    <span className="text-gray-400">-</span>
+                                                    <span className="text-gray-900 dark:text-white">{dinero(detalle.precio_unitario)}</span>
                                                 )}
-                                            </td>*/}
-                                            <td className="px-3 py-2 text-center text-gray-500 dark:text-gray-400">
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-2 text-right align-top font-mono font-semibold text-gray-900 dark:text-white">
+                                                {dinero(detalle.subtotal)}
+                                                {/* Descuento de la línea (el subtotal ya viene descontado) */}
+                                                {Number(detalle.descuento) > 0 && (
+                                                    <div className="font-sans text-xs font-normal text-green-600 dark:text-green-400">
+                                                        −{dinero(detalle.descuento)} desc.
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2 text-center align-top">
                                                 {detalle.lote ? (
-                                                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono">
+                                                    <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200">
                                                         {detalle.lote}
                                                     </span>
                                                 ) : (
                                                     <span className="text-gray-400">-</span>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-2 text-center text-gray-500 dark:text-gray-400">
-                                                {detalle.fecha_vencimiento ? (
-                                                    <span className="text-xs">
-                                                        {new Date(detalle.fecha_vencimiento).toLocaleDateString('es-ES')}
-                                                    </span>
-                                                ) : (
+                                            <td className="whitespace-nowrap px-3 py-2 text-center align-top">
+                                                {dias === null ? (
                                                     <span className="text-gray-400">-</span>
+                                                ) : (
+                                                    <>
+                                                        <div className="text-gray-900 dark:text-white">{formatearFecha(detalle.fecha_vencimiento)}</div>
+                                                        <div
+                                                            className={`text-xs ${
+                                                                dias < 0
+                                                                    ? 'font-medium text-red-600 dark:text-red-400'
+                                                                    : dias <= 30
+                                                                      ? 'font-medium text-amber-600 dark:text-amber-400'
+                                                                      : 'text-gray-500 dark:text-gray-400'
+                                                            }`}
+                                                        >
+                                                            {dias < 0 ? `vencido hace ${Math.abs(dias)} día(s)` : dias === 0 ? 'vence hoy' : `vence en ${dias} día(s)`}
+                                                        </div>
+                                                    </>
                                                 )}
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    );
+                                })}
+                            </tbody>
+                            {detalles.length > 0 && (
+                                <tfoot className="bg-gray-50 dark:bg-gray-700/50">
+                                    <tr>
+                                        <td colSpan={4} className="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                            Total de la compra
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-base font-bold text-gray-900 dark:text-white">
+                                            {dinero(compra.total)}
+                                        </td>
+                                        <td colSpan={2} />
+                                    </tr>
+                                </tfoot>
+                            )}
+                        </table>
                     </div>
+                </div>
             </div>
 
             {/* Contenido para impresión (oculto visualmente pero disponible en DOM) */}
@@ -614,7 +643,7 @@ export default function CompraShow() {
                 tipoDocumento="compra"
                 documentoInfo={{
                     numero: compra.numero,
-                    fecha: compra.fecha ? new Date(compra.fecha).toLocaleDateString('es-ES') : undefined,
+                    fecha: compra.fecha ? formatearFecha(compra.fecha) : undefined,
                     monto: compra.total,
                 }}
             />

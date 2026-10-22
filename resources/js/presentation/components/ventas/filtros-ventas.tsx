@@ -148,14 +148,19 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
         ventasService.searchVentas(filtrosFinales);
     };
 
+    // Limpiar = ver TODAS las ventas (el padre agrega todas=1 al no haber fechas). Antes además llamaba a
+    // ventasService.clearFilters(): eran dos navegaciones a /ventas, que el backend muestra como "solo hoy"
     const limpiarFiltros = () => {
-        const filtrosVacios: FiltrosVentas = {};
-        setFiltros(filtrosVacios);
         setBusquedaCombinada('');
         setMostrarFiltrosAvanzados(false);
-        ventasService.clearFilters();
-        // Aplicar los filtros vacíos al padre
         handleLimpiarFiltros();
+    };
+
+    // Fecha de hoy en hora LOCAL (toISOString() es UTC: en Bolivia, después de las 20:00 daba mañana)
+    const hoyLocal = () => {
+        const d = new Date();
+        const dos = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
     };
 
     // ✅ NUEVO: Función para obtener etiquetas de filtros activos
@@ -456,20 +461,41 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
             )}
             {/* Botones de acción */}
             <div className="mt-2 flex flex-wrap items-end justify-between gap-4 border-t border-gray-200 p-2 dark:border-zinc-700">
-                <button
-                    type="button"
-                    onClick={() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        handleMultipleFiltros({ fecha_desde: today, fecha_hasta: today });
-                    }}
-                    className={`font-small rounded-md p-1 text-sm transition-colors ${
-                        filtros.fecha_desde === filtros.fecha_hasta && filtros.fecha_desde
-                            ? 'bg-blue-600 text-white'
-                            : 'border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
-                    }`}
-                >
-                    📅 Hoy
-                </button>
+                {/* Atajos de rango: se aplican al instante */}
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const hoy = hoyLocal();
+                            const nuevos = { ...filtros, fecha_desde: hoy, fecha_hasta: hoy };
+                            setFiltros(nuevos);
+                            onFiltrosChange?.(nuevos);
+                        }}
+                        className={`font-small rounded-md p-1 text-sm transition-colors ${
+                            filtros.fecha_desde === hoyLocal() && filtros.fecha_hasta === hoyLocal()
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
+                        }`}
+                    >
+                        📅 Hoy
+                    </button>
+                    <button
+                        type="button"
+                        title="Ver ventas de todas las fechas (mantiene los demás filtros)"
+                        onClick={() => {
+                            const nuevos = { ...filtros, fecha_desde: undefined, fecha_hasta: undefined };
+                            setFiltros(nuevos);
+                            onFiltrosChange?.(nuevos);
+                        }}
+                        className={`font-small rounded-md p-1 text-sm transition-colors ${
+                            !filtros.fecha_desde && !filtros.fecha_hasta
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
+                        }`}
+                    >
+                        🗓️ Todas
+                    </button>
+                </div>
 
                 {/* Controles de Ordenamiento - Columna 1 */}
                 <div className="flex items-center gap-2">

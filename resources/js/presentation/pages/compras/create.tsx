@@ -64,6 +64,7 @@ interface CompraFormData {
   estado_documento_id: number | string;
   moneda_id: number | string;
   tipo_pago_id: number | string;
+  fecha_vencimiento_credito: string; // vencimiento de la cuenta por pagar (solo si el pago es a crédito)
   almacen_id: number | string;
   detalles: DetalleForm[];
 }
@@ -226,6 +227,9 @@ export default function CompraForm() {
     tipo_pago_id: props.compra?.tipo_pago_id ??
       props.tipos_pago?.find(t => t.codigo === 'EFECTIVO')?.id ??
       props.tipos_pago?.[0]?.id ?? '',
+    fecha_vencimiento_credito: (props.compra as any)?.fecha_vencimiento_credito
+      ? normalizeDateForInput((props.compra as any).fecha_vencimiento_credito)
+      : '',
     almacen_id: props.compra?.almacen_id ??
       props.almacenes?.[0]?.id ?? '',  // ✅ ACTUALIZADO: Usar el primer (y único) almacén del usuario
     detalles: props.compra?.detalles?.map(d => ({
@@ -233,7 +237,8 @@ export default function CompraForm() {
       producto_id: d.producto?.id ?? '',
       cantidad: d.cantidad,
       precio_unitario: d.precio_unitario,
-      descuento: 0,
+      // El descuento guardado (antes se cargaba en 0: se perdía y el subtotal dejaba de cuadrar al guardar)
+      descuento: Number(d.descuento) || 0,
       subtotal: d.subtotal,
       lote: d.lote ?? '',
       // ✅ FIX 2026-03-19: Normalizar fecha ISO a formato yyyy-MM-dd para inputs type="date"
@@ -274,6 +279,11 @@ export default function CompraForm() {
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Estado para manejar el valor y display del InputSearch de proveedor
+  // ¿El tipo de pago elegido es a crédito? (genera cuenta por pagar al aprobar; muestra el vencimiento)
+  const esCredito = Boolean(
+    (props.tipos_pago?.find((t) => String(t.id) === String(data.tipo_pago_id)) as { es_credito?: boolean } | undefined)?.es_credito,
+  );
+
   const [proveedorValue, setProveedorValue] = useState<string | number | null>(data.proveedor_id);
   const [proveedorDisplay, setProveedorDisplay] = useState<string>('');
 
@@ -372,6 +382,7 @@ export default function CompraForm() {
           : parseInt(String(data.estado_documento_id)),
         moneda_id: parseInt(String(data.moneda_id)),
         tipo_pago_id: data.tipo_pago_id ? parseInt(String(data.tipo_pago_id)) : null,
+        fecha_vencimiento_credito: esCredito ? data.fecha_vencimiento_credito || null : null,
         almacen_id: data.almacen_id ? parseInt(String(data.almacen_id)) : null,
         // Filtrar detalles válidos y convertir tipos
         detalles: data.detalles
@@ -665,7 +676,9 @@ export default function CompraForm() {
       parseInt(String(data.usuario_id)) !== props.compra.usuario_id ||
       parseInt(String(data.moneda_id)) !== props.compra.moneda_id ||
       (data.tipo_pago_id ? parseInt(String(data.tipo_pago_id)) : null) !== (props.compra.tipo_pago_id || null) ||
-      (data.almacen_id ? parseInt(String(data.almacen_id)) : null) !== (props.compra.almacen_id || null)
+      (data.almacen_id ? parseInt(String(data.almacen_id)) : null) !== (props.compra.almacen_id || null) ||
+      (data.fecha_vencimiento_credito || '') !==
+        ((props.compra as any).fecha_vencimiento_credito ? normalizeDateForInput((props.compra as any).fecha_vencimiento_credito) : '')
     );
   };
 
@@ -862,6 +875,7 @@ export default function CompraForm() {
       estado_documento_id: parseInt(String(data.estado_documento_id)),
       moneda_id: parseInt(String(data.moneda_id)),
       tipo_pago_id: data.tipo_pago_id ? parseInt(String(data.tipo_pago_id)) : null,
+      fecha_vencimiento_credito: esCredito ? data.fecha_vencimiento_credito || null : null,
       almacen_id: data.almacen_id ? parseInt(String(data.almacen_id)) : null,
       detalles: detallesTransformados,
     };
@@ -940,6 +954,7 @@ export default function CompraForm() {
           estado_documento_id: parseInt(String(data.estado_documento_id)),
           moneda_id: parseInt(String(data.moneda_id)),
           tipo_pago_id: data.tipo_pago_id ? parseInt(String(data.tipo_pago_id)) : null,
+          fecha_vencimiento_credito: esCredito ? data.fecha_vencimiento_credito || null : null,
           almacen_id: data.almacen_id ? parseInt(String(data.almacen_id)) : null,
         };
 
@@ -1055,7 +1070,7 @@ export default function CompraForm() {
             e.preventDefault();
           }
         }}
-        className="space-y-6 p-6"
+        className="space-y-2 p-2"
       >
         {/* Campo hidden para moneda_id */}
         <input type="hidden" name="moneda_id" value={data.moneda_id} />
@@ -1107,7 +1122,7 @@ export default function CompraForm() {
         )}
 
         {/* Indicador de estado actual para compras existentes */}
-        {isEditing && props.compra?.estadoDocumento ? (() => {
+        {/* {isEditing && props.compra?.estadoDocumento ? (() => {
           const estadoDoc = props.compra.estadoDocumento;
           return (
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
@@ -1131,17 +1146,17 @@ export default function CompraForm() {
               </div>
             </div>
           );
-        })() : null}
+        })() : null} */}
 
         {/* Información general */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-2">
           {/* <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información General</h3> */}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             {/* Campo de número solo se muestra en modo edición */}
             {isEditing && (
               <div>
-                <label htmlFor="numero" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor="numero" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Número *
                 </label>
                 <input
@@ -1224,12 +1239,45 @@ export default function CompraForm() {
                 disabled={soloLectura}
                 value={data.tipo_pago_id}
                 options={tipoPagoOptions}
-                onChange={(value: any) => setData('tipo_pago_id', value || '')}
+                onChange={(value: any) => {
+                  setData('tipo_pago_id', value || '');
+                  // Al elegir crédito, proponer vencimiento a 7 días de la fecha de compra (si no hay uno)
+                  const tipo = props.tipos_pago?.find((t) => String(t.id) === String(value)) as { es_credito?: boolean } | undefined;
+                  if (tipo?.es_credito && !data.fecha_vencimiento_credito && data.fecha) {
+                    const [a, m, d] = String(data.fecha).slice(0, 10).split('-').map(Number);
+                    const vence = new Date(a, m - 1, d + 7);
+                    const dos = (n: number) => String(n).padStart(2, '0');
+                    setData('fecha_vencimiento_credito', `${vence.getFullYear()}-${dos(vence.getMonth() + 1)}-${dos(vence.getDate())}`);
+                  }
+                }}
                 placeholder="Seleccionar tipo de pago"
                 emptyText="No se encontraron tipos de pago"
                 searchPlaceholder="Buscar tipo de pago..."
                 error={errors.tipo_pago_id}
               />
+              {/* Vencimiento de la cuenta por pagar: solo para crédito (se crea al aprobar la compra) */}
+              {esCredito && (
+                <div className="mt-2">
+                  <label htmlFor="fecha_vencimiento_credito" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Vence el (cuenta por pagar)
+                  </label>
+                  <input
+                    id="fecha_vencimiento_credito"
+                    type="date"
+                    disabled={soloLectura}
+                    min={String(data.fecha).slice(0, 10)}
+                    value={data.fecha_vencimiento_credito}
+                    onChange={(e) => setData('fecha_vencimiento_credito', e.target.value)}
+                    className="mt-1 w-full rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-sm dark:border-amber-700 dark:bg-amber-950/30 dark:text-white"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Al aprobar se crea la cuenta por pagar. Vacío = 7 días después de la fecha de compra.
+                  </p>
+                  {(errors as Record<string, string>).fecha_vencimiento_credito && (
+                    <p className="mt-1 text-xs text-red-600">{(errors as Record<string, string>).fecha_vencimiento_credito}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
@@ -1298,7 +1346,6 @@ export default function CompraForm() {
               {errors.observaciones && <p className="text-red-600 text-xs mt-1">{errors.observaciones}</p>}
             </div>
           </div>
-          <br />
           <ProductosTable
             tipo="compra" // ✅ NUEVO: Indicar que es una compra (no filtrar por stock)
             almacen_id={Number(data.almacen_id) || undefined} // ✅ CRÍTICO: Pasar almacén seleccionado para traer stock correcto

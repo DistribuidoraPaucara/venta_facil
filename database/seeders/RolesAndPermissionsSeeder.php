@@ -167,6 +167,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'inventario'     => [
                 'inventario.dashboard', 'inventario.stock-bajo', 'inventario.proximos-vencer', 'inventario.vencidos', 'inventario.movimientos',
                 'inventario.ajuste.form', 'inventario.ajuste.procesar', 'inventario.api.buscar-productos', 'inventario.api.stock-producto',
+                'inventario.editor-productos', // Editor de Productos (datos, precios, límites y stock en tabla)
                 'inventario.reportes', 'inventario.mermas.index', 'inventario.mermas.registrar', 'inventario.mermas.store', 'inventario.mermas.show',
                 'inventario.mermas.aprobar', 'inventario.mermas.rechazar',
                 'inventario.transferencias.index', 'inventario.transferencias.crear', 'inventario.transferencias.ver', 'inventario.transferencias.edit',

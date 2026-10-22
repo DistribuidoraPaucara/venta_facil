@@ -252,7 +252,11 @@ class VentaController extends Controller
             // el histórico. Apenas el usuario aplica un filtro real, se respeta tal cual.
             $tieneFiltrosExplicitos = collect($filtros)->contains(fn($valor) => $valor !== null && $valor !== '');
 
-            if (! $isApiRequest && ! $tieneFiltrosExplicitos) {
+            // ?todas=1 (botón Limpiar / "Todas" o Buscar sin fechas): el usuario pidió explícitamente todas
+            // las ventas, sin el rango "hoy" por defecto (antes Limpiar volvía siempre a hoy)
+            $verTodas = $request->boolean('todas');
+
+            if (! $isApiRequest && ! $tieneFiltrosExplicitos && ! $verTodas) {
                 $hoy                    = now()->toDateString();
                 $filtros['fecha_desde'] = $hoy;
                 $filtros['fecha_hasta'] = $hoy;
@@ -305,7 +309,8 @@ class VentaController extends Controller
                 perPage: $perPage,
                 filtros: array_filter($filtros), // Solo filtros no vacíos
                 sortBy: $sortBy,
-                sortOrder: $sortOrder
+                sortOrder: $sortOrder,
+                conTotal: ! $isApiRequest, // la tabla web pagina con total/last_page; la API conserva la optimización
             );
 
             $ventasPaginadas->getCollection()->transform(function ($venta) {
@@ -488,6 +493,7 @@ class VentaController extends Controller
             return Inertia::render('ventas/Index', [
                 'ventas'           => $ventasPaginadas,
                 'filtros'          => array_merge($filtros, [
+                    'todas'      => $verTodas ?: null,
                     'sort_by'    => $sortBy,
                     'sort_order' => $sortOrder,
                     'per_page'   => $perPage,

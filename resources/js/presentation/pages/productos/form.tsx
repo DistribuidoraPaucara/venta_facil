@@ -1367,6 +1367,8 @@ export default function ProductoForm({
                                         setSectorConSincronizacion={setSectorConSincronizacion}
                                         canEditStockQuantities={canEditStockQuantities} // ✨ NUEVO: Pasar permiso para editar cantidades
                                         handleCantidadTotalChange={handleCantidadTotalChange}
+                                        productoId={producto?.id}
+                                        stockLimitesRepetidos={(producto as any)?.stock_limites_repetidos ?? []}
                                     />
                                 </TabsContent>
                             </form>

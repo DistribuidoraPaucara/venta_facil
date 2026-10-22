@@ -43,7 +43,7 @@ class ReporteComprasController extends Controller
             ->map(function ($grupo) {
                 return [
                     'proveedor_id' => $grupo->first()->proveedor_id,
-                    'nombre' => $grupo->first()->proveedor->nombre,
+                    'nombre' => $grupo->first()->proveedor?->nombre ?? 'Sin proveedor', // borradores sin proveedor
                     'total' => $grupo->sum('total'),
                 ];
             })
@@ -85,9 +85,10 @@ class ReporteComprasController extends Controller
 
                 return [
                     'proveedor' => [
-                        'id' => $proveedor->id,
-                        'nombre' => $proveedor->nombre,
-                        'nit' => $proveedor->nit ?? 'N/A',
+                        // Puede ser null: compras en borrador creadas sin proveedor
+                        'id' => $proveedor?->id ?? 0,
+                        'nombre' => $proveedor?->nombre ?? 'Sin proveedor',
+                        'nit' => $proveedor?->nit ?? 'N/A',
                     ],
                     'total_compras' => $totalCompras,
                     'cantidad_compras' => $grupo->count(),
@@ -445,7 +446,7 @@ class ReporteComprasController extends Controller
             ->map(function ($grupo) {
                 return [
                     'proveedor_id' => $grupo->first()->proveedor_id,
-                    'nombre' => $grupo->first()->proveedor->nombre,
+                    'nombre' => $grupo->first()->proveedor?->nombre ?? 'Sin proveedor', // borradores sin proveedor
                     'total' => $grupo->sum('total'),
                 ];
             })
@@ -487,9 +488,10 @@ class ReporteComprasController extends Controller
 
                 return [
                     'proveedor' => [
-                        'id' => $proveedor->id,
-                        'nombre' => $proveedor->nombre,
-                        'nit' => $proveedor->nit ?? 'N/A',
+                        // Puede ser null: compras en borrador creadas sin proveedor
+                        'id' => $proveedor?->id ?? 0,
+                        'nombre' => $proveedor?->nombre ?? 'Sin proveedor',
+                        'nit' => $proveedor?->nit ?? 'N/A',
                     ],
                     'total_compras' => $totalCompras,
                     'cantidad_compras' => $grupo->count(),

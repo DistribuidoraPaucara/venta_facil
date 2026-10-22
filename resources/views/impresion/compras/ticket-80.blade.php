@@ -4,13 +4,15 @@
 
 @section('contenido')
 
-@forelse($compras as $documento)
+{{-- Reporte de varias compras ($compras) o una sola (impresión individual: ImpresionService pasa $documento) --}}
+@forelse(($compras ?? collect([$documento])) as $documento)
 
 <div class="separador"></div>
 
 {{-- ==================== INFO DEL DOCUMENTO ==================== --}}
 <div class="documento-titulo">COMPRA</div>
-<div class="documento-numero"># {{ $documento->id }} | {{ $documento->numero }}</div>
+{{-- data_get: en el reporte las compras llegan como arreglos (sesión); en la impresión individual, como modelo --}}
+<div class="documento-numero"># {{ data_get($documento, 'id', '-') }} | {{ data_get($documento, 'numero', '-') }}</div>
 <div class="center" style="margin-top: 3px;">
     @php
         $fecha = null;
@@ -98,6 +100,7 @@
                     $producto = is_array($detalle) ? ($detalle['producto'] ?? null) : (is_object($detalle) ? ($detalle->producto ?? null) : null);
                     $nombre = '-';
                     $sku = '';
+                    $productoId = is_array($detalle) ? ($detalle['producto_id'] ?? null) : ($detalle->producto_id ?? null);
                     if ($producto) {
                         if (is_object($producto)) {
                             $nombre = $producto->nombre ?? '-';
@@ -109,7 +112,7 @@
                     }
                 @endphp
                 <strong>{{ $nombre }}</strong>
-                @if($sku)<br><span>{{ $sku }}</span>@endif
+                <br><span>@if($productoId)#{{ $productoId }}@endif{{ $productoId && $sku ? ' · ' : '' }}@if($sku)SKU: {{ $sku }}@endif</span>
             </td>
             <td style="text-align: right;">
                 @php
@@ -119,10 +122,15 @@
             </td>
             <td style="text-align: right;">
                 @php
-                    $precioUnit = is_array($detalle) ? ($detalle['precio_unitario'] ?? 0) : (is_object($detalle) ? ($detalle->precio_unitario ?? 0) : 0);
-                    $subtotal = $cantidad * $precioUnit;
-                    echo number_format($subtotal, 2);
+                    // Subtotal guardado: ya trae restado el descuento de la línea (cantidad × precio − descuento)
+                    $precioUnit = (float) data_get($detalle, 'precio_unitario', 0);
+                    $descuentoLinea = (float) data_get($detalle, 'descuento', 0);
+                    $subtotal = (float) (data_get($detalle, 'subtotal') ?? ($cantidad * $precioUnit - $descuentoLinea));
                 @endphp
+                {{ number_format($subtotal, 2) }}
+                @if($descuentoLinea > 0)
+                    <br><span style="font-size: 90%;">desc. -{{ number_format($descuentoLinea, 2) }}</span>
+                @endif
             </td>
         </tr>
         @empty

@@ -38,7 +38,10 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
             filtrosSeguras.moneda_id ||
             filtrosSeguras.tipo_pago_id ||
             filtrosSeguras.fecha_desde ||
-            filtrosSeguras.fecha_hasta
+            filtrosSeguras.fecha_hasta ||
+            filtrosSeguras.almacen_id ||
+            filtrosSeguras.producto ||
+            filtrosSeguras.sin_proveedor
         )
     );
 
@@ -51,6 +54,10 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
         tipo_pago_id: filtrosSeguras.tipo_pago_id || '',
         fecha_desde: filtrosSeguras.fecha_desde || '',
         fecha_hasta: filtrosSeguras.fecha_hasta || '',
+        almacen_id: filtrosSeguras.almacen_id || '',
+        producto: filtrosSeguras.producto || '',
+        sin_proveedor: filtrosSeguras.sin_proveedor ? '1' : '',
+        per_page: filtrosSeguras.per_page || '', // se conserva al aplicar filtros (el selector está bajo la tabla)
         sort_by: filtrosSeguras.sort_by || 'created_at',
         sort_dir: filtrosSeguras.sort_dir || 'desc',
     });
@@ -78,6 +85,9 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
             tipo_pago_id: '',
             fecha_desde: '',
             fecha_hasta: '',
+            almacen_id: '',
+            producto: '',
+            sin_proveedor: '',
             sort_by: 'created_at',
             sort_dir: 'desc',
         });
@@ -111,8 +121,9 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
         comprasService.search(filtrosParaBusqueda);
     };
 
-    const hayFiltrosActivos = Object.values(filtrosSeguras).some(value =>
-        value !== '' && value != null && value !== 'created_at' && value !== 'desc'
+    // per_page no es un filtro: no debe mostrar "Limpiar" por sí solo
+    const hayFiltrosActivos = Object.entries(filtrosSeguras).some(([clave, value]) =>
+        clave !== 'per_page' && value !== '' && value != null && value !== 'created_at' && value !== 'desc'
     );
 
     const opcionesProveedores = datosSeguras.proveedores.map(p => ({
@@ -135,13 +146,27 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
         label: `${t.nombre} (${t.codigo})`
     }));
 
+    const opcionesAlmacenes = (datosSeguras.almacenes ?? []).map(a => ({
+        value: a.id,
+        label: a.nombre
+    }));
+
     const opcionesOrden = [
         { value: 'created_at', label: 'Fecha de creación' },
         { value: 'fecha', label: 'Fecha de compra' },
+        { value: 'id', label: 'Folio' },
         { value: 'numero', label: 'Número' },
         { value: 'total', label: 'Total' },
         { value: 'proveedor', label: 'Proveedor' },
+        { value: 'estado', label: 'Estado' },
+        { value: 'usuario', label: 'Creador' },
     ];
+
+    // 'AAAA-MM-DD' en hora local (new Date() lo toma como UTC y mostraba el día anterior)
+    const fechaCorta = (valor: string) => {
+        const [anio, mes, dia] = valor.slice(0, 10).split('-').map(Number);
+        return new Date(anio, mes - 1, dia).toLocaleDateString('es-ES');
+    };
 
     // Validar que los filtros existan
     if (!filtros) {
@@ -266,6 +291,55 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                                 emptyText="No hay tipos de pago disponibles"
                             />
                         </div>
+
+                        {/* Almacén de destino */}
+                        <div>
+                            <Label htmlFor="almacen_id" className="text-sm font-medium">
+                                Almacén
+                            </Label>
+                            <SearchSelect
+                                id="almacen_id"
+                                placeholder="Todos los almacenes"
+                                value={valoresLocales.almacen_id || ''}
+                                options={opcionesAlmacenes}
+                                onChange={value => setValoresLocales(prev => ({ ...prev, almacen_id: String(value) }))}
+                                allowClear
+                                emptyText="No hay almacenes disponibles"
+                            />
+                        </div>
+
+                        {/* Compras que incluyen un producto */}
+                        <div>
+                            <Label htmlFor="producto" className="text-sm font-medium">
+                                Producto
+                            </Label>
+                            <Input
+                                id="producto"
+                                type="text"
+                                placeholder="Nombre, SKU, código de barras o ID"
+                                value={valoresLocales.producto || ''}
+                                onChange={e => setValoresLocales(prev => ({ ...prev, producto: e.target.value }))}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        aplicarFiltros();
+                                    }
+                                }}
+                            />
+                        </div>
+
+                        {/* Borradores todavía sin proveedor */}
+                        <div className="flex items-end">
+                            <label className="flex cursor-pointer items-center gap-2 pb-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={Boolean(valoresLocales.sin_proveedor)}
+                                    onChange={e => setValoresLocales(prev => ({ ...prev, sin_proveedor: e.target.checked ? '1' : '' }))}
+                                    className="h-4 w-4"
+                                />
+                                Solo compras sin proveedor
+                            </label>
+                        </div>
                     </div>
 
                     {/* Rango de fechas */}
@@ -385,12 +459,27 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                     )}
                     {filtrosSeguras.fecha_desde && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                            Desde: {new Date(filtrosSeguras.fecha_desde).toLocaleDateString('es-ES')}
+                            Desde: {fechaCorta(filtrosSeguras.fecha_desde)}
                         </span>
                     )}
                     {filtrosSeguras.fecha_hasta && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                            Hasta: {new Date(filtrosSeguras.fecha_hasta).toLocaleDateString('es-ES')}
+                            Hasta: {fechaCorta(filtrosSeguras.fecha_hasta)}
+                        </span>
+                    )}
+                    {filtrosSeguras.almacen_id && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200">
+                            Almacén: {datosSeguras.almacenes?.find(a => a.id === Number(filtrosSeguras.almacen_id))?.nombre || 'Desconocido'}
+                        </span>
+                    )}
+                    {filtrosSeguras.producto && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            Producto: {filtrosSeguras.producto}
+                        </span>
+                    )}
+                    {filtrosSeguras.sin_proveedor && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                            Sin proveedor
                         </span>
                     )}
                 </div>

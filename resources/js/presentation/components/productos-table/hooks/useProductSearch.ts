@@ -33,6 +33,10 @@ export function useProductSearch({
     const [productSearch, setProductSearch] = useState('');
     const [productosDisponibles, setProductosDisponibles] = useState<Producto[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    // Término de la última búsqueda TERMINADA: "sin resultados" solo se muestra si coincide con lo escrito
+    const [terminoBuscado, setTerminoBuscado] = useState('');
+    // Número de la búsqueda vigente: las respuestas de búsquedas anteriores se descartan
+    const busquedaVigenteRef = useRef(0);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [isFocused, setIsFocused] = useState(false);
 
@@ -174,7 +178,10 @@ export function useProductSearch({
         let codigosBarrasExtraidos: string[] = [];
 
         if (p.codigosBarra && Array.isArray(p.codigosBarra) && p.codigosBarra.length > 0) {
-            codigosBarrasExtraidos = p.codigosBarra.map((cb: any) => cb.codigo);
+            // El principal primero (es el que se muestra en las sugerencias)
+            codigosBarrasExtraidos = [...p.codigosBarra]
+                .sort((a: any, b: any) => Number(!!b.es_principal) - Number(!!a.es_principal))
+                .map((cb: any) => cb.codigo);
             if (p.nombre && (p.nombre.includes('Paceña') || p.nombre.includes('Corona'))) {
                 console.log(`✅ [transformarProductoAPI] ${p.nombre}: Códigos de barras desde codigosBarra:`, codigosBarrasExtraidos);
             }
@@ -385,22 +392,94 @@ export function useProductSearch({
         cargarTodosProductos();
     }, [useFuseSearch, productosInicioCargados, tipo, almacen_id, cliente_id]);
 
+    // Parámetros comunes a las búsquedas por API
+    const paramsBase = useCallback(
+        (q: string, extra: Record<string, string> = {}) => {
+            const params = new URLSearchParams({ q, tipo, ...extra });
+            if (almacen_id) params.append('almacen_id', almacen_id.toString());
+            if (cliente_id) params.append('cliente_id', cliente_id.toString());
+            if (permitirProductosSinStock) params.append('permitir_sin_stock', 'true'); // ✅ NUEVO (2026-05-26)
+            if (empresaId) params.append('empresa_id', empresaId.toString());
+            else console.warn('⚠️ [useProductSearch] No se encontró empresa_id del usuario autenticado');
+            return params;
+        },
+        [tipo, almacen_id, cliente_id, permitirProductosSinStock, empresaId],
+    );
+
+    // Búsqueda por texto en la API (nombre, código, SKU…; si son dígitos, el producto con ese ID va primero)
+    const buscarEnApi = useCallback(
+        async (term: string): Promise<Producto[]> => {
+            const url = `/api/app/productos/buscar?${paramsBase(term, { limite: LIMITE_BUSQUEDA_API }).toString()}`;
+            console.log('📡 [useProductSearch] URL:', url);
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`❌ [useProductSearch] Error HTTP ${response.status}:`, response.statusText);
+                throw new Error('Error en búsqueda de productos');
+            }
+
+            const data = await response.json();
+            const resultados = filtrarProductosValidos((data.data ?? []).map(transformarProductoAPI));
+            console.log(`✅ [useProductSearch] Productos válidos (después de filtrar): ${resultados.length}`);
+            return resultados;
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [paramsBase],
+    );
+
+    // Búsqueda EXACTA de un código (escáner / Enter): código de barras o SKU; el ID solo si no coincide ninguno
+    const buscarCodigoExacto = useCallback(
+        async (codigo: string): Promise<Producto | null> => {
+            // ✅ NIVEL 2: Si Fuse.js está disponible, buscar localmente primero
+            if (useFuseSearch && fuseIndexRef.current && productosInicioCargados) {
+                const resultadosFuse = fuseIndexRef.current.search(codigo, { limit: 1 });
+                if (resultadosFuse.length > 0) return resultadosFuse[0].item;
+            }
+
+            const url = `/api/productos/buscar?${paramsBase(codigo, { tipo_busqueda: 'exacta', limite: '1' }).toString()}`;
+            console.log('📡 [Scanner] URL:', url);
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`❌ [Scanner] Error HTTP ${response.status}:`, response.statusText);
+                throw new Error('Error buscando producto');
+            }
+
+            const data = await response.json();
+            return data.data && data.data.length > 0 ? transformarProductoAPI(data.data[0]) : null;
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [paramsBase, useFuseSearch, productosInicioCargados],
+    );
+
+    // Motivo por el que un producto encontrado por código no se puede agregar a una venta (null = se puede)
+    const motivoNoAgregable = (producto: Producto): string | null => {
+        if (tipo !== 'venta') return null;
+        const esCombo = (producto as any).es_combo || false;
+        const tieneComponentes = ((producto as any).combo_items?.length || 0) > 0;
+
+        if (esCombo) return tieneComponentes ? null : 'Combo sin productos componentes configurados';
+        if (producto.stock === 0) return 'Producto sin stock disponible';
+        if (producto.precio_venta === 0) return 'Producto sin precio de venta configurado';
+        return null;
+    };
+
     // ✅ NIVEL 1 + 2: Función de búsqueda con debounce, caché y Fuse.js
     const buscarProductos = useCallback(async (searchTerm?: string) => {
         // ✅ IMPORTANTE: Usar argumento si se proporciona, sino usar estado actual
         const term = searchTerm !== undefined ? searchTerm.trim() : productSearch.trim();
 
-        // Si no hay búsqueda, limpiar resultados
-        if (term === '') {
-            setProductosDisponibles([]);
-            setSearchError(null);
-            return;
+        // Toda búsqueda nueva invalida la anterior (la que espera el debounce o la que está en curso)
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
         }
+        const id = ++busquedaVigenteRef.current;
 
-        // Si búsqueda muy corta, no hacer request
+        // Si no hay búsqueda o es muy corta, no hacer request
         if (term.length < 2) {
             setProductosDisponibles([]);
             setSearchError(null);
+            setIsLoading(false);
+            setTerminoBuscado('');
             return;
         }
 
@@ -410,18 +489,17 @@ export function useProductSearch({
             console.log('✅ [useProductSearch] Resultado del caché para:', term);
             setProductosDisponibles(searchCacheRef.current.get(cacheKey) || []);
             setSearchError(null);
+            setIsLoading(false);
+            setTerminoBuscado(term);
             return;
         }
 
-        // ⏱️ Limpiar timeout anterior
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
+        // El indicador se enciende YA (también durante la espera del debounce), no recién al llamar a la API
+        setIsLoading(true);
+        setSearchError(null);
 
         // ⏰ Esperar 300ms antes de buscar (debounce)
         searchTimeoutRef.current = setTimeout(async () => {
-            setIsLoading(true);
-            setSearchError(null);
 
             try {
                 let resultados: Producto[] = [];
@@ -443,105 +521,28 @@ export function useProductSearch({
                     }
                 } else {
                     // ✅ NIVEL 1: Fallback a búsqueda por API
-                    console.log('🔍 [useProductSearch] Búsqueda por API para:', term);
-                    console.log('🔐 [useProductSearch] permitirProductosSinStock:', permitirProductosSinStock); // ✅ NUEVO: Debug
-
-                    const params = new URLSearchParams({
-                        q: term,
-                        limite: LIMITE_BUSQUEDA_API,
-                        tipo: tipo
-                    });
-
-                    if (almacen_id) params.append('almacen_id', almacen_id.toString());
-                    if (cliente_id) params.append('cliente_id', cliente_id.toString());
-                    if (permitirProductosSinStock) params.append('permitir_sin_stock', 'true'); // ✅ NUEVO (2026-05-26)
-                    if (empresaId) {
-                        params.append('empresa_id', empresaId.toString());
-                        console.log('🏢 [useProductSearch] Empresa ID enviada:', empresaId);
-                    } else {
-                        console.warn('⚠️ [useProductSearch] No se encontró empresa_id del usuario autenticado');
-                    }
-
-                    const url = `/api/app/productos/buscar?${params.toString()}`;
-                    console.log('📡 [useProductSearch] URL:', url);
-                    console.log('📦 [useProductSearch] Parámetros:', {
-                        q: term,
-                        limite: LIMITE_BUSQUEDA_API,
-                        tipo: tipo,
-                        almacen_id: almacen_id,
-                        cliente_id: cliente_id,
-                        permitir_sin_stock: permitirProductosSinStock // ✅ NUEVO: Debug
-                    });
-
-                    const response = await fetch(url);
-
-                    if (!response.ok) {
-                        console.error(`❌ [useProductSearch] Error HTTP ${response.status}:`, response.statusText);
-                        throw new Error('Error en búsqueda de productos');
-                    }
-
-                    const data = await response.json();
-                    console.log('📥 [useProductSearch] Respuesta cruda del API:', data);
-
-                    // 🔍 NUEVO: Verificar códigos de barras en el primer producto
-                    if (data.data && data.data.length > 0) {
-                        const primerProducto = data.data[0];
-                        console.log(`🏷️ [useProductSearch] Primer producto - Verificación de códigos de barras:`, {
-                            nombre: primerProducto.nombre,
-                            codigo: primerProducto.codigo || primerProducto.sku,
-                            codigo_barras: primerProducto.codigo_barras,
-                            codigosBarra: primerProducto.codigosBarra,
-                            codigos_barras: primerProducto.codigos_barras,
-                            codigos_producto: primerProducto.codigos_producto,
-                            todas_las_keys: Object.keys(primerProducto)
-                        });
-                    }
-
-                    const productosAPI = data.data.map(transformarProductoAPI);
-                    console.log(`📊 [useProductSearch] Productos transformados: ${productosAPI.length}`);
-                    if (productosAPI.length > 0) {
-                        console.table(productosAPI.slice(0, 5).map(p => ({
-                            nombre: p.nombre,
-                            código: p.codigo,
-                            precio: p.precio_venta,
-                            stock: p.stock,
-                            unidad: p.unidad_medida_nombre,
-                            codigosBarras: p.codigos_barras?.length || 0
-                        })));
-                    }
-
-                    resultados = filtrarProductosValidos(productosAPI);
-                    console.log(`✅ [useProductSearch] Productos válidos (después de filtrar): ${resultados.length}`);
-                    if (resultados.length > 0) {
-                        console.table(resultados.slice(0, 5).map(p => ({
-                            nombre: p.nombre,
-                            código: p.codigo,
-                            precio: p.precio_venta,
-                            stock: p.stock,
-                            unidad: p.unidad_medida_nombre
-                        })));
-                    }
+                    resultados = await buscarEnApi(term);
                 }
 
                 // 💾 Guardar en caché
                 searchCacheRef.current.set(cacheKey, resultados);
+                if (id !== busquedaVigenteRef.current) return; // llegó tarde: ya se escribió otra cosa
                 setProductosDisponibles(resultados);
+                setTerminoBuscado(term);
                 console.log(`🎯 [useProductSearch] Resultado final para mostrar: ${resultados.length} productos`);
 
-                // 🤖 Si hay 1 resultado exacto, agregar automáticamente
-                if (resultados.length === 1) {
-                    console.log('🤖 [useProductSearch] Auto-agregando producto único:', resultados[0].nombre);
-                    handleAgregarProductoYLimpiar(resultados[0]);
-                }
+                // Mientras se escribe NO se agrega nada solo, aunque haya un único resultado: con una pausa
+                // a mitad de un código se agregaba un producto equivocado. Se agrega con clic, Enter o escáner.
             } catch (error) {
+                if (id !== busquedaVigenteRef.current) return;
                 console.error('❌ [useProductSearch] Error:', error);
                 setSearchError('Error al buscar productos');
                 setProductosDisponibles([]);
             } finally {
-                setIsLoading(false);
+                if (id === busquedaVigenteRef.current) setIsLoading(false);
             }
         }, 300); // ⏱️ 300ms debounce
-    }, [productSearch, tipo, almacen_id, cliente_id, useFuseSearch, productosInicioCargados, empresaId]);
+    }, [productSearch, tipo, almacen_id, cliente_id, useFuseSearch, productosInicioCargados, empresaId, buscarEnApi]);
 
     // ✅ Limpiar timeout al desmontar o cuando cambian dependencias
     useEffect(() => {
@@ -554,14 +555,9 @@ export function useProductSearch({
 
     // ✅ AUTO-DISPARAR búsqueda cuando productSearch cambia (para que funcione sin presionar botón)
     // ⚠️ PERO: Solo buscar si hay más de 1 carácter (evitar búsquedas innecesarias en page load)
+    // (con menos de 2 caracteres buscarProductos solo limpia y cancela la búsqueda pendiente)
     useEffect(() => {
-        if (productSearch.trim().length >= 1) {
-            buscarProductos(productSearch);
-        } else if (productSearch.trim().length === 0) {
-            // Limpiar resultados si se borra todo
-            setProductosDisponibles([]);
-            setSearchError(null);
-        }
+        buscarProductos(productSearch);
     }, [productSearch, buscarProductos]);
 
     // ✅ Manejar resultado del escáner (búsqueda EXACTA por código de barras)
@@ -574,123 +570,87 @@ export function useProductSearch({
             setIsLoading(true);
             setSearchError(null);
 
-            let producto: Producto | null = null;
-
-            // ✅ NIVEL 2: Si Fuse.js está disponible, buscar localmente primero
-            if (useFuseSearch && fuseIndexRef.current && productosInicioCargados) {
-                console.log('🔍 [Scanner] Búsqueda LOCAL en Fuse.js para código:', result);
-                const resultadosFuse = fuseIndexRef.current.search(result, { limit: 1 });
-                console.log(`📊 [Scanner] Resultados Fuse.js: ${resultadosFuse.length} encontrados`);
-                if (resultadosFuse.length > 0) {
-                    producto = resultadosFuse[0].item;
-                    console.log(`✅ [Scanner] Producto encontrado en Fuse.js:`, {
-                        nombre: producto.nombre,
-                        codigo: producto.codigo,
-                        score: resultadosFuse[0].score
-                    });
-                }
-            }
-
-            // ✅ Fallback a API si Fuse.js no encontró nada
+            const producto = await buscarCodigoExacto(result);
             if (!producto) {
-                console.log('🔍 [Scanner] Búsqueda por API para código:', result);
-
-                const params = new URLSearchParams({
-                    q: result,
-                    tipo_busqueda: 'exacta',
-                    limite: '1',
-                    tipo: tipo
-                });
-
-                if (almacen_id) params.append('almacen_id', almacen_id.toString());
-                if (cliente_id) params.append('cliente_id', cliente_id.toString());
-                if (permitirProductosSinStock) params.append('permitir_sin_stock', 'true'); // ✅ NUEVO (2026-05-26)
-                if (empresaId) {
-                    params.append('empresa_id', empresaId.toString());
-                    console.log('🏢 [Scanner] Empresa ID enviada:', empresaId);
-                } else {
-                    console.warn('⚠️ [Scanner] No se encontró empresa_id del usuario autenticado');
-                }
-
-                const url = `/api/productos/buscar?${params.toString()}`;
-                console.log('📡 [Scanner] URL:', url);
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    console.error(`❌ [Scanner] Error HTTP ${response.status}:`, response.statusText);
-                    throw new Error('Error buscando producto');
-                }
-
-                const data = await response.json();
-                console.log('📥 [Scanner] Respuesta API:', data);
-
-                if (data.data && data.data.length > 0) {
-                    producto = transformarProductoAPI(data.data[0]);
-                    console.log('✅ [Scanner] Producto encontrado en API:', {
-                        nombre: producto.nombre,
-                        codigo: producto.codigo,
-                        stock: producto.stock
-                    });
-                } else {
-                    console.log('⚠️ [Scanner] No se encontró producto con ese código');
-                }
-            }
-
-            if (producto) {
-                console.log('🎯 [Scanner] Validando producto:', { nombre: producto.nombre, tipo: tipo });
-
-                // ✅ Validar producto para ventas
-                if (tipo === 'venta') {
-                    const esCombo = (producto as any).es_combo || false;
-                    const tieneComponentes = ((producto as any).combo_items?.length || 0) > 0;
-
-                    console.log(`📋 [Scanner] Validación para venta: esCombo=${esCombo}, tieneComponentes=${tieneComponentes}, stock=${producto.stock}, precio=${producto.precio_venta}`);
-
-                    if (!esCombo) {
-                        if (producto.stock === 0) {
-                            console.warn('⚠️ [Scanner] Producto sin stock disponible');
-                            NotificationService.error('Producto sin stock disponible');
-                            return;
-                        }
-
-                        if (producto.precio_venta === 0) {
-                            console.warn('⚠️ [Scanner] Producto sin precio de venta configurado');
-                            NotificationService.error('Producto sin precio de venta configurado');
-                            return;
-                        }
-                    } else {
-                        if (!tieneComponentes) {
-                            console.warn('⚠️ [Scanner] Combo sin productos componentes configurados');
-                            NotificationService.error('Combo sin productos componentes configurados');
-                            return;
-                        }
-                    }
-                }
-
-                console.log(`✨ [Scanner] Producto validado y listo para agregar: ${producto.nombre}`);
-                handleAgregarProductoYLimpiar(producto);
-                NotificationService.success(`Producto escaneado: ${producto.nombre}`);
-            } else {
-                console.log('❌ [Scanner] No se encontró producto con ese código de barras');
                 NotificationService.error('No se encontró producto con ese código de barras');
+                return;
             }
+
+            const motivo = motivoNoAgregable(producto);
+            if (motivo) {
+                NotificationService.error(motivo);
+                return;
+            }
+
+            handleAgregarProductoYLimpiar(producto);
+            NotificationService.success(`Producto escaneado: ${producto.nombre}`);
         } catch (error) {
             console.error('❌ [Scanner] Error:', error);
             NotificationService.error('Error al buscar producto escaneado');
         } finally {
             setIsLoading(false);
         }
-    }, [tipo, almacen_id, cliente_id, useFuseSearch, productosInicioCargados, empresaId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [buscarCodigoExacto, tipo]);
+
+    // ✅ Enter en el buscador (también lo envían los lectores de código de barras tipo teclado):
+    // 1) si el texto es un código exacto (barras/SKU, o el ID si ninguno coincide) agrega ese producto;
+    // 2) si no, muestra la búsqueda normal y agrega solo si hay un único resultado (Enter = intención explícita).
+    const confirmarBusqueda = useCallback(async () => {
+        const term = productSearch.trim();
+        if (term.length < 2) return;
+
+        // Cancelar la búsqueda con espera que dejó el tipeo: Enter decide ahora
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        const id = ++busquedaVigenteRef.current;
+
+        setIsLoading(true);
+        setSearchError(null);
+        try {
+            const exacto = await buscarCodigoExacto(term);
+            if (id !== busquedaVigenteRef.current) return; // se siguió escribiendo
+            if (exacto) {
+                const motivo = motivoNoAgregable(exacto);
+                if (motivo) {
+                    NotificationService.error(`${exacto.nombre}: ${motivo}`);
+                    return;
+                }
+                handleAgregarProductoYLimpiar(exacto);
+                return;
+            }
+
+            const resultados = await buscarEnApi(term);
+            searchCacheRef.current.set(`${term}_${tipo}_${almacen_id}_${cliente_id}_${permitirProductosSinStock}`, resultados);
+            if (id !== busquedaVigenteRef.current) return;
+            if (resultados.length === 1) {
+                handleAgregarProductoYLimpiar(resultados[0]);
+            } else {
+                setProductosDisponibles(resultados);
+                setTerminoBuscado(term);
+            }
+        } catch (error) {
+            if (id !== busquedaVigenteRef.current) return;
+            console.error('❌ [useProductSearch] Error al confirmar búsqueda:', error);
+            setSearchError('Error al buscar productos');
+            setProductosDisponibles([]);
+        } finally {
+            if (id === busquedaVigenteRef.current) setIsLoading(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productSearch, buscarCodigoExacto, buscarEnApi, tipo, almacen_id, cliente_id, permitirProductosSinStock]);
+
 
     return {
         productSearch,
         setProductSearch,
         productosDisponibles,
         isLoading,
+        terminoBuscado,
         searchError,
         isFocused,
         setIsFocused,
         buscarProductos,
+        confirmarBusqueda,
         handleScannerResult,
         handleAgregarProductoYLimpiar
     };

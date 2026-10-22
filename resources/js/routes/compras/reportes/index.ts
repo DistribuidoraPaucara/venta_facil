@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportMethod
- * @see app/Http/Controllers/ReporteComprasController.php:245
+ * @see app/Http/Controllers/ReporteComprasController.php:246
  * @route '/compras/reportes/export'
  */
 export const exportMethod = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ exportMethod.definition = {
 
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportMethod
- * @see app/Http/Controllers/ReporteComprasController.php:245
+ * @see app/Http/Controllers/ReporteComprasController.php:246
  * @route '/compras/reportes/export'
  */
 exportMethod.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ exportMethod.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportMethod
- * @see app/Http/Controllers/ReporteComprasController.php:245
+ * @see app/Http/Controllers/ReporteComprasController.php:246
  * @route '/compras/reportes/export'
  */
 exportMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ exportMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportMethod
- * @see app/Http/Controllers/ReporteComprasController.php:245
+ * @see app/Http/Controllers/ReporteComprasController.php:246
  * @route '/compras/reportes/export'
  */
 exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ReporteComprasController::exportMethod
- * @see app/Http/Controllers/ReporteComprasController.php:245
+ * @see app/Http/Controllers/ReporteComprasController.php:246
  * @route '/compras/reportes/export'
  */
     const exportMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ReporteComprasController::exportMethod
- * @see app/Http/Controllers/ReporteComprasController.php:245
+ * @see app/Http/Controllers/ReporteComprasController.php:246
  * @route '/compras/reportes/export'
  */
         exportMethodForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ReporteComprasController::exportMethod
- * @see app/Http/Controllers/ReporteComprasController.php:245
+ * @see app/Http/Controllers/ReporteComprasController.php:246
  * @route '/compras/reportes/export'
  */
         exportMethodForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     exportMethod.form = exportMethodForm
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportPdf
- * @see app/Http/Controllers/ReporteComprasController.php:368
+ * @see app/Http/Controllers/ReporteComprasController.php:369
  * @route '/compras/reportes/export-pdf'
  */
 export const exportPdf = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -172,7 +172,7 @@ exportPdf.definition = {
 
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportPdf
- * @see app/Http/Controllers/ReporteComprasController.php:368
+ * @see app/Http/Controllers/ReporteComprasController.php:369
  * @route '/compras/reportes/export-pdf'
  */
 exportPdf.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ exportPdf.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportPdf
- * @see app/Http/Controllers/ReporteComprasController.php:368
+ * @see app/Http/Controllers/ReporteComprasController.php:369
  * @route '/compras/reportes/export-pdf'
  */
 exportPdf.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -190,7 +190,7 @@ exportPdf.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ReporteComprasController::exportPdf
- * @see app/Http/Controllers/ReporteComprasController.php:368
+ * @see app/Http/Controllers/ReporteComprasController.php:369
  * @route '/compras/reportes/export-pdf'
  */
 exportPdf.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -200,7 +200,7 @@ exportPdf.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ReporteComprasController::exportPdf
- * @see app/Http/Controllers/ReporteComprasController.php:368
+ * @see app/Http/Controllers/ReporteComprasController.php:369
  * @route '/compras/reportes/export-pdf'
  */
     const exportPdfForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -210,7 +210,7 @@ exportPdf.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ReporteComprasController::exportPdf
- * @see app/Http/Controllers/ReporteComprasController.php:368
+ * @see app/Http/Controllers/ReporteComprasController.php:369
  * @route '/compras/reportes/export-pdf'
  */
         exportPdfForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -219,7 +219,7 @@ exportPdf.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ReporteComprasController::exportPdf
- * @see app/Http/Controllers/ReporteComprasController.php:368
+ * @see app/Http/Controllers/ReporteComprasController.php:369
  * @route '/compras/reportes/export-pdf'
  */
         exportPdfForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

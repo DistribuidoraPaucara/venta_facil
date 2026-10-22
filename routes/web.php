@@ -199,6 +199,8 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
 
     // Resource route DESPUÉS de las rutas específicas
     Route::resource('productos', \App\Http\Controllers\ProductoController::class)->except(['show'])->middleware('permission:productos.manage');
+    Route::delete('productos/{producto}/stock-limites/{limite}', [\App\Http\Controllers\ProductoController::class, 'eliminarStockLimite'])
+        ->whereNumber('limite')->middleware('permission:productos.manage')->name('productos.stock-limites.destroy');
     Route::get('productos/{producto}/historial-precios', [\App\Http\Controllers\ProductoController::class, 'historialPrecios'])->middleware('permission:productos.manage')->name('productos.historial-precios');
 
     // Rutas para gestión de códigos de barra
@@ -362,11 +364,15 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         // Gestión de Cuentas por Pagar
         Route::get('cuentas-por-pagar', [\App\Http\Controllers\CuentaPorPagarController::class, 'index'])->name('cuentas-por-pagar.index');
         Route::get('cuentas-por-pagar/export', [\App\Http\Controllers\CuentaPorPagarController::class, 'export'])->name('cuentas-por-pagar.export');
+        Route::get('cuentas-por-pagar/reporte', [\App\Http\Controllers\CuentaPorPagarController::class, 'reporte'])->name('cuentas-por-pagar.reporte');
         Route::get('cuentas-por-pagar/{cuenta}/show', [\App\Http\Controllers\CuentaPorPagarController::class, 'show'])->name('cuentas-por-pagar.show');
         Route::patch('cuentas-por-pagar/{cuenta}/estado', [\App\Http\Controllers\CuentaPorPagarController::class, 'actualizarEstado'])->name('cuentas-por-pagar.actualizar-estado');
         Route::post('cuentas-por-pagar/{cuentaPorPagar}/registrar-pago', [\App\Http\Controllers\CuentaPorPagarController::class, 'registrarPago'])->name('cuentas-por-pagar.registrar-pago');
         Route::post('cuentas-por-pagar/{cuentaPorPagar}/anular-pago/{pago}', [\App\Http\Controllers\CuentaPorPagarController::class, 'anularPago'])->name('cuentas-por-pagar.anular-pago');
         Route::get('cuentas-por-pagar/{cuentaPorPagar}/imprimir-ticket-80', [\App\Http\Controllers\CuentaPorPagarController::class, 'imprimirTicket80'])->name('cuentas-por-pagar.imprimir-ticket-80');
+        // URL que usa OutputSelectionModal (como el resto de documentos): ?formato=A4|TICKET_80|TICKET_58&accion=stream|download.
+        // Antes no existía y daba 404; el método ya atiende los tres formatos
+        Route::get('cuentas-por-pagar/{cuentaPorPagar}/imprimir', [\App\Http\Controllers\CuentaPorPagarController::class, 'imprimirTicket80'])->name('cuentas-por-pagar.imprimir');
 
         // Sistema de Pagos
         Route::get('pagos', [\App\Http\Controllers\PagoController::class, 'index'])->name('pagos.index');
@@ -400,6 +406,9 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     // Rutas para gestión de compras (después de rutas específicas para evitar conflictos)
     // ✅ NUEVO: Ruta para anular compras
     Route::post('compras/{compra}/anular', [\App\Http\Controllers\CompraController::class, 'anular'])->name('compras.anular');
+    // Copia la compra como una nueva en BORRADOR (no mueve stock ni registra pago)
+    Route::post('compras/{compra}/duplicar', [\App\Http\Controllers\CompraController::class, 'duplicar'])
+        ->whereNumber('compra')->middleware('permission:compras.store')->name('compras.duplicar');
 
     // ✅ NUEVO 2026-05-18: Rutas para asignación de lotes y fechas de vencimiento
     Route::get('compras/{compra}/editar-lotes', [\App\Http\Controllers\CompraController::class, 'editarAsignarLotes'])->name('compras.editar-lotes');
@@ -545,6 +554,8 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
 
         // Gestión de Cuentas por Cobrar
         Route::get('cuentas-por-cobrar', [\App\Http\Controllers\CuentaPorCobrarController::class, 'index'])->name('cuentas-por-cobrar.index');
+        // Reporte PDF según los filtros del listado (antes de {cuentaPorCobrar} para no chocar)
+        Route::get('cuentas-por-cobrar/reporte', [\App\Http\Controllers\CuentaPorCobrarController::class, 'reporte'])->name('cuentas-por-cobrar.reporte');
         Route::get('cuentas-por-cobrar/{cuentaPorCobrar}/show', [\App\Http\Controllers\CuentaPorCobrarController::class, 'show'])->name('cuentas-por-cobrar.show');
         Route::get('cuentas-por-cobrar/{cuentaPorCobrar}/imprimir', [\App\Http\Controllers\CuentaPorCobrarController::class, 'imprimir'])->name('cuentas-por-cobrar.imprimir');
         Route::get('cuentas-por-cobrar/{cuentaPorCobrar}/imprimir-ticket-80', [\App\Http\Controllers\CuentaPorCobrarController::class, 'imprimirTicket80'])->name('cuentas-por-cobrar.imprimir-ticket-80');
@@ -963,6 +974,8 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         // Rutas para análisis de productos a comprar
         Route::prefix('productos-compra')->name('productos-compra.')->group(function () {
             Route::get('/', [\App\Http\Controllers\ComprasController::class, 'index'])->middleware('permission:inventario.reposiciones.index')->name('index');
+            // Crea una compra en BORRADOR (orden de compra) con los productos elegidos; no mueve stock
+            Route::post('orden', [\App\Http\Controllers\ComprasController::class, 'crearBorrador'])->middleware('permission:compras.store')->name('orden');
         });
 
         // Rutas para configuración de stock
@@ -1006,11 +1019,15 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
 
         // Editor de productos tipo planilla: datos, precios, límites y stock (ajuste) en una tabla
         Route::prefix('editor-productos')->name('editor-productos.')
-            ->middleware(['permission:inventario.ajuste.form', 'permission:productos.edit'])
+            ->middleware('permission:inventario.editor-productos')
             ->group(function () {
                 Route::get('/', [\App\Http\Controllers\EditorProductosController::class, 'index'])->name('index');
                 Route::get('datos', [\App\Http\Controllers\EditorProductosController::class, 'datos'])->name('datos');
                 Route::post('guardar', [\App\Http\Controllers\EditorProductosController::class, 'guardar'])->name('guardar');
+                Route::get('{producto}/limites', [\App\Http\Controllers\EditorProductosController::class, 'limites'])->whereNumber('producto')->name('limites');
+                Route::delete('limites/{limite}', [\App\Http\Controllers\EditorProductosController::class, 'eliminarLimite'])->whereNumber('limite')->name('limites.eliminar');
+                Route::get('{producto}/lotes', [\App\Http\Controllers\EditorProductosController::class, 'lotes'])->whereNumber('producto')->name('lotes');
+                Route::delete('lotes/{stock}', [\App\Http\Controllers\EditorProductosController::class, 'darDeBajaLote'])->whereNumber('stock')->name('lotes.baja');
             });
 
         // Rutas para gestión de reservas de inventario

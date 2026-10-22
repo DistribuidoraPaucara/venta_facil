@@ -215,7 +215,7 @@ class TransferenciaProductoService
      * Registro de destino: mismo lote y vencimiento en el almacén destino (cualquier sector).
      * Si no existe se crea en el sector configurado para el producto (stock_limites) o en el primero del almacén.
      */
-    private function obtenerOCrearStockDestino(StockProducto $origen, int $almacenDestinoId): StockProducto
+    public function obtenerOCrearStockDestino(StockProducto $origen, int $almacenDestinoId): StockProducto
     {
         $sectorLimite = StockLimite::where('producto_id', $origen->producto_id)
             ->where('almacen_id', $almacenDestinoId)
@@ -246,6 +246,46 @@ class TransferenciaProductoService
         $sectorId = $sectorLimite ?? Sector::where('almacen_id', $almacenDestinoId)->orderBy('id')->value('id');
         if (! $sectorId) {
             throw new \Exception('El almacén de destino no tiene sectores configurados');
+        }
+
+        // El índice único (producto, almacén, sector, lote) también cuenta los lotes dados de baja:
+        // si ese lote existe con deleted_at, se restaura en vez de crear otro (que chocaría con el índice).
+        // Los lotes sin número no chocan (en PostgreSQL dos NULL no se consideran iguales).
+        if (! empty($origen->lote)) {
+            $dadoDeBaja = StockProducto::onlyTrashed()
+                ->where('producto_id', $origen->producto_id)
+                ->where('almacen_id', $almacenDestinoId)
+                ->where('sector_id', $sectorId)
+                ->where('lote', $origen->lote)
+                ->lockForUpdate()
+                ->first();
+
+            if ($dadoDeBaja) {
+                // Restaurarlo con stock "fantasma" (dado de baja sin llevarlo a 0) haría aparecer
+                // unidades sin movimiento que las explique: se frena y se pide regularizarlo.
+                if ((float) $dadoDeBaja->cantidad != 0 || (float) $dadoDeBaja->cantidad_reservada != 0) {
+                    throw new \Exception(
+                        "El lote {$origen->lote} está dado de baja en el almacén de destino pero aún registra "
+                        . (float) $dadoDeBaja->cantidad . ' unidad(es) (registro #' . $dadoDeBaja->id . '). '
+                        . 'Regularice ese lote antes de volver a ingresarlo.'
+                    );
+                }
+
+                $dadoDeBaja->restore();
+                $dadoDeBaja->update([
+                    'fecha_vencimiento'   => $origen->fecha_vencimiento,
+                    'fecha_actualizacion' => now(),
+                ]);
+
+                Log::info('♻️ [TransferenciaProductoService] Lote dado de baja restaurado en destino', [
+                    'stock_producto_id' => $dadoDeBaja->id,
+                    'producto_id'       => $origen->producto_id,
+                    'almacen_id'        => $almacenDestinoId,
+                    'lote'              => $origen->lote,
+                ]);
+
+                return $dadoDeBaja;
+            }
         }
 
         return StockProducto::create([

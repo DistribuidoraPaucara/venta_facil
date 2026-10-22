@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import SearchSelect, { type SelectOption } from '@/presentation/components/ui/search-select';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
-import { AlertCircle, ChevronLeft, ChevronRight, Loader2, RotateCcw, Save, Search } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, Loader2, RotateCcw, Save, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
@@ -66,7 +66,17 @@ interface Cambios {
 const SIN_CAMBIOS: Cambios = { productos: {}, precios: {}, limites: {}, stocks: {} };
 const SIN_MAXIMO = 999999;
 
-const filtrosIniciales = { q: '', almacen_id: '', sector_id: '', categoria_id: '', marca_id: '', unidad_id: '', stock: '', sin_precio: '' };
+const filtrosIniciales = {
+    q: '',
+    almacen_id: '',
+    sector_id: '',
+    categoria_id: '',
+    marca_id: '',
+    unidad_id: '',
+    stock: '',
+    sin_precio: '',
+    limites_por_almacen: '',
+};
 const claveUbicacion = (f: { producto_id: number; almacen_id: number | null; sector_id: number | null }) =>
     `${f.producto_id}-${f.almacen_id}-${f.sector_id}`;
 const formatear = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(Number(Number(n).toFixed(4))));
@@ -91,6 +101,10 @@ export default function EditorProductos({ opciones }: Props) {
     const [confirmar, setConfirmar] = useState(false);
     const [guardando, setGuardando] = useState(false);
     const [errores, setErrores] = useState<string[]>([]);
+    // Producto cuyo modal de límites (stock_limites) está abierto
+    const [limitesDe, setLimitesDe] = useState<{ producto_id: number; nombre: string } | null>(null);
+    // Ubicación cuyo modal de lotes (stock_productos) está abierto
+    const [lotesDe, setLotesDe] = useState<UbicacionLotes | null>(null);
     // Valores originales de los productos (para saber si un cambio vuelve al valor inicial)
     const originales = useRef<Record<number, Fila>>({});
     const ultimaCarga = useRef(0);
@@ -208,6 +222,27 @@ export default function EditorProductos({ opciones }: Props) {
                 };
             return { ...c, stocks };
         });
+
+    // Al eliminar un límite se descarta su edición pendiente (si no, Guardar lo volvería a crear)
+    const alEliminarLimite = (l: { producto_id: number; almacen_id: number; sector_id: number }) => {
+        setCambios((c) => {
+            const limites = { ...c.limites };
+            delete limites[claveUbicacion(l)];
+            return { ...c, limites };
+        });
+        cargar(pagina);
+    };
+
+    // Tras dar de baja un lote el stock de la ubicación cambia: se descarta su edición de stock
+    // pendiente (el backend la rechazaría por "el stock cambió mientras editabas") y se recarga
+    const alDarDeBajaLote = (u: UbicacionLotes) => {
+        setCambios((c) => {
+            const stocks = { ...c.stocks };
+            delete stocks[claveUbicacion(u)];
+            return { ...c, stocks };
+        });
+        cargar(pagina);
+    };
 
     const descartar = () => {
         setCambios(SIN_CAMBIOS);
@@ -384,6 +419,15 @@ export default function EditorProductos({ opciones }: Props) {
                         onCambiar={(v) => setFiltro('sin_precio', v)}
                         opciones={opciones.tiposPrecio.map((t) => ({ value: t.id, label: `Sin precio ${t.codigo}` }))}
                     />
+                    <FiltroBuscable
+                        placeholder="Cualquier límite"
+                        valor={filtros.limites_por_almacen}
+                        onCambiar={(v) => setFiltro('limites_por_almacen', v)}
+                        opciones={[
+                            { value: 2, label: '2+ límites en un almacén', description: 'Límites repetidos (p. ej. uno por sector)' },
+                            { value: 3, label: '3+ límites en un almacén' },
+                        ]}
+                    />
                     {Object.values(filtros).some(Boolean) && (
                         <Button variant="ghost" size="sm" onClick={() => setFiltros(filtrosIniciales)}>
                             Limpiar
@@ -455,6 +499,14 @@ export default function EditorProductos({ opciones }: Props) {
                                                         >
                                                             #{f.producto_id}
                                                         </a>
+                                                        <button
+                                                            type="button"
+                                                            title="Ver y eliminar límites de stock (mín/máx)"
+                                                            onClick={() => setLimitesDe({ producto_id: f.producto_id, nombre: f.nombre })}
+                                                            className="rounded p-0.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-slate-800"
+                                                        >
+                                                            <SlidersHorizontal className="h-3.5 w-3.5" />
+                                                        </button>
                                                         <CeldaTexto
                                                             {...celda(`${f.producto_id}-nombre`)}
                                                             valor={String(valorProducto(f, 'nombre') ?? '')}
@@ -523,7 +575,28 @@ export default function EditorProductos({ opciones }: Props) {
                                                     <div className="font-semibold">{f.almacen}</div>
                                                     <div className="text-gray-500">
                                                         {f.sector ?? 'Sin sector'}
-                                                        {f.lotes > 1 ? ` · ${f.lotes} lotes` : ''}
+                                                        {conUbicacion && f.lotes > 0 && (
+                                                            <>
+                                                                {' · '}
+                                                                <button
+                                                                    type="button"
+                                                                    title="Ver lotes y darlos de baja"
+                                                                    className="text-blue-600 hover:underline dark:text-blue-400"
+                                                                    onClick={() =>
+                                                                        setLotesDe({
+                                                                            producto_id: f.producto_id,
+                                                                            nombre: f.nombre,
+                                                                            almacen_id: f.almacen_id!,
+                                                                            sector_id: f.sector_id!,
+                                                                            ubicacion: `${f.almacen} / ${f.sector ?? 'Sin sector'}`,
+                                                                            fraccionado: f.es_fraccionado,
+                                                                        })
+                                                                    }
+                                                                >
+                                                                    {f.lotes} lote{f.lotes !== 1 ? 's' : ''}
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </>
                                             ) : (
@@ -642,7 +715,391 @@ export default function EditorProductos({ opciones }: Props) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {limitesDe && (
+                <ModalLimites
+                    producto={limitesDe}
+                    pendientes={cambios.limites}
+                    onCerrar={() => setLimitesDe(null)}
+                    onEliminado={alEliminarLimite}
+                />
+            )}
+
+            {lotesDe && (
+                <ModalLotes
+                    ubicacion={lotesDe}
+                    stockPendiente={claveUbicacion(lotesDe) in cambios.stocks}
+                    onCerrar={() => setLotesDe(null)}
+                    onDadoDeBaja={() => alDarDeBajaLote(lotesDe)}
+                />
+            )}
         </AppLayout>
+    );
+}
+
+interface UbicacionLotes {
+    producto_id: number;
+    nombre: string;
+    almacen_id: number;
+    sector_id: number;
+    ubicacion: string;
+    fraccionado: boolean;
+}
+
+interface LoteStock {
+    id: number;
+    lote: string | null;
+    fecha_vencimiento: string | null;
+    dias_para_vencer: number | null;
+    cantidad: number;
+    disponible: number;
+    reservada: number;
+    precio_costo: number | null;
+    actualizado: string | null;
+}
+
+/** Modal con los lotes vigentes (stock_productos) de una ubicación, con opción de darlos de baja. */
+function ModalLotes({
+    ubicacion,
+    stockPendiente,
+    onCerrar,
+    onDadoDeBaja,
+}: {
+    ubicacion: UbicacionLotes;
+    stockPendiente: boolean;
+    onCerrar: () => void;
+    onDadoDeBaja: () => void;
+}) {
+    const [lotes, setLotes] = useState<LoteStock[] | null>(null);
+    const [confirmarId, setConfirmarId] = useState<number | null>(null);
+    const [procesando, setProcesando] = useState<number | null>(null);
+
+    useEffect(() => {
+        axios
+            .get(`/inventario/editor-productos/${ubicacion.producto_id}/lotes`, {
+                params: { almacen_id: ubicacion.almacen_id, sector_id: ubicacion.sector_id },
+            })
+            .then(({ data }) => setLotes(data.lotes))
+            .catch(() => {
+                toast.error('No se pudieron cargar los lotes');
+                setLotes([]);
+            });
+    }, [ubicacion]);
+
+    const etiqueta = (l: LoteStock) => (l.lote ? `Lote ${l.lote}` : 'Sin número de lote');
+
+    const darDeBaja = async (l: LoteStock) => {
+        setProcesando(l.id);
+        try {
+            const { data } = await axios.delete(`/inventario/editor-productos/lotes/${l.id}`);
+            setLotes((lista) => (lista ?? []).filter((x) => x.id !== l.id));
+            setConfirmarId(null);
+            toast.success(
+                data.cantidad_baja > 0
+                    ? `${etiqueta(l)} dado de baja (salida por ajuste de ${formatear(data.cantidad_baja)})`
+                    : `${etiqueta(l)} dado de baja`,
+            );
+            onDadoDeBaja();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message ?? 'No se pudo dar de baja el lote');
+        } finally {
+            setProcesando(null);
+        }
+    };
+
+    return (
+        <Dialog open onOpenChange={(o) => !o && procesando === null && onCerrar()}>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>
+                        Lotes · #{ubicacion.producto_id} {ubicacion.nombre}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {ubicacion.ubicacion}. Dar de baja un lote registra una salida por ajuste con su stock restante (queda en el historial de
+                        movimientos) y luego lo marca como dado de baja. No se puede si tiene unidades reservadas.
+                    </DialogDescription>
+                </DialogHeader>
+
+                {stockPendiente && (
+                    <div className="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                        Tienes un cambio de stock sin guardar en esta ubicación: si das de baja un lote, ese cambio se descarta.
+                    </div>
+                )}
+
+                {lotes === null ? (
+                    <div className="flex items-center justify-center gap-2 py-8 text-gray-500">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Cargando lotes…
+                    </div>
+                ) : lotes.length === 0 ? (
+                    <div className="py-8 text-center text-gray-500">No hay lotes vigentes en esta ubicación.</div>
+                ) : (
+                    <div className="max-h-96 overflow-auto rounded border border-gray-200 dark:border-slate-700">
+                        <table className="w-full text-sm">
+                            <thead className="sticky top-0 bg-gray-100 text-left text-xs text-gray-600 uppercase dark:bg-slate-800 dark:text-gray-300">
+                                <tr>
+                                    <th className="px-3 py-2">Lote</th>
+                                    <th className="px-3 py-2">Vencimiento</th>
+                                    <th className="px-3 py-2 text-right">Cantidad</th>
+                                    <th className="px-3 py-2 text-right">Disponible</th>
+                                    <th className="px-3 py-2 text-right">Reservada</th>
+                                    <th className="px-3 py-2 text-right">Costo</th>
+                                    <th className="px-3 py-2 text-right" />
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {lotes.map((l) => {
+                                    const conReserva = l.reservada > 0;
+                                    const vencido = l.dias_para_vencer !== null && l.dias_para_vencer < 0;
+                                    const porVencer = l.dias_para_vencer !== null && l.dias_para_vencer >= 0 && l.dias_para_vencer <= 30;
+                                    return (
+                                        <tr key={l.id} className="border-t border-gray-200 dark:border-slate-700">
+                                            <td className="px-3 py-2">
+                                                <div className="font-medium">{l.lote ?? <span className="text-gray-400 italic">sin número</span>}</div>
+                                                <div className="text-xs text-gray-500">#{l.id}{l.actualizado ? ` · ${l.actualizado}` : ''}</div>
+                                            </td>
+                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                {l.fecha_vencimiento ? (
+                                                    <>
+                                                        <div>{l.fecha_vencimiento}</div>
+                                                        <div
+                                                            className={`text-xs ${
+                                                                vencido
+                                                                    ? 'text-red-600 dark:text-red-400'
+                                                                    : porVencer
+                                                                      ? 'text-amber-600 dark:text-amber-400'
+                                                                      : 'text-gray-500'
+                                                            }`}
+                                                        >
+                                                            {vencido
+                                                                ? `vencido hace ${Math.abs(l.dias_para_vencer!)} día(s)`
+                                                                : `vence en ${l.dias_para_vencer} día(s)`}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-gray-400">sin vencimiento</span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2 text-right tabular-nums">{formatear(l.cantidad)}</td>
+                                            <td className="px-3 py-2 text-right tabular-nums">{formatear(l.disponible)}</td>
+                                            <td className={`px-3 py-2 text-right tabular-nums ${conReserva ? 'font-semibold text-amber-600 dark:text-amber-400' : ''}`}>
+                                                {formatear(l.reservada)}
+                                            </td>
+                                            <td className="px-3 py-2 text-right tabular-nums">
+                                                {l.precio_costo !== null ? formatear(l.precio_costo) : <span className="text-gray-400">—</span>}
+                                            </td>
+                                            <td className="px-3 py-2 text-right whitespace-nowrap">
+                                                {confirmarId === l.id ? (
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                                                            {l.cantidad > 0 ? `Sale ${formatear(l.cantidad)} por ajuste. ¿Confirmar?` : '¿Confirmar baja?'}
+                                                        </span>
+                                                        <div className="flex gap-1">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                disabled={procesando !== null}
+                                                                onClick={() => darDeBaja(l)}
+                                                            >
+                                                                {procesando === l.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Sí, dar de baja'}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled={procesando !== null}
+                                                                onClick={() => setConfirmarId(null)}
+                                                            >
+                                                                No
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                                                        disabled={procesando !== null || conReserva}
+                                                        title={conReserva ? 'Tiene unidades reservadas en proformas' : undefined}
+                                                        onClick={() => setConfirmarId(l.id)}
+                                                    >
+                                                        <Trash2 className="mr-1 h-3.5 w-3.5" /> Dar de baja
+                                                    </Button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                <DialogFooter>
+                    <Button variant="outline" disabled={procesando !== null} onClick={onCerrar}>
+                        Cerrar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface LimiteStock {
+    id: number;
+    almacen_id: number;
+    almacen: string | null;
+    sector_id: number;
+    sector: string | null;
+    stock_minimo: number;
+    stock_maximo: number | null;
+    capacidad_advertencia: number | null;
+    stock: number;
+    actualizado: string | null;
+}
+
+/** Modal con los límites (stock_limites) de un producto por almacén/sector, con opción de eliminarlos. */
+function ModalLimites({
+    producto,
+    pendientes,
+    onCerrar,
+    onEliminado,
+}: {
+    producto: { producto_id: number; nombre: string };
+    pendientes: Cambios['limites'];
+    onCerrar: () => void;
+    onEliminado: (l: { producto_id: number; almacen_id: number; sector_id: number }) => void;
+}) {
+    const [limites, setLimites] = useState<LimiteStock[] | null>(null);
+    const [confirmarId, setConfirmarId] = useState<number | null>(null);
+    const [eliminando, setEliminando] = useState<number | null>(null);
+
+    useEffect(() => {
+        axios
+            .get(`/inventario/editor-productos/${producto.producto_id}/limites`)
+            .then(({ data }) => setLimites(data.limites))
+            .catch(() => {
+                toast.error('No se pudieron cargar los límites');
+                setLimites([]);
+            });
+    }, [producto.producto_id]);
+
+    const eliminar = async (l: LimiteStock) => {
+        setEliminando(l.id);
+        try {
+            await axios.delete(`/inventario/editor-productos/limites/${l.id}`);
+            setLimites((lista) => (lista ?? []).filter((x) => x.id !== l.id));
+            setConfirmarId(null);
+            toast.success(`Límite eliminado: ${l.almacen} / ${l.sector}`);
+            onEliminado({ producto_id: producto.producto_id, almacen_id: l.almacen_id, sector_id: l.sector_id });
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message ?? 'No se pudo eliminar el límite');
+        } finally {
+            setEliminando(null);
+        }
+    };
+
+    return (
+        <Dialog open onOpenChange={(o) => !o && eliminando === null && onCerrar()}>
+            <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>
+                        Límites de stock · #{producto.producto_id} {producto.nombre}
+                    </DialogTitle>
+                    <DialogDescription>
+                        Mínimo y máximo por almacén y sector (stock_limites). Eliminar un límite no cambia el stock, pero el producto deja de
+                        tener mín/máx en esa ubicación y ya no aparece en reposiciones por ese límite.
+                    </DialogDescription>
+                </DialogHeader>
+
+                {limites === null ? (
+                    <div className="flex items-center justify-center gap-2 py-8 text-gray-500">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Cargando límites…
+                    </div>
+                ) : limites.length === 0 ? (
+                    <div className="py-8 text-center text-gray-500">Este producto no tiene límites de stock definidos.</div>
+                ) : (
+                    <div className="max-h-96 overflow-auto rounded border border-gray-200 dark:border-slate-700">
+                        <table className="w-full text-sm">
+                            <thead className="sticky top-0 bg-gray-100 text-left text-xs text-gray-600 uppercase dark:bg-slate-800 dark:text-gray-300">
+                                <tr>
+                                    <th className="px-3 py-2">Almacén / Sector</th>
+                                    <th className="px-3 py-2 text-right">Stock</th>
+                                    <th className="px-3 py-2 text-right">Mín</th>
+                                    <th className="px-3 py-2 text-right">Máx</th>
+                                    <th className="px-3 py-2">Actualizado</th>
+                                    <th className="px-3 py-2 text-right" />
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {limites.map((l) => {
+                                    const pendiente = pendientes[claveUbicacion({ producto_id: producto.producto_id, ...l })];
+                                    const bajoMinimo = l.stock < l.stock_minimo;
+                                    return (
+                                        <tr key={l.id} className="border-t border-gray-200 dark:border-slate-700">
+                                            <td className={`border-l-4 px-3 py-2 ${colorAlmacen(l.almacen)}`}>
+                                                <div className="font-semibold">{l.almacen ?? '—'}</div>
+                                                <div className="text-xs text-gray-500">{l.sector ?? 'Sin sector'}</div>
+                                                {pendiente && (
+                                                    <div className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                                                        Cambio sin guardar: mín {pendiente.stock_minimo} / máx {pendiente.stock_maximo || 'sin máx'}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className={`px-3 py-2 text-right tabular-nums ${bajoMinimo ? 'text-red-600 dark:text-red-400' : ''}`}>
+                                                {formatear(l.stock)}
+                                            </td>
+                                            <td className="px-3 py-2 text-right tabular-nums">{l.stock_minimo}</td>
+                                            <td className="px-3 py-2 text-right tabular-nums">
+                                                {l.stock_maximo ?? <span className="text-gray-400">sin máx</span>}
+                                            </td>
+                                            <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-500">{l.actualizado ?? '—'}</td>
+                                            <td className="px-3 py-2 text-right whitespace-nowrap">
+                                                {confirmarId === l.id ? (
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <span className="text-xs text-gray-600 dark:text-gray-400">¿Eliminar?</span>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            disabled={eliminando !== null}
+                                                            onClick={() => eliminar(l)}
+                                                        >
+                                                            {eliminando === l.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Sí'}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled={eliminando !== null}
+                                                            onClick={() => setConfirmarId(null)}
+                                                        >
+                                                            No
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                                                        disabled={eliminando !== null}
+                                                        onClick={() => setConfirmarId(l.id)}
+                                                    >
+                                                        <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                                                    </Button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                <DialogFooter>
+                    <Button variant="outline" disabled={eliminando !== null} onClick={onCerrar}>
+                        Cerrar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 

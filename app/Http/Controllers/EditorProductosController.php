@@ -15,6 +15,7 @@ use App\Models\StockProducto;
 use App\Models\TipoPrecio;
 use App\Models\UnidadMedida;
 use App\Services\CodigosBarraCacheService;
+use App\Services\Stock\BajaLoteService;
 use App\Services\Stock\MovimientoStockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -68,7 +69,8 @@ class EditorProductosController extends Controller
     /**
      * GET datos: filas paginadas con filtros.
      * Filtros: q, almacen_id, sector_id, categoria_id, marca_id, unidad_id,
-     * stock (sin_stock | con_stock | bajo_minimo | sobre_maximo), sin_precio (tipo_precio_id).
+     * stock (sin_stock | con_stock | bajo_minimo | sobre_maximo), sin_precio (tipo_precio_id),
+     * limites_por_almacen (N: N o más límites en un mismo almacén).
      */
     public function datos(Request $request): JsonResponse
     {
@@ -132,6 +134,18 @@ class EditorProductosController extends Controller
             'sobre_maximo' => $query->whereNotNull('l.stock_maximo')->where('l.stock_maximo', '<', 999999)->whereRaw('COALESCE(s.cantidad, 0) > l.stock_maximo'),
             default        => null,
         };
+        // Productos con N o más registros de stock_limites en un mismo almacén (p. ej. un límite por sector);
+        // si hay filtro de almacén, se cuenta solo en ese almacén
+        if ($request->filled('limites_por_almacen')) {
+            $minimo = max(2, (int) $request->input('limites_por_almacen'));
+            $enAlmacenes = $request->filled('almacen_id') ? [(int) $request->input('almacen_id')] : $almacenIds;
+            $query->whereExists(fn($e) => $e->from('stock_limites as sl')
+                ->selectRaw('1')
+                ->whereColumn('sl.producto_id', 'p.id')
+                ->whereIn('sl.almacen_id', $enAlmacenes)
+                ->groupBy('sl.almacen_id')
+                ->havingRaw('COUNT(*) >= ?', [$minimo]));
+        }
         if ($request->filled('sin_precio')) {
             $query->whereNotExists(fn($e) => $e->from('precios_producto as pp')
                 ->whereColumn('pp.producto_id', 'p.id')
@@ -375,6 +389,123 @@ class EditorProductosController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Cambios guardados', 'resumen' => $resumen]);
+    }
+
+    /**
+     * GET {producto}/limites: límites (stock_limites) del producto en los almacenes de la empresa,
+     * con el stock actual de cada ubicación para dar contexto en el modal.
+     */
+    public function limites(int $producto): JsonResponse
+    {
+        $empresaId  = auth()->user()->empresa_id;
+        $producto   = Producto::where('empresa_id', $empresaId)->findOrFail($producto, ['id', 'nombre', 'sku']);
+        $almacenIds = Almacen::where('empresa_id', $empresaId)->pluck('id');
+
+        $stock = StockProducto::where('producto_id', $producto->id)
+            ->whereIn('almacen_id', $almacenIds)
+            ->selectRaw('almacen_id, sector_id, SUM(cantidad) AS cantidad')
+            ->groupBy('almacen_id', 'sector_id')
+            ->get()
+            ->keyBy(fn($s) => "{$s->almacen_id}-{$s->sector_id}");
+
+        $limites = StockLimite::with(['almacen:id,nombre', 'sector:id,nombre'])
+            ->where('producto_id', $producto->id)
+            ->whereIn('almacen_id', $almacenIds)
+            ->orderBy('almacen_id')
+            ->orderBy('sector_id')
+            ->get()
+            ->map(fn(StockLimite $l) => [
+                'id'                    => $l->id,
+                'almacen_id'            => $l->almacen_id,
+                'almacen'               => $l->almacen?->nombre,
+                'sector_id'             => $l->sector_id,
+                'sector'                => $l->sector?->nombre,
+                'stock_minimo'          => $l->stock_minimo,
+                'stock_maximo'          => $l->stock_maximo >= 999999 ? null : $l->stock_maximo,
+                'capacidad_advertencia' => $l->capacidad_advertencia,
+                'stock'                 => (float) ($stock["{$l->almacen_id}-{$l->sector_id}"]->cantidad ?? 0),
+                'actualizado'           => $l->updated_at?->format('d/m/Y H:i'),
+            ]);
+
+        return response()->json(['producto' => $producto, 'limites' => $limites]);
+    }
+
+    /**
+     * DELETE limites/{limite}: elimina un límite. No toca el stock; el producto deja de
+     * tener mín/máx en esa ubicación (y ya no aparece en reposiciones por ese límite).
+     */
+    public function eliminarLimite(int $limite): JsonResponse
+    {
+        $almacenIds = Almacen::where('empresa_id', auth()->user()->empresa_id)->pluck('id');
+        $registro   = StockLimite::whereIn('almacen_id', $almacenIds)->findOrFail($limite);
+
+        $registro->delete();
+
+        Log::info('🗑️ [EditorProductos] Límite de stock eliminado', [
+            'stock_limite_id' => $registro->id,
+            'producto_id'     => $registro->producto_id,
+            'almacen_id'      => $registro->almacen_id,
+            'sector_id'       => $registro->sector_id,
+            'stock_minimo'    => $registro->stock_minimo,
+            'stock_maximo'    => $registro->stock_maximo,
+            'user_id'         => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Límite eliminado']);
+    }
+
+    /**
+     * GET {producto}/lotes?almacen_id=&sector_id=: lotes vigentes (stock_productos) del producto en esa ubicación.
+     */
+    public function lotes(Request $request, int $producto): JsonResponse
+    {
+        $data = $request->validate([
+            'almacen_id' => 'required|integer',
+            'sector_id'  => 'required|integer',
+        ]);
+        $empresaId = auth()->user()->empresa_id;
+        $producto  = Producto::where('empresa_id', $empresaId)->findOrFail($producto, ['id', 'nombre', 'es_fraccionado']);
+        $almacen   = Almacen::where('empresa_id', $empresaId)->findOrFail($data['almacen_id'], ['id', 'nombre']);
+
+        $lotes = StockProducto::where('producto_id', $producto->id)
+            ->where('almacen_id', $almacen->id)
+            ->where('sector_id', $data['sector_id'])
+            ->orderByRaw('fecha_vencimiento IS NULL, fecha_vencimiento')
+            ->orderBy('id')
+            ->get()
+            ->map(fn(StockProducto $s) => [
+                'id'                => $s->id,
+                'lote'              => $s->lote,
+                'fecha_vencimiento' => $s->fecha_vencimiento?->format('d/m/Y'),
+                'dias_para_vencer'  => $s->fecha_vencimiento ? (int) floor($s->diasParaVencer()) : null,
+                'cantidad'          => (float) $s->cantidad,
+                'disponible'        => (float) $s->cantidad_disponible,
+                'reservada'         => (float) $s->cantidad_reservada,
+                'precio_costo'      => $s->precio_costo !== null ? (float) $s->precio_costo : null,
+                'actualizado'       => $s->fecha_actualizacion?->format('d/m/Y H:i'),
+            ]);
+
+        return response()->json(['producto' => $producto, 'almacen' => $almacen, 'lotes' => $lotes]);
+    }
+
+    /**
+     * DELETE lotes/{stock}: da de baja el lote (salida por ajuste hasta 0 + deleted_at), vía BajaLoteService.
+     */
+    public function darDeBajaLote(int $stock, BajaLoteService $bajaLoteService): JsonResponse
+    {
+        $registro = StockProducto::findOrFail($stock);
+
+        try {
+            $movimiento = $bajaLoteService->darDeBaja($registro, (int) auth()->user()->empresa_id, 'Baja de lote (Editor de productos)');
+        } catch (\DomainException | \InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success'       => true,
+            'message'       => 'Lote dado de baja',
+            'cantidad_baja' => $movimiento ? abs((float) $movimiento->cantidad) : 0,
+        ]);
     }
 
     /**

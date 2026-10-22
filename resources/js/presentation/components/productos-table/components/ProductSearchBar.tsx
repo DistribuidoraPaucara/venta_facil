@@ -46,10 +46,12 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
         setProductSearch,
         productosDisponibles,
         isLoading,
+        terminoBuscado,
         searchError,
         isFocused,
         setIsFocused,
         buscarProductos,
+        confirmarBusqueda,
         handleScannerResult,
         handleAgregarProductoYLimpiar
     } = useProductSearch({
@@ -77,6 +79,11 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
         }
     }, [productosDisponibles.length]);
 
+    // Al volver a escribir, reabrir el panel (si se cerró con ✕) para ver el indicador y los resultados
+    useEffect(() => {
+        if (productSearch.trim().length >= 2) setShowSuggestions(true);
+    }, [productSearch]);
+
     // ✅ Logging cuando los productos disponibles cambian
     useEffect(() => {
         if (productosDisponibles.length > 0) {
@@ -94,6 +101,11 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
             })));
         }
     }, [productosDisponibles, tipo]);
+
+    // "Sin resultados" solo cuando terminó de buscar exactamente lo que está escrito
+    // (antes aparecía durante la espera del debounce, antes de haber buscado)
+    const sinResultados =
+        !isLoading && !searchError && productosDisponibles.length === 0 && terminoBuscado !== '' && terminoBuscado === productSearch.trim();
 
     // ✅ Manejadores del modal escáner
     const openScannerModal = () => {
@@ -176,16 +188,26 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     e.preventDefault();
-                                    buscarProductos();
+                                    // Código exacto (o ID) → se agrega; si no, lista de resultados
+                                    confirmarBusqueda();
                                 }
                             }}
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => setIsFocused(false)}
                             autoComplete="off"
                             disabled={readOnly}
-                            className={`w-full px-2 py-1 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-zinc-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed ${productSearch ? 'pt-3' : ''}`}
+                            className={`w-full px-2 py-1 pr-8 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-zinc-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed ${productSearch ? 'pt-3' : ''}`}
                             placeholder=""
                         />
+                        {/* Indicador de búsqueda dentro del campo (se ve aunque el panel de sugerencias esté cerrado) */}
+                        {isLoading && (
+                            <span
+                                className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"
+                                role="status"
+                                aria-label="Buscando productos"
+                                title="Buscando productos…"
+                            />
+                        )}
                         <label className={`absolute left-3 transition-all duration-200 pointer-events-none ${productSearch || isFocused
                             ? 'top-[-20px] text-xs font-medium text-green-600 dark:text-green-400'
                             : 'top-1/2 -translate-y-1/2 text-xs text-gray-600 dark:text-gray-400'
@@ -200,7 +222,7 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                         className="px-2 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Buscar producto"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-4 h-4 ${isLoading ? 'animate-pulse' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </button>
@@ -231,12 +253,13 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                 </div>
 
                 {/* ✅ Mostrar resultados solo si hay búsqueda realizada */}
-                {showSuggestions && (productosDisponibles.length > 0 || searchError || (productSearch && !isLoading && productosDisponibles.length === 0)) && (
+                {showSuggestions && (isLoading || productosDisponibles.length > 0 || searchError || sinResultados) && (
                     <div className="mt-1 max-h-[60vh] overflow-y-auto border border-gray-200 dark:border-zinc-600 rounded-md">
-                        {/* ✅ ESTADO: Cargando */}
+                        {/* ✅ ESTADO: Cargando (arriba; si había resultados quedan visibles, atenuados) */}
                         {isLoading && (
-                            <div className="px-2.5 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-center">
-                                🔍 Buscando...
+                            <div className="flex items-center justify-center gap-2 px-2.5 py-2 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20">
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
+                                {productSearch.trim() ? `Buscando “${productSearch.trim()}”…` : 'Buscando…'}
                             </div>
                         )}
 
@@ -248,9 +271,9 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                         )}
 
                         {/* ✅ ESTADO: Resultados encontrados - TABLA MODERNA */}
-                        {!isLoading && productosDisponibles.length > 0 && (
+                        {productosDisponibles.length > 0 && (
                             <>
-                                <table className="w-full border-collapse">
+                                <table className={`w-full border-collapse transition-opacity ${isLoading ? 'opacity-50' : ''}`}>
                                     {/* ✅ ENCABEZADO: Tabla (fijo al hacer scroll) */}
                                     <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900">
                                         <tr className={`border-b-2 ${tipo === 'compra'
@@ -289,8 +312,9 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                                             </th>
                                         </tr>
                                         <tr className="border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800">
+                                            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">ID</th>
                                             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Producto</th>
-                                            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Código</th>
+                                            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">SKU / Código de barras</th>
                                             <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">
                                                 {tipo === 'compra' ? 'Precio Costo' : 'Precio Venta'}
                                             </th>
@@ -313,11 +337,51 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                                                     : 'hover:bg-green-50 dark:hover:bg-green-900/20'
                                                 }`}
                                             >
+                                                <td className="px-3 py-3 text-xs whitespace-nowrap">
+                                                    {/* Abre la edición en otra pestaña (no se pierde la venta) y no agrega el producto */}
+                                                    <a
+                                                        href={`/productos/${producto.id}/edit`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        title="Editar producto en otra pestaña"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="inline-flex items-center gap-1 rounded bg-blue-600 px-1.5 py-0.5 font-bold text-white hover:bg-blue-700 hover:underline"
+                                                    >
+                                                        #{producto.id}
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 3h7v7m0-7L10 14M5 5h4M5 5v14h14v-4" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
                                                 <td className="px-3 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                                                     {producto.nombre}
                                                 </td>
                                                 <td className="px-3 py-3 text-sm font-medium text-gray-600 dark:text-gray-300">
-                                                    {producto.codigo}
+                                                    <div>{producto.codigo}</div>
+                                                    {(() => {
+                                                        // Códigos de barra activos (codigos_barra), el principal primero. Si lo buscado
+                                                        // coincide con otro código, se muestra ese, para ver por qué apareció el producto.
+                                                        const codigos: string[] = producto.codigos_barras ?? [];
+                                                        if (codigos.length === 0) {
+                                                            return <div className="text-xs text-gray-400 dark:text-gray-500">Sin código de barras</div>;
+                                                        }
+                                                        const termino = productSearch.trim().toLowerCase();
+                                                        const mostrado = (termino && codigos.find((c) => c.toLowerCase().includes(termino))) || codigos[0];
+                                                        const otros = codigos.filter((c) => c !== mostrado);
+                                                        return (
+                                                            <div className="flex items-center gap-1 font-mono text-xs">
+                                                                <span title="Código de barras">▮▯ {mostrado}</span>
+                                                                {otros.length > 0 && (
+                                                                    <span
+                                                                        title={`Otros códigos de barras:\n${otros.join('\n')}`}
+                                                                        className="cursor-help rounded bg-gray-200 px-1 font-sans text-gray-700 dark:bg-zinc-700 dark:text-gray-300"
+                                                                    >
+                                                                        +{otros.length}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-3 py-3 text-sm font-bold text-right text-green-700 dark:text-green-400">
                                                     {formatCurrencyWith2Decimals(producto.precio_venta || 0)}
@@ -404,9 +468,9 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                         )}
 
                         {/* ✅ ESTADO: Sin resultados */}
-                        {!isLoading && productosDisponibles.length === 0 && !searchError && (
+                        {sinResultados && (
                             <div className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300 text-center bg-gray-50 dark:bg-zinc-800/50">
-                                🔍 No se encontraron productos
+                                🔍 No se encontraron productos para “{terminoBuscado}”
                             </div>
                         )}
                     </div>

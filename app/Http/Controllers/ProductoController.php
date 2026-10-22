@@ -179,6 +179,7 @@ class ProductoController extends Controller
         $sinPrecio   = $request->boolean('sin_precio');
         $visibleApp  = $request->has('visible_app') ? $request->boolean('visible_app') : null; // ✨ NUEVO
         $esFraccionado = $request->filled('es_fraccionado') ? $request->boolean('es_fraccionado') : null;
+        $activo      = $request->filled('activo') ? $request->boolean('activo') : null; // null = activos e inactivos
         $orderBy     = $request->string('order_by')->toString();
         $orderDir    = strtolower($request->string('order_dir')->toString()) === 'asc' ? 'asc' : 'desc';
 
@@ -219,31 +220,35 @@ class ProductoController extends Controller
                 'stock:producto_id,cantidad,cantidad_disponible',
             ])
             ->when($q, function ($qq) use ($q) {
-                // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
-                $searchLower = strtolower($q);
-                $qq->where(function ($sub) use ($searchLower, $q) {
-                    // 🔍 Búsqueda con prioridad: ID > SKU > Códigos de barras > Nombre > Descripción
-                    $sub->whereRaw('CAST(productos.id AS CHAR) like ?', ["%$q%"])
-                        ->orWhereRaw('LOWER(productos.sku) like ?', ["%$searchLower%"])
-                        ->orWhereRaw('LOWER(productos.nombre) like ?', ["%$searchLower%"])
-                        ->orWhereRaw('LOWER(productos.descripcion) like ?', ["%$searchLower%"])
-                        ->orWhereHas('codigosBarra', function ($q) use ($searchLower) {
-                            $q->whereRaw('LOWER(codigo) like ?', ["%$searchLower%"]);
-                        })
-                        ->orWhereHas('proveedor', function ($q) use ($searchLower) {
-                            $q->whereRaw('LOWER(nombre) like ?', ["%$searchLower%"]);
-                        });
+                $q           = trim($q);
+                $searchLower = mb_strtolower($q);
+                $like        = "%$searchLower%";
+                // El ID solo coincide EXACTO (97 no trae 197 ni 970). Antes se usaba CAST(id AS CHAR), que en
+                // PostgreSQL recorta a 1 carácter ("9"), así que la búsqueda por ID nunca encontraba nada.
+                $idExacto    = ctype_digit($q) && strlen($q) <= 18 ? (int) $q : null;
+
+                $qq->where(function ($sub) use ($like, $idExacto) {
+                    $sub->when($idExacto !== null, fn($s) => $s->orWhere('productos.id', $idExacto))
+                        ->orWhereRaw('LOWER(productos.sku) like ?', [$like])
+                        ->orWhereRaw('LOWER(productos.nombre) like ?', [$like])
+                        ->orWhereRaw('LOWER(productos.descripcion) like ?', [$like])
+                        ->orWhereHas('codigosBarra', fn($c) => $c->whereRaw('LOWER(codigo) like ?', [$like]))
+                        ->orWhereHas('proveedor', fn($p) => $p->whereRaw('LOWER(nombre) like ?', [$like]));
                 })
-                // 📊 Ordenar por prioridad de coincidencia
+                // 📊 Prioridad: ID exacto > SKU o código de barras exactos > nombre que empieza con el texto
+                //    > SKU parcial > nombre parcial > descripción > resto (código parcial / proveedor)
                     ->orderByRaw("
                     CASE
-                        WHEN CAST(productos.id AS CHAR) LIKE ? THEN 5
-                        WHEN LOWER(productos.sku) LIKE ? THEN 4
-                        WHEN LOWER(productos.nombre) LIKE ? THEN 3
-                        WHEN LOWER(productos.descripcion) LIKE ? THEN 2
+                        WHEN productos.id = ? THEN 9
+                        WHEN LOWER(productos.sku) = ? THEN 8
+                        WHEN EXISTS (SELECT 1 FROM codigos_barra cb WHERE cb.producto_id = productos.id AND LOWER(cb.codigo) = ?) THEN 7
+                        WHEN LOWER(productos.nombre) LIKE ? THEN 6
+                        WHEN LOWER(productos.sku) LIKE ? THEN 5
+                        WHEN LOWER(productos.nombre) LIKE ? THEN 4
+                        WHEN LOWER(productos.descripcion) LIKE ? THEN 3
                         ELSE 1
-                    END DESC
-                ", ["%$q%", "%$searchLower%", "%$searchLower%", "%$searchLower%"]);
+                    END DESC, productos.nombre ASC
+                ", [$idExacto ?? -1, $searchLower, $searchLower, "$searchLower%", $like, $like, $like]);
             })
             ->when($categoriaId, fn($qq) => $qq->where('productos.categoria_id', $categoriaId))
             ->when($marcaId, fn($qq) => $qq->where('productos.marca_id', $marcaId))
@@ -256,6 +261,7 @@ class ProductoController extends Controller
             })
             ->when($visibleApp !== null, fn($qq) => $qq->where('productos.visible_app', $visibleApp)) // ✨ NUEVO
             ->when($esFraccionado !== null, fn($qq) => $qq->where('productos.es_fraccionado', $esFraccionado))
+            ->when($activo !== null, fn($qq) => $qq->where('productos.activo', $activo))
             ->when($sectorId, function ($qq) use ($sectorId) {
                 // ✨ NUEVO: Filtrar por sector mediante stock_limites
                 $qq->whereHas('stockLimites', function ($q) use ($sectorId) {
@@ -340,7 +346,7 @@ class ProductoController extends Controller
                     'stock_maximo'          => $producto->stock_maximo,
                     'stock_total'           => $stockTotal,
                     'stock_disponible_calc' => $stockDisponible,
-                    'activo'                => $producto->activo,
+                    'activo'                => (bool) $producto->activo,
                     'visible_app'           => (bool) $producto->visible_app, // ✨ NUEVO
                     'fecha_creacion'        => $producto->fecha_creacion,
                     'es_alquilable'         => $producto->es_alquilable,
@@ -389,6 +395,7 @@ class ProductoController extends Controller
                 'sin_precio'   => $sinPrecio ?: null,
                 'visible_app'  => $visibleApp, // ✨ NUEVO
                 'es_fraccionado' => $esFraccionado === null ? null : ($esFraccionado ? '1' : '0'), // formato del select booleano
+                'activo'       => $activo === null ? null : ($activo ? '1' : '0'),
                 'order_by'     => $orderBy ?: null,
                 'order_dir'    => $orderDir,
             ],
@@ -1147,9 +1154,16 @@ class ProductoController extends Controller
         }
 
         // ✨ NUEVO: Cargar stock_limites por almacén para Section 3
-        $stockLimites = StockLimite::where('producto_id', $producto->id)
-            ->get(['id', 'almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo'])
-            ->keyBy('almacen_id')
+        // El formulario edita UN límite por almacén (el más reciente). Si hay más en el mismo almacén
+        // (p. ej. uno por sector) van aparte en stock_limites_repetidos, para poder verlos y eliminarlos.
+        $todosLosLimites = StockLimite::with(['almacen:id,nombre', 'sector:id,nombre'])
+            ->where('producto_id', $producto->id)
+            ->orderBy('updated_at')
+            ->orderBy('id')
+            ->get(['id', 'almacen_id', 'sector_id', 'stock_minimo', 'stock_maximo', 'updated_at']);
+        $porAlmacen = $todosLosLimites->keyBy('almacen_id'); // se queda con el último (el más reciente)
+
+        $stockLimites = $porAlmacen
             ->map(function ($limites) {
                 return [
                     'id'           => $limites->id,
@@ -1161,6 +1175,19 @@ class ProductoController extends Controller
             ->toArray();
 
         $payload['stock_limites'] = $stockLimites;
+        $payload['stock_limites_repetidos'] = $todosLosLimites
+            ->reject(fn($l) => $porAlmacen[$l->almacen_id]->id === $l->id)
+            ->map(fn($l) => [
+                'id'           => $l->id,
+                'almacen_id'   => $l->almacen_id,
+                'almacen'      => $l->almacen?->nombre,
+                'sector_id'    => $l->sector_id,
+                'sector'       => $l->sector?->nombre,
+                'stock_minimo' => (int) $l->stock_minimo,
+                'stock_maximo' => (int) $l->stock_maximo >= 999999 ? null : (int) $l->stock_maximo,
+            ])
+            ->values()
+            ->toArray();
 
         return Inertia::render('productos/form', [
             'producto'                       => $payload,
@@ -1182,6 +1209,32 @@ class ProductoController extends Controller
             'permite_productos_produccion'   => $empresa?->permite_productos_produccion ?? false,  // ✅ NUEVO
             'productos'                      => [], // ✨ Vacío - búsqueda dinámica via /api/app/productos/buscar
         ]);
+    }
+
+    /**
+     * DELETE productos/{producto}/stock-limites/{limite}: elimina un límite de stock del producto.
+     * No toca el stock; solo quita el mín/máx de esa ubicación.
+     */
+    public function eliminarStockLimite(Producto $producto, int $limite): JsonResponse
+    {
+        $almacenIds = Almacen::where('empresa_id', auth()->user()->empresa_id)->pluck('id');
+        $registro   = StockLimite::where('producto_id', $producto->id)
+            ->whereIn('almacen_id', $almacenIds)
+            ->findOrFail($limite);
+
+        $registro->delete();
+
+        Log::info('🗑️ [ProductoController] Límite de stock eliminado desde el formulario', [
+            'stock_limite_id' => $registro->id,
+            'producto_id'     => $producto->id,
+            'almacen_id'      => $registro->almacen_id,
+            'sector_id'       => $registro->sector_id,
+            'stock_minimo'    => $registro->stock_minimo,
+            'stock_maximo'    => $registro->stock_maximo,
+            'user_id'         => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Límite de stock eliminado']);
     }
 
     public function update(UpdateProductoRequest $request, Producto $producto): RedirectResponse
@@ -3587,7 +3640,8 @@ class ProductoController extends Controller
     {
         $q                = $request->string('q');
         $limite           = min(max($request->integer('limite', 10), 1), 100); // Tope de seguridad: 100
-        $tipoBusqueda     = $request->string('tipo_busqueda', 'parcial');   // ✅ exacta o parcial
+        // toString(): con Stringable, "=== 'exacta'" siempre era false y el escáner nunca buscaba exacto
+        $tipoBusqueda     = $request->string('tipo_busqueda', 'parcial')->toString(); // ✅ exacta o parcial
         $tipo             = $request->string('tipo', 'venta');              // ✅ 'venta' o 'compra'
         $clienteId        = $request->integer('cliente_id', null);          // ✅ NUEVO: Cliente para filtrar tipos_precio
         $permitirSinStock = $request->boolean('permitir_sin_stock', false); // ✅ NUEVO (2026-05-26): Permitir sin stock
@@ -3701,19 +3755,18 @@ class ProductoController extends Controller
                 });
         };
 
-        // ✅ NUEVO: PRIORIDAD 1 - Buscar por ID exacto
-        $productoPorId = null;
-        if (is_numeric($q)) {
+        // ✅ PRIORIDAD 1 - ID exacto (solo si el texto son dígitos).
+        // $q es Stringable: is_numeric($q) siempre daba false y el ID nunca se buscaba; se usa el texto.
+        // - Búsqueda escrita: el producto con ese ID va PRIMERO pero junto al resto de coincidencias
+        //   (no como resultado único: el buscador agrega solo los resultados únicos).
+        // - Búsqueda exacta (escáner): manda el código de barras/SKU; el ID solo si no hay coincidencia.
+        $texto         = (string) $q;
+        $productoPorId = (new Producto)->newCollection();
+        if (ctype_digit($texto) && strlen($texto) <= 18) { // tope: que no desborde el bigint
             $productoPorId = $construirQueryBase(Producto::query())
-                ->where('id', $q)
+                ->where('id', (int) $texto)
                 ->limit(1)
                 ->get();
-        }
-
-        // Si encontró por ID, retornar inmediatamente
-        if ($productoPorId && $productoPorId->count() > 0) {
-            Log::info('✅ Producto encontrado por ID: ' . $q);
-            return $this->mapearProductos($productoPorId, $almacenId, $tipo, $clienteId);
         }
 
         // ✅ PRIORIDAD 2 - Buscar por SKU exacto (case-insensitive)
@@ -3761,7 +3814,9 @@ class ProductoController extends Controller
 
         if ($productoPorSku && $productoPorSku->count() > 0) {
             Log::info('✅ Producto encontrado por SKU: ' . $q);
-            return $this->mapearProductos($productoPorSku, $almacenId, $tipo, $clienteId);
+            // En la búsqueda escrita, el producto con ese ID (si lo hay) también se muestra, primero
+            $resultado = $esExacta ? $productoPorSku : $productoPorId->concat($productoPorSku)->unique('id')->values();
+            return $this->mapearProductos($resultado, $almacenId, $tipo, $clienteId);
         }
 
         // ✅ PRIORIDAD 3 - Búsqueda normal (por nombre, código_barras, descripción, etc)
@@ -3769,11 +3824,12 @@ class ProductoController extends Controller
         $productos = $construirQueryBase(Producto::query())
             ->where(function ($query) use ($searchLower, $esExacta) {
                 if ($esExacta) {
-                    // ✅ BÚSQUEDA EXACTA: Para código de barras (escáner)
-                    $query->where('codigo_barras', $searchLower)
-                        ->orWhere('sku', $searchLower)
+                    // ✅ BÚSQUEDA EXACTA: Para código de barras (escáner). Sin distinguir mayúsculas:
+                    // $searchLower va en minúsculas y hay códigos/SKU con letras ("ORN-12-CM", "PRO0097")
+                    $query->whereRaw('LOWER(codigo_barras) = ?', [$searchLower])
+                        ->orWhereRaw('LOWER(sku) = ?', [$searchLower])
                         ->orWhereHas('codigosBarra', function ($codigoQuery) use ($searchLower) {
-                            $codigoQuery->where('codigo', $searchLower);
+                            $codigoQuery->where('activo', true)->whereRaw('LOWER(codigo) = ?', [$searchLower]);
                         });
                 } else {
                     // ✅ BÚSQUEDA PARCIAL: Para texto (búsqueda manual)
@@ -3801,6 +3857,19 @@ class ProductoController extends Controller
             ->orderBy('id', 'desc')
             ->limit($limite)
             ->get();
+
+        if ($productoPorId->isNotEmpty()) {
+            if ($esExacta) {
+                // Escáner: el ID es solo el último recurso, si ningún código coincidió
+                if ($productos->isEmpty()) {
+                    Log::info('✅ Producto encontrado por ID (sin código coincidente): ' . $q);
+                    $productos = $productoPorId;
+                }
+            } else {
+                Log::info('✅ Producto con ID ' . $q . ' puesto primero en los resultados');
+                $productos = $productoPorId->concat($productos)->unique('id')->take($limite)->values();
+            }
+        }
 
         return $this->mapearProductos($productos, $almacenId, $tipo, $clienteId);
     }

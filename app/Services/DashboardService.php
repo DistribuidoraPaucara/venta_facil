@@ -233,6 +233,39 @@ class DashboardService
     }
 
     /**
+     * Cuentas por cobrar pendientes que vencen en el mes del calendario
+     */
+    public function getCuentasCalendario(int $empresaId, Carbon $mes): array
+    {
+        $userIds = User::where('empresa_id', $empresaId)->pluck('id');
+
+        return CuentaPorCobrar::with(['cliente:id,nombre'])
+            ->pendientes()
+            ->whereNotIn('estado', ['PAGADO', 'ANULADO'])
+            ->whereBetween('fecha_vencimiento', [
+                $mes->toDateString(),
+                $mes->copy()->endOfMonth()->toDateString(),
+            ])
+            ->where(function ($q) use ($userIds) {
+                $q->whereIn('usuario_id', $userIds)
+                  ->orWhereNull('usuario_id');
+            })
+            ->orderBy('fecha_vencimiento')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'cliente_nombre' => $c->cliente?->nombre ?? 'Sin cliente',
+                'saldo_pendiente' => (float) $c->saldo_pendiente,
+                'fecha_vencimiento' => $c->fecha_vencimiento?->toDateString(),
+                'referencia_documento' => $c->referencia_documento,
+                'estado' => $c->estado,
+                'vencida' => $c->fecha_vencimiento?->lt(today()) ?? false,
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Obtener métricas de ventas
      * @param int|null $cajaId Filtra por caja abierta (opcional). Usa whereHas para filtrar por MovimientoCaja.caja_id
      */

@@ -28,16 +28,15 @@
 
 @section('contenido')
 
-@forelse($compras as $documento)
+{{-- Reporte de varias compras ($compras) o una sola (impresión individual: ImpresionService pasa $documento) --}}
+@forelse(($compras ?? collect([$documento])) as $documento)
 
 <div class="separador"></div>
 
 {{-- ==================== INFO DEL DOCUMENTO (compacta) ==================== --}}
 <div class="documento-titulo">COMPRA</div>
 <div class="center bold">
-    @php
-        echo is_object($documento) ? ($documento->numero ?? '-') : (is_array($documento) ? ($documento['numero'] ?? '-') : '-');
-    @endphp
+    #{{ data_get($documento, 'id', '-') }} · {{ data_get($documento, 'numero', '-') }}
 </div>
 <div class="center" style="font-size: 6px;">
     @php
@@ -131,15 +130,20 @@
                 @php
                     $producto = is_array($detalle) ? ($detalle['producto'] ?? null) : (is_object($detalle) ? ($detalle->producto ?? null) : null);
                     $nombre = '-';
+                    $sku = '';
+                    $productoId = is_array($detalle) ? ($detalle['producto_id'] ?? null) : ($detalle->producto_id ?? null);
                     if ($producto) {
                         if (is_object($producto)) {
                             $nombre = $producto->nombre ?? '-';
+                            $sku = $producto->sku ?? '';
                         } else {
                             $nombre = $producto['nombre'] ?? '-';
+                            $sku = $producto['sku'] ?? '';
                         }
                     }
                 @endphp
                 {{ Str::limit($nombre, 15) }}
+                <br><span style="font-size: 90%;">@if($productoId)#{{ $productoId }}@endif{{ $productoId && $sku ? ' ' : '' }}{{ $sku }}</span>
             </td>
             <td style="text-align: right; padding: 2px 0;">
                 @php
@@ -149,10 +153,15 @@
             </td>
             <td style="text-align: right; padding: 2px 0;">
                 @php
-                    $precioUnit = is_array($detalle) ? ($detalle['precio_unitario'] ?? 0) : (is_object($detalle) ? ($detalle->precio_unitario ?? 0) : 0);
-                    $subtotal = $cantidad * $precioUnit;
-                    echo number_format($subtotal, 2);
+                    // Subtotal guardado: ya trae restado el descuento de la línea
+                    $precioUnit = (float) data_get($detalle, 'precio_unitario', 0);
+                    $descuentoLinea = (float) data_get($detalle, 'descuento', 0);
+                    $subtotal = (float) (data_get($detalle, 'subtotal') ?? ($cantidad * $precioUnit - $descuentoLinea));
                 @endphp
+                {{ number_format($subtotal, 2) }}
+                @if($descuentoLinea > 0)
+                    <br><span style="font-size: 90%;">-{{ number_format($descuentoLinea, 2) }}</span>
+                @endif
             </td>
         </tr>
         @empty

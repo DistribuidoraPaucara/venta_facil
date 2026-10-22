@@ -643,9 +643,9 @@ class VentaService
      * @param int $perPage
      * @param array $filtros Puede incluir: estado, estado_documento_id, cliente_id, usuario_id, fecha_desde, fecha_hasta, numero, search, monto_min, monto_max, moneda_id
      */
-    public function listar(int $perPage = 15, array $filtros = [], string $sortBy = 'id', string $sortOrder = 'desc'): Paginator | LengthAwarePaginator
+    public function listar(int $perPage = 15, array $filtros = [], string $sortBy = 'id', string $sortOrder = 'desc', bool $conTotal = false): Paginator | LengthAwarePaginator
     {
-        return $this->read(function () use ($perPage, $filtros, $sortBy, $sortOrder) {
+        return $this->read(function () use ($perPage, $filtros, $sortBy, $sortOrder, $conTotal) {
             // ✅ ACTUALIZADO: Cargar todas las relaciones necesarias para el frontend
             // Incluye estadoLogistica para mostrar estado de entregas en tabla
             $query = Venta::with([
@@ -772,7 +772,9 @@ class VentaService
             // ✅ CORREGIDO (2026-08-21): Determinar si hay filtros activos
             // Esto evita el count() de todos los registros cuando no hay filtros
             $tieneFiltrosBusqueda = !empty(array_filter($filtros, fn($v) => $v !== null && $v !== ''));
-            $paginationMethod = $tieneFiltrosBusqueda ? 'paginate' : 'simplePaginate';
+            // $conTotal: la pantalla web necesita total y last_page para paginar (sin filtros, como al ver
+            // "todas", simplePaginate no los trae y la tabla mostraba solo la 1ª página sin paginación)
+            $paginationMethod = ($tieneFiltrosBusqueda || $conTotal) ? 'paginate' : 'simplePaginate';
 
             $resultado = $query
                 ->orderBy($sortBy, $sortOrder)

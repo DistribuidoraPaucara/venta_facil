@@ -94,6 +94,22 @@ export default function ProductoTableRow({
                       : ''
             }`}
         >
+            {/* ID del producto: abre su edición en otra pestaña (no se pierde la venta en curso) */}
+            <td className="items-start px-2 py-2 whitespace-nowrap">
+                <a
+                    href={`/productos/${detalle.producto_id}/edit`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Editar producto en otra pestaña"
+                    className="inline-flex items-center gap-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-bold text-white hover:bg-blue-700 hover:underline"
+                >
+                    #{detalle.producto_id}
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 3h7v7m0-7L10 14M5 5h4M5 5v14h14v-4" />
+                    </svg>
+                </a>
+            </td>
+
             {/* Producto Nombre */}
             <td className="items-start px-2 py-2">
                 {/* ✨ MEJORADO (2026-09-07): Nombre dinámico según unidad de venta con nombre personalizado */}
@@ -297,7 +313,8 @@ export default function ProductoTableRow({
                             setEditingField(null);
                             setValidacionError(null);
                         }}
-                        className={`rounded-lg border px-1 py-1 text-sm focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
+                        // Ancho propio como el resto de inputs de la fila (sin w-* el navegador le daba ~20 caracteres)
+                        className={`w-24 rounded-lg border px-2 py-2 text-right font-mono text-sm font-semibold focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
                             validacionError
                                 ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500 dark:border-red-600 dark:bg-red-950/30'
                                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-zinc-600'
@@ -395,6 +412,56 @@ export default function ProductoTableRow({
                                 })()}
                             </div>
                         )} */}
+                    </td>
+
+                    {/* Descuento de la línea, en monto (Bs). El costo del producto se sigue tomando del precio sin descuento */}
+                    <td className="px-2 py-4">
+                        {(() => {
+                            const importe = Number(detalle.cantidad || 0) * Number(detalle.precio_unitario || 0);
+                            const descuento = Number(detalle.descuento || 0);
+                            const excede = descuento > importe + 0.0001;
+                            return (
+                                <>
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        disabled={readOnly}
+                                        value={
+                                            editingField?.index === index && editingField?.field === 'descuento'
+                                                ? editingField.value
+                                                : descuento === 0
+                                                  ? ''
+                                                  : String(descuento)
+                                        }
+                                        placeholder="0"
+                                        title="Descuento de toda la línea, en monto"
+                                        onFocus={() => {
+                                            setEditingField({ index, field: 'descuento', value: descuento === 0 ? '' : String(descuento) });
+                                        }}
+                                        onChange={(e) => {
+                                            const valor = e.target.value.replace(',', '.');
+                                            setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                            if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                                onUpdateDetail(index, 'descuento', valor === '' ? 0 : parseFloat(valor) || 0);
+                                            }
+                                        }}
+                                        onBlur={() => setEditingField(null)}
+                                        className={`w-24 rounded-lg border px-2 py-2 font-mono text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
+                                            excede
+                                                ? 'border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                                : descuento > 0
+                                                  ? 'border-green-400 bg-green-50 dark:border-green-600 dark:bg-green-900/20'
+                                                  : 'border-gray-300 dark:border-zinc-600'
+                                        }`}
+                                    />
+                                    {excede && (
+                                        <div className="mt-0.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                                            Supera {formatCurrency(importe)}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </td>
 
                     {/* Lote */}

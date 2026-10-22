@@ -27,19 +27,26 @@
 <table class="tabla-productos">
     <thead>
         <tr>
-            <th style="width: 3%;">#</th>
-            <th style="width: 10%;">Fecha</th>
-            <th style="width: 20%;">Proveedor</th>
-            <th style="width: 10%;">Cantidad</th>
-            <th style="width: 12%;">P. Unit.</th>
-            <th style="width: 12%;">Subtotal</th>
-            <th style="width: 5%;">Estado</th>
+            <th style="width: 4%;">#</th>
+            <th style="width: 16%;">Compra</th>
+            <th style="width: 11%;">Fecha</th>
+            <th style="width: 31%;">Proveedor</th>
+            <th style="width: 10%; text-align: center;">Productos</th>
+            <th style="width: 15%; text-align: right;">Total</th>
+            <th style="width: 13%;">Estado</th>
         </tr>
     </thead>
     <tbody>
         @forelse($compras as $item)
         <tr>
             <td>{{ $loop->iteration }}</td>
+            <td>
+                {{-- ID y número de la compra ($item puede llegar como arreglo, desde la sesión, o como modelo) --}}
+                <strong>#{{ data_get($item, 'id', '-') }}</strong>
+                @if(data_get($item, 'numero'))
+                    <br><small style="color: #666;">{{ data_get($item, 'numero') }}</small>
+                @endif
+            </td>
             <td>
                 @php
                     $fecha = null;
@@ -75,51 +82,13 @@
                 @endphp
                 <strong>{{ $proveedor }}</strong>
             </td>
-            <td>
-                @php
-                    $cantidadTotal = 0;
-                    if (is_array($item) && isset($item['detalles'])) {
-                        $detalles = $item['detalles'];
-                        if (is_array($detalles)) {
-                            foreach ($detalles as $detalle) {
-                                $cant = is_array($detalle) ? ($detalle['cantidad'] ?? 0) : (is_object($detalle) ? ($detalle->cantidad ?? 0) : 0);
-                                $cantidadTotal += (float)$cant;
-                            }
-                        }
-                    } elseif (is_object($item) && isset($item->detalles)) {
-                        foreach ($item->detalles as $detalle) {
-                            $cantidadTotal += $detalle->cantidad ?? 0;
-                        }
-                    }
-                @endphp
-                <strong>{{ number_format($cantidadTotal, 2) }}</strong>
+            {{-- Cantidad de productos (líneas) de la compra: sumar cantidades mezclaría unidades distintas --}}
+            <td style="text-align: center;">
+                {{ count(data_get($item, 'detalles') ?? []) }}
             </td>
-            <td>
-                @php
-                    $precioUnit = 0;
-                    if (is_array($item) && isset($item['detalles'])) {
-                        $detalles = $item['detalles'];
-                        if (is_array($detalles) && count($detalles) > 0) {
-                            $precioUnit = is_array($detalles[0]) ? ($detalles[0]['precio_unitario'] ?? 0) : (is_object($detalles[0]) ? ($detalles[0]->precio_unitario ?? 0) : 0);
-                        }
-                    } elseif (is_object($item) && isset($item->detalles)) {
-                        if ($item->detalles->count() > 0) {
-                            $precioUnit = $item->detalles->first()->precio_unitario ?? 0;
-                        }
-                    }
-                @endphp
-                Bs{{ number_format($precioUnit, 2) }}
-            </td>
-            <td>
-                @php
-                    $subtotal = 0;
-                    if (is_array($item) && isset($item['subtotal'])) {
-                        $subtotal = (float)$item['subtotal'];
-                    } elseif (is_object($item) && isset($item->subtotal)) {
-                        $subtotal = (float)$item->subtotal;
-                    }
-                @endphp
-                <strong>Bs{{ number_format($subtotal, 2) }}</strong>
+            {{-- Total de la compra (ya con descuento e impuesto): es lo que suma el MONTO TOTAL de abajo --}}
+            <td style="text-align: right;">
+                <strong>{{ data_get($item, 'moneda.simbolo', 'Bs') }} {{ number_format((float) data_get($item, 'total', 0), 2) }}</strong>
             </td>
             <td>
                 @php

@@ -516,7 +516,20 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
         );
       }
     }, */
-    { key: 'activo', label: 'Estado', type: 'boolean' },
+    {
+      key: 'activo',
+      label: 'Estado',
+      type: 'custom',
+      render: (value) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold text-xs border ${value
+          ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-200 border-emerald-200 dark:border-emerald-700'
+          : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200 border-red-200 dark:border-red-700'
+          }`}>
+          <span className={`h-2 w-2 rounded-full ${value ? 'bg-emerald-500' : 'bg-red-500'}`} />
+          {value ? 'Activo' : 'Inactivo'}
+        </span>
+      )
+    },
     {
       key: 'visible_app',
       label: 'Visible en App',
@@ -684,7 +697,11 @@ export const productosConfig: ModuleConfig<Producto, ProductoFormData> = {
         key: 'activo',
         label: 'Estado',
         type: 'boolean' as const,
-        placeholder: 'Todos los estados',
+        placeholder: 'Activos e inactivos',
+        options: [
+          { value: '1', label: 'Solo activos' },
+          { value: '0', label: 'Solo inactivos' },
+        ],
         width: 'sm' as const
       },
       {

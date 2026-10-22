@@ -69,7 +69,7 @@ export default function ComboExpandedRows({
             {/* ✅ INFORMACIÓN REFERENCIAL: Cantidad de productos opcionales a elegir */}
             {cantidadALlevar && (
                 <tr className="bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-400">
-                    <td colSpan={tipo === 'compra' ? 4 : 5} className="px-4 py-3">
+                    <td colSpan={6} className="px-4 py-3">
                         <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                             <span className="text-lg">ℹ️</span>
                             <span className="font-medium">Referencia:</span>
@@ -81,7 +81,7 @@ export default function ComboExpandedRows({
 
             {/* ✅ NUEVO: Header mostrando resumen de selección + cantidad obligatoria por producto */}
             <tr className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400">
-                <td colSpan={tipo === 'compra' ? 4 : 5} className="px-4 py-3">
+                <td colSpan={6} className="px-4 py-3">
                     <div className="flex items-center justify-between">
                         {/* <div className="flex items-center gap-2 text-sm">
                             <span className="text-amber-600 dark:text-amber-400 font-medium">📦 Componentes:</span>
@@ -109,6 +109,8 @@ export default function ComboExpandedRows({
                     ? 'bg-green-50 dark:bg-green-900/10 border-green-400'
                     : 'bg-gray-100 dark:bg-gray-800/50 opacity-60 border-gray-300'
                     }`}>
+                    {/* Celda vacía bajo la columna ID de la tabla de detalles (mantiene la alineación) */}
+                    <td className="px-2 py-3" />
                     {/* Selector + Producto + Cantidad Obligatoria */}
                     <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">

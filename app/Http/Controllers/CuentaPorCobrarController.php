@@ -25,7 +25,120 @@ class CuentaPorCobrarController extends Controller
     public function index(Request $request)
     {
         // ✅ CORREGIDO: Cargar cliente directamente + cliente de venta + usuario creador para mostrar ambos tipos
-        $query = CuentaPorCobrar::with(['cliente', 'venta.cliente', 'pagos.tipoPago', 'usuario'])
+        $query = $this->consultaFiltrada($request)->with(['cliente', 'venta.cliente', 'pagos.tipoPago', 'usuario']);
+
+        // Sorting - ✅ ACTUALIZADO: Ordenar por ID descendente por defecto
+        $sortField = $request->get('sort', 'id');
+        $sortOrder = $request->get('order', 'desc');
+        $query->orderBy($sortField, $sortOrder);
+
+        // ✅ ACTUALIZADO: Permitir cambiar per_page vía parámetro (50 por defecto)
+        $perPage = min((int)$request->get('per_page', 25), 500); // Máximo 500 para evitar sobrecarga
+        $cuentas = $query->paginate($perPage)->withQueryString();
+
+        // ✅ NUEVO: Recalcular dias_vencido dinámicamente para cada cuenta
+        $cuentas->getCollection()->transform(function ($cuenta) {
+            $cuenta->dias_vencido = $cuenta->calcularDiasVencido();
+            return $cuenta;
+        });
+
+        // Estadísticas (solo de la empresa del usuario)
+        $base = fn() => $this->deLaEmpresa(CuentaPorCobrar::query());
+        $estadisticas = [
+            'monto_total_pendiente' => $base()->where('estado', '!=', 'PAGADO')
+                ->where('saldo_pendiente', '>', 0)->sum('saldo_pendiente'),  // ✅ Excluir pagadas
+            'cuentas_vencidas'      => $base()->where('estado', '!=', 'PAGADO')
+                ->where('saldo_pendiente', '>', 0)  // ✅ Excluir pagadas
+                ->whereDate('fecha_vencimiento', '<', today())->count(),
+            'monto_total_vencido'   => $base()->where('estado', '!=', 'PAGADO')
+                ->where('saldo_pendiente', '>', 0)  // ✅ Excluir pagadas
+                ->whereDate('fecha_vencimiento', '<', today())->sum('saldo_pendiente'),
+            'total_mes'             => $base()->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)->sum('monto_original'),
+            'promedio_dias_pago'    => 0,
+        ];
+
+        return Inertia::render('ventas/cuentas-por-cobrar/index', [
+            'cuentasPorCobrar' => [
+                'cuentas_por_cobrar' => [
+                    'data'         => $cuentas->items(),
+                    'current_page' => $cuentas->currentPage(),
+                    'last_page'    => $cuentas->lastPage(),
+                    'per_page'     => $cuentas->perPage(),
+                    'total'        => $cuentas->total(),
+                    'links'        => $cuentas->linkCollection()->toArray(),
+                ],
+                'filtros'            => $request->only(['estado', 'cliente_id', 'q', 'fecha_vencimiento_desde', 'fecha_vencimiento_hasta', 'solo_vencidas']),
+                'estadisticas'       => $estadisticas,
+                'datosParaFiltros'   => [
+                    'clientes' => Cliente::select('id', 'nombre', 'codigo_cliente')
+                        ->where('empresa_id', Auth::user()->empresa_id)
+                        ->orderBy('nombre')
+                        ->get(),
+                ],
+                'tipos_pago'         => TipoPago::select('id', 'nombre', 'codigo')->where('codigo', '!=', 'CREDITO')->get(),
+            ],
+        ]);
+    }
+
+    /**
+     * Reporte PDF de las cuentas que cumplen los filtros del listado (sin paginar).
+     * GET ventas/cuentas-por-cobrar/reporte?accion=stream|download&{filtros}
+     */
+    public function reporte(Request $request)
+    {
+        $accion = $request->input('accion', 'stream');
+
+        $sortField = in_array($request->get('sort'), ['id', 'fecha_vencimiento', 'saldo_pendiente', 'monto_original', 'created_at', 'estado'], true)
+            ? $request->get('sort') : 'fecha_vencimiento';
+        $sortOrder = strtolower((string) $request->get('order')) === 'desc' ? 'desc' : 'asc';
+
+        $cuentas = $this->consultaFiltrada($request)
+            ->with(['cliente:id,nombre,codigo_cliente', 'venta:id,numero,cliente_id', 'venta.cliente:id,nombre,codigo_cliente'])
+            ->orderBy($sortField, $sortOrder)
+            ->orderBy('id')
+            ->get()
+            ->each(fn($cuenta) => $cuenta->dias_vencido = $cuenta->calcularDiasVencido());
+
+        $pendientes = $cuentas->where('saldo_pendiente', '>', 0)->where('estado', '!=', 'PAGADO');
+        $vencidas   = $pendientes->where('dias_vencido', '>', 0);
+        $totales = [
+            'cantidad'       => $cuentas->count(),
+            'monto_original' => $cuentas->sum('monto_original'),
+            'monto_pagado'   => $cuentas->sum(fn($c) => (float) $c->monto_original - (float) $c->saldo_pendiente),
+            'saldo'          => $cuentas->sum('saldo_pendiente'),
+            'vencidas'       => $vencidas->count(),
+            'saldo_vencido'  => $vencidas->sum('saldo_pendiente'),
+        ];
+
+        // Descripción legible de los filtros aplicados
+        $filtros = [];
+        if ($request->filled('estado'))     $filtros['Estado'] = strtoupper($request->estado);
+        if ($request->filled('cliente_id')) $filtros['Cliente'] = Cliente::find($request->cliente_id)?->nombre ?? "#{$request->cliente_id}";
+        if ($request->filled('q'))          $filtros['Búsqueda'] = $request->q;
+        if ($request->filled('fecha_vencimiento_desde')) $filtros['Vence desde'] = \Carbon\Carbon::parse($request->fecha_vencimiento_desde)->format('d/m/Y');
+        if ($request->filled('fecha_vencimiento_hasta')) $filtros['Vence hasta'] = \Carbon\Carbon::parse($request->fecha_vencimiento_hasta)->format('d/m/Y');
+        if ($request->boolean('solo_vencidas')) $filtros['Solo vencidas'] = 'Sí';
+
+        $html = view('impresion.cuentas_por_cobrar.reporte-a4', [
+            'cuentas' => $cuentas,
+            'totales' => $totales,
+            'filtros' => $filtros,
+            'empresa' => Auth::user()->empresa ?? \App\Models\Empresa::first(),
+            'usuario' => Auth::user(),
+        ])->render();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
+
+        $nombreArchivo = 'reporte_cuentas_por_cobrar_' . now()->format('Ymd_His') . '.pdf';
+
+        return $accion === 'download' ? $pdf->download($nombreArchivo) : $pdf->stream($nombreArchivo);
+    }
+
+    /** Filtros del listado (compartidos por index y reporte), limitados a la empresa del usuario. */
+    private function consultaFiltrada(Request $request)
+    {
+        return $this->deLaEmpresa(CuentaPorCobrar::query())
             ->when($request->estado, function ($q) use ($request) {
                 // ✅ CORREGIDO (2026-03-30): Filtro case-insensitive para estado
                 $q->whereRaw('LOWER(estado) = ?', [strtolower($request->estado)]);
@@ -62,63 +175,27 @@ class CuentaPorCobrarController extends Controller
                         });
                 });
             })
-            ->when($request->fecha_vencimiento_desde && $request->fecha_vencimiento_hasta, function ($q) use ($request) {
-                $q->whereBetween('fecha_vencimiento', [$request->fecha_vencimiento_desde, $request->fecha_vencimiento_hasta]);
-            })
-            ->when($request->solo_vencidas, function ($q) {
+            // Cada extremo del rango funciona solo (antes se exigían ambos y con uno no filtraba nada)
+            ->when($request->fecha_vencimiento_desde, fn($q) => $q->whereDate('fecha_vencimiento', '>=', $request->fecha_vencimiento_desde))
+            ->when($request->fecha_vencimiento_hasta, fn($q) => $q->whereDate('fecha_vencimiento', '<=', $request->fecha_vencimiento_hasta))
+            ->when($request->boolean('solo_vencidas'), function ($q) {
                 $q->whereDate('fecha_vencimiento', '<', today())
                     ->where('estado', '!=', 'PAGADO')
                     ->where('saldo_pendiente', '>', 0);  // ✅ NUEVO: Excluir cuentas completamente pagadas
             });
+    }
 
-        // Sorting - ✅ ACTUALIZADO: Ordenar por ID descendente por defecto
-        $sortField = $request->get('sort', 'id');
-        $sortOrder = $request->get('order', 'desc');
-        $query->orderBy($sortField, $sortOrder);
+    /**
+     * CuentaPorCobrar no tiene scope de empresa: se limita por el cliente de la cuenta,
+     * o por la venta (que sí tiene scope de empresa) si la cuenta no tiene cliente.
+     */
+    private function deLaEmpresa($query)
+    {
+        $empresaId = Auth::user()->empresa_id;
 
-        // ✅ ACTUALIZADO: Permitir cambiar per_page vía parámetro (50 por defecto)
-        $perPage = min((int)$request->get('per_page', 25), 500); // Máximo 500 para evitar sobrecarga
-        $cuentas = $query->paginate($perPage)->withQueryString();
-
-        // ✅ NUEVO: Recalcular dias_vencido dinámicamente para cada cuenta
-        $cuentas->getCollection()->transform(function ($cuenta) {
-            $cuenta->dias_vencido = $cuenta->calcularDiasVencido();
-            return $cuenta;
-        });
-
-        // Estadísticas
-        $estadisticas = [
-            'monto_total_pendiente' => CuentaPorCobrar::where('estado', '!=', 'PAGADO')
-                ->where('saldo_pendiente', '>', 0)->sum('saldo_pendiente'),  // ✅ Excluir pagadas
-            'cuentas_vencidas'      => CuentaPorCobrar::where('estado', '!=', 'PAGADO')
-                ->where('saldo_pendiente', '>', 0)  // ✅ Excluir pagadas
-                ->whereDate('fecha_vencimiento', '<', today())->count(),
-            'monto_total_vencido'   => CuentaPorCobrar::where('estado', '!=', 'PAGADO')
-                ->where('saldo_pendiente', '>', 0)  // ✅ Excluir pagadas
-                ->whereDate('fecha_vencimiento', '<', today())->sum('saldo_pendiente'),
-            'total_mes'             => CuentaPorCobrar::whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)->sum('monto_original'),
-            'promedio_dias_pago'    => 0,
-        ];
-
-        return Inertia::render('ventas/cuentas-por-cobrar/index', [
-            'cuentasPorCobrar' => [
-                'cuentas_por_cobrar' => [
-                    'data'         => $cuentas->items(),
-                    'current_page' => $cuentas->currentPage(),
-                    'last_page'    => $cuentas->lastPage(),
-                    'per_page'     => $cuentas->perPage(),
-                    'total'        => $cuentas->total(),
-                    'links'        => $cuentas->linkCollection()->toArray(),
-                ],
-                'filtros'            => $request->only(['estado', 'cliente_id', 'q', 'fecha_vencimiento_desde', 'fecha_vencimiento_hasta', 'solo_vencidas']),
-                'estadisticas'       => $estadisticas,
-                'datosParaFiltros'   => [
-                    'clientes' => Cliente::select('id', 'nombre', 'codigo_cliente')->get(),
-                ],
-                'tipos_pago'         => TipoPago::select('id', 'nombre', 'codigo')->where('codigo', '!=', 'CREDITO')->get(),
-            ],
-        ]);
+        return $query->where(fn($q) => $q
+            ->whereHas('cliente', fn($c) => $c->where('empresa_id', $empresaId))
+            ->orWhere(fn($sq) => $sq->whereNull('cliente_id')->whereHas('venta')));
     }
 
     public function show(CuentaPorCobrar $cuentaPorCobrar)

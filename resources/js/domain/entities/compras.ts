@@ -16,6 +16,7 @@ export interface CuentaPorPagar extends BaseEntity {
     compra?: Compra;
     monto_original: number;
     saldo_pendiente: number;
+    monto_pagado?: number | null;
     fecha_vencimiento: string;
     dias_vencido: number;
     estado: 'PENDIENTE' | 'PAGADO' | 'VENCIDO' | 'PARCIAL';
@@ -58,9 +59,12 @@ export interface DetalleCompra extends BaseEntity {
     producto: Producto;
     cantidad: number;
     precio_unitario: number;
+    descuento?: number; // descuento de la línea, en monto (no %)
     subtotal: number;
     lote?: string | null;
     fecha_vencimiento?: string | null;
+    // Unidad en que se compró (la del detalle o, si no tiene, la del producto)
+    unidad?: { id: Id; nombre: string; codigo?: string | null } | null;
     // ✅ NUEVO 2026-03-24: Stock movement tracking
     cantidad_anterior?: number | null;
     cantidad_posterior?: number | null;
@@ -78,8 +82,20 @@ export interface Compra extends BaseEntity {
     observaciones?: string | null;
 
     // Relaciones
-    proveedor_id: Id;
-    proveedor?: Proveedor;
+    proveedor_id: Id | null; // null: compra en BORRADOR sin proveedor todavía
+    proveedor?: Proveedor | null;
+    almacen_id?: Id | null;
+    almacen?: { id: Id; nombre: string } | null;
+    fecha_vencimiento_credito?: string | null;
+    // Cuenta por pagar (compras a crédito aprobadas)
+    cuenta_por_pagar?: {
+        id: Id;
+        monto_original: number | string;
+        monto_pagado?: number | string | null;
+        saldo_pendiente: number | string;
+        fecha_vencimiento: string;
+        estado: 'PENDIENTE' | 'PARCIAL' | 'PAGADO' | 'VENCIDO' | string;
+    } | null;
     usuario_id: Id;
     usuario?: Usuario;
     estado_documento_id: Id;
@@ -91,6 +107,8 @@ export interface Compra extends BaseEntity {
 
     // Detalles
     detalles?: DetalleCompra[];
+    detalles_count?: number; // listado: cantidad de productos
+    detalles_sin_precio_count?: number; // listado: productos con precio 0
 
     // Timestamps
     created_at?: string;
@@ -151,6 +169,10 @@ export interface FiltrosCompras {
     tipo_pago_id?: string;
     fecha_desde?: string;
     fecha_hasta?: string;
+    almacen_id?: string;
+    producto?: string; // compras que incluyen el producto (nombre, SKU o código de barras)
+    sin_proveedor?: string | boolean;
+    per_page?: string | number;
     sort_by?: string;
     sort_dir?: string;
 }
@@ -164,6 +186,8 @@ export interface FiltrosCuentasPorPagar {
     solo_vencidas?: boolean;
     sort_by?: string;
     sort_dir?: string;
+    per_page?: string | number;
+    page?: string | number;
 }
 
 export interface FiltrosPagos {
@@ -178,9 +202,10 @@ export interface FiltrosPagos {
 
 export interface DatosParaFiltrosCompras {
     proveedores: Proveedor[];
-    estados: EstadoDocumento[];
+    estados: (EstadoDocumento & { cantidad?: number })[]; // cantidad: compras en ese estado con los demás filtros
     monedas: Moneda[];
     tipos_pago: TipoPago[];
+    almacenes?: { id: number; nombre: string }[];
 }
 
 // =============== ESTADÍSTICAS ===============

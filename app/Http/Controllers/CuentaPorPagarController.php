@@ -18,42 +18,25 @@ class CuentaPorPagarController extends Controller
     public function __construct(private ImpresionService $impresionService) {}
     public function index(Request $request)
     {
-        $query = CuentaPorPagar::with(['compra.proveedor', 'pagos.tipoPago'])
-            ->when($request->estado, function ($q) use ($request) {
-                $q->where('estado', $request->estado);
-            })
-            ->when($request->proveedor_id, function ($q) use ($request) {
-                $q->whereHas('compra', function ($subQ) use ($request) {
-                    $subQ->where('proveedor_id', $request->proveedor_id);
-                });
-            })
-            ->when($request->search, function ($q) use ($request) {
-                $q->whereHas('compra', function ($subQ) use ($request) {
-                    $subQ->where('numero_factura', 'LIKE', "%{$request->search}%")
-                        ->orWhereHas('proveedor', function ($provQ) use ($request) {
-                            $provQ->where('nombre', 'LIKE', "%{$request->search}%");
-                        });
-                });
-            })
-            ->when($request->fecha_desde && $request->fecha_hasta, function ($q) use ($request) {
-                $q->whereBetween('fecha_vencimiento', [$request->fecha_desde, $request->fecha_hasta]);
-            });
+        $query = $this->consultaFiltrada($request)->with(['compra.proveedor', 'pagos.tipoPago']);
 
         // Sorting
-        $sortField = $request->get('sort', 'fecha_vencimiento');
-        $sortOrder = $request->get('order', 'asc');
-        $query->orderBy($sortField, $sortOrder);
+        $sortField = in_array($request->get('sort'), self::ORDEN_PERMITIDO, true) ? $request->get('sort') : 'fecha_vencimiento';
+        $sortOrder = strtolower((string) $request->get('order')) === 'desc' ? 'desc' : 'asc';
+        $query->orderBy($sortField, $sortOrder)->orderBy('id');
 
-        $cuentas = $query->paginate(15)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page'), [10, 15, 25, 50, 100], true) ? (int) $request->get('per_page') : 15;
+        $cuentas = $query->paginate($perPage)->withQueryString();
 
-        // Estadísticas
+        // Estadísticas (solo de la empresa del usuario)
+        $base = fn() => $this->deLaEmpresa(CuentaPorPagar::query());
         $estadisticas = [
-            'monto_total_pendiente' => CuentaPorPagar::where('estado', '!=', 'PAGADO')->sum('saldo_pendiente'),
-            'cuentas_vencidas'      => CuentaPorPagar::where('estado', '!=', 'PAGADO')
+            'monto_total_pendiente' => $base()->where('estado', '!=', 'PAGADO')->sum('saldo_pendiente'),
+            'cuentas_vencidas'      => $base()->where('estado', '!=', 'PAGADO')
                 ->where('fecha_vencimiento', '<', now())->count(),
-            'monto_total_vencido'   => CuentaPorPagar::where('estado', '!=', 'PAGADO')
+            'monto_total_vencido'   => $base()->where('estado', '!=', 'PAGADO')
                 ->where('fecha_vencimiento', '<', now())->sum('saldo_pendiente'),
-            'total_mes'             => CuentaPorPagar::whereMonth('created_at', now()->month)
+            'total_mes'             => $base()->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)->sum('monto_original'),
             'promedio_dias_pago'    => 0, // Calcular promedio de días de pago si es necesario
         ];
@@ -68,14 +51,111 @@ class CuentaPorPagarController extends Controller
                     'total'        => $cuentas->total(),
                     'links'        => $cuentas->linkCollection()->toArray(),
                 ],
-                'filtros'           => $request->only(['estado', 'proveedor_id', 'search', 'fecha_desde', 'fecha_hasta']),
+                'filtros'           => $request->only([...self::FILTROS, 'per_page']),
                 'estadisticas'      => $estadisticas,
                 'datosParaFiltros'  => [
-                    'proveedores' => Proveedor::select('id', 'nombre')->get(),
+                    'proveedores' => Proveedor::select('id', 'nombre')
+                        ->where('empresa_id', Auth::user()->empresa_id)
+                        ->orderBy('nombre')
+                        ->get(),
                     'tipos_pago'  => TipoPago::select('id', 'nombre', 'codigo')->where('codigo', '!=', 'CREDITO')->get(),
                 ],
             ],
         ]);
+    }
+
+    private const FILTROS = ['estado', 'proveedor_id', 'q', 'fecha_vencimiento_desde', 'fecha_vencimiento_hasta', 'solo_vencidas'];
+    private const ORDEN_PERMITIDO = ['id', 'fecha_vencimiento', 'saldo_pendiente', 'monto_original', 'created_at', 'estado'];
+
+    /**
+     * Reporte PDF de las cuentas que cumplen los filtros del listado (sin paginar).
+     * GET compras/cuentas-por-pagar/reporte?accion=stream|download&{filtros}
+     */
+    public function reporte(Request $request)
+    {
+        $accion = $request->input('accion', 'stream');
+
+        $sortField = in_array($request->get('sort'), self::ORDEN_PERMITIDO, true) ? $request->get('sort') : 'fecha_vencimiento';
+        $sortOrder = strtolower((string) $request->get('order')) === 'desc' ? 'desc' : 'asc';
+
+        $cuentas = $this->consultaFiltrada($request)
+            ->with(['compra:id,numero,numero_factura,fecha,proveedor_id', 'compra.proveedor:id,nombre'])
+            ->orderBy($sortField, $sortOrder)
+            ->orderBy('id')
+            ->get();
+
+        $pendientes = $cuentas->where('saldo_pendiente', '>', 0)->where('estado', '!=', 'PAGADO');
+        $vencidas   = $pendientes->filter(fn($c) => $c->dias_vencido > 0);
+        $totales = [
+            'cantidad'       => $cuentas->count(),
+            'monto_original' => $cuentas->sum('monto_original'),
+            'monto_pagado'   => $cuentas->sum(fn($c) => (float) $c->monto_original - (float) $c->saldo_pendiente),
+            'saldo'          => $cuentas->sum('saldo_pendiente'),
+            'vencidas'       => $vencidas->count(),
+            'saldo_vencido'  => $vencidas->sum('saldo_pendiente'),
+        ];
+
+        // Descripción legible de los filtros aplicados
+        $filtros = [];
+        if ($request->filled('estado'))       $filtros['Estado'] = strtoupper($request->estado);
+        if ($request->filled('proveedor_id')) $filtros['Proveedor'] = Proveedor::find($request->proveedor_id)?->nombre ?? "#{$request->proveedor_id}";
+        if ($request->filled('q'))            $filtros['Búsqueda'] = $request->q;
+        if ($request->filled('fecha_vencimiento_desde')) $filtros['Vence desde'] = \Carbon\Carbon::parse($request->fecha_vencimiento_desde)->format('d/m/Y');
+        if ($request->filled('fecha_vencimiento_hasta')) $filtros['Vence hasta'] = \Carbon\Carbon::parse($request->fecha_vencimiento_hasta)->format('d/m/Y');
+        if ($request->boolean('solo_vencidas')) $filtros['Solo vencidas'] = 'Sí';
+
+        $html = view('impresion.cuentas_por_pagar.reporte-a4', [
+            'cuentas' => $cuentas,
+            'totales' => $totales,
+            'filtros' => $filtros,
+            'empresa' => Auth::user()->empresa ?? \App\Models\Empresa::first(),
+            'usuario' => Auth::user(),
+        ])->render();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
+        $nombreArchivo = 'reporte_cuentas_por_pagar_' . now()->format('Ymd_His') . '.pdf';
+
+        return $accion === 'download' ? $pdf->download($nombreArchivo) : $pdf->stream($nombreArchivo);
+    }
+
+    /**
+     * Filtros del listado (compartidos por index y reporte). Usa los nombres que envía la pantalla
+     * (q, fecha_vencimiento_desde/hasta, solo_vencidas); antes se leían search/fecha_desde/fecha_hasta
+     * y esos filtros no hacían nada.
+     */
+    private function consultaFiltrada(Request $request)
+    {
+        $buscar = trim((string) $request->input('q'));
+
+        return $this->deLaEmpresa(CuentaPorPagar::query())
+            ->when($request->estado, fn($q) => $q->whereRaw('UPPER(estado) = ?', [strtoupper($request->estado)]))
+            ->when($request->proveedor_id, fn($q) => $q->whereHas('compra', fn($c) => $c->where('proveedor_id', $request->proveedor_id)))
+            ->when($buscar !== '', function ($q) use ($buscar) {
+                $like = "%{$buscar}%";
+                $q->where(function ($sq) use ($buscar, $like) {
+                    if (ctype_digit($buscar) && strlen($buscar) <= 9) {
+                        $sq->orWhere('id', (int) $buscar)->orWhere('compra_id', (int) $buscar);
+                    }
+                    $sq->orWhere('referencia_documento', 'ilike', $like)
+                        ->orWhereHas('compra', fn($c) => $c->where('numero', 'ilike', $like)
+                            ->orWhere('numero_factura', 'ilike', $like)
+                            ->orWhereHas('proveedor', fn($p) => $p->where('nombre', 'ilike', $like)));
+                });
+            })
+            ->when($request->fecha_vencimiento_desde, fn($q) => $q->whereDate('fecha_vencimiento', '>=', $request->fecha_vencimiento_desde))
+            ->when($request->fecha_vencimiento_hasta, fn($q) => $q->whereDate('fecha_vencimiento', '<=', $request->fecha_vencimiento_hasta))
+            ->when($request->boolean('solo_vencidas'), fn($q) => $q->whereDate('fecha_vencimiento', '<', today())
+                ->where('estado', '!=', 'PAGADO')
+                ->where('saldo_pendiente', '>', 0));
+    }
+
+    /** CuentaPorPagar no tiene scope de empresa: se limita por el almacén de la compra. */
+    private function deLaEmpresa($query)
+    {
+        return $query->whereHas('compra', fn($c) => $c->whereIn(
+            'almacen_id',
+            DB::table('almacenes')->where('empresa_id', Auth::user()->empresa_id)->select('id')
+        ));
     }
 
     public function show(CuentaPorPagar $cuenta)
@@ -150,6 +230,7 @@ class CuentaPorPagarController extends Controller
                 $nuevoSaldo = $cuentaPorPagar->saldo_pendiente - $validated['monto'];
                 $cuentaPorPagar->update([
                     'saldo_pendiente' => max(0, $nuevoSaldo),
+                    'monto_pagado'    => round((float) $cuentaPorPagar->monto_original - max(0, $nuevoSaldo), 2),
                     'estado'          => $nuevoSaldo <= 0 ? 'PAGADO' : 'PARCIAL',
                 ]);
 
@@ -253,6 +334,7 @@ class CuentaPorPagarController extends Controller
                 $nuevoSaldo = $cuentaPorPagar->saldo_pendiente + $pago->monto;
                 $cuentaPorPagar->update([
                     'saldo_pendiente' => $nuevoSaldo,
+                    'monto_pagado' => round(max(0, (float) $cuentaPorPagar->monto_original - $nuevoSaldo), 2),
                     'estado' => $nuevoSaldo >= $cuentaPorPagar->monto_original ? 'PENDIENTE' : 'PARCIAL',
                 ]);
 

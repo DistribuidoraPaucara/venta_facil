@@ -3,8 +3,10 @@ import { ComprasService } from '@/infrastructure/services/compras.service';
 import { formatCurrency } from '@/lib/utils';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { Link } from '@inertiajs/react';
-import { AlertCircle, ChevronDown, ChevronUp, Edit, Eye, MoreVertical, Printer, Trash2 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { AlertCircle, ChevronDown, ChevronUp, Copy, Edit, Eye, MoreVertical, Printer, Trash2 } from 'lucide-react';
+import { duplicarCompra } from './duplicar-compra';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 import AnularCompraModal from './AnularCompraModal';
 
@@ -30,33 +32,83 @@ interface AccionesDropdownProps {
     isAnulando: boolean;
 }
 
+/**
+ * El menú se dibuja en un portal (document.body) con posición fija junto al botón: dentro de la tabla lo
+ * recortaba el contenedor con overflow (se veía "detrás", sobre todo en las últimas filas). Si no entra
+ * hacia abajo se abre hacia arriba.
+ */
 function AccionesCompraDropdown({ compra, can, onPrimir, onAnular, isAnulando }: AccionesDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const [duplicando, setDuplicando] = useState(false);
+    const botonRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
+    // Posición fija: bajo el botón y alineado a su borde derecho; arriba si no hay lugar abajo
+    useLayoutEffect(() => {
+        if (!isOpen) {
+            setPos(null);
+            return;
         }
+        const boton = botonRef.current?.getBoundingClientRect();
+        const panel = panelRef.current;
+        if (!boton || !panel) return;
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        const alto = panel.offsetHeight;
+        const ancho = panel.offsetWidth;
+        const margen = 8;
+        const cabeAbajo = boton.bottom + 4 + alto <= window.innerHeight - margen;
+        setPos({
+            top: cabeAbajo ? boton.bottom + 4 : Math.max(margen, boton.top - 4 - alto),
+            left: Math.min(Math.max(margen, boton.right - ancho), window.innerWidth - ancho - margen),
+        });
+    }, [isOpen]);
+
+    // Cerrar: clic afuera, Escape, scroll de la página o de la tabla, cambio de tamaño de la ventana
+    useEffect(() => {
+        if (!isOpen) return;
+        const cerrar = () => setIsOpen(false);
+        const alClicFuera = (event: MouseEvent) => {
+            const objetivo = event.target as Node;
+            if (!panelRef.current?.contains(objetivo) && !botonRef.current?.contains(objetivo)) cerrar();
+        };
+        const alTeclear = (event: KeyboardEvent) => event.key === 'Escape' && cerrar();
+
+        document.addEventListener('mousedown', alClicFuera);
+        document.addEventListener('keydown', alTeclear);
+        window.addEventListener('scroll', cerrar, true);
+        window.addEventListener('resize', cerrar);
+        return () => {
+            document.removeEventListener('mousedown', alClicFuera);
+            document.removeEventListener('keydown', alTeclear);
+            window.removeEventListener('scroll', cerrar, true);
+            window.removeEventListener('resize', cerrar);
+        };
+    }, [isOpen]);
 
     return (
-        <div className="relative inline-block text-left" ref={menuRef}>
+        <div className="relative inline-block text-left">
             <button
+                ref={botonRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex items-center rounded p-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                className={`inline-flex items-center rounded p-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${
+                    isOpen ? 'bg-gray-100 dark:bg-gray-700' : ''
+                }`}
                 title="Más acciones"
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
             >
                 <MoreVertical className="h-5 w-5" />
             </button>
 
-            {isOpen && (
-                <div className="absolute right-0 z-10 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            {isOpen && createPortal(
+                <div
+                    ref={panelRef}
+                    role="menu"
+                    // Se mide primero invisible (pos null) y luego se ubica: evita un parpadeo en la esquina
+                    style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: 'hidden' }}
+                    className="fixed z-[100] w-52 rounded-lg border border-gray-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-gray-600 dark:bg-gray-800 dark:ring-white/10"
+                >
                     <div className="py-1">
                         {/* Ver Detalle */}
                         {can('compras.show') && (
@@ -96,6 +148,23 @@ function AccionesCompraDropdown({ compra, can, onPrimir, onAnular, isAnulando }:
                             </Link>
                         )}
 
+                        {/* Duplicar: crea una compra nueva en borrador con los mismos productos */}
+                        {can('compras.store') && (
+                            <button
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    setDuplicando(true);
+                                    duplicarCompra(compra.id, () => setDuplicando(false));
+                                }}
+                                disabled={duplicando}
+                                title="Crear una compra nueva en borrador con los mismos productos, cantidades y precios"
+                                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                            >
+                                <Copy className="h-4 w-4" />
+                                {duplicando ? 'Duplicando…' : 'Duplicar en borrador'}
+                            </button>
+                        )}
+
                         {/* Anular */}
                         {can('compras.update') && compra.estado_documento?.codigo === 'APROBADO' && (
                             <button
@@ -121,7 +190,8 @@ function AccionesCompraDropdown({ compra, can, onPrimir, onAnular, isAnulando }:
                             </button>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body,
             )}
         </div>
     );
@@ -130,7 +200,12 @@ function AccionesCompraDropdown({ compra, can, onPrimir, onAnular, isAnulando }:
 const getEstadoColor = (estado?: EstadoDocumento) => {
     if (!estado) return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
 
-    switch (estado.nombre.toUpperCase()) {
+    // Por código (con el nombre como respaldo): FACTURADO y CANCELADO no tenían color
+    switch ((estado.codigo || estado.nombre).toUpperCase()) {
+        case 'FACTURADO':
+            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        case 'CANCELADO':
+            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
         case 'BORRADOR':
             return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200';
         case 'PENDIENTE':
@@ -276,13 +351,16 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <SortableHeader field="id">FOLIO</SortableHeader>
-                            {/* <SortableHeader field="numero">Número</SortableHeader> */}
-                            <SortableHeader field="estadoDocumento">Estado</SortableHeader>
+                            {/* Los campos deben coincidir con los sort_by que acepta CompraController::index */}
+                            <SortableHeader field="id">Folio</SortableHeader>
+                            <SortableHeader field="estado">Estado</SortableHeader>
                             <SortableHeader field="proveedor">Proveedor</SortableHeader>
-                            <SortableHeader field="proveedor">Creador</SortableHeader>
+                            <th className="px-2 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">Almacén</th>
+                            <th className="px-2 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">Productos</th>
+                            <th className="px-2 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">Pago</th>
                             <SortableHeader field="total">Total</SortableHeader>
-                            <SortableHeader field="created_at">Fecha</SortableHeader>
+                            <SortableHeader field="fecha">Fecha</SortableHeader>
+                            <SortableHeader field="usuario">Creador</SortableHeader>
                             <th className="px-6 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">-</th>
                         </tr>
                     </thead>
@@ -290,19 +368,14 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                         {comprasSeguras.map((compra) => (
                             <tr key={compra.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td className="px-2 py-2 text-center text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white">
-                                    #{compra.id}
+                                    <Link href={`/compras/${compra.id}`} className="text-blue-600 hover:underline dark:text-blue-400">
+                                        #{compra.id}
+                                    </Link>
+                                    <div className="font-mono text-[11px] font-normal text-gray-500 dark:text-gray-400">{compra.numero}</div>
+                                    {compra.numero_factura && (
+                                        <div className="text-[11px] font-normal text-gray-500 dark:text-gray-400">Fact. {compra.numero_factura}</div>
+                                    )}
                                 </td>
-                                {/* <td className="px-2 py-4 text-xs font-mono whitespace-nowrap text-gray-900 dark:text-white">
-                                    {compra.numero}
-
-                                    <p>
-                                        {compra.numero_factura && (
-                                            <span className="mt-2 rounded bg-gray-100 px-2 py-1 font-mono text-xs dark:bg-gray-700">
-                                                Factura: #{compra.numero_factura}
-                                            </span>
-                                        )}
-                                    </p>
-                                </td> */}
                                 <td className="px-2 py-4 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <span
                                         className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getEstadoColor(compra.estado_documento)}`}
@@ -312,12 +385,32 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                 </td>
 
                                 <td className="px-2 py-2 text-xs whitespace-nowrap text-gray-900 dark:text-white">
-                                    <p className="text-xs font-medium">{compra.proveedor?.nombre ?? 'Sin proveedor'}</p>
+                                    {compra.proveedor?.nombre ? (
+                                        <p className="text-xs font-medium">{compra.proveedor.nombre}</p>
+                                    ) : (
+                                        <p className="text-xs font-medium text-amber-600 dark:text-amber-400">Sin proveedor</p>
+                                    )}
                                 </td>
-                                <td className="px-2 py-2 text-xs whitespace-nowrap text-gray-900 dark:text-white">
-                                    <p className="text-xs text-gray-400">
-                                        {compra.usuario?.name}
-                                    </p>
+                                <td className="px-2 py-2 text-center text-xs whitespace-nowrap text-gray-700 dark:text-gray-300">
+                                    {compra.almacen?.nombre ?? <span className="text-gray-400">-</span>}
+                                </td>
+                                <td className="px-2 py-2 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
+                                    <div className="font-medium">{compra.detalles_count ?? 0}</div>
+                                    {/* Aviso en borradores: precios por completar antes de aprobar */}
+                                    {(compra.detalles_sin_precio_count ?? 0) > 0 && (
+                                        <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                                            {compra.detalles_sin_precio_count} sin precio
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="px-2 py-2 text-center text-xs whitespace-nowrap">
+                                    {compra.tipo_pago?.nombre ? (
+                                        <span className="inline-flex rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                            {compra.tipo_pago.nombre}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-gray-400">-</span>
+                                    )}
                                 </td>
 
                                 <td className="px-2 py-2 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
@@ -338,31 +431,20 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                                             </div>
                                         )}
                                     </div>
-                                    {/* {compra.tipo_pago ? (
-                                        <span
-                                            className={`inline-flex rounded px-2 py-1 text-xs font-medium ${
-                                                compra.tipo_pago.codigo === 'CONTADO'
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
-                                            }`}
-                                        >
-                                            {compra.tipo_pago.nombre}
-                                        </span>
-                                    ) : (
-                                        <span className="text-xs text-gray-400">Sin tipo</span>
-                                    )} */}
                                 </td>
+                                {/* Fecha de compra (la que usa el filtro desde/hasta) y, debajo, cuándo se registró */}
                                 <td className="px-2 py-2 text-center text-xs whitespace-nowrap text-gray-900 dark:text-white">
                                     <div className="font-medium">
-                                        {new Date(compra.created_at).toLocaleString('es-ES', {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            second: '2-digit',
-                                        })}
+                                        {compra.fecha ? new Date(compra.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                                     </div>
+                                    {compra.created_at && (
+                                        <div className="text-[11px] text-gray-500 dark:text-gray-400" title="Fecha de registro">
+                                            reg. {new Date(compra.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="px-2 py-2 text-xs whitespace-nowrap text-gray-500 dark:text-gray-400">
+                                    {compra.usuario?.name ?? '-'}
                                 </td>
 
                                 <td className="px-2 py-2 text-right text-sm font-medium whitespace-nowrap">

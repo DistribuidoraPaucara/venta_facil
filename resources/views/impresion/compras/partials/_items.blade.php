@@ -14,7 +14,8 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 45%;">Producto</th>
+                <th style="width: 8%;">ID</th>
+                <th style="width: 37%;">Producto</th>
                 <th style="width: 10%;">Cant.</th>
                 <th style="width: 12%;">P. Unit.</th>
                 <th style="width: 10%;">Desc.</th>
@@ -25,10 +26,11 @@
             @foreach($compra->detalles as $index => $detalle)
             <tr>
                 <td>{{ $index + 1 }}</td>
+                <td>#{{ $detalle->producto_id }}</td>
                 <td>
-                    <strong>{{ $detalle->producto->nombre }}</strong>
-                    @if($detalle->producto->codigo)
-                        <br><small style="color: #666;">Código: {{ $detalle->producto->codigo }}</small>
+                    <strong>{{ $detalle->producto?->nombre ?? 'Producto #' . $detalle->producto_id }}</strong>
+                    @if($detalle->producto?->sku)
+                        <br><small style="color: #666;">SKU: {{ $detalle->producto->sku }}</small>
                     @endif
                 </td>
                 <td>{{ number_format($detalle->cantidad, 2) }}</td>
@@ -45,13 +47,13 @@
     <table class="items">
         @foreach($compra->detalles as $detalle)
         <tr>
-            <td colspan="3" class="item-nombre">{{ $detalle->producto->nombre }}</td>
+            <td colspan="3" class="item-nombre">{{ $detalle->producto?->nombre ?? 'Producto #' . $detalle->producto_id }}</td>
         </tr>
-        @if($detalle->producto->codigo)
         <tr>
-            <td colspan="3" class="item-detalle">Código: {{ $detalle->producto->codigo }}</td>
+            <td colspan="3" class="item-detalle">
+                ID #{{ $detalle->producto_id }}@if($detalle->producto?->sku) · SKU: {{ $detalle->producto->sku }}@endif
+            </td>
         </tr>
-        @endif
         <tr>
             <td style="width: 50%;">
                 {{ number_format($detalle->cantidad, 2) }} x {{ number_format($detalle->precio_unitario, 2) }}
@@ -70,7 +72,10 @@
     <table class="items">
         @foreach($compra->detalles as $detalle)
         <tr>
-            <td colspan="2" style="font-weight: bold;">{{ Str::limit($detalle->producto->nombre, 25) }}</td>
+            <td colspan="2" style="font-weight: bold;">{{ Str::limit($detalle->producto?->nombre ?? 'Producto #' . $detalle->producto_id, 25) }}</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="font-size: 90%;">#{{ $detalle->producto_id }}@if($detalle->producto?->sku) · {{ $detalle->producto->sku }}@endif</td>
         </tr>
         <tr>
             <td style="width: 60%;">

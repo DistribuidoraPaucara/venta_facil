@@ -171,16 +171,16 @@ export default function VentasDiarioCajas() {
 
     return (
         <AppLayout title="Reporte Diario de Ventas por Cajas">
-            <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8">
+            <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-2">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <div className="flex justify-between items-start mb-4 flex-wrap gap-4">
+                        <div className="flex justify-between items-start mb-1 flex-wrap gap-4">
                             <div>
                                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                                     Reporte Diario de Ventas por Cajas
                                 </h1>
-                                <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                                <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">
                                     {reporte.fecha_formato}
                                 </p>
                             </div>
@@ -212,14 +212,14 @@ export default function VentasDiarioCajas() {
                     </div>
 
                     {/* Resumen General */}
-                    <Card className="mb-8 p-6 bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                    <Card className="mb-1 p-2 bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                             📊 Resumen General del Día
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-1">
                             {/* Card: Total Ventas */}
-                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg p-2 border border-blue-200 dark:border-blue-800">
                                 <p className="text-sm text-gray-600 dark:text-gray-300 font-semibold">Total Ventas</p>
                                 <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
                                     Bs. {formatearMoneda(reporte.resumen_general.total_ventas)}
@@ -230,7 +230,7 @@ export default function VentasDiarioCajas() {
                             </div>
 
                             {/* Card: Ticket Promedio */}
-                            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 rounded-lg p-2 border border-green-200 dark:border-green-800">
                                 <p className="text-sm text-gray-600 dark:text-gray-300 font-semibold">
                                     Ticket Promedio
                                 </p>
@@ -241,7 +241,7 @@ export default function VentasDiarioCajas() {
                             </div>
 
                             {/* Card: Cajas Activas */}
-                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-lg p-2 border border-purple-200 dark:border-purple-800">
                                 <p className="text-sm text-gray-600 dark:text-gray-300 font-semibold">
                                     Cajas Activas
                                 </p>
@@ -252,7 +252,7 @@ export default function VentasDiarioCajas() {
                             </div>
 
                             {/* Card: Cantidad Ventas */}
-                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 rounded-lg p-2 border border-orange-200 dark:border-orange-800">
                                 <p className="text-sm text-gray-600 dark:text-gray-300 font-semibold">
                                     Cantidad Ventas
                                 </p>
@@ -264,8 +264,8 @@ export default function VentasDiarioCajas() {
                         </div>
 
                         {/* Productos Top */}
-                        <div className="mb-8 p-4 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border border-amber-200 dark:border-amber-800 rounded-lg">
-                            <h3 className="font-bold text-amber-900 dark:text-amber-100 mb-3">
+                        <div className="mb-1 p-2 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <h3 className="font-bold text-amber-900 dark:text-amber-100 mb-1">
                                 🏆 Productos Más Vendidos
                             </h3>
                             <div className="space-y-2">
@@ -300,7 +300,7 @@ export default function VentasDiarioCajas() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Por Tipo de Pago */}
                             <div>
-                                <h3 className="font-bold text-gray-900 dark:text-white mb-3">💰 Por Tipo de Pago</h3>
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">💰 Por Tipo de Pago</h3>
                                 <div className="space-y-2">
                                     {Array.isArray(reporte.resumen_general.por_tipo_pago) && reporte.resumen_general.por_tipo_pago.length > 0 ? (
                                         reporte.resumen_general.por_tipo_pago.map((pago) => (
@@ -329,7 +329,7 @@ export default function VentasDiarioCajas() {
 
                             {/* Por Estado */}
                             <div>
-                                <h3 className="font-bold text-gray-900 dark:text-white mb-3">📋 Por Estado</h3>
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">📋 Por Estado</h3>
                                 <div className="space-y-2">
                                     {Array.isArray(reporte.resumen_general.por_estado) && reporte.resumen_general.por_estado.length > 0 ? (
                                         reporte.resumen_general.por_estado.map((estado) => (
@@ -359,7 +359,7 @@ export default function VentasDiarioCajas() {
                     </Card>
 
                     {/* Desglose por Caja */}
-                    <div className="space-y-6">
+                    <div className="space-y-2">
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🏪 Desglose por Caja</h2>
 
                         {Array.isArray(reporte.ventas_por_caja) && reporte.ventas_por_caja.length > 0 ? (
@@ -367,7 +367,7 @@ export default function VentasDiarioCajas() {
                             <Card key={index} className="overflow-hidden bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
                                 {/* Header de Caja */}
                                 <div
-                                    className={`bg-gradient-to-r text-white px-6 py-4 ${
+                                    className={`bg-gradient-to-r text-white px-6 py-2 ${
                                         caja.es_maxima
                                             ? 'from-amber-600 to-amber-800 dark:from-amber-700 dark:to-amber-900'
                                             : 'from-gray-700 to-gray-900 dark:from-slate-700 dark:to-slate-900'

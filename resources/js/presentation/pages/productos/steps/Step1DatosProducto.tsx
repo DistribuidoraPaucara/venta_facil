@@ -1,5 +1,4 @@
 import NotificationService from '@/infrastructure/services/notification.service';
-import { Checkbox } from '@/presentation/components/ui/checkbox';
 import { FeatureToggle } from '@/presentation/components/ui/feature-toggle';
 import { Input } from '@/presentation/components/ui/input';
 import InputSearch from '@/presentation/components/ui/input-search';
@@ -40,6 +39,7 @@ export interface Step1Props {
         uso_de_medicacion?: string | null; // ✨ NUEVO - Indicaciones de uso para medicamentos
         visible_app?: boolean; // ✨ NUEVO - Visible en app
         es_de_produccion?: boolean; // 🏭 NUEVO - Indica si es producto de una receta de producción
+        almacenes?: { stock?: number; cantidad?: number }[]; // lotes del paso de almacenes (para avisar al desactivar con stock)
     };
     errors: Record<string, string>;
     categoriasOptions: Option[];
@@ -231,8 +231,56 @@ function Step1DatosProducto({
             return [];
         }
     };
+    // ✨ Activar / desactivar: desactivar no borra nada, solo oculta el producto en ventas, compras y reposiciones
+    const activo = data.activo !== false;
+    const stockActual = (data.almacenes || []).reduce((s, a) => s + Number(a.stock ?? a.cantidad ?? 0), 0);
+
+    const cambiarActivo = async (nuevo: boolean) => {
+        if (!nuevo && stockActual > 0) {
+            const ok = await NotificationService.confirm(
+                `Este producto tiene ${stockActual.toLocaleString('es-BO', { maximumFractionDigits: 2 })} en stock. Al desactivarlo dejará de aparecer en ventas, compras y reposiciones (el stock y el historial se conservan). ¿Desactivar?`,
+                { confirmText: 'Desactivar', cancelText: 'Cancelar' },
+            );
+            if (!ok) return;
+        }
+        setData('activo', nuevo);
+    };
+
     return (
         <div>
+            {/* Estado del producto */}
+            <div
+                className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 ${
+                    activo
+                        ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20'
+                        : 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                }`}
+            >
+                <div>
+                    <p className={`text-sm font-semibold ${activo ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>
+                        {activo ? '● Producto activo' : '● Producto inactivo'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        {activo
+                            ? 'Aparece en ventas, compras y reposiciones.'
+                            : 'No aparece en ventas, compras ni reposiciones. Su stock e historial se conservan; puede reactivarlo cuando quiera.'}
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    role="switch"
+                    id="activo"
+                    aria-checked={activo}
+                    aria-label={activo ? 'Desactivar producto' : 'Activar producto'}
+                    onClick={() => cambiarActivo(!activo)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                        activo ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                >
+                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
+            </div>
+
             {/* <div className="bg-secondary border border-border rounded p-3">
         <div className="text-sm font-semibold text-foreground">Paso 1: Datos del producto</div>
         <div className="text-xs text-muted-foreground">Complete la información general del producto</div>
@@ -603,11 +651,6 @@ function Step1DatosProducto({
                     </div>
                     {errors.peso && <div className="mt-1 text-sm text-red-500">⚠️ {errors.peso}</div>}
                 </div> */}
-                {/* 🆕 Campo activo oculto - el valor por defecto (true) se establece en form.tsx */}
-                <div className="hidden">
-                    <Checkbox id="activo" checked={!!data.activo} onCheckedChange={(v) => setData('activo', !!v)} />
-                    <Label htmlFor="activo">Activo</Label>
-                </div>
                 {/* <div className="space-y-1">
                     <div className="relative">
                         <label

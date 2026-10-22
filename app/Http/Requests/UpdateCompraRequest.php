@@ -23,11 +23,16 @@ class UpdateCompraRequest extends FormRequest
             'impuesto'                     => 'nullable|numeric|min:0',
             'total'                        => 'sometimes|numeric|min:0',
             'observaciones'                => 'nullable|string|max:500',
-            'proveedor_id'                 => 'sometimes|exists:proveedores,id',
+            // nullable: un BORRADOR puede no tener proveedor todavía (ver validarProveedorSegunEstado)
+            'proveedor_id'                 => 'sometimes|nullable|exists:proveedores,id',
             'usuario_id'                   => 'sometimes|exists:users,id',
             'estado_documento_id'          => 'sometimes|exists:estados_documento,id',
             'moneda_id'                    => 'sometimes|exists:monedas,id',
             'tipo_pago_id'                 => 'nullable|exists:tipos_pago,id',
+            'fecha_vencimiento_credito'    => 'nullable|date', // solo aplica si el pago es a crédito
+            // Sin esta regla validated() descartaba el almacén: el cambio no se guardaba y al aprobar el
+            // stock entraba al almacén anterior. (Que sea de la empresa: validarAlmacenDeLaEmpresa)
+            'almacen_id'                   => 'sometimes|integer|exists:almacenes,id',
         ];
 
         // Solo validar detalles si están siendo modificados (Escenario 1)
@@ -54,6 +59,43 @@ class UpdateCompraRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    /** El almacén elegido tiene que ser de la empresa del usuario. */
+    private function validarAlmacenDeLaEmpresa(Validator $validator): void
+    {
+        if (! $this->filled('almacen_id')) {
+            return;
+        }
+
+        $esDeLaEmpresa = \App\Models\Almacen::whereKey($this->input('almacen_id'))
+            ->where('empresa_id', $this->user()?->empresa_id)
+            ->exists();
+
+        if (! $esDeLaEmpresa) {
+            $validator->errors()->add('almacen_id', 'El almacén seleccionado no pertenece a su empresa.');
+        }
+    }
+
+    /**
+     * Sin proveedor solo puede quedar en BORRADOR (o anulada/cancelada): para enviarla (PENDIENTE),
+     * aprobarla o facturarla hace falta saber a quién se le compra.
+     */
+    private function validarProveedorSegunEstado(Validator $validator): void
+    {
+        $compra = \App\Models\Compra::find($this->route('compra'));
+
+        $proveedorId = $this->has('proveedor_id') ? $this->input('proveedor_id') : $compra?->proveedor_id;
+        if (! empty($proveedorId)) {
+            return;
+        }
+
+        $estadoId     = $this->input('estado_documento_id', $compra?->estado_documento_id);
+        $codigoEstado = \App\Models\EstadoDocumento::whereKey($estadoId)->value('codigo');
+
+        if (! in_array($codigoEstado, ['BORRADOR', 'ANULADO', 'CANCELADO'], true)) {
+            $validator->errors()->add('proveedor_id', 'Elija un proveedor: es obligatorio para dejar la compra en estado ' . ($codigoEstado ?? 'distinto de borrador') . '.');
+        }
     }
 
     /**
@@ -90,6 +132,9 @@ class UpdateCompraRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            $this->validarProveedorSegunEstado($validator);
+            $this->validarAlmacenDeLaEmpresa($validator);
+
             // Detectar si es Escenario 2: solo cambio de estado
             $esEscenarioEstadoOnly = !$this->hasDetallesModificados();
 

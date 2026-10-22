@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MovimientoInventario;
 use App\Models\StockProducto;
+use App\Services\Stock\BajaLoteService;
 use App\Services\Stock\CalendarioVencimientosService;
 use App\Services\Stock\MovimientoStockService;
 use App\Models\Producto;
@@ -193,60 +194,14 @@ class LoteVencimientoController extends Controller
     /**
      * Dar de baja un lote (soft delete: marca deleted_at y deja de usarse en el sistema)
      */
-    public function darDeBaja(StockProducto $stock, MovimientoStockService $movimientoStockService)
+    public function darDeBaja(StockProducto $stock, BajaLoteService $bajaLoteService)
     {
-        // Solo lotes de almacenes de la empresa del usuario
-        if ($stock->almacen?->empresa_id !== Auth::user()->empresa_id) {
-            abort(403, 'No tiene permiso para dar de baja este lote.');
-        }
-
-        if ($stock->cantidad_reservada > 0) {
-            return back()->withErrors([
-                'lote' => "No se puede dar de baja el lote {$stock->lote}: tiene {$stock->cantidad_reservada} unidades reservadas.",
-            ]);
-        }
-
-        $cantidadBaja = (float) $stock->cantidad;
-
         try {
-            $movimiento = DB::transaction(function () use ($stock, $cantidadBaja, $movimientoStockService) {
-                $movimiento = null;
-
-                // Registrar la salida del stock restante en movimientos_inventario (lleva el lote a 0)
-                if ($cantidadBaja > 0) {
-                    $movimiento = $movimientoStockService->registrarMovimientoYActualizar(
-                        $stock->id,
-                        -$cantidadBaja,
-                        MovimientoInventario::TIPO_SALIDA_AJUSTE,
-                        'baja_lote',
-                        $stock->id,
-                        [
-                            'motivo'            => 'Baja de lote',
-                            'lote'              => $stock->lote,
-                            'fecha_vencimiento' => $stock->fecha_vencimiento?->toDateString(),
-                        ],
-                        "BAJA-LOTE-{$stock->id}"
-                    );
-                }
-
-                // Soft delete: marca deleted_at para que el lote no se use más
-                $stock->refresh()->delete();
-
-                return $movimiento;
-            });
-        } catch (\InvalidArgumentException $e) {
+            // Lleva el lote a 0 con un movimiento de salida y luego marca deleted_at
+            $bajaLoteService->darDeBaja($stock, (int) Auth::user()->empresa_id);
+        } catch (\DomainException | \InvalidArgumentException $e) {
             return back()->withErrors(['lote' => $e->getMessage()]);
         }
-
-        Log::info('LoteVencimientoController::darDeBaja - lote dado de baja', [
-            'stock_producto_id' => $stock->id,
-            'producto_id'       => $stock->producto_id,
-            'almacen_id'        => $stock->almacen_id,
-            'lote'              => $stock->lote,
-            'cantidad'          => $cantidadBaja,
-            'movimiento_id'     => $movimiento?->id,
-            'user_id'           => Auth::id(),
-        ]);
 
         return back()->with('success', "Lote {$stock->lote} dado de baja correctamente.");
     }

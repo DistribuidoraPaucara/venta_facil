@@ -1,4 +1,5 @@
-@extends('impresion.layouts.base')
+{{-- base-a4 (como las demás hojas A4): "impresion.layouts.base" no existe y el A4 fallaba --}}
+@extends('impresion.layouts.base-a4')
 
 @section('titulo', 'Cuenta por Pagar #' . $documento->id)
 

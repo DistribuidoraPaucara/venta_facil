@@ -111,9 +111,11 @@ interface AdminDashboardProps {
     periodo: string;
     titulo: string;
     descripcion: string;
+    ruta?: string;
+    breadcrumbs?: BreadcrumbItem[];
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
+const defaultBreadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Admin',
         href: '/admin/dashboard',
@@ -139,6 +141,8 @@ export default function AdminDashboard({
     periodo: initialPeriodo = 'mes_actual',
     titulo = 'Dashboard Administrativo',
     descripcion = 'Resumen completo del sistema',
+    ruta = '/admin/dashboard',
+    breadcrumbs = defaultBreadcrumbs,
 }: AdminDashboardProps) {
     const [periodo, setPeriodo] = useState(initialPeriodo);
     const [loading, setLoading] = useState(false);
@@ -171,7 +175,7 @@ export default function AdminDashboard({
         setPeriodo(newPeriod);
         setLoading(true);
 
-        router.get('/admin/dashboard', { periodo: newPeriod, mes: mesCalendario }, {
+        router.get(ruta, { periodo: newPeriod, mes: mesCalendario }, {
             preserveScroll: true,
             onFinish: () => setLoading(false),
         });
@@ -194,7 +198,7 @@ export default function AdminDashboard({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard Administrativo" />
+            <Head title={titulo} />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-6">
                 {/* Header */}
@@ -219,7 +223,7 @@ export default function AdminDashboard({
                         lotes={calendario}
                         cuentas={cuentasCalendario}
                         mes={mesCalendario}
-                        ruta="/admin/dashboard"
+                        ruta={ruta}
                         filtros={{ periodo }}
                     />
                 </div>
