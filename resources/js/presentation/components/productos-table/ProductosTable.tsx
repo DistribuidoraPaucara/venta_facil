@@ -350,8 +350,8 @@ export default function ProductosTable({
         setModalCascadaState({
             isOpen: true,
             productoId: typeof detalle.producto_id === 'string' ? parseInt(detalle.producto_id) : detalle.producto_id,
-            // ✅ FIJO: Usar precio_unitario que contiene el precio de compra correcto (90 PAQUETE)
-            precioActual: detalle.precio_unitario || null,
+            // Costo actual = el registrado en precios_producto; nuevo = el precio unitario ingresado en la compra
+            precioActual: detalle.precio_costo || (detalle.producto as any)?.precio_costo || null,
             precioCostoNuevo: detalle.precio_unitario || null,
             detalleIndex: index,
             productoData: detalle.producto || { id: detalle.producto_id, nombre: 'Producto' },
@@ -512,10 +512,20 @@ export default function ProductosTable({
                         <thead className="border-b-2 border-gray-300 bg-gradient-to-b from-gray-100 to-gray-50 dark:border-zinc-600 dark:from-zinc-700 dark:to-zinc-800">
                             <tr>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">ID</th>
+                                <th
+                                    className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                    title="Código de barras; si no tiene, el SKU"
+                                >
+                                    Código/SKU
+                                </th>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Producto</th>
-                                {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">SKU</th> */}
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disponible</th>
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Cantidad</th>
+                                {/* En ventas, el disponible se muestra dentro de la columna Cantidad (se recalcula al escribir) */}
+                                {tipo !== 'venta' && (
+                                    <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disponible</th>
+                                )}
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
+                                    {tipo === 'venta' && !proformaConvertida ? 'Cantidad / Disp.' : 'Cantidad'}
+                                </th>
                                 {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">PRECIO</th> */}
                                 {tipo === 'compra' && (
                                     <>
@@ -536,7 +546,7 @@ export default function ProductosTable({
                                 )}
                                 {tipo === 'venta' && (
                                     <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
-                                        Precio Unitario
+                                        Precio
                                     </th>
                                 )}
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Subtotal</th>

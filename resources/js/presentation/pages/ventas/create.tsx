@@ -2013,7 +2013,7 @@ export default function VentaForm() {
                 </div>
                 {/* Totales */}
                 {detallesWithProducts.length > 0 && (
-                    <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <div className="rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                             {/* Descuento general */}
                             <div>
@@ -2079,14 +2079,14 @@ export default function VentaForm() {
                                     />
                                 </div>
                                 {/* ✅ NUEVO: Generar QR para mostrarle al cliente (ayuda visual, no confirma el pago solo) */}
-                                <button
+                                {/* <button
                                     type="button"
                                     onClick={() => setShowQrCobroModal(true)}
                                     disabled={(Number(montoTransferencia) || data.total) <= 0}
                                     className="mt-1 w-full rounded-md border border-blue-300 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
                                 >
                                     📱 Generar QR
-                                </button>
+                                </button> */}
                             </div>
                         </div>
 

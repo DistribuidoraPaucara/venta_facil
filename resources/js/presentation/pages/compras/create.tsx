@@ -643,8 +643,15 @@ export default function CompraForm() {
     const newDetalles = [...data.detalles];
     newDetalles[idx] = { ...newDetalles[idx], [field]: value };
 
-    // Recalcular subtotal para este detalle
-    if (field === 'cantidad' || field === 'precio_unitario' || field === 'descuento') {
+    // Si se ingresa el subtotal, despejar el precio unitario: (subtotal + descuento) / cantidad
+    if (field === 'subtotal') {
+      const subtotal = Number(value) || 0;
+      const cantidad = Number(newDetalles[idx].cantidad) || 0;
+      const descuento = Number(newDetalles[idx].descuento) || 0;
+      newDetalles[idx].subtotal = subtotal;
+      newDetalles[idx].precio_unitario = cantidad > 0 ? (subtotal + descuento) / cantidad : 0;
+    } else if (field === 'cantidad' || field === 'precio_unitario' || field === 'descuento') {
+      // Recalcular subtotal para este detalle
       const cantidad = field === 'cantidad' ? Number(value) : Number(newDetalles[idx].cantidad);
       const precio = field === 'precio_unitario' ? Number(value) : Number(newDetalles[idx].precio_unitario);
       const descuento = field === 'descuento' ? Number(value) : Number(newDetalles[idx].descuento);
@@ -1388,6 +1395,7 @@ export default function CompraForm() {
                   nombre: producto.nombre,
                   codigo: producto.codigo,
                   codigo_barras: producto.codigo_barras,
+                  sku: (producto as any).sku || undefined, // Para mostrarlo en el modal de actualizar precios
                   codigosBarra: (producto as any).codigosBarra || [],  // ✅ NUEVO: Incluir códigos de barra para mostrar en tabla
                   codigos_barras: (producto as any).codigos_barras || [],  // ✅ NUEVO: Array de strings de códigos
                   precio_costo: precioCosto,
@@ -1406,6 +1414,7 @@ export default function CompraForm() {
                   capacidad: (producto as any).capacidad || null,
                   // ✅ NUEVO: Agregar marca, unidad y precios para mostrar en tabla
                   marca: (producto as any).marca || null,
+                  categoria: (producto as any).categoria || null, // Para el tooltip del nombre en la tabla
                   unidad: (producto as any).unidad || null,
                   precios: (producto as any).precios || [],
                   // ✅ NUEVO: Agregar tipo_precio_id_recomendado para búsqueda correcta en useProductSearch

@@ -1,6 +1,7 @@
 import { obtenerNombreConUnidad } from '@/infrastructure/helpers/nombre-dinamico-unidad.helper';
 import { validarStockDisponible } from '@/infrastructure/helpers/validar-stock-conversion.helper';
 import { formatCurrency, formatCurrencyMinimalDecimals } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import { Fragment, useState } from 'react';
 import type { DetalleProducto } from '../types';
 import ComboExpandedRows from './ComboExpandedRows';
@@ -82,6 +83,28 @@ export default function ProductoTableRow({
     );
     const esCombo = productoInfo && productoInfo.es_combo;
     const precioCosto = detalle.precio_costo || productoInfo?.precio_costo || 0;
+    // Stock disponible expresado en la unidad de venta (para fraccionados se convierte desde la unidad base)
+    let stockDisponible =
+        (productoInfo as any)?.stock_disponible_calc ?? (productoInfo as any)?.stock_disponible ?? (productoInfo as any)?.stock ?? 0;
+    let unidadDisplay = productoInfo?.unidad?.codigo || 'UN';
+    if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
+        const unidadVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
+        if (unidadVenta !== detalle.unidad_medida_id) {
+            const conversion = detalle.conversiones.find((c: any) => c.unidad_destino_id === unidadVenta && c.activo) as any;
+            if (conversion) {
+                stockDisponible = stockDisponible * conversion.factor_conversion;
+                unidadDisplay = conversion.unidad_destino?.codigo || conversion.unidad_destino?.nombre || '';
+            }
+        }
+    }
+    // En ventas el disponible se descuenta en vivo con la cantidad ingresada (no aplica a proformas ya convertidas: su stock está reservado)
+    const validarStockVenta = tipo === 'venta' && !proformaConvertida;
+    const stockRestante = stockDisponible - Number(detalle.cantidad || 0);
+    // Cantidades de stock sin decimales innecesarios (máx. 2): 10 → "10", 2.5 → "2.5"
+    const formatearCantidad = (valor: number) => String(Number(valor.toFixed(2)));
+
+    // Mostrar en inputs solo los decimales necesarios (máx. 4): 3.333333 → "3.3333", 14.1000 → "14.1"
+    const mostrarDecimales = (valor: number | string | null | undefined) => String(Number(Number(valor || 0).toFixed(4)));
 
     const content = (
         <tr
@@ -110,6 +133,33 @@ export default function ProductoTableRow({
                 </a>
             </td>
 
+            {/* Código / SKU: código de barras si tiene; si no, el SKU (o el código interno) */}
+            <td className="items-left px-2 py-2 whitespace-nowrap">
+                {(() => {
+                    const codigoBarras =
+                        productoInfo?.codigo_barras || productoInfo?.codigos_barras?.[0] || productoInfo?.codigosBarra?.[0]?.codigo;
+                    const sku = productoInfo?.sku || productoInfo?.codigo;
+                    if (codigoBarras) {
+                        return (
+                            <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300" title="Código de barras">
+                                {codigoBarras}
+                            </span>
+                        );
+                    }
+                    if (sku) {
+                        return (
+                            <span
+                                className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                                title="SKU"
+                            >
+                                {sku}
+                            </span>
+                        );
+                    }
+                    return <span className="text-xs text-gray-400 dark:text-gray-600">-</span>;
+                })()}
+            </td>
+
             {/* Producto Nombre */}
             <td className="items-start px-2 py-2">
                 {/* ✨ MEJORADO (2026-09-07): Nombre dinámico según unidad de venta con nombre personalizado */}
@@ -134,8 +184,17 @@ export default function ProductoTableRow({
 
                     console.log(`🏷️ [obtenerNombreConUnidad RESULTADO] nombre final: "${nombreDinamico}"`);
 
-                    return (
-                        <div className="items-start text-sm font-bold text-gray-900 dark:text-white">
+                    // Marca y categoría se muestran en un tooltip sobre el nombre
+                    const marca = typeof productoInfo?.marca === 'string' ? productoInfo.marca : productoInfo?.marca?.nombre;
+                    const categoria =
+                        typeof productoInfo?.categoria === 'string' ? productoInfo.categoria : productoInfo?.categoria?.nombre;
+
+                    const nombre = (
+                        <div
+                            className={`items-start text-sm font-bold text-gray-900 dark:text-white ${
+                                marca || categoria ? 'cursor-help decoration-gray-400 decoration-dotted underline-offset-2 hover:underline' : ''
+                            }`}
+                        >
                             {/* ✅ Mostrar nombre personalizado con icono 📦 si es fraccionado */}
                             {detalle.es_fraccionado && (
                                 <span className="mr-1 text-base" title="Producto fraccionado">
@@ -145,27 +204,31 @@ export default function ProductoTableRow({
                             {nombreDinamico}
                         </div>
                     );
+
+                    if (!marca && !categoria) return nombre;
+
+                    return (
+                        <Tooltip>
+                            <TooltipTrigger asChild>{nombre}</TooltipTrigger>
+                            <TooltipContent side="top" align="start">
+                                <div className="space-y-0.5">
+                                    {marca && (
+                                        <div>
+                                            <span className="opacity-75">Marca:</span> <span className="font-semibold uppercase">{marca}</span>
+                                        </div>
+                                    )}
+                                    {categoria && (
+                                        <div>
+                                            <span className="opacity-75">Categoría:</span> <span className="font-semibold">{categoria}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    );
                 })()}
 
                 <div className="text-left text-xs text-gray-500 dark:text-gray-400">
-                    {(() => {
-                        // ✅ Mostrar código de barras desde código_barras, codigos_barras o codigosBarra
-                        const codigoBarras =
-                            productoInfo?.codigo_barras || productoInfo?.codigos_barras?.[0] || productoInfo?.codigosBarra?.[0]?.codigo;
-                        return codigoBarras && codigoBarras !== productoInfo?.sku ? (
-                            <div>
-                                #{codigoBarras} {' '}
-                                {productoInfo?.sku || productoInfo?.codigo && (
-                                    <span className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                                        {productoInfo.sku || productoInfo.codigo}
-                                    </span>
-                                )} { ' '}
-                                <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
-                                    {typeof productoInfo?.marca === 'string' ? productoInfo.marca : productoInfo?.marca?.nombre || ''}
-                                </span>                                 
-                            </div>
-                        ) : null;
-                    })()}
                     {(() => {
                         const tieneDataMedicamentos = (productoInfo as any)?.principio_activo || (productoInfo as any)?.uso_de_medicacion;
                         const mostrarMedicamentos = es_farmacia && tieneDataMedicamentos;
@@ -179,58 +242,13 @@ export default function ProductoTableRow({
                         );
                     })()}
                 </div>
-            </td>
+            </td>            
 
-            {/* SKU */}
-            {/* <td className="items-left px-2 py-2">
-                {productoInfo?.sku || productoInfo?.codigo ? (
-                    <span className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                        {productoInfo.sku || productoInfo.codigo}
-                    </span>
-                ) : (
-                    <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
-                )}
-            </td> */}
-            {/* Disponibilidad */}
+            {/* Disponibilidad (en ventas se muestra dentro de la columna Cantidad) */}
+            {tipo !== 'venta' && (
             <td className="text-left px-2 py-2 text-xs">
                 {!proformaConvertida &&
                     (() => {
-                        let stockDisponible =
-                            (productoInfo as any)?.stock_disponible_calc ??
-                            (productoInfo as any)?.stock_disponible ??
-                            (productoInfo as any)?.stock ??
-                            0;
-                        let unidadDisplay = '';
-
-                        // ✨ NUEVO: Convertir stock a la unidad de venta si está fraccionado
-                        if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
-                            const unidadVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
-                            const unidadBase = detalle.unidad_medida_id;
-
-                            // ✅ CASO 1: Si vende por la unidad base (no hay conversión)
-                            if (unidadVenta === unidadBase) {
-                                // Usar la unidad base directamente
-                                unidadDisplay = productoInfo?.unidad?.codigo || 'UN';
-                                console.log(
-                                    `📊 [Stock Sin Convertir] Producto: ${productoInfo?.nombre}, Vende por unidad base, Stock: ${stockDisponible} ${unidadDisplay}`,
-                                );
-                            } else {
-                                // ✅ CASO 2: Si vende por una unidad de conversión
-                                const conversion = detalle.conversiones.find((c: any) => c.unidad_destino_id === unidadVenta && c.activo);
-
-                                if (conversion) {
-                                    stockDisponible = stockDisponible * conversion.factor_conversion;
-                                    unidadDisplay = conversion.unidad_destino?.codigo || conversion.unidad_destino?.nombre || '';
-                                    console.log(
-                                        `📊 [Stock Convertido] Producto: ${productoInfo?.nombre}, Stock base: ${stockDisponible / conversion.factor_conversion}, Factor: ${conversion.factor_conversion}, Stock en unidad venta: ${stockDisponible} ${unidadDisplay}`,
-                                    );
-                                }
-                            }
-                        } else {
-                            // ✅ CASO 3: Producto NO fraccionado - mostrar código de unidad base
-                            unidadDisplay = productoInfo?.unidad?.codigo || 'UN';
-                        }
-
                         return (
                             <div
                                 className={`flex flex-col rounded p-1 text-center text-xs ${
@@ -254,9 +272,10 @@ export default function ProductoTableRow({
                         );
                     })()}
             </td>
+            )}
 
             {/* Cantidad */}
-            <td className="text-left px-2 py-2">
+            <td className="px-2 py-2">
                 <div>
                     <input
                         type="text"
@@ -303,6 +322,13 @@ export default function ProductoTableRow({
                                         } else {
                                             setValidacionError(null);
                                         }
+                                    } else if (validarStockVenta) {
+                                        // Productos no fraccionados: no permitir vender más que el disponible
+                                        if (num > stockDisponible + 0.000001) {
+                                            setValidacionError(`Solo hay ${formatearCantidad(stockDisponible)} ${unidadDisplay} disponibles`);
+                                            return;
+                                        }
+                                        setValidacionError(null);
                                     }
 
                                     onUpdateDetail(index, 'cantidad', num);
@@ -322,6 +348,22 @@ export default function ProductoTableRow({
                     />
                     {/* ✅ NUEVO (2026-09-07): Mostrar error de validación de stock */}
                     {validacionError && <div className="text-xs text-red-600 dark:text-red-400">⚠️ {validacionError}</div>}
+                    {/* Ventas: disponible restante, recalculado en vivo con la cantidad */}
+                    {validarStockVenta && !validacionError && (
+                        <div
+                            className={`mt-0.5 text-xs font-semibold ${
+                                stockDisponible <= 0 || stockRestante < 0
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : stockRestante < 5
+                                      ? 'text-orange-600 dark:text-orange-400'
+                                      : 'text-emerald-600 dark:text-emerald-400'
+                            }`}
+                        >
+                            {stockDisponible <= 0
+                                ? 'Sin stock'
+                                : `Quedan ${formatearCantidad(Math.max(0, stockRestante))} de ${formatearCantidad(stockDisponible)} ${unidadDisplay}`}
+                        </div>
+                    )}
                 </div>
             </td>
 
@@ -335,7 +377,11 @@ export default function ProductoTableRow({
             {/* Precio Unitario (Compra) */}
             {tipo === 'compra' && (
                 <>
-                    <td className="px-2 py-4">
+                    <td className="px-2 py-2">
+                        {/* Si el precio difiere del costo registrado, el detalle se muestra en un tooltip */}
+                        <Tooltip open={tieneDiferencia ? undefined : false}>
+                            <TooltipTrigger asChild>
+                                <span className="inline-block">
                         <input
                             type="text"
                             inputMode="decimal"
@@ -343,14 +389,14 @@ export default function ProductoTableRow({
                             value={
                                 editingField?.index === index && editingField?.field === 'precio_unitario'
                                     ? editingField.value
-                                    : detalle.precio_unitario.toString()
+                                    : mostrarDecimales(detalle.precio_unitario)
                             }
                             placeholder="0.0000"
                             onFocus={() => {
                                 setEditingField({
                                     index,
                                     field: 'precio_unitario',
-                                    value: detalle.precio_unitario.toString(),
+                                    value: mostrarDecimales(detalle.precio_unitario),
                                 });
                             }}
                             onChange={(e) => {
@@ -374,48 +420,22 @@ export default function ProductoTableRow({
                                     : 'border-gray-300 dark:border-zinc-600'
                             }`}
                         />
-                        {tieneDiferencia && (
-                            <div
-                                className={`mt-0.5 text-xs font-semibold ${
-                                    esAumento ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'
-                                }`}
-                            >
-                                {esAumento ? '↑' : '↓'} {formatCurrency(Math.abs(detalle.precio_unitario - precioCosto))}
-                            </div>
-                        )}
-                        {/* {detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0 && (
-                            <div>
-                                {(() => {
-                                    const unidadActual = detalle.unidad_venta_id || detalle.unidad_medida_id;
-
-                                    if (unidadActual === detalle.unidad_medida_id) {
-                                        return (
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                {formatCurrency(detalle.precio_unitario)} / {detalle.unidad_medida_nombre || 'Base'}
-                                            </div>
-                                        );
-                                    }
-
-                                    const conversion = detalle.conversiones.find((c) => c.unidad_destino_id === unidadActual);
-
-                                    if (conversion && conversion.factor_conversion > 0) {
-                                        const precioPorUnidad = detalle.precio_unitario / conversion.factor_conversion;
-                                        return (
-                                            <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                                {formatCurrency(precioPorUnidad)} /{' '}
-                                                {conversion.unidad_destino_nombre || `Unidad ${conversion.unidad_destino_id}`}
-                                            </div>
-                                        );
-                                    }
-
-                                    return <div className="text-sm text-gray-500 dark:text-gray-400">N/A</div>;
-                                })()}
-                            </div>
-                        )} */}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                <div className="space-y-0.5">
+                                    <div className="font-semibold">
+                                        {esAumento ? '↑ Aumento' : '↓ Disminución'}:{' '}
+                                        {formatCurrencyMinimalDecimals(Math.abs(detalle.precio_unitario - precioCosto))}
+                                    </div>
+                                    <div className="opacity-75">Costo registrado: {formatCurrencyMinimalDecimals(precioCosto)}</div>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
                     </td>
 
                     {/* Descuento de la línea, en monto (Bs). El costo del producto se sigue tomando del precio sin descuento */}
-                    <td className="px-2 py-4">
+                    <td className="px-2 py-2 text-center">
                         {(() => {
                             const importe = Number(detalle.cantidad || 0) * Number(detalle.precio_unitario || 0);
                             const descuento = Number(detalle.descuento || 0);
@@ -690,9 +710,62 @@ export default function ProductoTableRow({
                 </td>
             )}
 
-            {/* Subtotal */}
+            {/* Subtotal: en compras es editable y completa el precio unitario */}
             <td className="items-left px-2 py-2">
-                <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrencyMinimalDecimals(detalle.subtotal)}</span>
+                {tipo === 'compra' ? (
+                    <Tooltip>
+                        {/* El trigger es un span para que el tooltip funcione aunque el input esté deshabilitado */}
+                        <TooltipTrigger asChild>
+                            <span className="inline-block">
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            disabled={readOnly}
+                            value={
+                                editingField?.index === index && editingField?.field === 'subtotal'
+                                    ? editingField.value
+                                    : mostrarDecimales(detalle.subtotal)
+                            }
+                            placeholder="0.00"
+                            onFocus={() => {
+                                setEditingField({ index, field: 'subtotal', value: mostrarDecimales(detalle.subtotal) });
+                            }}
+                            onChange={(e) => {
+                                const valor = e.target.value.replace(',', '.');
+                                setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                    onUpdateDetail(index, 'subtotal', valor === '' ? 0 : parseFloat(valor) || 0);
+                                }
+                            }}
+                            onBlur={() => setEditingField(null)}
+                            className="w-28 rounded-lg border border-gray-300 px-2 py-2 font-mono text-sm font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                        />
+                            </span>
+                        </TooltipTrigger>
+                        {/* Precio de costo ya registrado en precios_producto */}
+                        <TooltipContent side="top">
+                            {precioCosto > 0 ? (
+                                <div className="space-y-0.5">
+                                    <div className="font-semibold">Costo registrado</div>
+                                    <div>
+                                        {formatCurrencyMinimalDecimals(precioCosto)} c/u
+                                        {Number(detalle.cantidad) > 0 && (
+                                            <> · {formatCurrencyMinimalDecimals(precioCosto * Number(detalle.cantidad))} total</>
+                                        )}
+                                    </div>
+                                    <div className="opacity-75">Ingrese el subtotal para calcular el precio unitario</div>
+                                </div>
+                            ) : (
+                                <div className="space-y-0.5">
+                                    <div className="font-semibold">Sin precio registrado</div>
+                                    <div className="opacity-75">Ingrese el subtotal para calcular el precio unitario</div>
+                                </div>
+                            )}
+                        </TooltipContent>
+                    </Tooltip>
+                ) : (
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrencyMinimalDecimals(detalle.subtotal)}</span>
+                )}
             </td>
 
             {/* Categoría */}
@@ -710,7 +783,7 @@ export default function ProductoTableRow({
             </td> */}
 
             {/* Acciones */}
-            <td className="items-start px-2 py-4 text-center">
+            <td className="items-start px-2 py-2 text-center">
                 <div className="flex items-center justify-center gap-1">
                     {/* Botón expandir/contraer combo */}
                     {detalle.producto && (detalle.producto as any).es_combo && (

@@ -86,14 +86,16 @@ export function useCascadaPreciosCompra(
                 }
 
                 // ===== OTROS TIPOS DE PRECIO =====
-                // Estrategia: Mantener el margen de ganancia absoluto (diferencia costo-precio)
-                // Así si costo sube $1, el precio sube $1 también (mantiene el % de ganancia relativo)
+                // Estrategia: Mantener el % de ganancia sobre el costo
+                // Ej: costo 10 → 12, precio 15 (50%) → 18 (50%)
 
-                const margenAbsoluto = precio.precio_actual - (precioCostoActual || 0);
-                const nuevoPrecio = precioCostoNuevo + margenAbsoluto;
-                const nuevoPorcentajeGanancia = precioCostoNuevo > 0
-                    ? redondearDos(((nuevoPrecio - precioCostoNuevo) / precioCostoNuevo) * 100)
-                    : 0;
+                // % de ganancia actual: calculado con el costo registrado; si no hay, el guardado en el precio
+                const porcentajeActual = precioCostoActual && precioCostoActual > 0
+                    ? ((precio.precio_actual - precioCostoActual) / precioCostoActual) * 100
+                    : Number(precio.porcentaje_ganancia) || 0;
+                const nuevoPrecio = precioCostoNuevo * (1 + porcentajeActual / 100);
+                const nuevoPorcentajeGanancia = redondearDos(porcentajeActual);
+                const margenAbsoluto = nuevoPrecio - precioCostoNuevo;
 
                 return {
                     id: precio.id,
