@@ -593,6 +593,10 @@ class CajaController extends Controller
             'monto_real'    => 'required|numeric|min:0',
             'observaciones' => 'nullable|string|max:500',
             'fecha_cierre'  => 'nullable|date',
+            // ✅ NUEVO (2026-10-29): Conteo por medio de pago (monto_real = suma de estos montos)
+            'conteo'         => 'nullable|array',
+            'conteo.*.tipo'  => 'required_with:conteo|string|max:50',
+            'conteo.*.monto' => 'required_with:conteo|numeric|min:0',
         ]);
 
         $usuarioAutenticado = Auth::user();
@@ -648,6 +652,15 @@ class CajaController extends Controller
             // Calcular diferencia
             $diferencia = $request->monto_real - $montoEsperado;
 
+            // ✅ NUEVO (2026-10-29): Dejar registrado el conteo por medio de pago junto a las observaciones
+            $observaciones = $request->observaciones;
+            if ($request->filled('conteo')) {
+                $detalleConteo = collect($request->conteo)
+                    ->map(fn($c) => $c['tipo'] . ': ' . number_format((float) $c['monto'], 2, '.', ''))
+                    ->implode(' | ');
+                $observaciones = trim(($observaciones ?? '') . "\n[Conteo] " . $detalleConteo);
+            }
+
             // Obtener estado PENDIENTE
             $estadoPendiente = \App\Models\EstadoCierre::obtenerIdPendiente();
 
@@ -660,20 +673,22 @@ class CajaController extends Controller
                 'monto_esperado'   => $montoEsperado,
                 'monto_real'       => $request->monto_real,
                 'diferencia'       => $diferencia,
-                'observaciones'    => $request->observaciones,
+                'observaciones'    => $observaciones,
                 'estado_cierre_id' => $estadoPendiente,
             ]);
 
             // Si hay diferencia, crear movimiento de ajuste
-            if ($diferencia != 0) {
+            if (abs($diferencia) >= 0.01) {
                 $tipoOperacion = TipoOperacionCaja::where('codigo', 'AJUSTE')->first();
 
                 if ($tipoOperacion) {
                     MovimientoCaja::create([
                         'caja_id'           => $apertura->caja_id,
+                        'apertura_caja_id'  => $apertura->id,  // ✅ Vincular el ajuste a su apertura
                         'tipo_operacion_id' => $tipoOperacion->id,
                         'numero_documento'  => 'AJUSTE-' . date('Ymd') . '-' . $usuarioDestino->id,
-                        'descripcion'       => 'Ajuste por diferencia en cierre - ' . ($diferencia > 0 ? 'Sobrante' : 'Faltante'),
+                        // ✅ CORREGIDO: 'descripcion' no existe en movimientos_caja, se usa 'observaciones'
+                        'observaciones'     => "Ajuste por diferencia en cierre #{$cierre->id} - " . ($diferencia > 0 ? 'Sobrante' : 'Faltante'),
                         'monto'             => $diferencia,
                         'fecha'             => now(),
                         'user_id'           => $usuarioDestino->id,

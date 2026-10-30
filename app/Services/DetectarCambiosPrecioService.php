@@ -116,6 +116,91 @@ class DetectarCambiosPrecioService
     }
 
     /**
+     * Al aprobar una compra, aplica los precios de venta editados en su tabla (detalle_compras.precios_venta).
+     *
+     * - Cada entrada trae el precio_id y UNO de: precio (directo), monto (ganancia en Bs) o porcentaje.
+     *   El precio final se calcula sobre el precio unitario de la línea (el nuevo costo).
+     * - Solo se tocan precios del mismo producto de la línea, y solo si cambian.
+     * - Si el mismo precio aparece en varias líneas, manda la última (igual que el costo en procesarCompraAprobada).
+     * - update() directo: PrecioProductoObserver deja el registro de historial con el motivo.
+     *
+     * Se llama al pasar a APROBADO, después de procesarCompraAprobada (el costo ya quedó actualizado).
+     *
+     * @return array Precios de venta que cambiaron
+     */
+    public function aplicarPreciosVentaCompra(Compra $compra): array
+    {
+        $compra->loadMissing('detalles');
+        $motivo = "Precio de venta por compra #{$compra->numero}";
+
+        // Una entrada por precio_id (la última línea de la compra)
+        $porPrecioId = [];
+        foreach ($compra->detalles as $detalle) {
+            $costo = (float) $detalle->precio_unitario;
+            if ($costo <= 0 || empty($detalle->precios_venta)) {
+                continue;
+            }
+            foreach ($detalle->precios_venta as $editado) {
+                if (empty($editado['precio_id'])) {
+                    continue;
+                }
+                $porPrecioId[(int) $editado['precio_id']] = [$detalle, $costo, $editado];
+            }
+        }
+
+        $cambios = [];
+        foreach ($porPrecioId as $precioId => [$detalle, $costo, $editado]) {
+            $precio = PrecioProducto::where('id', $precioId)
+                ->where('producto_id', $detalle->producto_id)
+                ->first();
+            if (! $precio) {
+                Log::warning('Precio de venta de la compra no encontrado para el producto: se omite', [
+                    'compra_numero' => $compra->numero,
+                    'precio_id'     => $precioId,
+                    'producto_id'   => $detalle->producto_id,
+                ]);
+                continue;
+            }
+
+            // Ganancia según lo que se editó: precio directo, ganancia en Bs o %
+            if (isset($editado['precio']) && $editado['precio'] !== null) {
+                $ganancia = (float) $editado['precio'] - $costo;
+            } elseif (isset($editado['monto']) && $editado['monto'] !== null) {
+                $ganancia = (float) $editado['monto'];
+            } else {
+                $ganancia = $costo * ((float) ($editado['porcentaje'] ?? 0)) / 100;
+            }
+            $precioNuevo   = round($costo + $ganancia, 2);
+            $precioAnterior = (float) $precio->precio;
+
+            if (abs($precioAnterior - $precioNuevo) <= 0.000001) {
+                continue; // mismo precio: nada que hacer
+            }
+
+            $precio->update([
+                'precio'                     => $precioNuevo,
+                'margen_ganancia'            => round($precioNuevo - $costo, 2),
+                'porcentaje_ganancia'        => round((($precioNuevo - $costo) / $costo) * 100, 2),
+                'motivo_cambio'              => $motivo,
+                'fecha_ultima_actualizacion' => now(),
+            ]);
+
+            $cambio = [
+                'precio_id'       => $precio->id,
+                'producto_id'     => $detalle->producto_id,
+                'tipo_precio_id'  => $precio->tipo_precio_id,
+                'precio_anterior' => $precioAnterior,
+                'precio_nuevo'    => $precioNuevo,
+                'compra_numero'   => $compra->numero,
+            ];
+            Log::info('Precio de venta actualizado por compra', $cambio);
+            $cambios[] = $cambio;
+        }
+
+        return $cambios;
+    }
+
+    /**
      * Obtener todos los precios que cambiaron en los últimos N días
      */
     public function obtenerCambiosRecientes(int $dias = 7): array

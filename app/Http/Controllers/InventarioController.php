@@ -1076,6 +1076,67 @@ class InventarioController extends Controller
     }
 
     /**
+     * Ver detalle de un ajuste de inventario
+     * GET /inventario/ajustes/{ajuste}
+     */
+    public function verAjuste($id): Response
+    {
+        // ✅ CRÍTICO: Solo ajustes de almacenes de la empresa del usuario
+        $ajuste = AjusteInventario::whereHas('almacen', fn($q) => $q->where('empresa_id', auth()->user()?->empresa_id))
+            ->with([
+                'almacen:id,nombre',
+                'user:id,name',
+                'userAnulacion:id,name',
+                'movimientos' => fn($q) => $q->with([
+                    'stockProductoHistorico:id,producto_id,lote,fecha_vencimiento',
+                    'stockProductoHistorico.producto:id,nombre,sku',
+                    'tipoAjusteInventario:id,label',
+                ])->orderBy('id'),
+            ])
+            ->findOrFail($id);
+
+        $detalles = $ajuste->movimientos->map(function ($mov) {
+            $stock = $mov->stockProductoHistorico;
+            $esEntrada = (float) $mov->cantidad >= 0;
+
+            return [
+                'id'               => $mov->id,
+                'producto_id'      => $stock?->producto?->id,
+                'producto_nombre'  => $stock?->producto?->nombre ?? 'Producto desconocido',
+                'producto_sku'     => $stock?->producto?->sku,
+                'lote'             => $stock?->lote,
+                'fecha_vencimiento' => $stock?->fecha_vencimiento?->format('Y-m-d'),
+                'tipo'             => $esEntrada ? 'entrada' : 'salida',
+                'tipo_ajuste'      => $mov->tipoAjusteInventario?->label,
+                'cantidad'         => abs((float) $mov->cantidad),
+                // Totales del producto en el almacén (todos sus lotes); si no existen, los del lote
+                'stock_anterior'   => (float) ($mov->cantidad_total_anterior ?? $mov->cantidad_anterior ?? 0),
+                'stock_posterior'  => (float) ($mov->cantidad_total_posterior ?? $mov->cantidad_posterior ?? 0),
+                'anulado'          => (bool) $mov->anulado,
+            ];
+        })->values();
+
+        return Inertia::render('inventario/ajustes/ver', [
+            'ajuste' => [
+                'id'                 => $ajuste->id,
+                'numero'             => $ajuste->numero,
+                'estado'             => $ajuste->estado,
+                'observacion'        => $ajuste->observacion,
+                'created_at'         => $ajuste->created_at?->toIso8601String(),
+                'cantidad_productos' => $ajuste->cantidad_productos,
+                'cantidad_entradas'  => $ajuste->cantidad_entradas,
+                'cantidad_salidas'   => $ajuste->cantidad_salidas,
+                'almacen'            => $ajuste->almacen ? ['id' => $ajuste->almacen->id, 'nombre' => $ajuste->almacen->nombre] : null,
+                'user'               => $ajuste->user ? ['id' => $ajuste->user->id, 'name' => $ajuste->user->name] : null,
+                'fecha_anulacion'    => $ajuste->fecha_anulacion?->toIso8601String(),
+                'motivo_anulacion'   => $ajuste->motivo_anulacion,
+                'user_anulacion'     => $ajuste->userAnulacion ? ['id' => $ajuste->userAnulacion->id, 'name' => $ajuste->userAnulacion->name] : null,
+                'detalles'           => $detalles,
+            ],
+        ]);
+    }
+
+    /**
      * Formulario de merma de inventario - Histórico
      */
     public function mermaForm(Request $request): Response
@@ -1131,7 +1192,7 @@ class InventarioController extends Controller
                 'cantidad_productos'  => $merma->cantidad_productos ?? 0,
                 'costo_total'         => (float) ($merma->costo_total ?? 0),
                 'observacion'         => $merma->observacion ?? null,
-                'estado'              => $merma->estado ?? 'procesado',
+                'estado'              => $merma->estadoClave(),
                 'created_at'          => $merma->created_at ? $merma->created_at->toIso8601String() : now()->toIso8601String(),
                 'updated_at'          => $merma->updated_at ? $merma->updated_at->toIso8601String() : now()->toIso8601String(),
                 // ✅ Relaciones explícitamente incluidas
@@ -1721,6 +1782,11 @@ class InventarioController extends Controller
     {
         $data = $request->validated();
 
+        // ✅ Si el tipo requiere aprobación y el usuario no puede aprobar, la merma queda PENDIENTE sin tocar stock.
+        // Quien tiene inventario.mermas.aprobar (manager, MANAGER_TIENDA, Super Admin) la deja aprobada directamente.
+        $tipoMerma = TipoMerma::where('clave', $data['tipo_merma'])->first();
+        $quedaPendiente = (bool) $tipoMerma?->requiere_aprobacion && ! $request->user()->can('inventario.mermas.aprobar');
+
         try {
             DB::beginTransaction();
 
@@ -1728,9 +1794,10 @@ class InventarioController extends Controller
                 'almacen_id'      => $data['almacen_id'],
                 'tipo_merma'      => $data['tipo_merma'],
                 'total_productos' => count($data['productos']),
+                'queda_pendiente' => $quedaPendiente,
             ]);
 
-            // PASO 1: Crear registro maestro en mermas_inventario (con número temporal)
+            // PASO 1: Crear registro maestro en mermas_inventario
             // Concatenar motivo específico + observaciones
             $observacionCompleta = $data['motivo'];
             if (!empty($data['observaciones'])) {
@@ -1738,65 +1805,38 @@ class InventarioController extends Controller
             }
 
             $mermaInventario = MermaInventario::create([
-                'numero'              => 'TEMP',
-                'almacen_id'          => $data['almacen_id'],
-                'user_id'             => auth()->id(),
-                'tipo_merma'          => $data['tipo_merma'],
-                'cantidad_productos'  => count($data['productos']),
-                'costo_total'         => 0, // Se actualiza después
-                'observacion'         => $observacionCompleta,
-                'estado'              => MermaInventario::ESTADO_PROCESADO,
+                'numero'               => 'TEMP',
+                'almacen_id'           => $data['almacen_id'],
+                'user_id'              => auth()->id(),
+                'tipo_merma'           => $data['tipo_merma'],
+                'cantidad_productos'   => count($data['productos']),
+                // Pendiente: costo estimado con lo ingresado; se recalcula al descontar el stock
+                'costo_total'          => collect($data['productos'])->sum(fn($p) => (float) $p['cantidad'] * (float) ($p['costo_unitario'] ?? 0)),
+                'observacion'          => $observacionCompleta,
+                'productos_pendientes' => $quedaPendiente ? $data['productos'] : null,
+                'estado'               => $quedaPendiente ? MermaInventario::ESTADO_PENDIENTE : MermaInventario::ESTADO_PROCESADO,
+                'aprobado_por_id'      => $quedaPendiente ? null : auth()->id(),
+                'fecha_aprobacion'     => $quedaPendiente ? null : now(),
             ]);
 
-            Log::info('🟠 [REGISTRAR MERMA] Cabecera creada (temporal)', [
-                'merma_id' => $mermaInventario->id,
-                'almacen'  => $data['almacen_id'],
-            ]);
-
-            // ✅ REFACTORIZADO (2026-03-27): Usar servicio centralizado para registrar mermas AGRUPADAS
-            try {
-                $resultado = $this->mermaDistribucionService->registrarMermasAgrupadas(
-                    productos: $data['productos'],
-                    numeroMerma: 'TEMP',  // Se actualizará después
-                    almacenId: $data['almacen_id'],
-                    motivo: $data['motivo'],
-                    usuarioId: auth()->id() ?? 1
-                );
-
-                $movimientosRegistrados = $resultado['movimientos'];
-                $costTotalMerma = $resultado['costo_total'];
-
-                Log::info('✅ [REGISTRAR MERMA] Movimientos agrupados registrados', [
-                    'merma_id'         => $mermaInventario->id,
-                    'movimientos'      => count($movimientosRegistrados),
-                    'costo_total'      => $costTotalMerma,
-                    'nota'             => 'Movimientos AGRUPADOS por producto (no por lote)',
-                ]);
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error('❌ [REGISTRAR MERMA] Error al registrar mermas agrupadas', [
-                    'error' => $e->getMessage(),
-                ]);
-                return ApiResponse::error(
-                    'Error al registrar merma: ' . $e->getMessage(),
-                    422
-                );
-            }
-
-            // PASO 4: Actualizar número de la merma usando el ID
             $numeroMerma = MermaInventario::generarNumero($mermaInventario->id);
-            $mermaInventario->update([
-                'numero'      => $numeroMerma,
-                'costo_total' => $costTotalMerma,
-            ]);
+            $mermaInventario->update(['numero' => $numeroMerma]);
 
-            // PASO 5: ✅ Asociar movimientos con merma maestro y actualizar número_documento
-            foreach ($movimientosRegistrados as $movimiento) {
-                $movimiento->update([
-                    'merma_inventario_id' => $mermaInventario->id,
-                    'numero_documento'    => $numeroMerma,
-                ]);
+            // PASO 2: Descontar stock (solo si no queda pendiente de aprobación)
+            $movimientosRegistrados = [];
+            if (! $quedaPendiente) {
+                try {
+                    $movimientosRegistrados = $this->aplicarMerma($mermaInventario, $data['productos'], $data['motivo']);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('❌ [REGISTRAR MERMA] Error al registrar mermas agrupadas', [
+                        'error' => $e->getMessage(),
+                    ]);
+                    return ApiResponse::error(
+                        'Error al registrar merma: ' . $e->getMessage(),
+                        422
+                    );
+                }
             }
 
             DB::commit();
@@ -1804,21 +1844,23 @@ class InventarioController extends Controller
             Log::info('🟢 [REGISTRAR MERMA] COMPLETADO', [
                 'merma_id'          => $mermaInventario->id,
                 'numero'            => $numeroMerma,
+                'estado'            => $mermaInventario->estado,
                 'total_movimientos' => count($movimientosRegistrados),
-                'costo_total'       => $costTotalMerma,
+                'costo_total'       => $mermaInventario->costo_total,
             ]);
 
             return ApiResponse::success(
                 [
                     'merma_inventario_id' => $mermaInventario->id,
                     'numero_merma'        => $numeroMerma,
+                    'estado'              => $mermaInventario->estadoClave(),
                     'movimientos'         => MovimientoInventario::where('merma_inventario_id', $mermaInventario->id)
                         ->with(['stockProducto.producto', 'stockProducto.almacen'])
                         ->get(),
-                    'costo_total'         => $costTotalMerma,
-                    'cantidad_productos'  => count($movimientosRegistrados),
+                    'costo_total'         => (float) $mermaInventario->costo_total,
+                    'cantidad_productos'  => count($data['productos']),
                 ],
-                'Merma registrada exitosamente'
+                $quedaPendiente ? 'Merma registrada, pendiente de aprobación' : 'Merma registrada exitosamente'
             );
 
         } catch (\Exception $e) {
@@ -1832,6 +1874,36 @@ class InventarioController extends Controller
                 500
             );
         }
+    }
+
+    /**
+     * Descontar el stock de una merma (FIFO por lote) y asociar los movimientos a ella.
+     * Se usa al registrar una merma que no requiere aprobación y al aprobar una pendiente.
+     * Debe llamarse dentro de una transacción.
+     */
+    private function aplicarMerma(MermaInventario $merma, array $productos, string $motivo): array
+    {
+        $resultado = $this->mermaDistribucionService->registrarMermasAgrupadas(
+            productos: $productos,
+            numeroMerma: $merma->numero,
+            almacenId: $merma->almacen_id,
+            motivo: $motivo,
+            usuarioId: auth()->id() ?? 1
+        );
+
+        $estadoAprobadoId = EstadoMerma::where('clave', 'APROBADO')->value('id');
+
+        foreach ($resultado['movimientos'] as $movimiento) {
+            $movimiento->update([
+                'merma_inventario_id' => $merma->id,
+                'numero_documento'    => $merma->numero,
+                'estado_merma_id'     => $estadoAprobadoId,
+            ]);
+        }
+
+        $merma->update(['costo_total' => $resultado['costo_total']]);
+
+        return $resultado['movimientos'];
     }
 
     /**
@@ -1950,8 +2022,14 @@ class InventarioController extends Controller
         $tipoMerma = (string) $request->string('tipo_merma', '');
         $perPage   = $request->integer('per_page', 15);
 
+        // ✅ CRÍTICO: Obtener empresa del usuario para filtrar mermas y almacenes
+        $userEmpresaId = auth()->user()?->empresa_id;
+        $mermasEmpresa = fn() => MermaInventario::whereHas('almacen', function ($q) use ($userEmpresaId) {
+            $q->where('empresa_id', $userEmpresaId);
+        });
+
         // 🔍 DEBUG: Verificar estado de la tabla
-        $totalMermasEnBD = MermaInventario::count();
+        $totalMermasEnBD = $mermasEmpresa()->count();
         Log::info('🔍 [MERMAS] DEBUG', [
             'total_mermas_en_bd' => $totalMermasEnBD,
             'filtro_almacen' => $almacenId,
@@ -1960,7 +2038,7 @@ class InventarioController extends Controller
         ]);
 
         // Obtener mermas realizadas desde tabla maestra MermaInventario
-        $query = MermaInventario::with([
+        $query = $mermasEmpresa()->with([
             'almacen:id,nombre',
             'user:id,name',
             'movimientos' => function ($q) {
@@ -1976,6 +2054,25 @@ class InventarioController extends Controller
         // Filtrar por tipo de merma si se proporciona (y no es vacío)
         if (!empty($tipoMerma) && $tipoMerma !== '') {
             $query->where('tipo_merma', $tipoMerma);
+        }
+
+        // Filtrar por estado (PENDIENTE / APROBADO / RECHAZADO)
+        $estadoFiltro = match (strtoupper((string) $request->string('estado', ''))) {
+            'PENDIENTE' => MermaInventario::ESTADO_PENDIENTE,
+            'APROBADO'  => MermaInventario::ESTADO_PROCESADO,
+            'RECHAZADO' => MermaInventario::ESTADO_RECHAZADO,
+            default     => null,
+        };
+        if ($estadoFiltro) {
+            $query->where('estado', $estadoFiltro);
+        }
+
+        // Filtrar por rango de fechas de registro
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('created_at', '>=', $request->date('fecha_desde'));
+        }
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('created_at', '<=', $request->date('fecha_hasta'));
         }
 
         $mermasData = $query
@@ -1997,7 +2094,7 @@ class InventarioController extends Controller
                 'cantidad_productos'  => $merma->cantidad_productos ?? 0,
                 'costo_total'         => (float) ($merma->costo_total ?? 0),
                 'observacion'         => $merma->observacion ?? null,
-                'estado'              => $merma->estado ?? 'procesado',
+                'estado'              => $merma->estadoClave(),
                 'created_at'          => $merma->created_at ? $merma->created_at->toIso8601String() : now()->toIso8601String(),
                 'updated_at'          => $merma->updated_at ? $merma->updated_at->toIso8601String() : now()->toIso8601String(),
                 'almacen'             => $merma->almacen ? [
@@ -2025,16 +2122,20 @@ class InventarioController extends Controller
             return $item !== null;
         });
 
-        // Obtener almacenes para filtro
-        $almacenes = Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        // ✅ CRÍTICO: Obtener solo almacenes de la empresa del usuario para el filtro
+        $almacenes = Almacen::where('empresa_id', $userEmpresaId)
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
 
-        // Calcular estadísticas de mermas
+        // Calcular estadísticas de mermas - SOLO de la empresa del usuario
         $estadisticas = [
-            'total_mermas'     => MermaInventario::count(),
-            'total_pendientes' => MermaInventario::where('estado', MermaInventario::ESTADO_PENDIENTE)->count(),
-            'total_aprobadas'  => MermaInventario::where('estado', MermaInventario::ESTADO_PROCESADO)->count(),
-            'total_rechazadas' => 0, // No hay estado rechazado aún
-            'costo_total_mes'  => MermaInventario::whereMonth('created_at', now()->month)->sum('costo_total'),
+            'total_mermas'     => $mermasEmpresa()->count(),
+            'total_pendientes' => $mermasEmpresa()->where('estado', MermaInventario::ESTADO_PENDIENTE)->count(),
+            'total_aprobadas'  => $mermasEmpresa()->where('estado', MermaInventario::ESTADO_PROCESADO)->count(),
+            'total_rechazadas' => $mermasEmpresa()->where('estado', MermaInventario::ESTADO_RECHAZADO)->count(),
+            // Solo mermas aprobadas: las pendientes y rechazadas no descontaron stock
+            'costo_total_mes'  => $mermasEmpresa()->where('estado', MermaInventario::ESTADO_PROCESADO)->whereMonth('created_at', now()->month)->sum('costo_total'),
         ];
 
         return Inertia::render('inventario/mermas/index', [
@@ -2043,6 +2144,14 @@ class InventarioController extends Controller
             'almacen_seleccionado'  => $almacenId,
             'tipo_merma_filtro'     => $tipoMerma,
             'estadisticas'          => $estadisticas,
+            // Filtros activos para el panel de filtros (la página los espera como objeto)
+            'filtros'               => (object) array_filter([
+                'tipo_merma'  => $tipoMerma,
+                'estado'      => strtoupper((string) $request->string('estado', '')),
+                'almacen_id'  => $almacenId ?: null,
+                'fecha_desde' => (string) $request->string('fecha_desde', ''),
+                'fecha_hasta' => (string) $request->string('fecha_hasta', ''),
+            ]),
         ]);
     }
 
@@ -2051,7 +2160,10 @@ class InventarioController extends Controller
      */
     public function formularioRegistrarMerma(): Response
     {
-        $almacenes = Almacen::where('activo', true)->get();
+        // ✅ CRÍTICO: Solo almacenes de la empresa del usuario
+        $almacenes = Almacen::where('empresa_id', auth()->user()?->empresa_id)
+            ->where('activo', true)
+            ->get();
 
         return Inertia::render('inventario/mermas/registrar', [
             'almacenes' => $almacenes,
@@ -2290,6 +2402,9 @@ class InventarioController extends Controller
      */
     public function verMerma(MermaInventario $merma): Response
     {
+        // ✅ CRÍTICO: Solo mermas de almacenes de la empresa del usuario
+        $merma = $this->mermaDeLaEmpresa($merma->id);
+
         // Cargar movimientos relacionados con eager loading
         // Importante: Cargar producto directamente de stockProducto para obtener SKU
         $merma->load([
@@ -2395,6 +2510,42 @@ class InventarioController extends Controller
             $totalCosto += abs($mov->cantidad) * $precioCosto;
         }
 
+        // Merma pendiente: aún no tiene movimientos, mostrar los productos que se descontarán al aprobar
+        if ($merma->estado === MermaInventario::ESTADO_PENDIENTE && ! empty($merma->productos_pendientes)) {
+            $productosPendientes = Producto::whereIn('id', collect($merma->productos_pendientes)->pluck('producto_id'))
+                ->get(['id', 'nombre', 'sku'])
+                ->keyBy('id');
+
+            $detalles = collect($merma->productos_pendientes)->values()->map(function ($item, $index) use ($merma, $productosPendientes) {
+                $producto = $productosPendientes->get($item['producto_id']);
+                $cantidad = (float) $item['cantidad'];
+                $costoUnitario = (float) ($item['costo_unitario'] ?? 0);
+
+                return [
+                    'id'                => $index + 1,
+                    'merma_id'          => $merma->id,
+                    'producto_id'       => $item['producto_id'],
+                    'cantidad'          => $cantidad,
+                    'costo_unitario'    => $costoUnitario,
+                    'costo_total'       => $cantidad * $costoUnitario,
+                    'lote'              => null,
+                    'fecha_vencimiento' => null,
+                    'observaciones'     => $item['observaciones'] ?? null,
+                    'producto'          => [
+                        'id'     => $item['producto_id'],
+                        'nombre' => $producto?->nombre ?? 'Producto desconocido',
+                        'sku'    => $producto?->sku ?? 'SIN-SKU',
+                        'codigo' => null,
+                    ],
+                    'stock_anterior'    => null,
+                    'stock_posterior'   => null,
+                ];
+            })->toArray();
+
+            $totalCantidad = collect($detalles)->sum('cantidad');
+            $totalCosto = collect($detalles)->sum('costo_total');
+        }
+
         Log::info("🔍 [VerMerma] Total cantidad: $totalCantidad, Total costo: $totalCosto");
 
         // Transformar respuesta para match con interfaz TypeScript
@@ -2407,12 +2558,13 @@ class InventarioController extends Controller
             'motivo'              => $merma->observacion ?? '',
             'observaciones'       => $merma->observacion ?? '',
             'total_productos'     => $merma->cantidad_productos ?? count($detalles),
-            'total_cantidad'      => (int) $totalCantidad,
+            'total_cantidad'      => (float) $totalCantidad,
             'total_costo'         => (float) $totalCosto,
             'usuario_id'          => $merma->user_id,
-            'estado'              => strtoupper($merma->estado ?? 'PENDIENTE'),
-            'fecha_aprobacion'    => null,
-            'aprobado_por_id'     => null,
+            'estado'              => $merma->estadoClave(),
+            'fecha_aprobacion'    => $merma->fecha_aprobacion?->format('Y-m-d H:i:s'),
+            'aprobado_por_id'     => $merma->aprobado_por_id,
+            'observacion_aprobacion' => $merma->observacion_aprobacion,
             // Relaciones
             'almacen'             => [
                 'id'     => $merma->almacen?->id ?? null,
@@ -2422,7 +2574,10 @@ class InventarioController extends Controller
                 'id'   => $merma->user?->id ?? 0,
                 'name' => $merma->user?->name ?? 'Sistema',
             ],
-            'aprobado_por'        => null,
+            'aprobado_por'        => $merma->aprobadoPor ? [
+                'id'   => $merma->aprobadoPor->id,
+                'name' => $merma->aprobadoPor->name,
+            ] : null,
             'detalles'            => $detalles,
         ];
 
@@ -2434,7 +2589,7 @@ class InventarioController extends Controller
     }
 
     /**
-     * Aprobar merma
+     * Aprobar merma pendiente: recién aquí se descuenta el stock
      */
     public function aprobarMerma(Request $request, $id): JsonResponse
     {
@@ -2442,49 +2597,43 @@ class InventarioController extends Controller
             'observaciones_aprobacion' => 'nullable|string|max:500',
         ]);
 
-        try {
-            $movimiento = MovimientoInventario::where('tipo', MovimientoInventario::TIPO_SALIDA_MERMA)
-                ->findOrFail($id);
+        $merma = $this->mermaDeLaEmpresa($id);
 
-            // Verificar que no esté anulado
-            if ($movimiento->anulado) {
-                return ApiResponse::error('No se puede aprobar una merma anulada', 400);
-            }
-
-            // Buscar el estado "aprobado"
-            $estadoAprobado = EstadoMerma::where('clave', 'APROBADO')
-                ->orWhere('label', 'like', '%aprobad%')
-                ->first();
-
-            if (! $estadoAprobado) {
-                return ApiResponse::error('No se encontró el estado "Aprobado" en el sistema', 500);
-            }
-
-            // Actualizar estado
-            $movimiento->update([
-                'estado_merma_id' => $estadoAprobado->id,
-            ]);
-
-            // Si hay observaciones, agregarlas
-            if ($request->observaciones_aprobacion) {
-                $observacionActual = $movimiento->observacion ?? '';
-                $movimiento->update([
-                    'observacion' => $observacionActual . "\n[APROBACIÓN] " . $request->observaciones_aprobacion,
-                ]);
-            }
-
-            return ApiResponse::success([
-                'message'    => 'Merma aprobada exitosamente',
-                'merma_id'   => $id,
-                'movimiento' => $movimiento->load(['estadoMerma', 'tipoMerma']),
-            ]);
-        } catch (\Exception $e) {
-            return ApiResponse::error('Error al aprobar la merma: ' . $e->getMessage(), 500);
+        if ($merma->estado !== MermaInventario::ESTADO_PENDIENTE) {
+            return ApiResponse::error('Solo se pueden aprobar mermas pendientes', 400);
         }
+
+        try {
+            DB::transaction(function () use ($merma, $request) {
+                // Bloquear la merma para que dos aprobaciones simultáneas no descuenten el stock dos veces
+                $merma = MermaInventario::lockForUpdate()->findOrFail($merma->id);
+                if ($merma->estado !== MermaInventario::ESTADO_PENDIENTE) {
+                    throw new \RuntimeException('La merma ya fue procesada');
+                }
+
+                $this->aplicarMerma($merma, $merma->productos_pendientes ?? [], $merma->observacion ?? 'Merma aprobada');
+
+                $merma->update([
+                    'estado'                 => MermaInventario::ESTADO_PROCESADO,
+                    'aprobado_por_id'        => auth()->id(),
+                    'fecha_aprobacion'       => now(),
+                    'observacion_aprobacion' => $request->input('observaciones_aprobacion'),
+                ]);
+            });
+        } catch (\Exception $e) {
+            Log::error('❌ [APROBAR MERMA] ' . $e->getMessage(), ['merma_id' => $merma->id]);
+            // Típicamente: ya no hay stock suficiente para descontar
+            return ApiResponse::error('No se pudo aprobar la merma: ' . $e->getMessage(), 422);
+        }
+
+        return ApiResponse::success([
+            'merma_id' => $merma->id,
+            'estado'   => 'APROBADO',
+        ], 'Merma aprobada exitosamente');
     }
 
     /**
-     * Rechazar merma
+     * Rechazar merma pendiente: se cierra sin tocar el stock
      */
     public function rechazarMerma(Request $request, $id): JsonResponse
     {
@@ -2492,40 +2641,33 @@ class InventarioController extends Controller
             'observaciones_rechazo' => 'required|string|max:500',
         ]);
 
-        try {
-            $movimiento = MovimientoInventario::where('tipo', MovimientoInventario::TIPO_SALIDA_MERMA)
-                ->findOrFail($id);
+        $merma = $this->mermaDeLaEmpresa($id);
 
-            // Verificar que no esté anulado
-            if ($movimiento->anulado) {
-                return ApiResponse::error('No se puede rechazar una merma anulada', 400);
-            }
-
-            // Buscar el estado "rechazado"
-            $estadoRechazado = EstadoMerma::where('clave', 'RECHAZADO')
-                ->orWhere('label', 'like', '%rechazad%')
-                ->first();
-
-            if (! $estadoRechazado) {
-                return ApiResponse::error('No se encontró el estado "Rechazado" en el sistema', 500);
-            }
-
-            // Actualizar estado y agregar observaciones
-            $observacionActual = $movimiento->observacion ?? '';
-            $movimiento->update([
-                'estado_merma_id' => $estadoRechazado->id,
-                'observacion'     => $observacionActual . "\n[RECHAZO] " . $request->observaciones_rechazo,
-            ]);
-
-            return ApiResponse::success([
-                'message'        => 'Merma rechazada exitosamente',
-                'merma_id'       => $id,
-                'motivo_rechazo' => $request->observaciones_rechazo,
-                'movimiento'     => $movimiento->load(['estadoMerma', 'tipoMerma']),
-            ]);
-        } catch (\Exception $e) {
-            return ApiResponse::error('Error al rechazar la merma: ' . $e->getMessage(), 500);
+        if ($merma->estado !== MermaInventario::ESTADO_PENDIENTE) {
+            return ApiResponse::error('Solo se pueden rechazar mermas pendientes', 400);
         }
+
+        $merma->update([
+            'estado'                 => MermaInventario::ESTADO_RECHAZADO,
+            'aprobado_por_id'        => auth()->id(),
+            'fecha_aprobacion'       => now(),
+            'observacion_aprobacion' => $request->input('observaciones_rechazo'),
+        ]);
+
+        return ApiResponse::success([
+            'merma_id'       => $merma->id,
+            'estado'         => 'RECHAZADO',
+            'motivo_rechazo' => $request->input('observaciones_rechazo'),
+        ], 'Merma rechazada exitosamente');
+    }
+
+    /**
+     * Buscar una merma solo dentro de los almacenes de la empresa del usuario
+     */
+    private function mermaDeLaEmpresa($id): MermaInventario
+    {
+        return MermaInventario::whereHas('almacen', fn($q) => $q->where('empresa_id', auth()->user()?->empresa_id))
+            ->findOrFail($id);
     }
 
     /**
@@ -3126,27 +3268,10 @@ class InventarioController extends Controller
                 ->where('empresa_id', $empresaId); // ✅ Solo productos de la empresa del usuario
 
             // Aplicar filtro de búsqueda solo si hay término de búsqueda
+            // Prioridad: ID > código de barras > SKU > nombre (ver Producto::scopeBuscarPrioridad)
+            $relevancia = null;
             if ($busqueda) {
-                $productoQuery->where(function ($q) use ($busqueda) {
-                    // Prioridad 1: Búsqueda exacta por ID si es numérico
-                    if (is_numeric($busqueda)) {
-                        $q->where('id', (int) $busqueda);
-                    } else {
-                        // Prioridad 2: Búsqueda exacta por SKU (no parcial)
-                        $q->where('sku', strtolower($busqueda));
-                    }
-
-                    // Prioridad 3: Si no coincide exacto, buscar parcial en SKU
-                    $q->orWhereRaw('LOWER(sku) like ?', ["%{$busqueda}%"]);
-
-                    // Prioridad 4: Buscar parcial en nombre
-                    $q->orWhereRaw('LOWER(nombre) like ?', ["%{$busqueda}%"]);
-
-                    // Prioridad 5: Buscar en código de barras
-                    $q->orWhereHas('codigoPrincipal', function ($cq) use ($busqueda) {
-                        $cq->whereRaw('LOWER(codigo) like ?', ["%{$busqueda}%"]);
-                    });
-                });
+                $productoQuery->buscarPrioridad($busqueda);
             }
 
             // ✅ Paginación en SQL para el caso por defecto (orden por nombre, rango "todos", una fila por producto):
@@ -3175,6 +3300,11 @@ class InventarioController extends Controller
                 $productoQuery = $paginador->getCollection();
             } else {
                 $productoQuery = $productoQuery->get();
+            }
+
+            // Posición de cada producto según la relevancia de la búsqueda
+            if ($busqueda) {
+                $relevancia = $productoQuery->pluck('id')->flip();
             }
 
             // Procesar productos encontrados
@@ -3337,7 +3467,15 @@ class InventarioController extends Controller
             }
 
             // Ordenamiento
-            usort($stockProductos, function ($a, $b) use ($ordenamiento) {
+            usort($stockProductos, function ($a, $b) use ($ordenamiento, $relevancia) {
+                // Con búsqueda, la relevancia (ID > código de barras > SKU > nombre) manda
+                if ($relevancia) {
+                    $porRelevancia = ($relevancia[$a['producto_id']] ?? PHP_INT_MAX) <=> ($relevancia[$b['producto_id']] ?? PHP_INT_MAX);
+                    if ($porRelevancia !== 0) {
+                        return $porRelevancia;
+                    }
+                }
+
                 return match ($ordenamiento) {
                     'cantidad-asc'  => (int) $a['cantidad'] <=> (int) $b['cantidad'],
                     'cantidad-desc' => (int) $b['cantidad'] <=> (int) $a['cantidad'],
@@ -3466,10 +3604,17 @@ class InventarioController extends Controller
                 ], 400);
             }
 
+            // ✅ CRÍTICO: Filtrar por la empresa del usuario autenticado
+            $empresaId = auth()->user()?->empresa_id;
+            if (! $empresaId) {
+                return response()->json(['success' => false, 'message' => 'Usuario sin empresa asignada'], 403);
+            }
+
             // Obtener lotes del producto en el almacén especificado
             $lotes = StockProducto::query()
                 ->where('producto_id', $productoId)
                 ->where('almacen_id', $almacenId)
+                ->whereHas('almacen', fn($q) => $q->where('empresa_id', $empresaId))
                 ->where('cantidad', '>', 0)
                 ->withoutTrashed()
                 ->select('id', 'lote', 'fecha_vencimiento', 'cantidad', 'cantidad_disponible')
@@ -3533,98 +3678,52 @@ class InventarioController extends Controller
                 ]);
             }
 
-            $searchLower = strtolower($searchTerm);
-            $isNumeric = is_numeric($searchTerm);
+            // ✅ Productos por relevancia: ID > código de barras > SKU > nombre (ver Producto::scopeBuscarPrioridad).
+            // Si hay coincidencia exacta (ej. lector de códigos), solo se devuelve esa.
+            $productos = \App\Models\Producto::buscarPrioridad((string) $searchTerm)
+                ->where('productos.empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Solo productos de su empresa
+                ->with('codigosBarra')
+                ->limit($limit)
+                ->get(['productos.id', 'productos.nombre', 'productos.sku', 'productos.codigo_barras']);
 
-            // ✅ PASO 1: Obtener productos que ya existen en stock en este almacén (NO soft-deleted)
-            $stockProductos = StockProducto::where('almacen_id', $almacenId)
-                ->withoutTrashed()  // ✅ CRÍTICO: Excluir registros soft-deleted
-                ->with(['producto:id,nombre,sku,codigo_barras', 'producto.codigosBarra'])
-                ->get();
+            // Stock de esos productos en este almacén (solo lo necesario, NO soft-deleted)
+            $stockPorProducto = StockProducto::where('almacen_id', $almacenId)
+                ->whereIn('producto_id', $productos->pluck('id'))
+                ->withoutTrashed()
+                ->orderBy('id')
+                ->get()
+                ->groupBy('producto_id');
 
-            // ✅ PASO 2: Obtener todos los productos (incluyendo los que NO existen en stock)
-            // ✅ CRÍTICO: Filtrar solo productos de la empresa del usuario
-            // ✅ CORREGIDO (2026-06-29): Búsqueda EXACTA para ID y SKU, parcial para nombre
-            $todosProductos = \App\Models\Producto::with('codigosBarra')
-                ->where('empresa_id', $userEmpresaId)  // ✅ CRÍTICO: Solo productos de su empresa
-                ->select('id', 'nombre', 'sku', 'codigo_barras')
-                ->where(function ($query) use ($searchLower, $isNumeric, $searchTerm) {
-                    // ID exacto (si es numérico)
-                    if ($isNumeric) {
-                        $query->orWhere('id', (int)$searchTerm);
-                    }
-                    // SKU EXACTO (case-insensitive)
-                    $query->orWhereRaw('LOWER(sku) = ?', [$searchLower])
-                          // Nombre (búsqueda parcial)
-                          ->orWhereRaw('LOWER(nombre) LIKE ?', ['%' . $searchLower . '%'])
-                          // Código de barras principal EXACTO
-                          ->orWhereRaw('LOWER(codigo_barras) = ?', [$searchLower]);
-                })
-                ->orWhereHas('codigosBarra', function ($query) use ($searchLower) {
-                    // Códigos de barra adicionales EXACTO
-                    $query->whereRaw('LOWER(codigo) = ?', [$searchLower]);
-                })
-                ->get();
+            // Respetar el orden de relevancia; un producto puede tener varios lotes en el almacén
+            $resultados = collect();
+            foreach ($productos as $producto) {
+                $lotes = $stockPorProducto->get($producto->id, collect());
+                // Stock total del producto en el almacén (suma de todos sus lotes)
+                $stockTotalProducto = (float) $lotes->sum('cantidad');
+                $disponibleTotalProducto = (float) $lotes->sum('cantidad_disponible');
 
-            // ✅ PASO 3: Helper function para obtener todos los códigos de barra de un producto
-            $obtenerCodigosBarra = function ($producto) {
-                $codigos = [];
-                // Código principal
-                if (!empty($producto->codigo_barras)) {
-                    $codigos[] = strtolower($producto->codigo_barras);
-                }
-                // Códigos adicionales desde la relación
-                if ($producto->codigosBarra) {
-                    foreach ($producto->codigosBarra as $cb) {
-                        $codigos[] = strtolower($cb->codigo ?? '');
-                    }
-                }
-                return array_filter($codigos);
-            };
-
-            // ✅ PASO 4: Combinar resultados - Priorizar los que ya existen en stock
-            $resultadosColecccion = collect();
-
-            // Primero agregar los que ya están en stock
-            // ✅ CORREGIDO (2026-06-29): Búsqueda EXACTA para SKU e ID, parcial para nombre
-            foreach ($stockProductos as $sp) {
-                $sku = strtolower($sp->producto->sku ?? '');
-                $nombre = strtolower($sp->producto->nombre ?? '');
-                $codigos = $obtenerCodigosBarra($sp->producto);
-                $productoId = (string)$sp->producto->id;
-
-                // Coincide si: ID exacto O SKU exacto O nombre parcial O código barras exacto
-                $coincide = $isNumeric && $productoId === $searchTerm ||
-                           $sku === $searchLower ||
-                           strpos($nombre, $searchLower) !== false ||
-                           in_array($searchLower, $codigos);
-
-                if ($coincide) {
-                    $resultadosColecccion->push([
+                foreach ($lotes as $sp) {
+                    $resultados->push([
                         'id' => $sp->id,
                         'stock_producto_id' => $sp->id,
-                        'producto_id' => $sp->producto->id,
-                        'nombre' => $sp->producto->nombre,
-                        'sku' => $sp->producto->sku,
-                        'codigo_barras' => $sp->producto->codigo_barras,
+                        'producto_id' => $producto->id,
+                        'nombre' => $producto->nombre,
+                        'sku' => $producto->sku,
+                        'codigo_barras' => $producto->codigo_barras,
                         'cantidad_disponible' => $sp->cantidad_disponible,
                         'cantidad_actual' => $sp->cantidad,
                         'lote' => $sp->lote,
-                        'producto' => $sp->producto,
+                        'fecha_vencimiento' => $sp->fecha_vencimiento?->format('Y-m-d'),
+                        'stock_total_producto' => $stockTotalProducto,
+                        'disponible_total_producto' => $disponibleTotalProducto,
+                        'cantidad_lotes' => $lotes->count(),
+                        'producto' => $producto,
                         'existe_en_almacen' => true,
                     ]);
                 }
-            }
 
-            // Luego agregar productos que NO están en stock en este almacén
-            foreach ($todosProductos as $producto) {
-                // Verificar si ya fue agregado (existe en stock)
-                $yaExiste = $resultadosColecccion->contains(function ($item) use ($producto) {
-                    return $item['producto_id'] === $producto->id;
-                });
-
-                if (!$yaExiste) {
-                    $resultadosColecccion->push([
+                if ($lotes->isEmpty()) {
+                    $resultados->push([
                         'id' => null,  // No hay stock_producto aún
                         'stock_producto_id' => null,
                         'producto_id' => $producto->id,
@@ -3634,83 +3733,31 @@ class InventarioController extends Controller
                         'cantidad_disponible' => 0,
                         'cantidad_actual' => 0,
                         'lote' => null,
+                        'fecha_vencimiento' => null,
+                        'stock_total_producto' => 0,
+                        'disponible_total_producto' => 0,
+                        'cantidad_lotes' => 0,
                         'producto' => $producto,
                         'existe_en_almacen' => false,  // Marca como nuevo en almacén
                     ]);
                 }
             }
 
-            // ✅ PASO 5: Ordenar por relevancia (Prioridades: ID > SKU > CodigosBarra > Nombre)
-            $resultados = $resultadosColecccion->sort(function ($a, $b) use ($searchLower, $isNumeric, $searchTerm, $obtenerCodigosBarra) {
-                $idA = (string)$a['producto_id'];
-                $idB = (string)$b['producto_id'];
-                $skuA = strtolower($a['sku'] ?? '');
-                $skuB = strtolower($b['sku'] ?? '');
-                $nombreA = strtolower($a['nombre'] ?? '');
-                $nombreB = strtolower($b['nombre'] ?? '');
-
-                $codigosA = $obtenerCodigosBarra($a['producto']);
-                $codigosB = $obtenerCodigosBarra($b['producto']);
-
-                // Prioridad 0: Existentes en almacén
-                if ($a['existe_en_almacen'] !== $b['existe_en_almacen']) {
-                    return $a['existe_en_almacen'] ? -1 : 1;
-                }
-
-                // Prioridad 1: ID coincidencia exacta
-                if ($isNumeric) {
-                    $idMatch = (int)$searchTerm;
-                    $matchA = $a['producto_id'] === $idMatch ? 1 : 0;
-                    $matchB = $b['producto_id'] === $idMatch ? 1 : 0;
-                    if ($matchA !== $matchB) return $matchB - $matchA;
-                }
-
-                // Prioridad 2: SKU coincidencia exacta
-                if ($skuA === $searchLower && $skuB !== $searchLower) return -1;
-                if ($skuA !== $searchLower && $skuB === $searchLower) return 1;
-
-                // Prioridad 3: Código de barras coincidencia exacta
-                $codigoExactoA = in_array($searchLower, $codigosA) ? 1 : 0;
-                $codigoExactoB = in_array($searchLower, $codigosB) ? 1 : 0;
-                if ($codigoExactoA !== $codigoExactoB) return $codigoExactoB - $codigoExactoA;
-
-                // Prioridad 4: SKU comienza con término
-                $skuStartsA = strpos($skuA, $searchLower) === 0 ? 1 : 0;
-                $skuStartsB = strpos($skuB, $searchLower) === 0 ? 1 : 0;
-                if ($skuStartsA !== $skuStartsB) return $skuStartsB - $skuStartsA;
-
-                // Prioridad 5: Código de barras comienza con término
-                $codigoStartsA = array_filter($codigosA, fn($c) => strpos($c, $searchLower) === 0);
-                $codigoStartsB = array_filter($codigosB, fn($c) => strpos($c, $searchLower) === 0);
-                if ((bool)$codigoStartsA !== (bool)$codigoStartsB) return (bool)$codigoStartsB ? 1 : -1;
-
-                // Prioridad 6: SKU contiene término
-                $skuContainsA = strpos($skuA, $searchLower) !== false ? 1 : 0;
-                $skuContainsB = strpos($skuB, $searchLower) !== false ? 1 : 0;
-                if ($skuContainsA !== $skuContainsB) return $skuContainsB - $skuContainsA;
-
-                // Prioridad 7: Código de barras contiene término
-                $codigoContainsA = array_filter($codigosA, fn($c) => strpos($c, $searchLower) !== false);
-                $codigoContainsB = array_filter($codigosB, fn($c) => strpos($c, $searchLower) !== false);
-                if ((bool)$codigoContainsA !== (bool)$codigoContainsB) return (bool)$codigoContainsB ? 1 : -1;
-
-                // Prioridad 8: Nombre comienza con término
-                $nombreStartsA = strpos($nombreA, $searchLower) === 0 ? 1 : 0;
-                $nombreStartsB = strpos($nombreB, $searchLower) === 0 ? 1 : 0;
-                if ($nombreStartsA !== $nombreStartsB) return $nombreStartsB - $nombreStartsA;
-
-                // Prioridad 9: Nombre contiene término
-                $nombreContainsA = strpos($nombreA, $searchLower) !== false ? 1 : 0;
-                $nombreContainsB = strpos($nombreB, $searchLower) !== false ? 1 : 0;
-                return $nombreContainsB - $nombreContainsA;
-            })
-            ->take($limit)
-            ->values();
+            // ¿El término coincide EXACTO con el ID, un código de barras activo o el SKU del único producto encontrado?
+            // El frontend lo usa para agregar directo a la tabla sin Enter (lector de códigos / ID tecleado).
+            $termino = mb_strtolower(trim((string) $searchTerm));
+            $unico = $productos->count() === 1 ? $productos->first() : null;
+            $exacta = $unico && (
+                (string) $unico->id === $termino
+                || mb_strtolower((string) $unico->sku) === $termino
+                || $unico->codigosBarra->contains(fn($cb) => $cb->activo && mb_strtolower((string) $cb->codigo) === $termino)
+            );
 
             return response()->json([
                 'success' => true,
                 'data' => $resultados->toArray(),
                 'total' => $resultados->count(),
+                'exacta' => $exacta,
             ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -4058,6 +4105,14 @@ class InventarioController extends Controller
                 ], 403);
             }
 
+            // ✅ CRÍTICO: Solo ajustes de almacenes de la empresa del usuario
+            if ($ajuste->almacen?->empresa_id !== auth()->user()->empresa_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ajuste no encontrado',
+                ], 404);
+            }
+
             // 2. No anular si ya está anulado
             if ($ajuste->estado === AjusteInventario::ESTADO_ANULADO) {
                 return response()->json([
@@ -4260,12 +4315,8 @@ class InventarioController extends Controller
      */
     public function imprimirMerma(Request $request, $id): Response | \Symfony\Component\HttpFoundation\Response
     {
-        // Obtener merma por ID
-        $merma = MermaInventario::find($id);
-
-        if (!$merma) {
-            abort(404, 'Merma no encontrada');
-        }
+        // Obtener merma por ID (solo de la empresa del usuario; si no, 404)
+        $merma = $this->mermaDeLaEmpresa($id);
 
         // Cargar relaciones
         $merma->load([

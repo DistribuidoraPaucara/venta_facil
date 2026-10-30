@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\DetalleVenta;
 use App\Models\Producto;
 use App\Models\Venta;
-use App\Models\MovimientoInventario;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,8 +17,6 @@ class ReporteController extends Controller
      */
     public function ventasPorProducto(Request $request)
     {
-        $productos = Producto::orderBy('nombre')->get();
-
         $productoId = $request->input('producto_id');
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
@@ -41,8 +38,10 @@ class ReporteController extends Controller
 
             // ✅ NUEVO (2026-04-28): Traer TODOS los detalles del período
             // Procesaremos en PHP para evitar problemas con JSON en PostgreSQL
-            $query = DetalleVenta::with([
-                'venta' => fn($q) => $q->with('cliente'),
+            // whereHas('venta'): el scope global de Venta limita a la empresa del usuario;
+            // sin esto llegaban detalles de otras empresas con venta = null y la página fallaba
+            $query = DetalleVenta::whereHas('venta')->with([
+                'venta' => fn($q) => $q->with(['cliente', 'estadoDocumento', 'usuario:id,name']),
                 'producto'
             ]);
 
@@ -132,51 +131,19 @@ class ReporteController extends Controller
                 $montoDevueltoTotal = round($montoDevueltoTotal, 2);
                 $montoNetoTotal = round($cantidadNetaTotal * $precioPromedio, 2);
 
-                // ✅ NUEVO (2026-04-28): Obtener movimiento de inventario para esta venta
-                // Busca por fecha y tipo, ya que referencia_id puede estar en NULL
                 $primerDetalle = $detalles_grupo->first();
-                $ventaFecha = $primerDetalle->venta->created_at;
-                $numeroVenta = $primerDetalle->venta->numero;
-
-                // Buscar movimiento para venta aprobada (SALIDA_VENTA, CONSUMO_RESERVA)
-                $movimiento = MovimientoInventario::whereHas('stockProducto', function($q) use ($productoId) {
-                    $q->where('producto_id', $productoId);
-                })
-                    ->whereIn('tipo', ['SALIDA_VENTA', 'CONSUMO_RESERVA', 'ENTRADA_DEVOLUCION', 'ENTRADA_AJUSTE'])
-                    // Buscar en rango amplio de tiempo (hasta 2 horas después)
-                    ->whereBetween('created_at', [
-                        $ventaFecha->copy()->subMinutes(30),
-                        $ventaFecha->copy()->addHours(2)
-                    ])
-                    ->orderByDesc('created_at')
-                    ->first();
-
-                // Si no encuentra movimiento reciente, buscar en observación (si contiene el número de venta)
-                if (!$movimiento && !empty($numeroVenta)) {
-                    $movimiento = MovimientoInventario::whereHas('stockProducto', function($q) use ($productoId) {
-                        $q->where('producto_id', $productoId);
-                    })
-                        ->where('numero_documento', 'LIKE', '%' . $numeroVenta . '%')
-                        ->orderByDesc('created_at')
-                        ->first();
-                }
 
                 // Determinar tipo de venta (si tiene COMBO, mostrar COMBO, sino DIRECTA)
                 $tipoVentaPrincipal = $tiposVenta->contains('DENTRO DE COMBO') ? 'DENTRO DE COMBO' : 'DIRECTA';
-
-                // ✅ NUEVO (2026-04-28): Usar valores del movimiento de inventario directamente
-                // La cantidad del movimiento ya refleja el signo (negativo para salida, positivo para entrada)
-                $cantidadMovimiento = $movimiento?->cantidad ?? 0;
-                $totalAnterior = $movimiento?->cantidad_total_anterior ?? 0;
-                $totalPosterior = $movimiento?->cantidad_total_posterior ?? 0;
 
                 $ventaData = [
                     'detalle_id' => $primerDetalle->id,
                     'numero_venta' => $primerDetalle->venta->numero,
                     'venta_id' => $primerDetalle->venta->id,
                     'cliente' => $primerDetalle->venta->cliente->nombre ?? 'N/A',
+                    'vendedor' => $primerDetalle->venta->usuario->name ?? 'N/A',
                     'fecha' => $primerDetalle->venta->created_at->format('d/m/Y H:i'),
-                    'cantidad_vendida' => $cantidadMovimiento,  // ✅ CAMBIO: Usar cantidad del movimiento (con signo)
+                    'cantidad_vendida' => $cantidadVendidaTotal, // Cantidad del detalle de venta (incluye combos)
                     'cantidad_devuelta' => $cantidadDevueltaTotal,
                     'cantidad_neta' => $cantidadNetaTotal,
                     'precio_unitario' => $precioPromedio,
@@ -185,13 +152,6 @@ class ReporteController extends Controller
                     'monto_neto' => $montoNetoTotal,
                     'estado' => $primerDetalle->venta->estado ?? 'N/A',
                     'tipo_venta' => $tipoVentaPrincipal,
-                    // Stock anterior y posterior del movimiento (directamente de la BD)
-                    'total_anterior' => $totalAnterior,
-                    'total_posterior' => $totalPosterior,
-                    'disponible_anterior' => $movimiento?->cantidad_disponible_anterior ?? 0,
-                    'disponible_posterior' => $movimiento?->cantidad_disponible_posterior ?? 0,
-                    'reservado_anterior' => $movimiento?->cantidad_reservada_anterior ?? 0,
-                    'reservado_posterior' => $movimiento?->cantidad_reservada_posterior ?? 0,
                 ];
 
                 $ventas->push($ventaData);
@@ -207,7 +167,6 @@ class ReporteController extends Controller
         }
 
         return Inertia::render('reportes/ventas-por-producto', [
-            'productos' => $productos,
             'productoSeleccionado' => $productoId ? Producto::find($productoId) : null,
             'ventas' => $ventas,
             'filtros' => [

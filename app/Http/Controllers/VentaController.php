@@ -782,6 +782,7 @@ class VentaController extends Controller
                                 'fecha'            => now(),
                                 'numero_documento' => $ventaCreada->numero,
                                 'observaciones'    => "Cambio venta #{$ventaCreada->numero}",
+                                'venta_id'         => $ventaCreada->id,  // ✅ Necesario para excluir/revertir el vuelto si la venta se anula
                             ]);
 
                             Log::info('💵 [VentaController::store] Movimiento de cambio registrado', [
@@ -1365,8 +1366,14 @@ class VentaController extends Controller
                             ->first();
 
                         if ($tipoOperacionAnuladoVenta) {
-                            // 1️⃣ ACTUALIZAR TODOS los movimientos VENTA a ANULADO-VENTA
+                            // 1️⃣ ACTUALIZAR solo los movimientos VENTA a ANULADO-VENTA
+                            // ✅ Los VUELTO se mantienen como VUELTO: Venta::revertirMovimientoCaja()
+                            // los revierte con un movimiento positivo (VUELTO-ANU)
                             foreach ($movimientosVenta as $movimiento) {
+                                if ($movimiento->tipoOperacion?->codigo !== 'VENTA') {
+                                    continue;
+                                }
+
                                 $movimiento->update([
                                     'tipo_operacion_id' => $tipoOperacionAnuladoVenta->id,
                                 ]);
@@ -1378,23 +1385,6 @@ class VentaController extends Controller
                                     'monto'              => $movimiento->monto,
                                     'tipo_operacion_id'  => $tipoOperacionAnuladoVenta->id,
                                 ]);
-                            }
-
-                            // 2️⃣ Actualizar movimientos de VUELTO si existen
-                            $movimientosVuelto = \App\Models\MovimientoCaja::where('venta_id', $venta->id)
-                                ->whereHas('tipoOperacion', fn($q) => $q->where('codigo', 'VUELTO'))
-                                ->get();
-
-                            if ($movimientosVuelto->isNotEmpty()) {
-                                foreach ($movimientosVuelto as $vuelto) {
-                                    $vuelto->update(['tipo_operacion_id' => $tipoOperacionAnuladoVenta->id]);
-
-                                    Log::info('✅ Movimiento de vuelto actualizado a ANULADO-VENTA', [
-                                        'venta_id'              => $venta->id,
-                                        'movimiento_vuelto_id'  => $vuelto->id,
-                                        'monto'                 => $vuelto->monto,
-                                    ]);
-                                }
                             }
                         } else {
                             Log::warning('⚠️ Tipo de operación ANULADO-VENTA no encontrado', [

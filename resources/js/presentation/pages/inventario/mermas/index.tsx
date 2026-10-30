@@ -50,6 +50,10 @@ interface PageProps extends InertiaPageProps {
     };
 }
 
+// Controles del panel de filtros con fondo y texto explícitos para que se lean en modo oscuro
+const selectFiltroClass = 'flex h-9 w-full rounded-md border border-input bg-white dark:bg-gray-900 text-gray-900 dark:text-white dark:border-gray-700 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+const fechaFiltroClass = 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white dark:border-gray-700 dark:[color-scheme:dark]';
+
 export default function MermasIndex() {
     const { props } = usePage<PageProps>();
     const { mermas, filtros, almacenes, estadisticas } = props;
@@ -70,7 +74,7 @@ export default function MermasIndex() {
         costo_total_mes: 0
     };
 
-    const [filtrosLocales, setFiltrosLocales] = useState<FiltrosMermas>(filtros);
+    const [filtrosLocales, setFiltrosLocales] = useState<FiltrosMermas>(filtros ?? {});
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
     const [modalTipoMermaOpen, setModalTipoMermaOpen] = useState(false);
     const [modalEstadoMermaOpen, setModalEstadoMermaOpen] = useState(false);
@@ -137,7 +141,7 @@ export default function MermasIndex() {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
-                body: JSON.stringify({ motivo_rechazo: motivo }),
+                body: JSON.stringify({ observaciones_rechazo: motivo }),
             });
 
             const result = await response.json();
@@ -212,7 +216,7 @@ export default function MermasIndex() {
                             <Filter className="w-4 h-4" />
                             <span className="ml-2">Filtros</span>
                         </Button>
-                        <Button
+                        {/* <Button
                             variant="outline"
                             onClick={() => setModalTipoMermaOpen(true)}
                         >
@@ -223,7 +227,7 @@ export default function MermasIndex() {
                             onClick={() => setModalEstadoMermaOpen(true)}
                         >
                             <span className="ml-2">Estados de Merma</span>
-                        </Button>
+                        </Button> */}
                         {can('inventario.mermas.registrar') && (
                             <Link href="/inventario/mermas/registrar">
                                 <Button>
@@ -310,7 +314,7 @@ export default function MermasIndex() {
                             Filtros de Búsqueda
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Tipo de Merma
@@ -321,7 +325,7 @@ export default function MermasIndex() {
                                         ...prev,
                                         tipo_merma: e.target.value as TipoMerma || undefined
                                     }))}
-                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    className={selectFiltroClass}
                                 >
                                     <option value="">Todos los tipos</option>
                                     {tipos.map(tipo => (
@@ -340,7 +344,7 @@ export default function MermasIndex() {
                                         ...prev,
                                         estado: e.target.value as EstadoMerma || undefined
                                     }))}
-                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    className={selectFiltroClass}
                                 >
                                     <option value="">Todos los estados</option>
                                     {estados.map(estado => (
@@ -359,7 +363,7 @@ export default function MermasIndex() {
                                         ...prev,
                                         almacen_id: e.target.value ? parseInt(e.target.value) : undefined
                                     }))}
-                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    className={selectFiltroClass}
                                 >
                                     <option value="">Todos los almacenes</option>
                                     {almacenes.map(almacen => (
@@ -381,6 +385,22 @@ export default function MermasIndex() {
                                         ...prev,
                                         fecha_desde: e.target.value || undefined
                                     }))}
+                                    className={fechaFiltroClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Fecha Hasta
+                                </label>
+                                <Input
+                                    type="date"
+                                    value={filtrosLocales.fecha_hasta || ''}
+                                    onChange={(e) => setFiltrosLocales(prev => ({
+                                        ...prev,
+                                        fecha_hasta: e.target.value || undefined
+                                    }))}
+                                    className={fechaFiltroClass}
                                 />
                             </div>
                         </div>

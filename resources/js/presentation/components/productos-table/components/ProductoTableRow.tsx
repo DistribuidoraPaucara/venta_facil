@@ -36,6 +36,9 @@ interface ProductoTableRowProps {
     normalizeDateForInput?: (fecha: string | null) => string;
     onUpdateDetailUnidadConPrecio?: (index: number, unidadId: number, precio: number) => void;
     proformaConvertida?: boolean;
+    // Compras: columnas de precios de venta (una por tipo) y los precios registrados de esta línea por tipo
+    tiposPrecioVenta?: Array<{ tipo_precio_id: number; nombre: string }>;
+    preciosVentaPorTipo?: Record<number, { id: number; precio: number; tipo_precio_id: number; nombre: string }>;
 }
 
 export default function ProductoTableRow({
@@ -68,6 +71,8 @@ export default function ProductoTableRow({
     normalizeDateForInput = (fecha) => fecha || '',
     onUpdateDetailUnidadConPrecio,
     proformaConvertida = false,
+    tiposPrecioVenta = [],
+    preciosVentaPorTipo = {},
 }: ProductoTableRowProps) {
     const productoInfo = detalle.producto as any;
     const [validacionError, setValidacionError] = useState<string | null>(null);
@@ -100,6 +105,23 @@ export default function ProductoTableRow({
     // En ventas el disponible se descuenta en vivo con la cantidad ingresada (no aplica a proformas ya convertidas: su stock está reservado)
     const validarStockVenta = tipo === 'venta' && !proformaConvertida;
     const stockRestante = stockDisponible - Number(detalle.cantidad || 0);
+    // Código del producto: código de barras si tiene; si no, el SKU (o el código interno); null si no hay ninguno
+    const codigoBarrasProducto =
+        productoInfo?.codigo_barras || productoInfo?.codigos_barras?.[0] || productoInfo?.codigosBarra?.[0]?.codigo;
+    const skuProducto = productoInfo?.sku || productoInfo?.codigo;
+    const codigoProducto = codigoBarrasProducto ? (
+        <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300" title="Código de barras">
+            {codigoBarrasProducto}
+        </span>
+    ) : skuProducto ? (
+        <span
+            className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+            title="SKU"
+        >
+            {skuProducto}
+        </span>
+    ) : null;
+
     // Cantidades de stock sin decimales innecesarios (máx. 2): 10 → "10", 2.5 → "2.5"
     const formatearCantidad = (valor: number) => String(Number(valor.toFixed(2)));
 
@@ -109,13 +131,12 @@ export default function ProductoTableRow({
     const content = (
         <tr
             key={detalle.producto_id}
-            className={`hover:bg-gray-50 dark:hover:bg-zinc-800 ${
-                tipo === 'compra' && tieneDiferencia && esAumento
-                    ? 'bg-amber-50 px-2 py-2 dark:bg-amber-950/10'
-                    : tipo === 'compra' && tieneDiferencia && !esAumento
-                      ? 'bg-green-50 px-2 py-2 dark:bg-green-950/10'
-                      : ''
-            }`}
+            className={`hover:bg-gray-50 dark:hover:bg-zinc-800 ${tipo === 'compra' && tieneDiferencia && esAumento
+                ? 'bg-amber-50 px-2 py-2 dark:bg-amber-950/10'
+                : tipo === 'compra' && tieneDiferencia && !esAumento
+                    ? 'bg-green-50 px-2 py-2 dark:bg-green-950/10'
+                    : ''
+                }`}
         >
             {/* ID del producto: abre su edición en otra pestaña (no se pierde la venta en curso) */}
             <td className="items-start px-2 py-2 whitespace-nowrap">
@@ -133,32 +154,8 @@ export default function ProductoTableRow({
                 </a>
             </td>
 
-            {/* Código / SKU: código de barras si tiene; si no, el SKU (o el código interno) */}
-            <td className="items-left px-2 py-2 whitespace-nowrap">
-                {(() => {
-                    const codigoBarras =
-                        productoInfo?.codigo_barras || productoInfo?.codigos_barras?.[0] || productoInfo?.codigosBarra?.[0]?.codigo;
-                    const sku = productoInfo?.sku || productoInfo?.codigo;
-                    if (codigoBarras) {
-                        return (
-                            <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300" title="Código de barras">
-                                {codigoBarras}
-                            </span>
-                        );
-                    }
-                    if (sku) {
-                        return (
-                            <span
-                                className="items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                                title="SKU"
-                            >
-                                {sku}
-                            </span>
-                        );
-                    }
-                    return <span className="text-xs text-gray-400 dark:text-gray-600">-</span>;
-                })()}
-            </td>
+            {/* Código / SKU (en compras va debajo del nombre, en la columna Producto) */}
+            {tipo !== 'compra' && <td className="items-left px-2 py-2 whitespace-nowrap">{codigoProducto ?? <span className="text-xs text-gray-400 dark:text-gray-600">-</span>}</td>}
 
             {/* Producto Nombre */}
             <td className="items-start px-2 py-2">
@@ -175,11 +172,11 @@ export default function ProductoTableRow({
                     const nombreDinamico =
                         detalle.es_fraccionado && conversiones && conversiones.length > 0
                             ? obtenerNombreConUnidad(
-                                  productoInfo?.nombre || 'Producto no encontrado',
-                                  unidadActualVenta,
-                                  detalle.unidad_medida_id,
-                                  conversiones,
-                              )
+                                productoInfo?.nombre || 'Producto no encontrado',
+                                unidadActualVenta,
+                                detalle.unidad_medida_id,
+                                conversiones,
+                            )
                             : productoInfo?.nombre || 'Producto no encontrado';
 
                     console.log(`🏷️ [obtenerNombreConUnidad RESULTADO] nombre final: "${nombreDinamico}"`);
@@ -191,9 +188,8 @@ export default function ProductoTableRow({
 
                     const nombre = (
                         <div
-                            className={`items-start text-sm font-bold text-gray-900 dark:text-white ${
-                                marca || categoria ? 'cursor-help decoration-gray-400 decoration-dotted underline-offset-2 hover:underline' : ''
-                            }`}
+                            className={`items-start text-sm font-bold text-gray-900 dark:text-white ${marca || categoria ? 'cursor-help decoration-gray-400 decoration-dotted underline-offset-2 hover:underline' : ''
+                                }`}
                         >
                             {/* ✅ Mostrar nombre personalizado con icono 📦 si es fraccionado */}
                             {detalle.es_fraccionado && (
@@ -228,6 +224,9 @@ export default function ProductoTableRow({
                     );
                 })()}
 
+                {/* Compras: código de barras / SKU debajo del nombre */}
+                {tipo === 'compra' && codigoProducto && <div className="mt-1">{codigoProducto}</div>}
+
                 <div className="text-left text-xs text-gray-500 dark:text-gray-400">
                     {(() => {
                         const tieneDataMedicamentos = (productoInfo as any)?.principio_activo || (productoInfo as any)?.uso_de_medicacion;
@@ -242,39 +241,9 @@ export default function ProductoTableRow({
                         );
                     })()}
                 </div>
-            </td>            
-
-            {/* Disponibilidad (en ventas se muestra dentro de la columna Cantidad) */}
-            {tipo !== 'venta' && (
-            <td className="text-left px-2 py-2 text-xs">
-                {!proformaConvertida &&
-                    (() => {
-                        return (
-                            <div
-                                className={`flex flex-col rounded p-1 text-center text-xs ${
-                                    stockDisponible === 0
-                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200'
-                                        : stockDisponible < 5
-                                          ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-200'
-                                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
-                                }`}
-                            >
-                                {/* Disp. {stockDisponible} | Res. {stockReservado} | Total {stockTotal} */}
-                                {/* disponible */}
-                                <p className="font-semibold">
-                                    {Math.round(stockDisponible)} {unidadDisplay}
-                                </p>
-                                {/* Reservado */}
-                                {/* <p>Res.: {stockReservado}</p> */}
-                                {/* Total */}
-                                {/* <p>T: {stockTotal}</p> */}
-                            </div>
-                        );
-                    })()}
             </td>
-            )}
 
-            {/* Cantidad */}
+            {/* Cantidad (el stock disponible se muestra debajo, recalculado en vivo: en ventas resta, en compras suma) */}
             <td className="px-2 py-2">
                 <div>
                     <input
@@ -340,28 +309,40 @@ export default function ProductoTableRow({
                             setValidacionError(null);
                         }}
                         // Ancho propio como el resto de inputs de la fila (sin w-* el navegador le daba ~20 caracteres)
-                        className={`w-24 rounded-lg border px-2 py-2 text-right font-mono text-sm font-semibold focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
-                            validacionError
-                                ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500 dark:border-red-600 dark:bg-red-950/30'
-                                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-zinc-600'
-                        }`}
+                        className={`w-24 rounded-lg border px-2 py-2 text-right font-mono text-sm font-semibold focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${validacionError
+                            ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500 dark:border-red-600 dark:bg-red-950/30'
+                            : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:border-zinc-600'
+                            }`}
                     />
                     {/* ✅ NUEVO (2026-09-07): Mostrar error de validación de stock */}
                     {validacionError && <div className="text-xs text-red-600 dark:text-red-400">⚠️ {validacionError}</div>}
                     {/* Ventas: disponible restante, recalculado en vivo con la cantidad */}
                     {validarStockVenta && !validacionError && (
                         <div
-                            className={`mt-0.5 text-xs font-semibold ${
-                                stockDisponible <= 0 || stockRestante < 0
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : stockRestante < 5
-                                      ? 'text-orange-600 dark:text-orange-400'
-                                      : 'text-emerald-600 dark:text-emerald-400'
-                            }`}
+                            className={`mt-0.5 text-xs font-semibold ${stockDisponible <= 0 || stockRestante < 0
+                                ? 'text-red-600 dark:text-red-400'
+                                : stockRestante < 5
+                                    ? 'text-orange-600 dark:text-orange-400'
+                                    : 'text-emerald-600 dark:text-emerald-400'
+                                }`}
                         >
                             {stockDisponible <= 0
                                 ? 'Sin stock'
                                 : `Quedan ${formatearCantidad(Math.max(0, stockRestante))} de ${formatearCantidad(stockDisponible)} ${unidadDisplay}`}
+                        </div>
+                    )}
+                    {/* Compras: stock resultante (la compra suma al disponible actual) */}
+                    {tipo === 'compra' && (
+                        <div
+                            className={`mt-0.5 text-xs font-semibold ${
+                                stockDisponible <= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'
+                            }`}
+                            title="Stock disponible después de registrar esta compra"
+                        >
+                            {formatearCantidad(stockDisponible + Number(detalle.cantidad || 0))} {unidadDisplay}{' '}
+                            <span className="font-normal opacity-75">
+                                ({stockDisponible <= 0 ? 'sin stock' : `hay ${formatearCantidad(stockDisponible)}`})
+                            </span>
                         </div>
                     )}
                 </div>
@@ -382,44 +363,43 @@ export default function ProductoTableRow({
                         <Tooltip open={tieneDiferencia ? undefined : false}>
                             <TooltipTrigger asChild>
                                 <span className="inline-block">
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            disabled={readOnly}
-                            value={
-                                editingField?.index === index && editingField?.field === 'precio_unitario'
-                                    ? editingField.value
-                                    : mostrarDecimales(detalle.precio_unitario)
-                            }
-                            placeholder="0.0000"
-                            onFocus={() => {
-                                setEditingField({
-                                    index,
-                                    field: 'precio_unitario',
-                                    value: mostrarDecimales(detalle.precio_unitario),
-                                });
-                            }}
-                            onChange={(e) => {
-                                const valor = e.target.value;
-                                setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
-                                if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
-                                    const num = valor === '' ? 0 : parseFloat(valor);
-                                    if (num >= 0) {
-                                        onUpdateDetail(index, 'precio_unitario', num);
-                                    }
-                                }
-                            }}
-                            onBlur={() => {
-                                setEditingField(null);
-                            }}
-                            className={`w-28 rounded-lg border px-2 py-2 font-mono text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
-                                tieneDiferencia
-                                    ? esAumento
-                                        ? 'border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-900/20'
-                                        : 'border-green-400 bg-green-50 dark:border-green-600 dark:bg-green-900/20'
-                                    : 'border-gray-300 dark:border-zinc-600'
-                            }`}
-                        />
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        disabled={readOnly}
+                                        value={
+                                            editingField?.index === index && editingField?.field === 'precio_unitario'
+                                                ? editingField.value
+                                                : mostrarDecimales(detalle.precio_unitario)
+                                        }
+                                        placeholder="0.0000"
+                                        onFocus={() => {
+                                            setEditingField({
+                                                index,
+                                                field: 'precio_unitario',
+                                                value: mostrarDecimales(detalle.precio_unitario),
+                                            });
+                                        }}
+                                        onChange={(e) => {
+                                            const valor = e.target.value;
+                                            setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                            if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                                const num = valor === '' ? 0 : parseFloat(valor);
+                                                if (num >= 0) {
+                                                    onUpdateDetail(index, 'precio_unitario', num);
+                                                }
+                                            }
+                                        }}
+                                        onBlur={() => {
+                                            setEditingField(null);
+                                        }}
+                                        className={`w-28 rounded-lg border px-2 py-2 font-mono text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${tieneDiferencia
+                                            ? esAumento
+                                                ? 'border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-900/20'
+                                                : 'border-green-400 bg-green-50 dark:border-green-600 dark:bg-green-900/20'
+                                            : 'border-gray-300 dark:border-zinc-600'
+                                            }`}
+                                    />
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent side="top">
@@ -432,57 +412,18 @@ export default function ProductoTableRow({
                                 </div>
                             </TooltipContent>
                         </Tooltip>
+                        {/* Costo registrado. Al aprobar la compra, el costo pasa a ser este precio de compra
+                            (backend: procesarCompraAprobada) */}
+                        <div
+                            className="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
+                            title="Costo registrado actualmente. Al aprobar la compra se actualiza con el precio de compra"
+                        >
+                            Reg.{' '}
+                            <span className="font-mono font-semibold">{precioCosto > 0 ? formatCurrencyMinimalDecimals(precioCosto) : '-'}</span>
+                        </div>
                     </td>
 
-                    {/* Descuento de la línea, en monto (Bs). El costo del producto se sigue tomando del precio sin descuento */}
-                    <td className="px-2 py-2 text-center">
-                        {(() => {
-                            const importe = Number(detalle.cantidad || 0) * Number(detalle.precio_unitario || 0);
-                            const descuento = Number(detalle.descuento || 0);
-                            const excede = descuento > importe + 0.0001;
-                            return (
-                                <>
-                                    <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        disabled={readOnly}
-                                        value={
-                                            editingField?.index === index && editingField?.field === 'descuento'
-                                                ? editingField.value
-                                                : descuento === 0
-                                                  ? ''
-                                                  : String(descuento)
-                                        }
-                                        placeholder="0"
-                                        title="Descuento de toda la línea, en monto"
-                                        onFocus={() => {
-                                            setEditingField({ index, field: 'descuento', value: descuento === 0 ? '' : String(descuento) });
-                                        }}
-                                        onChange={(e) => {
-                                            const valor = e.target.value.replace(',', '.');
-                                            setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
-                                            if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
-                                                onUpdateDetail(index, 'descuento', valor === '' ? 0 : parseFloat(valor) || 0);
-                                            }
-                                        }}
-                                        onBlur={() => setEditingField(null)}
-                                        className={`w-24 rounded-lg border px-2 py-2 font-mono text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
-                                            excede
-                                                ? 'border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                                : descuento > 0
-                                                  ? 'border-green-400 bg-green-50 dark:border-green-600 dark:bg-green-900/20'
-                                                  : 'border-gray-300 dark:border-zinc-600'
-                                        }`}
-                                    />
-                                    {excede && (
-                                        <div className="mt-0.5 text-xs font-semibold text-red-600 dark:text-red-400">
-                                            Supera {formatCurrency(importe)}
-                                        </div>
-                                    )}
-                                </>
-                            );
-                        })()}
-                    </td>
+
 
                     {/* Lote */}
                     <td className="px-2 py-4">
@@ -709,7 +650,57 @@ export default function ProductoTableRow({
                     })()}
                 </td>
             )}
+            {/* Descuento de la línea, en monto (Bs). El costo del producto se sigue tomando del precio sin descuento */}
+            {tipo === 'compra' && (
+                <td className="px-2 py-2 text-center">
+                    {(() => {
+                        const importe = Number(detalle.cantidad || 0) * Number(detalle.precio_unitario || 0);
+                        const descuento = Number(detalle.descuento || 0);
+                        const excede = descuento > importe + 0.0001;
+                        return (
+                            <>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    disabled={readOnly}
+                                    value={
+                                        editingField?.index === index && editingField?.field === 'descuento'
+                                            ? editingField.value
+                                            : descuento === 0
+                                                ? ''
+                                                : String(descuento)
+                                    }
+                                    placeholder="0"
+                                    title="Descuento de toda la línea, en monto"
+                                    onFocus={() => {
+                                        setEditingField({ index, field: 'descuento', value: descuento === 0 ? '' : String(descuento) });
+                                    }}
+                                    onChange={(e) => {
+                                        const valor = e.target.value.replace(',', '.');
+                                        setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                        if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                            onUpdateDetail(index, 'descuento', valor === '' ? 0 : parseFloat(valor) || 0);
+                                        }
+                                    }}
+                                    onBlur={() => setEditingField(null)}
+                                    className={`w-24 rounded-lg border px-2 py-2 font-mono text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${excede
+                                        ? 'border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                        : descuento > 0
+                                            ? 'border-green-400 bg-green-50 dark:border-green-600 dark:bg-green-900/20'
+                                            : 'border-gray-300 dark:border-zinc-600'
+                                        }`}
+                                />
+                                {excede && (
+                                    <div className="mt-0.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                                        Supera {formatCurrency(importe)}
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
+                </td>
 
+            )}
             {/* Subtotal: en compras es editable y completa el precio unitario */}
             <td className="items-left px-2 py-2">
                 {tipo === 'compra' ? (
@@ -717,29 +708,29 @@ export default function ProductoTableRow({
                         {/* El trigger es un span para que el tooltip funcione aunque el input esté deshabilitado */}
                         <TooltipTrigger asChild>
                             <span className="inline-block">
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            disabled={readOnly}
-                            value={
-                                editingField?.index === index && editingField?.field === 'subtotal'
-                                    ? editingField.value
-                                    : mostrarDecimales(detalle.subtotal)
-                            }
-                            placeholder="0.00"
-                            onFocus={() => {
-                                setEditingField({ index, field: 'subtotal', value: mostrarDecimales(detalle.subtotal) });
-                            }}
-                            onChange={(e) => {
-                                const valor = e.target.value.replace(',', '.');
-                                setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
-                                if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
-                                    onUpdateDetail(index, 'subtotal', valor === '' ? 0 : parseFloat(valor) || 0);
-                                }
-                            }}
-                            onBlur={() => setEditingField(null)}
-                            className="w-28 rounded-lg border border-gray-300 px-2 py-2 font-mono text-sm font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                        />
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    disabled={readOnly}
+                                    value={
+                                        editingField?.index === index && editingField?.field === 'subtotal'
+                                            ? editingField.value
+                                            : mostrarDecimales(detalle.subtotal)
+                                    }
+                                    placeholder="0.00"
+                                    onFocus={() => {
+                                        setEditingField({ index, field: 'subtotal', value: mostrarDecimales(detalle.subtotal) });
+                                    }}
+                                    onChange={(e) => {
+                                        const valor = e.target.value.replace(',', '.');
+                                        setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                        if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                            onUpdateDetail(index, 'subtotal', valor === '' ? 0 : parseFloat(valor) || 0);
+                                        }
+                                    }}
+                                    onBlur={() => setEditingField(null)}
+                                    className="w-28 rounded-lg border border-gray-300 px-2 py-2 font-mono text-sm font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                                />
                             </span>
                         </TooltipTrigger>
                         {/* Precio de costo ya registrado en precios_producto */}
@@ -767,6 +758,131 @@ export default function ProductoTableRow({
                     <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrencyMinimalDecimals(detalle.subtotal)}</span>
                 )}
             </td>
+
+
+
+            {/* Compras: por cada tipo de precio de venta, 3 columnas: precio (nuevo y debajo el registrado), % ganancia y ganancia Bs.
+                La ganancia se aplica sobre el nuevo costo (precio unitario) */}
+            {tipo === 'compra' &&
+                tiposPrecioVenta.map((tp) => {
+                    const precioReg = preciosVentaPorTipo[tp.tipo_precio_id];
+                    if (!precioReg) {
+                        return (
+                            <Fragment key={tp.tipo_precio_id}>
+                                {[0, 1, 2].map((i) => (
+                                    <td key={i} className="px-2 py-2">
+                                        <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
+                                    </td>
+                                ))}
+                            </Fragment>
+                        );
+                    }
+
+                    const clave = String(tp.tipo_precio_id);
+                    const costoNuevo = Number(detalle.precio_unitario) || 0;
+                    const porcentajeReg = precioCosto > 0 ? ((precioReg.precio - precioCosto) / precioCosto) * 100 : null;
+                    const montoReg = precioCosto > 0 ? precioReg.precio - precioCosto : null;
+                    const editado = detalle.precios_nuevos?.[clave];
+
+                    // Lo editado manda: precio directo, ganancia en Bs (precio = costo + monto) o % (precio = costo × (1 + %)).
+                    // Sin editar, se sugiere con el % registrado
+                    let porcentaje: number | null = porcentajeReg;
+                    let monto: number | null = porcentajeReg != null ? (costoNuevo * porcentajeReg) / 100 : null;
+                    if (editado?.precio != null) {
+                        monto = editado.precio - costoNuevo;
+                        porcentaje = costoNuevo > 0 ? (monto / costoNuevo) * 100 : null;
+                    } else if (editado?.monto != null) {
+                        monto = editado.monto;
+                        porcentaje = costoNuevo > 0 ? (editado.monto / costoNuevo) * 100 : null;
+                    } else if (editado?.porcentaje != null) {
+                        porcentaje = editado.porcentaje;
+                        monto = (costoNuevo * editado.porcentaje) / 100;
+                    }
+                    const precioNuevo =
+                        editado?.precio != null
+                            ? editado.precio
+                            : monto != null && costoNuevo > 0
+                              ? Math.round((costoNuevo + monto) * 100) / 100
+                              : null;
+
+                    const actualizarGanancia = (tipoGanancia: 'precio' | 'porcentaje' | 'monto', valor: string) => {
+                        const nuevos = { ...(detalle.precios_nuevos || {}) };
+                        if (valor === '' || valor === '-') {
+                            delete nuevos[clave];
+                        } else {
+                            nuevos[clave] = { precio_id: precioReg.id, [tipoGanancia]: parseFloat(valor) || 0 };
+                        }
+                        onUpdateDetail(index, 'precios_nuevos', Object.keys(nuevos).length > 0 ? nuevos : undefined);
+                    };
+
+                    // Inputs de precio, % y ganancia Bs, precargados con el valor vigente: el editado, el derivado de otro, o el sugerido
+                    // con el % registrado. Solo se guarda si se editó (borde azul); borrar el valor vuelve a la sugerencia
+                    const inputGanancia = (tipoGanancia: 'precio' | 'porcentaje' | 'monto', valor: number | null, sufijo: string, titulo: string) => {
+                        const campo = `precio_venta_${tipoGanancia}_${tp.tipo_precio_id}`;
+                        const valorMostrado = valor != null ? mostrarDecimales(valor.toFixed(2)) : '';
+                        return (
+                            <div className="flex items-center gap-1">
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    disabled={readOnly}
+                                    value={editingField?.index === index && editingField?.field === campo ? editingField.value : valorMostrado}
+                                    placeholder={sufijo}
+                                    title={titulo}
+                                    onFocus={() => setEditingField({ index, field: campo, value: valorMostrado })}
+                                    onChange={(e) => {
+                                        const valor = e.target.value.replace(',', '.');
+                                        setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                        if (/^-?\d*\.?\d*$/.test(valor)) {
+                                            actualizarGanancia(tipoGanancia, valor);
+                                        }
+                                    }}
+                                    onBlur={() => setEditingField(null)}
+                                    className={`${tipoGanancia === 'precio' ? 'w-20' : 'w-16'} rounded-lg border px-2 py-1 text-right font-mono text-xs font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${editado ? 'border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20' : 'border-gray-300 dark:border-zinc-600'
+                                        }`}
+                                />
+                                <span className="text-xs text-gray-500 dark:text-gray-400">{sufijo}</span>
+                            </div>
+                        );
+                    };
+
+                    return (
+                        <Fragment key={tp.tipo_precio_id}>
+                            {/* Precio de venta: nuevo (editable; al editarlo se recalcula la ganancia) y debajo el registrado */}
+                            <td className="px-2 py-2 whitespace-nowrap">
+                                {inputGanancia(
+                                    'precio',
+                                    precioNuevo,
+                                    'Bs',
+                                    editado
+                                        ? 'Nuevo precio de venta: se aplicará al aprobar la compra'
+                                        : 'Sugerido con la ganancia registrada. No se guarda si no lo edita (ni la ganancia)',
+                                )}
+                                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400" title="Precio registrado actualmente">
+                                    Reg. <span className="font-mono font-semibold">{formatCurrencyMinimalDecimals(precioReg.precio)}</span>
+                                </div>
+                            </td>
+                            {/* % de ganancia (al editarlo se recalcula la ganancia en Bs) */}
+                            <td className="px-2 py-2 whitespace-nowrap">
+                                {inputGanancia(
+                                    'porcentaje',
+                                    porcentaje,
+                                    '%',
+                                    `% de ganancia sobre el precio de compra${porcentajeReg != null ? ` (registrado: ${mostrarDecimales(porcentajeReg.toFixed(2))}%)` : ''}. Borrar = no cambiar este precio`,
+                                )}
+                            </td>
+                            {/* Ganancia en Bs (precio = compra + ganancia; al editarla se recalcula el %) */}
+                            <td className="px-2 py-2 whitespace-nowrap">
+                                {inputGanancia(
+                                    'monto',
+                                    monto,
+                                    'Bs',
+                                    `Ganancia en Bs sobre el precio de compra${montoReg != null ? ` (registrada: ${mostrarDecimales(montoReg.toFixed(2))} Bs)` : ''}. Borrar = no cambiar este precio`,
+                                )}
+                            </td>
+                        </Fragment>
+                    );
+                })}
 
             {/* Categoría */}
             {/* <td className="items-start px-2 py-2 text-center">

@@ -1,3 +1,4 @@
+import { useAuth } from '@/application/hooks/use-auth';
 import { Almacen } from '@/domain/entities/almacenes';
 import { Producto, StockProducto } from '@/domain/entities/movimientos-inventario';
 import AppLayout from '@/layouts/app-layout';
@@ -46,6 +47,13 @@ interface PageProps extends InertiaPageProps {
     tipos_ajuste_inventario?: TipoAjusteInventario[];
 }
 
+// Muestra solo los decimales necesarios (10 → "10", 2.5 → "2,5"), hasta 6 para productos fraccionados
+const formatCantidad = (valor: unknown) =>
+    new Intl.NumberFormat('es-BO', { maximumFractionDigits: 6 }).format(Number(valor) || 0);
+
+const formatVencimiento = (fecha?: string | null) =>
+    fecha ? new Date(`${fecha}T00:00:00`).toLocaleDateString('es-BO') : null;
+
 const breadcrumbs = [
     { title: 'Inventario', href: '/inventario' },
     { title: 'Ajuste por Tabla', href: '/inventario/ajuste-tabla' },
@@ -93,6 +101,8 @@ function DropdownPortal({ ajusteId, inputRef, searchResults, onSelectProduct, vi
                     sku: item.sku,
                     producto_id: productoId,
                     existe_en_almacen: item.existe_en_almacen ?? true, // ✅ Rastrear si es producto nuevo
+                    stock_total_producto: item.stock_total_producto ?? 0,
+                    disponible_total_producto: item.disponible_total_producto ?? 0,
                     lotes: [],
                 };
             }
@@ -118,9 +128,8 @@ function DropdownPortal({ ajusteId, inputRef, searchResults, onSelectProduct, vi
                 <div key={grupo.producto_id} className="border-b last:border-b-0 dark:border-slate-600">
                     {/* Encabezado del Producto */}
                     <div
-                        className={`sticky top-0 px-3 py-2 ${
-                            grupo.existe_en_almacen ? 'bg-gray-50 dark:bg-slate-600' : 'border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/30'
-                        }`}
+                        className={`sticky top-0 px-3 py-2 ${grupo.existe_en_almacen ? 'bg-gray-50 dark:bg-slate-600' : 'border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/30'
+                            }`}
                     >
                         <div className="flex items-center justify-between">
                             <div className="text-sm font-semibold dark:text-gray-100">{grupo.nombre}</div>
@@ -130,7 +139,16 @@ function DropdownPortal({ ajusteId, inputRef, searchResults, onSelectProduct, vi
                                 </span>
                             )}
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-300">SKU: {grupo.sku}</div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600 dark:text-gray-300">
+                            <span>ID: {grupo.producto_id} · SKU: {grupo.sku}</span>
+                            {grupo.existe_en_almacen && (
+                                <span>
+                                    Stock total: <strong className="text-blue-700 dark:text-blue-300">{formatCantidad(grupo.stock_total_producto)}</strong>
+                                    {' · '}Disp: <strong className="text-green-700 dark:text-green-300">{formatCantidad(grupo.disponible_total_producto)}</strong>
+                                    {grupo.lotes.length > 1 && ` (${grupo.lotes.length} lotes)`}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Lotes del Producto */}
@@ -144,25 +162,32 @@ function DropdownPortal({ ajusteId, inputRef, searchResults, onSelectProduct, vi
                                 className="cursor-pointer px-3 py-2 transition hover:bg-blue-50 dark:hover:bg-slate-500"
                             >
                                 <div className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
-                                    {lote.lote ? (
-                                        <div className="font-medium text-blue-600 dark:text-blue-400">📋 Lote: {lote.lote}</div>
-                                    ) : (
-                                        <div className="font-medium text-orange-600 dark:text-orange-400">⚠️ Sin Lote</div>
-                                    )}
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <span className="block">
-                                            📦 Stock:{' '}
-                                            <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                                {parseFloat(lote.cantidad_actual || 0).toFixed(2)}
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        {lote.lote ? (
+                                            <span className="font-medium text-blue-600 dark:text-blue-400">📋 Lote: {lote.lote}</span>
+                                        ) : (
+                                            <span className="font-medium text-orange-600 dark:text-orange-400">
+                                                ⚠️ Sin lote{grupo.lotes.length > 1 && lote.id ? ` (registro #${lote.id})` : ''}
                                             </span>
-                                        </span>
-                                        <span className="block">
-                                            ✓ Disp:{' '}
-                                            <span className="font-semibold text-green-600 dark:text-green-400">
-                                                {parseFloat(lote.cantidad_disponible || 0).toFixed(2)}
-                                            </span>
-                                        </span>
+                                        )}
+                                        {formatVencimiento(lote.fecha_vencimiento) && (
+                                            <span className="text-gray-500 dark:text-gray-400">Vence: {formatVencimiento(lote.fecha_vencimiento)}</span>
+                                        )}
                                     </div>
+                                    {grupo.existe_en_almacen ? (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <span className="block">
+                                                📦 Stock lote:{' '}
+                                                <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCantidad(lote.cantidad_actual)}</span>
+                                            </span>
+                                            <span className="block">
+                                                ✓ Disp. lote:{' '}
+                                                <span className="font-semibold text-green-600 dark:text-green-400">{formatCantidad(lote.cantidad_disponible)}</span>
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="text-amber-700 dark:text-amber-400">Sin stock en este almacén: se creará al agregarlo</div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -176,6 +201,7 @@ function DropdownPortal({ ajusteId, inputRef, searchResults, onSelectProduct, vi
 
 export default function AjusteTabla() {
     const { props } = usePage<PageProps>();
+    const { can } = useAuth();
     const { almacenes, stock_productos: initialStockProductos, tipos_ajuste_inventario = [] } = props;
 
     const [almacenSeleccionado, setAlmacenSeleccionado] = useState<string>('');
@@ -370,6 +396,7 @@ export default function AjusteTabla() {
                             // ✅ Si es producto nuevo, inicializar con cantidad 0
                             actualizado.producto = {
                                 id: producto.stock_producto_id,
+                                producto_id: producto.producto_id, // para la columna ID y el enlace al producto
                                 nombre: producto.nombre,
                                 sku: producto.sku,
                                 codigo_barras: producto.codigo_barras,
@@ -453,45 +480,66 @@ export default function AjusteTabla() {
     );
 
     // ✅ NUEVO: Búsqueda global desde el buscador principal (estilo ventas)
+    // Cada búsqueda nueva invalida las anteriores (una respuesta lenta no pisa a una más reciente)
+    const busquedaMainIdRef = useRef(0);
+
+    // Devuelve los resultados mostrados y si el término coincidió exacto (ID, código de barras o SKU),
+    // o null si la búsqueda quedó obsoleta o falló
     const buscarProductosGlobal = useCallback(
-        async (term: string) => {
+        async (term: string): Promise<{ resultados: any[]; exacta: boolean } | null> => {
             if (!almacenSeleccionado) {
                 toast.error('Selecciona un almacén primero');
-                return;
+                return null;
             }
+
+            const id = ++busquedaMainIdRef.current;
 
             if (term.trim() === '') {
                 setMainSearchResults([]);
-                return;
+                return null;
             }
 
             try {
                 setIsSearchingMain(true);
 
-                const response = await fetch(`/api/inventario/productos-almacen/${almacenSeleccionado}?q=${encodeURIComponent(term)}&limit=15`, {
+                const response = await fetch(`/api/inventario/productos-almacen/${almacenSeleccionado}?q=${encodeURIComponent(term.trim())}&limit=15`, {
                     headers: { Accept: 'application/json' },
                 });
 
                 const data = await response.json();
+                if (id !== busquedaMainIdRef.current) return null; // se siguió escribiendo
 
                 if (data.success) {
                     // Mostrar resultados directamente (incluye todos los lotes)
                     setMainSearchResults(data.data || []);
-                    console.log('🔍 Resultados búsqueda global:', data.data);
-                } else {
-                    toast.error(data.message || 'Error en la búsqueda');
-                    setMainSearchResults([]);
+                    return { resultados: data.data || [], exacta: !!data.exacta };
                 }
+
+                toast.error(data.message || 'Error en la búsqueda');
+                setMainSearchResults([]);
+                return null;
             } catch (error) {
+                if (id !== busquedaMainIdRef.current) return null;
                 console.error('Error buscando productos:', error);
                 toast.error('Error en la búsqueda');
                 setMainSearchResults([]);
+                return null;
             } finally {
-                setIsSearchingMain(false);
+                if (id === busquedaMainIdRef.current) setIsSearchingMain(false);
             }
         },
         [almacenSeleccionado],
     );
+
+    // Mientras se escribe se muestran sugerencias a los 300 ms. La carga directa a la tabla
+    // (coincidencia exacta, ver más abajo) espera a que se deje de escribir 600 ms.
+    useEffect(() => {
+        const term = mainSearchTerm.trim();
+        if (term.length < 2 || !almacenSeleccionado) return;
+
+        const timeout = setTimeout(() => buscarProductosGlobal(term), 300);
+        return () => clearTimeout(timeout);
+    }, [mainSearchTerm, almacenSeleccionado, buscarProductosGlobal]);
 
     // ✅ NUEVO: Agregar producto desde el listado de sugerencias
     const agregarDesdeListado = useCallback(
@@ -568,6 +616,51 @@ export default function AjusteTabla() {
         },
         [almacenSeleccionado, tipoAjusteSeleccionado, tiposAjuste],
     );
+
+    // Enter / escáner / botón buscar: si hay un único resultado se agrega directo a la tabla (como en ventas).
+    // Un código exacto (ID, código de barras o SKU) devuelve solo ese producto, así que el escáner lo agrega al instante.
+    // Si el producto tiene varios lotes en el almacén se deja la lista para elegir el lote.
+    // Evita agregar dos veces el mismo resultado (Enter y la carga automática pueden coincidir)
+    const agregandoMainRef = useRef(false);
+    const agregarResultadoUnico = useCallback(
+        async (resultado: any) => {
+            if (agregandoMainRef.current) return;
+            agregandoMainRef.current = true;
+            try {
+                busquedaMainIdRef.current++; // descartar búsquedas pendientes del tipeo
+                await agregarDesdeListado(resultado);
+                mainInputRef.current?.focus(); // listo para escanear el siguiente
+            } finally {
+                agregandoMainRef.current = false;
+            }
+        },
+        [agregarDesdeListado],
+    );
+
+    const confirmarBusquedaMain = useCallback(async () => {
+        const busqueda = await buscarProductosGlobal(mainSearchTerm);
+        if (busqueda && busqueda.resultados.length === 1) {
+            await agregarResultadoUnico(busqueda.resultados[0]);
+        }
+    }, [buscarProductosGlobal, agregarResultadoUnico, mainSearchTerm]);
+
+    // Sin Enter: si al dejar de escribir el texto coincide EXACTO con el ID, un código de barras o el SKU
+    // de un producto con un solo lote en el almacén, se carga directo a la tabla (como el escáner en ventas).
+    // Una coincidencia parcial solo muestra sugerencias.
+    useEffect(() => {
+        const term = mainSearchTerm.trim();
+        if (term.length < 2 || !almacenSeleccionado) return;
+
+        const timeout = setTimeout(async () => {
+            if (agregandoMainRef.current) return;
+            const busqueda = await buscarProductosGlobal(term);
+            if (busqueda?.exacta && busqueda.resultados.length === 1) {
+                await agregarResultadoUnico(busqueda.resultados[0]);
+            }
+        }, 600);
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mainSearchTerm, almacenSeleccionado]);
 
     // Agregar nueva fila de ajuste
     const agregarFila = useCallback(() => {
@@ -850,7 +943,7 @@ export default function AjusteTabla() {
         <AppLayout>
             <Head title="Ajuste de Inventario por Tabla" />
 
-            <div className="space-y-4 p-6">
+            <div className="space-y-4 p-2">
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
 
                 {/* <div className="flex items-center justify-between">
@@ -928,7 +1021,7 @@ export default function AjusteTabla() {
                                 <Input
                                     ref={mainInputRef}
                                     type="text"
-                                    placeholder="SKU, código de barras o nombre del producto..."
+                                    placeholder="ID, código de barras, SKU o nombre (Enter agrega si hay uno solo)"
                                     value={mainSearchTerm}
                                     onChange={(e) => {
                                         setMainSearchTerm(e.target.value);
@@ -937,10 +1030,10 @@ export default function AjusteTabla() {
                                             setMainSearchResults([]);
                                         }
                                     }}
-                                    onKeyPress={(e) => {
+                                    onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
-                                            buscarProductosGlobal(mainSearchTerm);
+                                            confirmarBusquedaMain();
                                         }
                                     }}
                                     className="w-full pl-10 text-base"
@@ -955,7 +1048,7 @@ export default function AjusteTabla() {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => buscarProductosGlobal(mainSearchTerm)}
+                                onClick={() => confirmarBusquedaMain()}
                                 disabled={!mainSearchTerm.trim() || !almacenSeleccionado || isSearchingMain}
                                 className="flex items-center justify-center rounded-md bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600"
                                 title="Buscar"
@@ -968,39 +1061,59 @@ export default function AjusteTabla() {
                         {mainSearchTerm && mainSearchResults.length > 0 && (
                             <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
                                 {mainSearchResults.map((resultado, idx) => (
+                                    // Clic (o Enter/Espacio con el teclado) en la sugerencia la agrega a la tabla.
+                                    // agregarResultadoUnico evita duplicados por doble clic y devuelve el foco al buscador.
                                     <div
                                         key={idx}
-                                        className="flex cursor-pointer items-center justify-between border-b p-2 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-700"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => agregarResultadoUnico(resultado)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                agregarResultadoUnico(resultado);
+                                            }
+                                        }}
+                                        title="Clic para agregar a la tabla"
+                                        className="group flex cursor-pointer items-center justify-between border-b p-2 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none dark:border-slate-700 dark:hover:bg-slate-700 dark:focus:bg-slate-700"
                                     >
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-medium dark:text-white">
+                                                <span className="font-mono text-gray-500 dark:text-gray-400">#{resultado.producto_id} </span>
                                                 {resultado.sku && `[${resultado.sku}] `}
                                                 {resultado.nombre}
                                             </p>
-                                            <div className="mt-1 flex gap-2 text-xs text-gray-600 dark:text-gray-400">
-                                                {resultado.lote && <span>📦 {resultado.lote}</span>}
-                                                <span className="text-blue-600 dark:text-blue-400">
-                                                    {parseFloat(resultado.cantidad_actual || 0).toFixed(2)}
-                                                </span>
-                                                <span className="text-green-600 dark:text-green-400">
-                                                    ✓ {parseFloat(resultado.cantidad_disponible || 0).toFixed(2)}
-                                                </span>
-                                                {!resultado.existe_en_almacen && (
-                                                    <span className="text-orange-600 dark:text-orange-400">+ Nuevo</span>
-                                                )}
-                                            </div>
+                                            {resultado.existe_en_almacen ? (
+                                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+                                                    {resultado.lote ? (
+                                                        <span className="font-medium text-blue-600 dark:text-blue-400">📋 Lote: {resultado.lote}</span>
+                                                    ) : (
+                                                        <span className="font-medium text-orange-600 dark:text-orange-400">
+                                                            ⚠️ Sin lote{resultado.cantidad_lotes > 1 && resultado.id ? ` (registro #${resultado.id})` : ''}
+                                                        </span>
+                                                    )}
+                                                    {formatVencimiento(resultado.fecha_vencimiento) && (
+                                                        <span>Vence: {formatVencimiento(resultado.fecha_vencimiento)}</span>
+                                                    )}
+                                                    <span>
+                                                        Stock lote: <strong className="text-blue-600 dark:text-blue-400">{formatCantidad(resultado.cantidad_actual)}</strong>
+                                                        {' '}(disp. <strong className="text-green-600 dark:text-green-400">{formatCantidad(resultado.cantidad_disponible)}</strong>)
+                                                    </span>
+                                                    <span>
+                                                        Stock total: <strong className="text-gray-900 dark:text-white">{formatCantidad(resultado.stock_total_producto)}</strong>
+                                                        {resultado.cantidad_lotes > 1 && ` en ${resultado.cantidad_lotes} lotes`}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-1 text-xs text-orange-600 dark:text-orange-400">
+                                                    + Nuevo: sin stock en este almacén
+                                                </div>
+                                            )}
                                         </div>
-                                        <Button
-                                            size="xs"
-                                            variant="default"
-                                            className="ml-2 flex-shrink-0 whitespace-nowrap"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                agregarDesdeListado(resultado);
-                                            }}
-                                        >
-                                            Agregar
-                                        </Button>
+                                        <Plus
+                                            className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                                            aria-hidden="true"
+                                        />
                                     </div>
                                 ))}
                             </div>
@@ -1034,11 +1147,12 @@ export default function AjusteTabla() {
                                 <table className="relative w-full">
                                     <thead className="border-b bg-gray-100 dark:border-slate-600 dark:bg-slate-700">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-sm font-medium dark:text-gray-200">Producto</th>
-                                            <th className="px-4 py-3 text-center text-sm font-medium dark:text-gray-200">📥/📤 Movimiento</th>
-                                            <th className="px-4 py-3 text-left text-sm font-medium dark:text-gray-200">Stock Actual</th>
-                                            <th className="px-4 py-3 text-left text-sm font-medium dark:text-gray-200">Cantidad</th>
-                                            <th className="px-4 py-3 text-left text-sm font-medium dark:text-gray-200">Stock Nuevo</th>
+                                            <th className="px-2 py-2 text-left text-sm font-medium dark:text-gray-200">ID</th>
+                                            <th className="px-2 py-2 text-left text-sm font-medium dark:text-gray-200">Producto</th>
+                                            <th className="px-2 py-2 text-center text-sm font-medium dark:text-gray-200">📥/📤 Movimiento</th>
+                                            <th className="px-2 py-2 text-left text-sm font-medium dark:text-gray-200">Stock Actual</th>
+                                            <th className="px-2 py-2 text-left text-sm font-medium dark:text-gray-200">Cantidad</th>
+                                            <th className="px-2 py-2 text-left text-sm font-medium dark:text-gray-200">Stock Nuevo</th>
                                             {/* ✅ REMOVIDA: Columna de Observación - ahora es general */}
                                             <th className="px-4 py-3 text-center text-sm font-medium dark:text-gray-200">Acción</th>
                                         </tr>
@@ -1046,8 +1160,28 @@ export default function AjusteTabla() {
                                     <tbody>
                                         {ajustes.map((ajuste, idx) => (
                                             <tr key={ajuste.id} className="border-b hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-700">
+                                                {/* ID DE PRODUCTO (ajuste.producto.id es el stock_producto_id, no el del producto) */}
+                                                <td className="px-2 py-2 font-mono text-sm font-medium dark:text-gray-200">
+                                                    {(() => {
+                                                        const productoId = ajuste.producto?.producto_id ?? ajuste.producto?.producto?.id;
+                                                        if (!productoId) return <span className="text-gray-400">—</span>;
+                                                        return can('productos.manage') ? (
+                                                            <a
+                                                                href={`/productos/${productoId}/edit`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-600 hover:underline dark:text-blue-400"
+                                                                title="Abrir producto en otra pestaña"
+                                                            >
+                                                                #{productoId}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-gray-400">#{productoId}</span>
+                                                        );
+                                                    })()}
+                                                </td>
                                                 {/* Producto - Mostrar seleccionado o Input de búsqueda */}
-                                                <td className="relative px-4 py-3">
+                                                <td className="relative px-2 py-2">
                                                     {ajuste.producto ? (
                                                         // ✅ Si hay producto seleccionado, mostrar con opción de cambiar
                                                         <div className="flex flex-col gap-2">
@@ -1153,7 +1287,7 @@ export default function AjusteTabla() {
                                                     )}
                                                 </td>
                                                 {/* 📥/📤 MOVIMIENTO - ENTRADA O SALIDA - INTERACTIVO */}
-                                                <td className="px-4 py-3 text-center">
+                                                <td className="px-2 py-2 text-center">
                                                     <div className="mb-2 flex justify-center gap-1">
                                                         <button
                                                             type="button"
@@ -1161,11 +1295,10 @@ export default function AjusteTabla() {
                                                                 // Usar actualizarFila para ejecutar el recálculo automático
                                                                 actualizarFila(ajuste.id, 'tipo_ajuste', 'entrada');
                                                             }}
-                                                            className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                                                                ajuste.tipo_ajuste === 'entrada'
+                                                            className={`rounded-full px-3 py-1 text-xs font-bold transition ${ajuste.tipo_ajuste === 'entrada'
                                                                     ? 'bg-green-500 text-white'
                                                                     : 'bg-gray-200 text-gray-700 hover:bg-green-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30'
-                                                            }`}
+                                                                }`}
                                                             title="Selecciona ENTRADA"
                                                         >
                                                             📥 ENTRADA
@@ -1176,11 +1309,10 @@ export default function AjusteTabla() {
                                                                 // Usar actualizarFila para ejecutar el recálculo automático
                                                                 actualizarFila(ajuste.id, 'tipo_ajuste', 'salida');
                                                             }}
-                                                            className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                                                                ajuste.tipo_ajuste === 'salida'
+                                                            className={`rounded-full px-3 py-1 text-xs font-bold transition ${ajuste.tipo_ajuste === 'salida'
                                                                     ? 'bg-red-500 text-white'
                                                                     : 'bg-gray-200 text-gray-700 hover:bg-red-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30'
-                                                            }`}
+                                                                }`}
                                                             title="Selecciona SALIDA"
                                                         >
                                                             📤 SALIDA
@@ -1189,7 +1321,7 @@ export default function AjusteTabla() {
                                                 </td>
 
                                                 {/* Stock Actual */}
-                                                <td className="px-4 py-3">
+                                                <td className="px-2 py-2">
                                                     <div className="text-sm font-medium dark:text-gray-200">
                                                         <div className="font-semibold text-blue-600 dark:text-blue-400">
                                                             {ajuste.cantidad_actual.toFixed(2)}
@@ -1203,7 +1335,7 @@ export default function AjusteTabla() {
                                                 </td>
 
                                                 {/* Cantidad Ajuste */}
-                                                <td className="px-4 py-3">
+                                                <td className="px-2 py-2">
                                                     <Input
                                                         type="number"
                                                         min="0"
@@ -1225,14 +1357,14 @@ export default function AjusteTabla() {
                                                 </td>
 
                                                 {/* Stock Nuevo */}
-                                                <td className="bg-blue-50 px-4 py-3 text-sm font-semibold dark:bg-blue-900 dark:text-blue-100">
+                                                <td className="bg-blue-50 px-2 py-2 text-sm font-semibold dark:bg-blue-900 dark:text-blue-100">
                                                     {ajuste.cantidad_nueva.toFixed(2)}
                                                 </td>
 
                                                 {/* ✅ REMOVIDA: Columna de Observación - ahora es general */}
 
                                                 {/* Acción */}
-                                                <td className="px-4 py-3 text-center">
+                                                <td className="px-2 py-2 text-center">
                                                     <button
                                                         type="button"
                                                         onClick={() => eliminarFila(ajuste.id)}
@@ -1266,32 +1398,32 @@ export default function AjusteTabla() {
                             )}
 
                             {/* Botones */}
-                            <div className="flex justify-between gap-3 border-t bg-gray-50 px-6 py-4 dark:border-slate-600 dark:bg-slate-700">
-                                <Button type="button" onClick={agregarFila} variant="outline" disabled={!almacenSeleccionado}>
+                            <div className="flex gap-3 border-t bg-gray-50 px-6 py-4 dark:border-slate-600 dark:bg-slate-700 items-end">
+                                {/* <Button type="button" onClick={agregarFila} variant="outline" disabled={!almacenSeleccionado}>
                                     <Plus size={18} className="mr-2" />
                                     Agregar Fila
-                                </Button>
+                                </Button> */}
 
-                                <div className="flex gap-3">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            setAjustes([]);
-                                            setAlmacenSeleccionado('');
-                                        }}
-                                    >
-                                        <XCircle size={18} className="mr-2" />
-                                        Cancelar
-                                    </Button>
-                                    <Button type="button" variant="outline" onClick={abrirOpcionesImpresion} disabled={ajustes.length === 0}>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setAjustes([]);
+                                        setAlmacenSeleccionado('');
+                                    }}
+                                >
+                                    <XCircle size={18} className="mr-2" />
+                                    Cancelar
+                                </Button>
+                                {/* <Button type="button" variant="outline" onClick={abrirOpcionesImpresion} disabled={ajustes.length === 0}>
                                         <FileText size={18} className="mr-2" />
                                         Opciones de Salida
-                                    </Button>
-                                    <Button type="submit" disabled={isSubmitting || ajustes.length === 0}>
-                                        <Save size={18} className="mr-2" />
-                                        {isSubmitting ? 'Procesando...' : 'Guardar Ajustes'}
-                                    </Button>
+                                    </Button> */}
+                                <Button type="submit" disabled={isSubmitting || ajustes.length === 0}>
+                                    <Save size={18} className="mr-2" />
+                                    {isSubmitting ? 'Procesando...' : 'Guardar Ajustes'}
+                                </Button>
+                                <div className="flex gap-3">
                                 </div>
                             </div>
                         </form>

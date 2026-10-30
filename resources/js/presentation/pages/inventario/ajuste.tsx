@@ -11,7 +11,7 @@ import { Almacen } from '@/domain/entities/almacenes';
 import type { StockProducto } from '@/domain/entities/movimientos-inventario';
 import { Id, Pagination } from '@/domain/entities/shared';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
-import { Printer, MoreVertical } from 'lucide-react';
+import { Eye, Printer, MoreVertical } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -647,7 +647,7 @@ export default function AjusteInventario() {
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
                                 <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                                    Ajuste de Inventario
+                                    Ajuste de Inventarios
                                 </h2>
                                 <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
                                     {vista === 'crear' ? 'Realizar ajustes manuales de stock por almacén' : vista === 'tabla' ? 'Ajuste masivo de stock por tabla editable' : 'Historial de ajustes realizados'}
@@ -1261,6 +1261,7 @@ export default function AjusteInventario() {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
+                                                    <TableHead>🔢 ID</TableHead>
                                                     <TableHead>🔢 Número</TableHead>
                                                     <TableHead>🏪 Almacén</TableHead>
                                                     <TableHead>👤 Usuario</TableHead>
@@ -1276,8 +1277,22 @@ export default function AjusteInventario() {
                                             <TableBody>
                                                 {ajustes_inventario.data.map((ajuste) => (
                                                     <TableRow key={ajuste.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                                        <TableCell className="font-mono font-semibold text-gray-900 dark:text-gray-100">
-                                                            {ajuste.numero}
+                                                        {/* ID del ajuste  */}
+                                                        <TableCell className="font-mono font-semibold">
+                                                            #{ajuste.id}
+                                                        </TableCell>
+                                                        <TableCell className="font-mono font-semibold">
+                                                            <a
+                                                                href={`/inventario/ajustes/${ajuste.id}`}
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    router.visit(`/inventario/ajustes/${ajuste.id}`);
+                                                                }}
+                                                                className="text-blue-600 hover:underline dark:text-blue-400"
+                                                                title="Ver detalle del ajuste"
+                                                            >
+                                                                {ajuste.numero}
+                                                            </a>
                                                         </TableCell>
                                                         <TableCell className="text-sm">
                                                             <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-medium">
@@ -1342,6 +1357,13 @@ export default function AjusteInventario() {
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => router.visit(`/inventario/ajustes/${ajuste.id}`)}
+                                                                        className="cursor-pointer gap-2"
+                                                                    >
+                                                                        <Eye className="h-4 w-4" />
+                                                                        Ver detalle
+                                                                    </DropdownMenuItem>
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleAbrirImpresion(ajuste.id)}
                                                                         className="cursor-pointer gap-2"

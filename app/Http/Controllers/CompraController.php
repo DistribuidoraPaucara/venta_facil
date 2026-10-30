@@ -500,6 +500,10 @@ class CompraController extends Controller
             'detalles.producto.unidad:id,codigo,nombre',
             'detalles.producto.codigosBarra:id,producto_id,codigo,es_principal',
             'detalles.producto.stock:id,producto_id,almacen_id,cantidad,cantidad_disponible',
+            // Precios registrados (costo y venta) para las columnas de precios de la tabla de compra
+            'detalles.producto.precios' => function ($q) {
+                $q->where('activo', true)->with('tipoPrecio:id,nombre,codigo');
+            },
             'estadoDocumento',
             'tipoPago',
             'moneda',
@@ -531,6 +535,13 @@ class CompraController extends Controller
             $cantidadTotal = $stockProductos->sum('cantidad');
             $cantidadDisponible = $stockProductos->sum('cantidad_disponible');
 
+            // Precios registrados: mismo formato que la búsqueda de productos (ProductoController::mapearProductos)
+            $precios     = $producto->precios ?? collect();
+            // Mismo criterio que ProductoController::mapearProductos: código COSTO, o "COSTO" en el nombre del tipo o del precio
+            $precioCosto = $precios->first(fn ($p) => $p->tipoPrecio?->codigo === 'COSTO'
+                || stripos($p->tipoPrecio?->nombre ?? '', 'COSTO') !== false
+                || stripos($p->nombre ?? '', 'COSTO') !== false)?->precio ?? 0;
+
             return [
                 'id'                  => $detalle->id,
                 'producto_id'         => $detalle->producto_id,
@@ -540,6 +551,7 @@ class CompraController extends Controller
                 'subtotal'            => $detalle->subtotal,
                 'lote'                => $detalle->lote,
                 'fecha_vencimiento'   => $detalle->fecha_vencimiento,
+                'precios_venta'       => $detalle->precios_venta, // Precios de venta editados (se aplican al aprobar)
                 // ✅ NUEVO 2026-03-06: Incluir producto con todos los campos
                 'producto'            => [
                     'id'                  => $producto->id,
@@ -562,6 +574,20 @@ class CompraController extends Controller
                     // ✅ NUEVO: Stock disponible totalizado
                     'stock_total'         => $cantidadTotal,
                     'stock_disponible'    => $cantidadDisponible,
+                    'precio_costo'        => (float) $precioCosto,
+                    'precios'             => $precios->map(fn ($p) => [
+                        'id'               => $p->id,
+                        'nombre'           => $p->tipoPrecio ? $p->tipoPrecio->nombre : ($p->nombre ?? 'Precio'),
+                        'precio'           => (float) $p->precio,
+                        'tipo_precio_id'   => $p->tipo_precio_id,
+                        'es_precio_base'   => $p->es_precio_base,
+                        'unidad_medida_id' => $p->unidad_medida_id,
+                        'tipo_precio'      => $p->tipoPrecio ? [
+                            'id'     => $p->tipoPrecio->id,
+                            'nombre' => $p->tipoPrecio->nombre,
+                            'codigo' => $p->tipoPrecio->codigo,
+                        ] : null,
+                    ])->values()->all(),
                 ],
             ];
         })->toArray();
@@ -783,13 +809,16 @@ class CompraController extends Controller
                 }
 
                 // El costo de los productos pasa a ser el de esta compra (igual que al aprobar un borrador en update())
-                $productosConCambio = (new DetectarCambiosPrecioService())->procesarCompraAprobada($compra);
+                $servicioPrecios    = new DetectarCambiosPrecioService();
+                $productosConCambio = $servicioPrecios->procesarCompraAprobada($compra);
                 if (! empty($productosConCambio)) {
                     Log::info('Precios de costo actualizados al crear la compra aprobada', [
                         'compra_numero'        => $compra->numero,
                         'productos_con_cambio' => count($productosConCambio),
                     ]);
                 }
+                // Precios de venta editados en la tabla de la compra
+                $servicioPrecios->aplicarPreciosVentaCompra($compra);
             }
 
             // ✅ NUEVO: Manejo de compras a CRÉDITO vs CONTADO
@@ -1089,6 +1118,14 @@ class CompraController extends Controller
                     'compra_numero'  => $compra->numero,
                     'detalles_count' => $compra->detalles()->count(),
                 ]);
+                // Los precios de venta editados no cuentan como cambio de detalle (no deben revertir ni volver a
+                // registrar stock): se guardan directo en cada línea existente
+                foreach ($data['detalles'] as $detalleData) {
+                    if (! empty($detalleData['id']) && array_key_exists('precios_venta', $detalleData)) {
+                        $compra->detalles()->where('id', $detalleData['id'])
+                            ->update(['precios_venta' => $detalleData['precios_venta'] ? json_encode($detalleData['precios_venta']) : null]);
+                    }
+                }
                 // Detalles no cambiaron, simplemente recargarlos
                 $compra->load('detalles');
             }
@@ -1161,6 +1198,8 @@ class CompraController extends Controller
                 // 3️⃣ ✨ NUEVO: Detectar cambios de precio de costo
                 $servicioPrecios    = new DetectarCambiosPrecioService();
                 $productosConCambio = $servicioPrecios->procesarCompraAprobada($compra);
+                // Precios de venta editados en la tabla de la compra (después del costo)
+                $servicioPrecios->aplicarPreciosVentaCompra($compra);
 
                 if (! empty($productosConCambio)) {
                     Log::info("Precios de costo actualizados, revisar precios de venta", [

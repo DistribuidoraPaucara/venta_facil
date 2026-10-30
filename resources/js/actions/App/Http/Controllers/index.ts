@@ -101,6 +101,8 @@ import ImpresionMovimientosController from './ImpresionMovimientosController'
 import ImpresionProductosVendidosController from './ImpresionProductosVendidosController'
 import FraccionamientoController from './FraccionamientoController'
 import TipoAjusteInventarioController from './TipoAjusteInventarioController'
+import TipoMermaController from './TipoMermaController'
+import EstadoMermaController from './EstadoMermaController'
 import ComprasController from './ComprasController'
 import ConfiguracionStockController from './ConfiguracionStockController'
 import InventarioInicialController from './InventarioInicialController'
@@ -230,6 +232,8 @@ ImpresionMovimientosController,
 ImpresionProductosVendidosController,
 FraccionamientoController,
 TipoAjusteInventarioController,
+TipoMermaController,
+EstadoMermaController,
 ComprasController,
 ConfiguracionStockController,
 InventarioInicialController,

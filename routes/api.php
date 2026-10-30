@@ -742,7 +742,7 @@ Route::group(['prefix' => 'inventario'], function () {
     Route::get('buscar-productos', [InventarioController::class, 'buscarProductos']);
     Route::get('stock-producto/{producto}', [InventarioController::class, 'stockProducto']);
     Route::get('stock-filtrado', [InventarioController::class, 'apiStockFiltrado'])->middleware('auth:sanctum,web'); // Requiere usuario para filtrar por su empresa
-    Route::get('lotes', [InventarioController::class, 'apiLotes']);
+    Route::get('lotes', [InventarioController::class, 'apiLotes'])->middleware('auth:sanctum,web'); // Requiere usuario para filtrar por su empresa
     Route::post('ajustes', [InventarioController::class, 'procesarAjusteApi']);
     // ✅ NUEVO: Endpoint mejorado para ajustes por tabla
     Route::post('ajuste', [InventarioController::class, 'procesarAjusteTabla']);

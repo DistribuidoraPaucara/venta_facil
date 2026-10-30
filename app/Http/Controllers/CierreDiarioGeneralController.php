@@ -15,6 +15,18 @@ class CierreDiarioGeneralController extends Controller
     }
 
     /**
+     * ✅ MULTI-TENANCY: Cierres de caja de usuarios de la empresa del usuario autenticado
+     */
+    private function cierresDeEmpresa()
+    {
+        $empresaId = auth()->user()->empresa_id;
+
+        return \App\Models\CierreCaja::whereHas('usuario', function ($query) use ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        });
+    }
+
+    /**
      * Mostrar historial de cierres diarios generales
      * GET /cajas/admin/reportes-diarios
      *
@@ -24,7 +36,7 @@ class CierreDiarioGeneralController extends Controller
     public function index(Request $request)
     {
         // ✅ Obtener cierres directamente de cierres_caja
-        $query = \App\Models\CierreCaja::with(['usuario', 'caja', 'apertura'])
+        $query = $this->cierresDeEmpresa()->with(['usuario', 'caja', 'apertura'])
             ->orderBy('fecha', 'desc');
 
         // ✅ NUEVO (2026-06-27): Búsqueda por ID, apertura_caja_id o usuario
@@ -75,6 +87,8 @@ class CierreDiarioGeneralController extends Controller
                 'apertura_caja_id' => $cierre->apertura_caja_id,
                 'usuario_id' => $cierre->user_id,
                 'fecha_ejecucion' => $cierre->fecha,
+                'fecha_apertura' => $cierre->apertura?->created_at?->toIso8601String(),
+                'fecha_cierre' => $cierre->created_at?->toIso8601String(),
                 'total_cajas_procesadas' => 1,
                 'total_cajas_cerradas' => 1,
                 'total_cajas_con_discrepancia' => $cierre->diferencia != 0 ? 1 : 0,
@@ -90,13 +104,14 @@ class CierreDiarioGeneralController extends Controller
                     'nombre' => $cierre->caja->nombre ?? 'Caja ' . $cierre->caja_id,
                 ],
                 'apertura_monto' => (float) $cierre->apertura?->monto_apertura,
+                'observaciones' => $cierre->observaciones,
             ];
         });
 
         $cierres->setCollection($cierresFormateados);
 
         // ✅ Estadísticas generales calculadas desde cierres_caja
-        $allCierres = \App\Models\CierreCaja::query();
+        $allCierres = $this->cierresDeEmpresa();
 
         $estadisticas = [
             'total_cierres' => $allCierres->count(),
@@ -106,8 +121,9 @@ class CierreDiarioGeneralController extends Controller
         ];
 
         // Usuarios disponibles para filtro
-        $usuarios = \App\Models\User::whereIn('id',
-                \App\Models\CierreCaja::distinct()->pluck('user_id')
+        $usuarios = \App\Models\User::where('empresa_id', auth()->user()->empresa_id)
+            ->whereIn('id',
+                $this->cierresDeEmpresa()->distinct()->pluck('user_id')
             )
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -133,7 +149,7 @@ class CierreDiarioGeneralController extends Controller
     public function debug($id)
     {
         try {
-            $cierre = \App\Models\CierreCaja::with(['usuario', 'caja', 'apertura'])->findOrFail($id);
+            $cierre = $this->cierresDeEmpresa()->with(['usuario', 'caja', 'apertura'])->findOrFail($id);
 
             // ✅ ACTUALIZADO (2026-05-04): Usar apertura_id para filtrado preciso
             $movimientos = \App\Models\MovimientoCaja::where('apertura_caja_id', $cierre->apertura->id)
@@ -182,7 +198,7 @@ class CierreDiarioGeneralController extends Controller
     {
         try {
             // ✅ Obtener cierre directamente de cierres_caja
-            $cierre = \App\Models\CierreCaja::with(['usuario', 'caja', 'apertura'])->findOrFail($id);
+            $cierre = $this->cierresDeEmpresa()->with(['usuario', 'caja', 'apertura'])->findOrFail($id);
 
             // ✅ ACTUALIZADO (2026-05-04): Usar apertura_id directamente para garantizar que solo se muestren movimientos de ESTA apertura
             // Antes: Filtraba por rango de fechas, lo que podía incluir movimientos de aperturas anteriores
@@ -300,11 +316,12 @@ class CierreDiarioGeneralController extends Controller
                         'nombre' => $cierre->caja->nombre,
                     ],
                     'fecha_apertura' => $cierre->apertura->fecha->toIso8601String(),
-                    'fecha_cierre' => $cierre->fecha->toIso8601String(),
+                    'fecha_cierre' => ($cierre->created_at ?? $cierre->fecha)->toIso8601String(),
                     'monto_apertura' => (float) $cierre->apertura->monto_apertura,
                     'monto_esperado' => (float) $cierre->monto_esperado,
                     'monto_real' => (float) $cierre->monto_real,
                     'diferencia' => (float) $cierre->diferencia,
+                    'observaciones' => $cierre->observaciones,
                 ],
                 'movimientos' => $movimientosFormateados,
                 'totales_por_tipo' => $totalesPorTipo->toArray(),
@@ -324,6 +341,10 @@ class CierreDiarioGeneralController extends Controller
                     'sumatorialServicio' => (float) ($datosCalculados['sumatorialServicio'] ?? 0),
                     'sumatorialDevoluciones' => (float) ($datosCalculados['sumatorialDevoluciones'] ?? 0),
                     'detallesPagosVentaPorTipo' => $datosCalculados['detallesPagosVentaPorTipo'] ?? [],
+                    // ✅ NUEVO (2026-10-29): Esperado separado por medio de pago
+                    'esperadoEfectivo' => (float) ($datosCalculados['efectivoEsperado']['efectivo'] ?? 0),
+                    'esperadoOtrosMedios' => $datosCalculados['efectivoEsperado']['otros_medios'] ?? [],
+                    'vueltos' => (float) ($datosCalculados['efectivoEsperado']['vueltos'] ?? 0),
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -347,7 +368,7 @@ class CierreDiarioGeneralController extends Controller
         $fuente = $request->query('fuente', 'consolas');
 
         // ✅ Obtener cierre directamente de cierres_caja
-        $cierre = \App\Models\CierreCaja::with(['usuario', 'caja', 'apertura'])->findOrFail($id);
+        $cierre = $this->cierresDeEmpresa()->with(['usuario', 'caja', 'apertura'])->findOrFail($id);
 
         // ✅ Preparar datos para el servicio - pasar el objeto completo
         $datos = [
@@ -386,7 +407,7 @@ class CierreDiarioGeneralController extends Controller
             $fuente = $request->query('fuente', 'consolas');
 
             // Obtener cierre
-            $cierre = \App\Models\CierreCaja::with(['usuario', 'caja', 'apertura'])->findOrFail($id);
+            $cierre = $this->cierresDeEmpresa()->with(['usuario', 'caja', 'apertura'])->findOrFail($id);
 
             // Obtener movimientos (igual que en show())
             // ✅ Ordenamiento: por ID ascendente (menor a mayor)

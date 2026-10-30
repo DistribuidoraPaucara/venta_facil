@@ -26,7 +26,11 @@ class MermaInventario extends Model
         'cantidad_productos',
         'costo_total',
         'observacion',
+        'productos_pendientes',
         'estado',
+        'aprobado_por_id',
+        'fecha_aprobacion',
+        'observacion_aprobacion',
         'created_at',
         'updated_at',
     ];
@@ -36,6 +40,8 @@ class MermaInventario extends Model
         return [
             'cantidad_productos' => 'integer',
             'costo_total'        => 'decimal:2',
+            'productos_pendientes' => 'array',
+            'fecha_aprobacion'   => 'datetime',
             'created_at'         => 'datetime',
             'updated_at'         => 'datetime',
         ];
@@ -43,7 +49,20 @@ class MermaInventario extends Model
 
     // Constantes de estado
     const ESTADO_PENDIENTE = 'pendiente';
-    const ESTADO_PROCESADO = 'procesado';
+    const ESTADO_PROCESADO = 'procesado'; // Aprobada: el stock ya fue descontado
+    const ESTADO_RECHAZADO = 'rechazado';
+
+    /**
+     * Clave del estado como la usan las pantallas y la tabla estado_mermas
+     */
+    public function estadoClave(): string
+    {
+        return match ($this->estado) {
+            self::ESTADO_PENDIENTE => 'PENDIENTE',
+            self::ESTADO_RECHAZADO => 'RECHAZADO',
+            default                => 'APROBADO',
+        };
+    }
 
     /**
      * Relaciones
@@ -56,6 +75,14 @@ class MermaInventario extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Usuario que aprobó o rechazó la merma
+     */
+    public function aprobadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'aprobado_por_id');
     }
 
     /**

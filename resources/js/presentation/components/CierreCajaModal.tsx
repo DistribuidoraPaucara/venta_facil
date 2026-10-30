@@ -5,6 +5,7 @@ import { Button } from '@/presentation/components/ui/button';
 import { Input } from '@/presentation/components/ui/input';
 import { Label } from '@/presentation/components/ui/label';
 import { Textarea } from '@/presentation/components/ui/textarea';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/presentation/components/ui/table';
 import toast from 'react-hot-toast';
 import { OutputSelectionModal, type TipoDocumento } from '@/presentation/components/impresion/OutputSelectionModal';
 
@@ -45,6 +46,9 @@ interface DatosCierre {
         ventas_efectivo: number;
         pagos_credito: number;
         gastos: number;
+        vueltos?: number;
+        efectivo?: number;
+        otros_medios?: Array<{ tipo: string; total: number }>;
         total: number;
     };
     rango_ventas_ids: { minId: number | null; maxId: number | null; totalVentas: number };
@@ -61,6 +65,47 @@ interface Props {
     montoEsperado: number;
 }
 
+type Formato = (monto: number) => string;
+
+function FilaResumen({
+    concepto,
+    cantidad,
+    monto,
+    signo,
+    subtotal = false,
+    formato,
+}: {
+    concepto: string;
+    cantidad?: number;
+    monto: number;
+    signo?: '+' | '-';
+    subtotal?: boolean;
+    formato: Formato;
+}) {
+    const color =
+        signo === '+' ? 'text-green-700 dark:text-green-300' : signo === '-' ? 'text-red-700 dark:text-red-300' : 'text-gray-500 dark:text-gray-400';
+    return (
+        <TableRow className={subtotal ? 'bg-gray-50 font-semibold dark:bg-gray-700/50' : ''}>
+            <TableCell className={`py-2 ${signo ? '' : 'text-gray-500 italic dark:text-gray-400'}`}>{concepto}</TableCell>
+            <TableCell className="py-2 text-right text-gray-500 dark:text-gray-400">{cantidad ?? ''}</TableCell>
+            <TableCell className={`py-2 text-right ${color}`}>
+                {signo === '-' ? '−' : signo ?? ''} {formato(monto)}
+            </TableCell>
+        </TableRow>
+    );
+}
+
+function CeldaDiferencia({ valor, formato }: { valor: number | null; formato: Formato }) {
+    if (valor === null) return <span className="text-gray-400">—</span>;
+    if (Math.abs(valor) < 0.01) return <span className="font-semibold text-green-600 dark:text-green-400">✅ 0</span>;
+    return (
+        <span className={`font-semibold ${valor > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
+            {valor > 0 ? '+' : '−'}
+            {formato(Math.abs(valor))}
+        </span>
+    );
+}
+
 export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsperado }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm({
         monto_real: '',
@@ -71,6 +116,20 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
     const [outputModal, setOutputModal] = useState<{ isOpen: boolean; aperturaId?: number }>({ isOpen: false });
     const [datosCierre, setDatosCierre] = useState<DatosCierre | null>(null);
     const [cargandoDatos, setCargandoDatos] = useState(false);
+
+    // ✅ NUEVO (2026-10-29): Conteo separado por medio de pago.
+    // El efectivo se cuenta en el cajón; los otros medios (QR, etc.) se precargan con lo registrado para confirmarlos.
+    const [efectivoContado, setEfectivoContado] = useState('');
+    const [otrosContados, setOtrosContados] = useState<Record<string, string>>({});
+    const [confirmaDiferencia, setConfirmaDiferencia] = useState(false);
+
+    React.useEffect(() => {
+        const otros = datosCierre?.efectivo_esperado?.otros_medios ?? [];
+        setOtrosContados(Object.fromEntries(otros.map((m) => [m.tipo, Number(m.total).toFixed(2)])));
+    }, [datosCierre]);
+
+    const montoOtros = Object.values(otrosContados).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+    const montoReal = efectivoContado !== '' ? (parseFloat(efectivoContado) || 0) + montoOtros : null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -86,9 +145,13 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
-                    monto_real: data.monto_real,
+                    monto_real: montoReal,
                     observaciones: data.observaciones,
                     fecha_cierre: data.fecha_cierre,
+                    conteo: [
+                        { tipo: 'Efectivo', monto: parseFloat(efectivoContado) || 0 },
+                        ...Object.entries(otrosContados).map(([tipo, monto]) => ({ tipo, monto: parseFloat(monto) || 0 })),
+                    ],
                 }),
             });
 
@@ -103,9 +166,13 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
                     console.log('🔓 [CierreCajaModal] Abriendo OutputSelectionModal con apertura_id:', cajaAbierta.id);
                     setOutputModal({ isOpen: true, aperturaId: cajaAbierta.id });
                     reset();
+                    setEfectivoContado('');
+                    setConfirmaDiferencia(false);
                 } else {
                     console.warn('⚠️ No hay cajaAbierta.id');
                     reset();
+                    setEfectivoContado('');
+                    setConfirmaDiferencia(false);
                     onClose();
                 }
             } else {
@@ -190,8 +257,12 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
     const egresos = desgloseEgresos.reduce((sum: number, egreso: any) => sum + (egreso.total || 0), 0);
     const apertura = datosCierre?.apertura || cajaAbierta?.monto_apertura || 0;
 
-    // ✅ REFACTORIZADO (2026-06-20): Total Esperado = Apertura + Ingresos (dinámicos) - Egresos (dinámicos)
-    const totalEsperadoMejorado = apertura + ingresos - egresos;
+    // ✅ CORREGIDO (2026-10-29): Total Esperado = Apertura + Ingresos - Egresos - Vueltos
+    // Las ventas registran lo que entregó el cliente; el vuelto es efectivo que sale de caja
+    const vueltos = efectivoEsperado.vueltos ?? 0;
+    const totalEsperadoMejorado = apertura + ingresos - egresos - vueltos;
+    const esperadoEfectivo = efectivoEsperado.efectivo;
+    const esperadoOtrosMedios = efectivoEsperado.otros_medios ?? [];
 
     // Mantener referencias a valores individuales para compatibilidad con templates
     const ventasTotales = datosCierre?.sumatoria_ventas_total || 0;
@@ -217,7 +288,19 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
     const efectivoReal = ventasEnEfectivo + pagosDeCredito - gastosTotales;
     const ventasAnuladas = datosCierre?.sumatoria_ventas_anuladas || 0;
 
-    const diferencia = data.monto_real ? parseFloat(data.monto_real) - totalEsperadoMejorado : 0;
+    const diferencia = montoReal !== null ? Math.round((montoReal - totalEsperadoMejorado) * 100) / 100 : 0;
+    const diferenciaEfectivo =
+        efectivoContado !== '' && esperadoEfectivo !== undefined ? Math.round(((parseFloat(efectivoContado) || 0) - esperadoEfectivo) * 100) / 100 : null;
+
+    // ✅ NUEVO (2026-10-29): Protección contra errores de digitación
+    // Una diferencia mayor a Bs. 50 o al 10% del esperado exige revisar, confirmar y explicar
+    const diferenciaGrande = montoReal !== null && Math.abs(diferencia) > Math.max(50, Math.abs(totalEsperadoMejorado) * 0.1);
+    const puedeCerrar = montoReal !== null && (!diferenciaGrande || (confirmaDiferencia && data.observaciones.trim() !== ''));
+
+    // Pagos de ventas por tipo (solo Efectivo y Transferencia/QR; el crédito va en su propia fila)
+    const pagosPorTipo = Object.entries(datosCierre?.detalles_pagos_venta_por_tipo || {}).filter(([tipo]) =>
+        ['EFECTIVO', 'TRANSFERENCIA / QR', 'TRANSFERENCIA/QR'].includes(tipo.toUpperCase()),
+    );
 
     const rangoVentas = datosCierre?.rango_ventas_ids
         ? {
@@ -272,230 +355,206 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
                         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
                             <div className="space-y-4 overflow-y-auto flex-1 px-6">
                                 {/* Información de la caja */}
-                                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
-                                    <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-2">
-                                        {cajaAbierta.caja.nombre}
-                                    </h4>
-                                    <div className="space-y-2 text-sm">
-                                        <div>
-                                            <span className="text-xs text-gray-600 dark:text-gray-400">Apertura:</span>
-                                            <p className="text-gray-900 dark:text-gray-100">
-                                                {new Date(cajaAbierta.fecha).toLocaleDateString('es-BO', {
-                                                    year: 'numeric',
-                                                    month: '2-digit',
-                                                    day: '2-digit'
-                                                })} {new Date(cajaAbierta.fecha).toLocaleTimeString('es-BO', {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
-                                            </p>
-                                        </div>
-                                        <div className="border-t border-gray-300 dark:border-gray-500 pt-2">
-                                            <span className="text-xs text-gray-600 dark:text-gray-400">Cierre:</span>
-                                            <input
-                                                type="date"
-                                                value={data.fecha_cierre}
-                                                onChange={(e) => setData('fecha_cierre', e.target.value)}
-                                                max={new Date().toISOString().split('T')[0]}
-                                                className="w-full mt-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100"
-                                            />
-                                        </div>
+                                <div className="grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm sm:grid-cols-3 dark:border-gray-600 dark:bg-gray-700">
+                                    <div>
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">Caja</span>
+                                        <p className="font-semibold text-gray-900 dark:text-gray-100">{cajaAbierta.caja.nombre}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">Apertura</span>
+                                        <p className="text-gray-900 dark:text-gray-100">
+                                            {new Date(cajaAbierta.fecha).toLocaleDateString('es-BO', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit'
+                                            })} {new Date(cajaAbierta.fecha).toLocaleTimeString('es-BO', {
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">Cierre</span>
+                                        <input
+                                            type="date"
+                                            value={data.fecha_cierre}
+                                            onChange={(e) => setData('fecha_cierre', e.target.value)}
+                                            max={new Date().toISOString().split('T')[0]}
+                                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100"
+                                        />
                                     </div>
                                 </div>
 
-                                {/* Totales de Ingresos y Egresos */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
-                                        <p className="text-xs text-green-600 dark:text-green-400 mb-2">⬆️ Total Ingresos</p>
-                                        <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                                            {formatCurrency(ingresos)}
-                                        </p>
-                                    </div>
-                                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
-                                        <p className="text-xs text-red-600 dark:text-red-400 mb-2">⬇️ Total Egresos</p>
-                                        <p className="text-2xl font-bold text-red-700 dark:text-red-300">
-                                            {formatCurrency(egresos)}
-                                        </p>
-                                    </div>
-                                    <div className={`p-4 rounded-lg border ${(ingresos - egresos) >= 0
-                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700'
-                                        : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700'
-                                        }`}>
-                                        <p className={`text-xs mb-2 ${(ingresos - egresos) >= 0
-                                            ? 'text-emerald-600 dark:text-emerald-400'
-                                            : 'text-orange-600 dark:text-orange-400'
-                                            }`}>💰 Total Neto</p>
-                                        <p className={`text-2xl font-bold ${(ingresos - egresos) >= 0
-                                            ? 'text-emerald-700 dark:text-emerald-300'
-                                            : 'text-orange-700 dark:text-orange-300'
-                                            }`}>
-                                            {formatCurrency(ingresos - egresos)}
-                                        </p>
-                                    </div>
-                                </div>
-                                {/* Resumen financiero - ✅ MEJORADO: Usa efectivo real en lugar de todas las operaciones */}
-                                <div className="space-y-2 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h4 className="font-semibold text-teal-900 dark:text-teal-300">
-                                            📊 Resumen
-                                        </h4>
+                                {/* ✅ NUEVO (2026-10-29): Resumen de movimientos en formato tabla */}
+                                <div className="rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-600">
+                                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">📊 Movimientos del turno</h4>
                                         {rangoVentas && (
-                                            <div className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 whitespace-nowrap">
-                                                IDs: #{rangoVentas.minId} → #{rangoVentas.maxId} ({rangoVentas.totalVentas})
-                                            </div>
+                                            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                                                Ventas #{rangoVentas.minId} → #{rangoVentas.maxId} ({rangoVentas.totalVentas})
+                                            </span>
                                         )}
                                     </div>
-                                    {/* ENTRADAS - Verde */}
-                                    <div className="flex justify-between px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700">
-                                        <span className="text-green-700 dark:text-green-300">⬆️ Monto Inicial:</span>
-                                        <span className="font-medium text-green-900 dark:text-green-100">{formatCurrency(cajaAbierta.monto_apertura)}</span>
-                                    </div>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Concepto</TableHead>
+                                                <TableHead className="text-right">Cant.</TableHead>
+                                                <TableHead className="text-right">Monto</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            <FilaResumen concepto="Monto inicial" monto={cajaAbierta.monto_apertura} signo="+" formato={formatCurrency} />
+                                            {pagosPorTipo.map(([tipo, datos]) => (
+                                                <FilaResumen
+                                                    key={tipo}
+                                                    concepto={`Ventas · ${tipo}`}
+                                                    cantidad={datos.cantidad}
+                                                    monto={datos.total}
+                                                    signo="+"
+                                                    formato={formatCurrency}
+                                                />
+                                            ))}
+                                            <FilaResumen concepto="CxC (pagos de créditos)" monto={pagosDeCredito} signo="+" formato={formatCurrency} />
+                                            {serviciosTotales > 0 && <FilaResumen concepto="Servicios" monto={serviciosTotales} signo="+" formato={formatCurrency} />}
+                                            <FilaResumen concepto="Total ingresos" monto={ingresos} signo="+" formato={formatCurrency} subtotal />
+                                            <FilaResumen concepto="Anulaciones de ventas" monto={ventasAnuladas} signo="-" formato={formatCurrency} />
+                                            {devolucionesTotales > 0 && (
+                                                <FilaResumen concepto="Devoluciones de productos" monto={devolucionesTotales} signo="-" formato={formatCurrency} />
+                                            )}
+                                            <FilaResumen concepto="Total egresos" monto={egresos} signo="-" formato={formatCurrency} subtotal />
+                                            {vueltos > 0 && <FilaResumen concepto="Vueltos / cambio (efectivo)" monto={vueltos} signo="-" formato={formatCurrency} />}
+                                            <FilaResumen concepto="Ventas a crédito (no ingresan a caja)" monto={ventasCredito} formato={formatCurrency} />
+                                        </TableBody>
+                                        <TableFooter>
+                                            <TableRow className="bg-yellow-50 dark:bg-yellow-900/20">
+                                                <TableCell colSpan={2} className="font-semibold text-yellow-900 dark:text-yellow-200">💰 Total esperado</TableCell>
+                                                <TableCell className="text-right text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                                                    {formatCurrency(totalEsperadoMejorado)}
+                                                </TableCell>
+                                            </TableRow>
+                                        </TableFooter>
+                                    </Table>
+                                </div>
 
-                                    {/* ✅ ACTUALIZADO (2026-05-03): Desglose de Ventas por Tipo de Pago desde detalles_pago_venta */}
-                                    <div className="bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700 p-3 space-y-2">
-                                        <div className="flex justify-between font-semibold">
-                                            <span className="text-green-700 dark:text-green-300">⬆️ Dinero Pagado por Tipo:</span>
-                                            <span className="text-green-900 dark:text-green-100">
-                                                {/* ✅ ACTUALIZADO (2026-05-03): SOLO sumar EFECTIVO + TRANSFERENCIA (CRÉDITO tiene su propio card) */}
-                                                {formatCurrency(
-                                                    Object.entries(datosCierre?.detalles_pagos_venta_por_tipo || {})
-                                                        .filter(([tipo]) =>
-                                                            tipo === 'Efectivo' || tipo === 'EFECTIVO' ||
-                                                            tipo === 'Transferencia / QR' || tipo === 'TRANSFERENCIA/QR'
-                                                        )
-                                                        .reduce((sum, [_, datos]: [string, any]) => sum + (datos.total || 0), 0)
-                                                )}
-                                            </span>
-                                        </div>
-                                        {datosCierre?.detalles_pagos_venta_por_tipo && Object.entries(datosCierre.detalles_pagos_venta_por_tipo).length > 0 ? (
-                                            <div className="space-y-1 pl-4 border-l-2 border-green-300 dark:border-green-700">
-                                                {/* ✅ ACTUALIZADO (2026-05-03): SOLO mostrar EFECTIVO + TRANSFERENCIA (CRÉDITO tiene su propio card) */}
-                                                {Object.entries(datosCierre.detalles_pagos_venta_por_tipo)
-                                                    .filter(([tipo]) =>
-                                                        tipo === 'Efectivo' || tipo === 'EFECTIVO' ||
-                                                        tipo === 'Transferencia / QR' || tipo === 'TRANSFERENCIA/QR'
-                                                    )
-                                                    .map(([tipo, datos]: [string, any]) => (
-                                                    <div key={tipo} className="flex justify-between text-sm">
-                                                        <span className="text-green-600 dark:text-green-400">{tipo}</span>
-                                                        <span className="text-green-700 dark:text-green-300">
-                                                            {formatCurrency(datos.total)} ({datos.cantidad})
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : null}
+                                {/* ✅ NUEVO (2026-10-29): Arqueo por medio de pago en formato tabla */}
+                                <div className="rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <div className="border-b border-gray-200 px-3 py-2 dark:border-gray-600">
+                                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">🧮 Arqueo de caja</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Efectivo: solo billetes y monedas del cajón. Los otros medios vienen precargados con lo registrado; corrígelos solo si no coinciden.
+                                        </p>
                                     </div>
-                                    <div className="flex justify-between px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
-                                        <span className="text-blue-700 dark:text-blue-300">ℹ️ Ventas a Crédito:</span>
-                                        <span className="font-medium text-blue-900 dark:text-blue-100">
-                                            {formatCurrency(ventasCredito)}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700">
-                                        <span className="text-green-700 dark:text-green-300">⬆️ CxC Efectivo <small>(Pagos Creditos):</small></span>
-                                        <span className="font-medium text-green-900 dark:text-green-100">{formatCurrency(pagosDeCredito)}</span>
-                                    </div>
-                                    {/* ✅ NUEVO (2026-03-09): Servicios */}
-                                    {serviciosTotales > 0 && (
-                                        <div className="flex justify-between px-3 py-2 bg-teal-50 dark:bg-teal-900/20 rounded border border-teal-200 dark:border-teal-700">
-                                            <span className="text-teal-700 dark:text-teal-300">⬆️ Servicios:</span>
-                                            <span className="font-medium text-teal-900 dark:text-teal-100">{formatCurrency(serviciosTotales)}</span>
-                                        </div>
-                                    )}
-                                    {/* SALIDAS - Rojo */}
-                                    <div className="flex justify-between px-3 py-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-700">
-                                        <span className="text-red-700 dark:text-red-300">⬇️ Anulaciones de Ventas</span>
-                                        <span className="font-medium text-red-900 dark:text-red-100">{formatCurrency(ventasAnuladas)}</span>
-                                    </div>
-                                    {/* ✅ NUEVO (2026-03-09): Devoluciones */}
-                                    {devolucionesTotales > 0 && (
-                                        <div className="flex justify-between px-3 py-2 bg-rose-50 dark:bg-rose-900/20 rounded border border-rose-200 dark:border-rose-700">
-                                            <span className="text-rose-700 dark:text-rose-300">⬇️ Devoluciones de Productos:</span>
-                                            <span className="font-medium text-rose-900 dark:text-rose-100">{formatCurrency(devolucionesTotales)}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between px-3 py-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-700">
-                                        <span className="text-red-700 dark:text-red-300">⬇️ Total Egresos:</span>
-                                        <span className="font-medium text-red-900 dark:text-red-100">
-                                            {formatCurrency(egresos)}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex justify-between text-lg font-semibold border-t border-yellow-300 dark:border-yellow-600 pt-2 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2 rounded">
-                                        <span className="text-yellow-900 dark:text-yellow-200">💰 Total Esperado:</span>
-                                        <span className="text-yellow-700 dark:text-yellow-300">{formatCurrency(totalEsperadoMejorado)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Ventas Totales:</span>
-                                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                                            {formatCurrency(ventasEnEfectivo + ventasCredito)}
-                                        </span>
-                                    </div>
-                                    {montoEsperado !== totalEsperadoMejorado && (
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 italic pt-2 border-t border-gray-300 dark:border-gray-600">
-                                            ℹ️ Total esperado corregido: No incluye ventas a crédito pendientes de pago
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Medio de pago</TableHead>
+                                                <TableHead className="text-right">Esperado</TableHead>
+                                                <TableHead className="w-40 text-right">Contado</TableHead>
+                                                <TableHead className="text-right">Diferencia</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            <TableRow>
+                                                <TableCell className="font-medium">💵 Efectivo *</TableCell>
+                                                <TableCell className="text-right">{esperadoEfectivo !== undefined ? formatCurrency(esperadoEfectivo) : '—'}</TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        id="efectivo_contado"
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={efectivoContado}
+                                                        onChange={(e) => {
+                                                            setEfectivoContado(e.target.value);
+                                                            setConfirmaDiferencia(false);
+                                                        }}
+                                                        placeholder="0.00"
+                                                        autoFocus
+                                                        className="h-8 text-right font-medium dark:text-gray-100 dark:bg-gray-700 dark:border-gray-600"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <CeldaDiferencia valor={diferenciaEfectivo} formato={formatCurrency} />
+                                                </TableCell>
+                                            </TableRow>
+                                            {Object.keys(otrosContados).map((tipo) => {
+                                                const esperado = esperadoOtrosMedios.find((m) => m.tipo === tipo)?.total ?? 0;
+                                                const contado = otrosContados[tipo];
+                                                return (
+                                                    <TableRow key={tipo}>
+                                                        <TableCell className="font-medium">📱 {tipo}</TableCell>
+                                                        <TableCell className="text-right">{formatCurrency(esperado)}</TableCell>
+                                                        <TableCell>
+                                                            <Input
+                                                                id={`conteo_${tipo}`}
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                value={contado}
+                                                                onChange={(e) => {
+                                                                    setOtrosContados((actual) => ({ ...actual, [tipo]: e.target.value }));
+                                                                    setConfirmaDiferencia(false);
+                                                                }}
+                                                                className="h-8 text-right dark:text-gray-100 dark:bg-gray-700 dark:border-gray-600"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <CeldaDiferencia
+                                                                valor={contado === '' ? null : Math.round(((parseFloat(contado) || 0) - esperado) * 100) / 100}
+                                                                formato={formatCurrency}
+                                                            />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                        <TableFooter>
+                                            <TableRow>
+                                                <TableCell className="font-semibold">Total</TableCell>
+                                                <TableCell className="text-right font-semibold">{formatCurrency(totalEsperadoMejorado)}</TableCell>
+                                                <TableCell className="text-right font-semibold">{montoReal !== null ? formatCurrency(montoReal) : '—'}</TableCell>
+                                                <TableCell className="text-right text-base">
+                                                    <CeldaDiferencia valor={montoReal !== null ? diferencia : null} formato={formatCurrency} />
+                                                </TableCell>
+                                            </TableRow>
+                                        </TableFooter>
+                                    </Table>
+                                    {errors.monto_real && <p className="px-3 py-2 text-sm text-red-600 dark:text-red-400">{errors.monto_real}</p>}
+                                    {montoReal !== null && (
+                                        <p
+                                            className={`border-t px-3 py-2 text-sm dark:border-gray-600 ${
+                                                diferencia === 0
+                                                    ? 'text-green-700 dark:text-green-300'
+                                                    : diferencia > 0
+                                                      ? 'text-blue-700 dark:text-blue-300'
+                                                      : 'text-red-700 dark:text-red-300'
+                                            }`}
+                                        >
+                                            {diferencia === 0 && '✅ Perfecto! No hay diferencias.'}
+                                            {diferencia > 0 && '📈 Sobrante - Tienes más dinero del esperado.'}
+                                            {diferencia < 0 && '📉 Faltante - Tienes menos dinero del esperado.'}
                                         </p>
                                     )}
                                 </div>
 
-                                {/* Mostrar diferencia si hay monto ingresado */}
-                                {data.monto_real && (
-                                    <div className={`p-3 rounded-lg ${diferencia === 0
-                                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700'
-                                        : diferencia > 0
-                                            ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700'
-                                            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700'
-                                        }`}>
-                                        <div className="flex justify-between items-center">
-                                            <span className={`font-medium ${diferencia === 0
-                                                ? 'text-gray-900 dark:text-green-300'
-                                                : diferencia > 0
-                                                    ? 'text-gray-900 dark:text-blue-300'
-                                                    : 'text-gray-900 dark:text-red-300'
-                                                }`}>Diferencia:</span>
-                                            <span className={`font-bold text-lg ${diferencia === 0
-                                                ? 'text-green-600 dark:text-green-400'
-                                                : diferencia > 0
-                                                    ? 'text-blue-600 dark:text-blue-400'
-                                                    : 'text-red-600 dark:text-red-400'
-                                                }`}>
-                                                {diferencia === 0 ? '✅ ' : diferencia > 0 ? '📈 +' : '📉 '}
-                                                {formatCurrency(Math.abs(diferencia))}
-                                            </span>
-                                        </div>
-                                        <p className={`text-xs mt-1 ${diferencia === 0
-                                            ? 'text-gray-600 dark:text-green-300'
-                                            : diferencia > 0
-                                                ? 'text-gray-600 dark:text-blue-300'
-                                                : 'text-gray-600 dark:text-red-300'
-                                            }`}>
-                                            {diferencia === 0 && 'Perfecto! No hay diferencias.'}
-                                            {diferencia > 0 && 'Sobrante - Tienes más dinero del esperado.'}
-                                            {diferencia < 0 && 'Faltante - Tienes menos dinero del esperado.'}
+                                {/* ⚠️ Diferencia grande: posible error de digitación */}
+                                {diferenciaGrande && (
+                                    <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-700 dark:bg-amber-900/20">
+                                        <p className="font-medium text-amber-800 dark:text-amber-300">
+                                            ⚠️ La diferencia es muy grande. Revisa que hayas escrito bien los montos.
                                         </p>
+                                        <label className="flex items-start gap-2 text-amber-800 dark:text-amber-300">
+                                            <input
+                                                type="checkbox"
+                                                checked={confirmaDiferencia}
+                                                onChange={(e) => setConfirmaDiferencia(e.target.checked)}
+                                                className="mt-0.5"
+                                            />
+                                            Confirmo que los montos son correctos y explico el motivo en Observaciones.
+                                        </label>
                                     </div>
                                 )}
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="monto_real" className="text-gray-900 dark:text-gray-100">Dinero Físico Contado (Bs) *</Label>
-                                    <Input
-                                        id="monto_real"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={data.monto_real}
-                                        onChange={(e) => setData('monto_real', e.target.value)}
-                                        placeholder="0.00"
-                                        className="text-right text-lg font-medium dark:text-gray-100 dark:bg-gray-700 dark:border-gray-600"
-                                    />
-                                    {errors.monto_real && (
-                                        <p className="text-sm text-red-600 dark:text-red-400">{errors.monto_real}</p>
-                                    )}
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Cuenta todo el dinero físico que tienes en la caja
-                                    </p>
-                                </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="observaciones" className="text-gray-900 dark:text-gray-100">
@@ -531,7 +590,7 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={processing || !data.monto_real}
+                                    disabled={processing || !puedeCerrar}
                                     className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white"
                                 >
                                     {processing ? (

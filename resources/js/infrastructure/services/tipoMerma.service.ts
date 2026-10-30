@@ -40,8 +40,12 @@ export class TipoMermaService extends GenericService<TipoMerma, TipoMermaFormDat
   validateData(data: TipoMermaFormData): string[] {
     const errors = super.validateData(data);
 
-    if (!data.nombre || data.nombre.trim().length === 0) {
-      errors.push('El nombre es requerido');
+    if (!data.clave || data.clave.trim().length === 0) {
+      errors.push('La clave es requerida');
+    }
+
+    if (!data.label || data.label.trim().length === 0) {
+      errors.push('El nombre visible es requerido');
     }
 
     return errors;

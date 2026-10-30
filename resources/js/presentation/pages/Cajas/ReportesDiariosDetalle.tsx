@@ -16,7 +16,20 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Download, Eye, Printer, Search, X } from 'lucide-react';
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    ExternalLink,
+    Eye,
+    Printer,
+    Search,
+    X,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 interface TipoOperacion {
@@ -81,8 +94,24 @@ interface TotalPorTipo {
     total: number;
 }
 
+// Campos de orden: vista Movimientos (id…monto) y vista Ventas (venta…estado)
+type CampoOrden = 'id' | 'fecha' | 'usuario' | 'tipo' | 'documento' | 'tipo_pago' | 'monto' | 'venta' | 'total' | 'pagado' | 'cambio' | 'estado';
+
+interface ResumenVenta {
+    ventaId: number;
+    numero: string;
+    fecha: string;
+    usuario: string;
+    total: number;
+    recibido: number; // Suma de movimientos VENTA vigentes (todos los medios de pago)
+    cambio: number;
+    pagos: Record<string, number>; // Recibido por medio de pago
+    anulada: boolean;
+}
+
 interface Cierre {
     id: number;
+    apertura_caja_id: number;
     usuario_id: number;
     usuario: {
         id: number;
@@ -98,6 +127,7 @@ interface Cierre {
     monto_esperado: number;
     monto_real: number;
     diferencia: number;
+    observaciones?: string | null;
 }
 
 interface DatosResumen {
@@ -118,6 +148,9 @@ interface DatosResumen {
         total: number;
         cantidad: number;
     }>;
+    esperadoEfectivo?: number;
+    esperadoOtrosMedios?: Array<{ tipo: string; total: number }>;
+    vueltos?: number;
 }
 
 interface Props {
@@ -171,6 +204,21 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
     const [montoMax, setMontoMax] = useState<number | null>(null);
     const [filtroEstadoVenta, setFiltroEstadoVenta] = useState<string>(''); // ✅ NUEVO: Filtro por estado de venta
 
+    // ✅ NUEVO (2026-10-29): Paginación de la tabla de movimientos
+    const [pagina, setPagina] = useState(1);
+    const [porPagina, setPorPagina] = useState(25);
+
+    // ✅ NUEVO (2026-10-29): Orden de la tabla de movimientos (clic en encabezados)
+    const [orden, setOrden] = useState<{ campo: CampoOrden; direccion: 'asc' | 'desc' }>({ campo: 'id', direccion: 'asc' });
+
+    // ✅ NUEVO (2026-10-29): Vista de la tabla: un movimiento por fila, o una venta por fila
+    const [vista, setVista] = useState<'movimientos' | 'ventas'>('ventas');
+    const cambiarVista = (nueva: 'movimientos' | 'ventas') => {
+        setVista(nueva);
+        setOrden(nueva === 'ventas' ? { campo: 'fecha', direccion: 'asc' } : { campo: 'id', direccion: 'asc' });
+        setPagina(1);
+    };
+
     // ===== MODAL DE SALIDA (Impresión/Descarga) =====
     const [isOutputModalOpen, setIsOutputModalOpen] = useState(false);
     const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<Movimiento | null>(null);
@@ -220,28 +268,59 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
     };
 
     // ✅ NUEVO: Detectar discrepancias en movimientos de venta
+    // ✅ NUEVO (2026-10-29): Resumen por venta = lo recibido (movimientos VENTA, uno por medio de pago)
+    // y el cambio entregado (VUELTO). Se calcula sobre TODOS los movimientos para no depender de los filtros.
+    // Los VUELTO antiguos no tienen venta_id: se vinculan por numero_documento (= número de la venta).
+    const resumenPorVenta = useMemo(() => {
+        const mapa = new Map<string, ResumenVenta>();
+
+        for (const mov of movimientos) {
+            if (!mov.venta || !['VENTA', 'ANULADO-VENTA'].includes(mov.tipo_operacion.codigo)) continue;
+            const codigoEstado = mov.venta.estado_documento?.codigo?.toUpperCase() ?? '';
+            const resumen = mapa.get(mov.venta.numero_documento) ?? {
+                ventaId: mov.venta.id,
+                numero: mov.venta.numero_documento,
+                fecha: mov.fecha,
+                usuario: mov.usuario.name,
+                total: Number(mov.venta.total ?? 0),
+                recibido: 0,
+                cambio: 0,
+                pagos: {},
+                anulada: codigoEstado === 'ANULADO' || codigoEstado === 'ANULADA',
+            };
+            // Lo recibido por medio de pago (también en anuladas, para ver qué se cobró)
+            const medio = mov.tipo_pago?.nombre ?? 'Sin tipo';
+            resumen.pagos[medio] = (resumen.pagos[medio] ?? 0) + Number(mov.monto);
+            if (mov.tipo_operacion.codigo === 'VENTA') resumen.recibido += Number(mov.monto);
+            if (Date.parse(mov.fecha) < Date.parse(resumen.fecha)) resumen.fecha = mov.fecha;
+            mapa.set(mov.venta.numero_documento, resumen);
+        }
+
+        for (const mov of movimientos) {
+            if (mov.tipo_operacion.codigo !== 'VUELTO') continue;
+            const clave = mov.venta?.numero_documento ?? mov.numero_documento.replace(/-VUELTO$/, '');
+            const resumen = mapa.get(clave);
+            if (resumen) resumen.cambio += Math.abs(Number(mov.monto));
+        }
+
+        return mapa;
+    }, [movimientos]);
+
+    const resumenDeVenta = (mov: Movimiento) => resumenPorVenta.get(mov.venta?.numero_documento ?? mov.numero_documento.replace(/-VUELTO$/, ''));
+
+    // ID de la venta del movimiento (incluye VUELTO antiguos sin venta_id)
+    const ventaIdDe = (mov: Movimiento) => mov.venta_id ?? (mov.tipo_operacion.codigo === 'VUELTO' ? resumenDeVenta(mov)?.ventaId : undefined);
+
     const tieneDiscrepancia = (mov: Movimiento): boolean => {
         // Solo revisar movimientos de tipo VENTA
         if (mov.tipo_operacion.codigo !== 'VENTA') return false;
 
-        // Si no hay venta asociada, no hay discrepancia
-        if (!mov.venta) return false;
+        const resumen = resumenDeVenta(mov);
+        if (!resumen) return false;
 
-        const montoMovimiento = Number(mov.monto);
-        const totalVenta = Number(mov.venta.total ?? 0);
-        const montoPagado = Number(mov.venta.monto_pagado ?? 0);
-
-        // Discrepancia 1: El monto del movimiento no coincide con el total de la venta
-        if (Math.abs(montoMovimiento - totalVenta) > 0.01) {
-            return true;
-        }
-
-        // Discrepancia 2: El total no coincide con el monto pagado (hay pendiente no registrado)
-        if (Math.abs(totalVenta - montoPagado) > 0.01) {
-            return true;
-        }
-
-        return false;
+        // ✅ CORREGIDO (2026-10-29): Se compara la venta completa, no cada movimiento suelto.
+        // Recibido (todos los medios de pago) - Cambio = Total de la venta
+        return Math.abs(resumen.recibido - resumen.cambio - resumen.total) > 0.01;
     };
 
     // Badge para estado de venta
@@ -348,6 +427,141 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
         });
     }
 
+    // ===== ORDEN (sobre los movimientos filtrados, antes de paginar) =====
+    const movimientosOrdenados = useMemo(() => {
+        const valor = (mov: Movimiento): string | number => {
+            switch (orden.campo) {
+                case 'fecha':
+                    return Date.parse(mov.fecha);
+                case 'usuario':
+                    return mov.usuario.name;
+                case 'tipo':
+                    return mov.tipo_operacion.nombre;
+                case 'documento':
+                    return mov.numero_documento;
+                case 'tipo_pago':
+                    return mov.tipo_pago?.nombre ?? '';
+                case 'monto':
+                    return mov.monto;
+                default:
+                    return mov.id;
+            }
+        };
+        const signo = orden.direccion === 'asc' ? 1 : -1;
+
+        return [...movimientosFiltrados].sort((a, b) => {
+            const va = valor(a);
+            const vb = valor(b);
+            const comparacion =
+                typeof va === 'number' && typeof vb === 'number'
+                    ? va - vb
+                    : String(va).localeCompare(String(vb), 'es', { numeric: true, sensitivity: 'base' });
+            // Desempate por ID para un orden estable
+            return (comparacion || a.id - b.id) * signo;
+        });
+    }, [movimientosFiltrados, orden]);
+
+    const cambiarOrden = (campo: CampoOrden) => {
+        setOrden((actual) =>
+            actual.campo === campo
+                ? { campo, direccion: actual.direccion === 'asc' ? 'desc' : 'asc' }
+                : { campo, direccion: ['fecha', 'monto', 'total', 'pagado', 'cambio'].includes(campo) ? 'desc' : 'asc' },
+        );
+        setPagina(1);
+    };
+
+    // ===== VISTA POR VENTAS =====
+    // Una venta aparece si al menos uno de sus movimientos (VENTA, VUELTO, anulación) pasa los filtros
+    const ventasFiltradas = useMemo(() => {
+        const claves = new Set(
+            movimientosFiltrados
+                .filter((m) => m.venta || m.tipo_operacion.codigo === 'VUELTO')
+                .map((m) => m.venta?.numero_documento ?? m.numero_documento.replace(/-VUELTO$/, '')),
+        );
+        return [...resumenPorVenta.values()].filter((v) => claves.has(v.numero));
+    }, [movimientosFiltrados, resumenPorVenta]);
+
+    const ventaCuadra = (v: ResumenVenta) => v.anulada || Math.abs(v.recibido - v.cambio - v.total) <= 0.01;
+    const pagadoDe = (v: ResumenVenta) => Object.values(v.pagos).reduce((s, n) => s + n, 0);
+
+    // Medios de pago presentes (columnas dinámicas: Efectivo, Transferencia / QR, …)
+    const mediosDePago = useMemo(
+        () => [...new Set([...resumenPorVenta.values()].flatMap((v) => Object.keys(v.pagos)))].sort((a, b) => a.localeCompare(b, 'es')),
+        [resumenPorVenta],
+    );
+
+    const ventasOrdenadas = useMemo(() => {
+        const valor = (v: ResumenVenta): string | number => {
+            switch (orden.campo) {
+                case 'venta':
+                    return v.numero;
+                case 'usuario':
+                    return v.usuario;
+                case 'total':
+                    return v.total;
+                case 'pagado':
+                    return pagadoDe(v);
+                case 'cambio':
+                    return v.cambio;
+                case 'estado':
+                    return v.anulada ? 2 : ventaCuadra(v) ? 0 : 1;
+                default:
+                    return Date.parse(v.fecha);
+            }
+        };
+        const signo = orden.direccion === 'asc' ? 1 : -1;
+
+        return [...ventasFiltradas].sort((a, b) => {
+            const va = valor(a);
+            const vb = valor(b);
+            const comparacion =
+                typeof va === 'number' && typeof vb === 'number'
+                    ? va - vb
+                    : String(va).localeCompare(String(vb), 'es', { numeric: true, sensitivity: 'base' });
+            return (comparacion || a.ventaId - b.ventaId) * signo;
+        });
+    }, [ventasFiltradas, orden]);
+
+    // Totales de ventas vigentes (las anuladas no suman)
+    const totalesVentas = useMemo(() => {
+        const vigentes = ventasFiltradas.filter((v) => !v.anulada);
+        return {
+            total: vigentes.reduce((s, v) => s + v.total, 0),
+            pagado: vigentes.reduce((s, v) => s + pagadoDe(v), 0),
+            cambio: vigentes.reduce((s, v) => s + v.cambio, 0),
+            porMedio: Object.fromEntries(mediosDePago.map((m) => [m, vigentes.reduce((s, v) => s + (v.pagos[m] ?? 0), 0)])),
+        };
+    }, [ventasFiltradas, mediosDePago]);
+
+    const encabezadoOrdenable = (campo: CampoOrden, etiqueta: string, className = '') => {
+        const activo = orden.campo === campo;
+        const Icono = !activo ? ArrowUpDown : orden.direccion === 'asc' ? ArrowUp : ArrowDown;
+        return (
+            <TableHead
+                className={`font-semibold dark:text-gray-300 ${className}`}
+                aria-sort={activo ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+                <button
+                    type="button"
+                    onClick={() => cambiarOrden(campo)}
+                    className={`inline-flex items-center gap-1 hover:text-gray-900 dark:hover:text-white ${activo ? 'text-gray-900 dark:text-white' : ''}`}
+                >
+                    {etiqueta}
+                    <Icono className={`h-3.5 w-3.5 ${activo ? '' : 'opacity-40'}`} />
+                </button>
+            </TableHead>
+        );
+    };
+
+    // ===== PAGINACIÓN (en cliente, sobre las filas filtradas y ordenadas de la vista actual) =====
+    const totalFilas = vista === 'ventas' ? ventasOrdenadas.length : movimientosOrdenados.length;
+    const totalPaginas = Math.max(1, Math.ceil(totalFilas / porPagina));
+    // Si cambian los filtros y la página actual ya no existe, ir a la última disponible
+    const paginaActual = Math.min(pagina, totalPaginas);
+    const inicioPagina = (paginaActual - 1) * porPagina;
+    const movimientosPagina = movimientosOrdenados.slice(inicioPagina, inicioPagina + porPagina);
+    const ventasPagina = ventasOrdenadas.slice(inicioPagina, inicioPagina + porPagina);
+
     // ===== TOTALES FILTRADOS =====
     const totalIngresos = movimientosFiltrados.filter((m) => m.monto > 0).reduce((sum, m) => sum + m.monto, 0);
 
@@ -398,7 +612,7 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
             <Head title={`Cierre de Caja #${cierre.id}`} />
 
             <div className="py-1">
-                <div className="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
+                <div className="space-y-2 p-2">
                     {/* Header */}
                     <div className="flex items-center justify-between gap-2">
                         <div>
@@ -419,7 +633,7 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                     {/* Información General */}
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         {/* Apertura */}
-                        <Card className="border p-3 dark:border-slate-700 dark:bg-slate-800">
+                        <Card className="border p-2 dark:border-slate-700 dark:bg-slate-800">
                             <div className="space-y-1">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Apertura #{cierre.apertura_caja_id}</h3>
                                 <div>
@@ -440,7 +654,7 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                         </Card>
 
                         {/* Cierre */}
-                        <Card className="border p-3 dark:border-slate-700 dark:bg-slate-800">
+                        <Card className="border p-2 dark:border-slate-700 dark:bg-slate-800">
                             <div className="space-y-1">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cierre</h3>
                                 <div>
@@ -455,6 +669,12 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ejecutado por</p>
                                     <p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">{cierre.usuario.name}</p>
                                 </div>
+                                {cierre.observaciones && (
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Observaciones</p>
+                                        <p className="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{cierre.observaciones}</p>
+                                    </div>
+                                )}
                             </div>
                         </Card>
                     </div>
@@ -464,6 +684,26 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                         <Card className="border p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800">
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monto Esperado</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">Bs. {Number(cierre.monto_esperado).toFixed(2)}</p>
+                            {datosResumen?.esperadoEfectivo !== undefined && (
+                                <div className="mt-1 space-y-0.5 text-xs text-gray-600 dark:text-gray-400">
+                                    <div className="flex justify-between">
+                                        <span>💵 Efectivo</span>
+                                        <span className="font-medium">Bs. {Number(datosResumen.esperadoEfectivo).toFixed(2)}</span>
+                                    </div>
+                                    {(datosResumen.esperadoOtrosMedios ?? []).map((medio) => (
+                                        <div key={medio.tipo} className="flex justify-between">
+                                            <span>📱 {medio.tipo}</span>
+                                            <span className="font-medium">Bs. {Number(medio.total).toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                    {(datosResumen.vueltos ?? 0) > 0 && (
+                                        <div className="flex justify-between">
+                                            <span>Vueltos descontados</span>
+                                            <span className="font-medium">Bs. {Number(datosResumen.vueltos).toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </Card>
 
                         <Card className="border p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -489,8 +729,8 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                     </div>
 
                     {/* Panel de Filtros Mejorado */}
-                    <Card className="border p-6 shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                        <div className="mb-2 flex items-center justify-between">
+                    <Card className="border p-2 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                        <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filtros Avanzados</h3>
                                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -582,7 +822,7 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                             </div>
                         )}
 
-                        <div className="space-y-6">
+                        <div className="space-y-1">
                             {/* Filtro por tipo de operación */}
                             <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
                                 {/* Búsqueda por documento */}
@@ -637,13 +877,11 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
 
                                 {/* Filtro por estado de venta */}
                                 <div>
-                                    <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                        Estado de Venta
-                                    </label>
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">Estado de Venta</label>
                                     <select
                                         value={filtroEstadoVenta}
                                         onChange={(e) => setFiltroEstadoVenta(e.target.value)}
-                                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:ring-blue-400 transition"
+                                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm transition focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:ring-blue-400"
                                     >
                                         <option value="">📋 Todas</option>
                                         <option value="aprobadas">✅ Aprobadas</option>
@@ -693,95 +931,265 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                         </Card>
                     )}
 
-                    {/* Tabla de Movimientos */}
-                    <Card className="overflow-hidden border dark:border-slate-700 dark:bg-slate-800">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="dark:border-slate-700 dark:bg-slate-900">
-                                    <TableHead className="font-semibold dark:text-gray-300">ID</TableHead>
-                                    <TableHead className="font-semibold dark:text-gray-300">Fecha/Hora</TableHead>
-                                    <TableHead className="font-semibold dark:text-gray-300">Usuario</TableHead>
-                                    <TableHead className="font-semibold dark:text-gray-300">Tipo de Operación</TableHead>
-                                    <TableHead className="font-semibold dark:text-gray-300">Documento</TableHead>
-                                    <TableHead className="font-semibold dark:text-gray-300">Tipo de Pago</TableHead>
-                                    {/* <TableHead className="font-semibold dark:text-gray-300">Cliente</TableHead> */}
-                                    <TableHead className="text-right font-semibold dark:text-gray-300">Monto</TableHead>
-                                    {/* <TableHead className="text-right font-semibold dark:text-gray-300">Total Venta</TableHead> */}
-                                    {/* <TableHead className="text-right font-semibold dark:text-gray-300">Monto Pagado</TableHead> */}
-                                    {/* <TableHead className="text-right font-semibold dark:text-gray-300">Monto Pendiente</TableHead> */}
-                                    {/* <TableHead className="font-semibold dark:text-gray-300">Detalles de Pago</TableHead> */}
-                                    {/* <TableHead className="font-semibold dark:text-gray-300">Estado Venta</TableHead> */}
-                                    <TableHead className="font-semibold dark:text-gray-300">Observaciones</TableHead>
-                                    <TableHead className="text-center font-semibold dark:text-gray-300">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {movimientosFiltrados.length > 0 ? (
-                                    movimientosFiltrados.map((mov) => (
-                                        <TableRow
-                                            key={mov.id}
-                                            className={`transition-colors dark:border-slate-700 ${
-                                                tieneDiscrepancia(mov)
-                                                    ? 'border-l-4 border-l-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30'
-                                                    : 'dark:hover:bg-slate-700'
-                                            }`}
-                                        >
-                                            <TableCell className="text-sm dark:text-gray-300">{mov.id}</TableCell>
-                                            <TableCell className="text-xs dark:text-gray-300">
-                                                {format(parseISO(mov.fecha), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
-                                            </TableCell>
-                                            <TableCell className="dark:text-gray-300">{mov.usuario.name}</TableCell>
-                                            <TableCell className="dark:text-gray-300">
-                                                <Badge
-                                                    variant={mov.monto > 0 ? 'default' : 'secondary'}
-                                                    className={
-                                                        mov.monto > 0
-                                                            ? 'bg-green-600 text-white dark:bg-green-700'
-                                                            : mov.monto < 0
-                                                              ? 'bg-red-600 text-white dark:bg-red-700'
-                                                              : ''
-                                                    }
+                    {/* Selector de vista */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Ver por:</span>
+                        <div className="inline-flex rounded-lg border p-0.5 dark:border-slate-700" role="group" aria-label="Vista de la tabla">
+                            {(['movimientos', 'ventas'] as const).map((opcion) => (
+                                <button
+                                    key={opcion}
+                                    type="button"
+                                    onClick={() => cambiarVista(opcion)}
+                                    aria-pressed={vista === opcion}
+                                    className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                                        vista === opcion
+                                            ? 'bg-blue-600 text-white dark:bg-blue-700'
+                                            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    {opcion === 'movimientos' ? 'Movimientos' : 'Ventas'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Tabla de Movimientos / Ventas */}
+                    <div className="overflow-hidden rounded-lg border shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                        {vista === 'ventas' ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="dark:border-slate-700 dark:bg-slate-900">
+                                        {encabezadoOrdenable('venta', 'Venta')}
+                                        {encabezadoOrdenable('fecha', 'Fecha/Hora')}
+                                        {encabezadoOrdenable('usuario', 'Usuario')}
+                                        {encabezadoOrdenable('total', 'Total venta', 'text-right')}
+                                        {mediosDePago.map((medio) => (
+                                            <TableHead key={medio} className="text-right font-semibold dark:text-gray-300">
+                                                {medio}
+                                            </TableHead>
+                                        ))}
+                                        {encabezadoOrdenable('pagado', 'Pagado', 'text-right')}
+                                        {encabezadoOrdenable('cambio', 'Cambio', 'text-right')}
+                                        {encabezadoOrdenable('estado', 'Estado', 'text-center')}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {ventasPagina.length > 0 ? (
+                                        ventasPagina.map((v) => {
+                                            const cuadra = ventaCuadra(v);
+                                            return (
+                                                <TableRow
+                                                    key={v.numero}
+                                                    title={!cuadra ? 'Lo recibido menos el cambio no coincide con el total de la venta' : undefined}
+                                                    className={`transition-colors dark:border-slate-700 ${
+                                                        v.anulada
+                                                            ? 'text-gray-400 dark:text-gray-500'
+                                                            : !cuadra
+                                                              ? 'border-l-4 border-l-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+                                                              : 'dark:text-gray-300 dark:hover:bg-slate-700'
+                                                    }`}
                                                 >
-                                                    {mov.tipo_operacion.nombre}
-                                                </Badge>
+                                                    <TableCell className="text-xs">
+                                                        <a
+                                                            href={`/ventas/${v.ventaId}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className={`hover:underline ${v.anulada ? 'line-through' : 'text-blue-600 dark:text-blue-400'}`}
+                                                            title="Abrir venta en otra pestaña"
+                                                        >
+                                                            {v.numero}
+                                                        </a>
+                                                    </TableCell>
+                                                    <TableCell className="text-xs">
+                                                        {format(parseISO(v.fecha), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
+                                                    </TableCell>
+                                                    <TableCell>{v.usuario}</TableCell>
+                                                    <TableCell className="text-right font-semibold">Bs. {v.total.toFixed(2)}</TableCell>
+                                                    {mediosDePago.map((medio) => (
+                                                        <TableCell key={medio} className="text-right">
+                                                            {v.pagos[medio] ? (
+                                                                `Bs. ${v.pagos[medio].toFixed(2)}`
+                                                            ) : (
+                                                                <span className="text-gray-400">—</span>
+                                                            )}
+                                                        </TableCell>
+                                                    ))}
+                                                    <TableCell className="text-right">Bs. {pagadoDe(v).toFixed(2)}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        {v.cambio > 0 ? (
+                                                            <span className="text-amber-600 dark:text-amber-400">Bs. {v.cambio.toFixed(2)}</span>
+                                                        ) : (
+                                                            <span className="text-gray-400">—</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {v.anulada ? (
+                                                            <Badge variant="secondary">Anulada</Badge>
+                                                        ) : cuadra ? (
+                                                            <Badge className="bg-green-600 text-white dark:bg-green-700">✓ Cuadra</Badge>
+                                                        ) : (
+                                                            <Badge className="bg-red-600 text-white dark:bg-red-700">No cuadra</Badge>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    ) : (
+                                        <TableRow className="dark:border-slate-700">
+                                            <TableCell
+                                                colSpan={7 + mediosDePago.length}
+                                                className="py-8 text-center text-gray-500 dark:text-gray-400"
+                                            >
+                                                No hay ventas que coincidan con los filtros seleccionados
                                             </TableCell>
-                                            <TableCell className="text-xs dark:text-gray-300">{mov.numero_documento}</TableCell>
-                                            <TableCell className="text-xs dark:text-gray-300">
-                                                {mov.tipo_pago ? (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="border-purple-300 bg-purple-100 text-purple-800 dark:border-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                                                    >
-                                                        💳 {mov.tipo_pago.nombre}
-                                                    </Badge>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
+                                        </TableRow>
+                                    )}
+
+                                    {/* Totales de ventas vigentes (todas las páginas, sin anuladas) */}
+                                    {ventasFiltradas.length > 0 && (
+                                        <TableRow className="bg-gray-50 font-semibold dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
+                                            <TableCell colSpan={3}>
+                                                Totales ({ventasFiltradas.filter((v) => !v.anulada).length} ventas vigentes)
+                                                {totalesVentas.porMedio['Efectivo'] !== undefined && totalesVentas.cambio > 0 && (
+                                                    <div className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                                                        Efectivo neto (efectivo − cambio): Bs.{' '}
+                                                        {(totalesVentas.porMedio['Efectivo'] - totalesVentas.cambio).toFixed(2)}
+                                                    </div>
                                                 )}
                                             </TableCell>
-                                            {/* <TableCell className="text-sm dark:text-gray-300">{mov.venta?.cliente?.nombre || '-'}</TableCell> */}
-                                            <TableCell
-                                                className={`text-right font-semibold ${
-                                                    mov.monto > 0
-                                                        ? 'text-green-600 dark:text-green-400'
-                                                        : mov.monto < 0
-                                                          ? 'text-red-600 dark:text-red-400'
-                                                          : 'text-gray-900 dark:text-white'
+                                            <TableCell className="text-right">Bs. {totalesVentas.total.toFixed(2)}</TableCell>
+                                            {mediosDePago.map((medio) => (
+                                                <TableCell key={medio} className="text-right">
+                                                    Bs. {(totalesVentas.porMedio[medio] ?? 0).toFixed(2)}
+                                                </TableCell>
+                                            ))}
+                                            <TableCell className="text-right">Bs. {totalesVentas.pagado.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">Bs. {totalesVentas.cambio.toFixed(2)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="dark:border-slate-700 dark:bg-slate-900">
+                                        {encabezadoOrdenable('id', 'ID')}
+                                        {encabezadoOrdenable('fecha', 'Fecha/Hora')}
+                                        {encabezadoOrdenable('usuario', 'Usuario')}
+                                        {encabezadoOrdenable('tipo', 'Tipo de Operación')}
+                                        {encabezadoOrdenable('documento', 'Documento')}
+                                        {encabezadoOrdenable('tipo_pago', 'Tipo de Pago')}
+                                        {/* <TableHead className="font-semibold dark:text-gray-300">Cliente</TableHead> */}
+                                        {encabezadoOrdenable('monto', 'Monto', 'text-right')}
+                                        {/* <TableHead className="text-right font-semibold dark:text-gray-300">Total Venta</TableHead> */}
+                                        {/* <TableHead className="text-right font-semibold dark:text-gray-300">Monto Pagado</TableHead> */}
+                                        {/* <TableHead className="text-right font-semibold dark:text-gray-300">Monto Pendiente</TableHead> */}
+                                        {/* <TableHead className="font-semibold dark:text-gray-300">Detalles de Pago</TableHead> */}
+                                        {/* <TableHead className="font-semibold dark:text-gray-300">Estado Venta</TableHead> */}
+                                        {/* <TableHead className="font-semibold dark:text-gray-300">Observaciones</TableHead> */}
+                                        <TableHead className="text-center font-semibold dark:text-gray-300">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {movimientosPagina.length > 0 ? (
+                                        movimientosPagina.map((mov) => (
+                                            <TableRow
+                                                key={mov.id}
+                                                title={
+                                                    tieneDiscrepancia(mov)
+                                                        ? 'Lo recibido menos el cambio no coincide con el total de la venta'
+                                                        : undefined
+                                                }
+                                                className={`transition-colors dark:border-slate-700 ${
+                                                    tieneDiscrepancia(mov)
+                                                        ? 'border-l-4 border-l-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+                                                        : 'dark:hover:bg-slate-700'
                                                 }`}
                                             >
-                                                {mov.monto > 0 ? '+' : ''}
-                                                Bs. {Number(mov.monto).toFixed(2)}
-                                            </TableCell>
+                                                <TableCell className="text-sm dark:text-gray-300">{mov.id}</TableCell>
+                                                <TableCell className="text-xs dark:text-gray-300">
+                                                    {format(parseISO(mov.fecha), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
+                                                </TableCell>
+                                                <TableCell className="dark:text-gray-300">{mov.usuario.name}</TableCell>
+                                                <TableCell className="dark:text-gray-300">
+                                                    <Badge
+                                                        variant={mov.monto > 0 ? 'default' : 'secondary'}
+                                                        className={
+                                                            mov.monto > 0
+                                                                ? 'bg-green-600 text-white dark:bg-green-700'
+                                                                : mov.monto < 0
+                                                                  ? 'bg-red-600 text-white dark:bg-red-700'
+                                                                  : ''
+                                                        }
+                                                    >
+                                                        {mov.tipo_operacion.nombre}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-xs dark:text-gray-300">
+                                                    {ventaIdDe(mov) ? (
+                                                        <a
+                                                            href={`/ventas/${ventaIdDe(mov)}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-blue-600 hover:underline dark:text-blue-400"
+                                                            title="Abrir venta en otra pestaña"
+                                                        >
+                                                            {mov.numero_documento}
+                                                        </a>
+                                                    ) : (
+                                                        mov.numero_documento
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-xs dark:text-gray-300">
+                                                    {mov.tipo_pago ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-purple-300 bg-purple-100 text-purple-800 dark:border-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                                                        >
+                                                            💳 {mov.tipo_pago.nombre}
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="text-gray-400">-</span>
+                                                    )}
+                                                </TableCell>
+                                                {/* <TableCell className="text-sm dark:text-gray-300">{mov.venta?.cliente?.nombre || '-'}</TableCell> */}
+                                                <TableCell
+                                                    className={`text-right font-semibold ${
+                                                        mov.monto > 0
+                                                            ? 'text-green-600 dark:text-green-400'
+                                                            : mov.monto < 0
+                                                              ? 'text-red-600 dark:text-red-400'
+                                                              : 'text-gray-900 dark:text-white'
+                                                    }`}
+                                                >
+                                                    {mov.monto > 0 ? '+' : ''}
+                                                    Bs. {Number(mov.monto).toFixed(2)}
+                                                    {(() => {
+                                                        // ✅ NUEVO (2026-10-29): Contexto de la venta (total y cambio) bajo el monto
+                                                        const resumen = ['VENTA', 'VUELTO'].includes(mov.tipo_operacion.codigo)
+                                                            ? resumenDeVenta(mov)
+                                                            : undefined;
+                                                        if (!resumen) return null;
+                                                        return (
+                                                            <div className="mt-0.5 text-[11px] font-normal text-gray-500 dark:text-gray-400">
+                                                                Venta Bs. {resumen.total.toFixed(2)}
+                                                                {resumen.cambio > 0 && <> · Cambio Bs. {resumen.cambio.toFixed(2)}</>}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </TableCell>
 
-                                            {/* ✅ NUEVO: Total Venta */}
-                                            {/* <TableCell className="text-right text-sm font-semibold dark:text-gray-300">
+                                                {/* ✅ NUEVO: Total Venta */}
+                                                {/* <TableCell className="text-right text-sm font-semibold dark:text-gray-300">
                                                 {mov.venta?.total ? `Bs. ${Number(mov.venta.total).toFixed(2)}` : '-'}
                                             </TableCell> */}
-                                            {/* ✅ NUEVO: Monto Pagado */}
-                                            {/* <TableCell className="text-right text-sm font-semibold dark:text-gray-300">
+                                                {/* ✅ NUEVO: Monto Pagado */}
+                                                {/* <TableCell className="text-right text-sm font-semibold dark:text-gray-300">
                                                 {mov.venta?.monto_pagado ? `Bs. ${Number(mov.venta.monto_pagado).toFixed(2)}` : '-'}
                                             </TableCell> */}
-                                            {/* ✅ NUEVO: Monto Pendiente (desde BD) */}
-                                            {/* <TableCell className="text-right text-sm font-semibold dark:text-gray-300">
+                                                {/* ✅ NUEVO: Monto Pendiente (desde BD) */}
+                                                {/* <TableCell className="text-right text-sm font-semibold dark:text-gray-300">
                                                 {mov.venta?.monto_pendiente !== undefined && mov.venta?.monto_pendiente !== null ? (
                                                     <span
                                                         className={
@@ -796,7 +1204,7 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                                                     '-'
                                                 )}
                                             </TableCell> */}
-                                            {/* <TableCell className="text-sm dark:text-gray-300">
+                                                {/* <TableCell className="text-sm dark:text-gray-300">
                                                 {mov.venta?.detallesPagoVenta && mov.venta.detallesPagoVenta.length > 0 ? (
                                                     <div className="space-y-1">
                                                         {mov.venta.detallesPagoVenta.map((detalle, idx) => (
@@ -817,44 +1225,127 @@ export default function ReportesDiariosDetalle({ cierre, movimientos, totales_po
                                                     <span className="text-gray-400">-</span>
                                                 )}
                                             </TableCell> */}
-                                            {/* <TableCell className="text-sm dark:text-gray-300">{getEstadoVentaBadge(mov) || '-'}</TableCell> */}
-                                            <TableCell className="text-xs dark:text-gray-300">{mov.observaciones || '-'}</TableCell>
-                                            <TableCell className="text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    {/* Botón de Ver Detalles de Venta */}
-                                                    {mov.venta && (
-                                                        <button
-                                                            onClick={() => abrirModalVenta(mov.venta)}
-                                                            className="inline-flex items-center justify-center rounded-lg p-2 text-purple-600 transition hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-purple-900/30"
-                                                            title="Ver detalles de venta"
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </button>
-                                                    )}
-                                                    {/* Botón de Imprimir - solo para movimientos que no sean VENTA ni CREDITO */}
-                                                    {mov.tipo_operacion.codigo !== 'VENTA' && mov.tipo_operacion.codigo !== 'CREDITO' && (
-                                                        <button
-                                                            onClick={() => abrirModalImpresion(mov)}
-                                                            className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30"
-                                                            title="Imprimir/Descargar movimiento"
-                                                        >
-                                                            <Printer className="h-4 w-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                {/* <TableCell className="text-sm dark:text-gray-300">{getEstadoVentaBadge(mov) || '-'}</TableCell> */}
+                                                {/* <TableCell className="text-xs dark:text-gray-300">{mov.observaciones || '-'}</TableCell> */}
+                                                <TableCell className="text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {/* Botón de Ver Detalles de Venta */}
+                                                        {mov.venta && (
+                                                            <button
+                                                                onClick={() => abrirModalVenta(mov.venta)}
+                                                                className="inline-flex items-center justify-center rounded-lg p-2 text-purple-600 transition hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-purple-900/30"
+                                                                title="Ver detalles de venta"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                        {/* Abrir la venta en otra pestaña */}
+                                                        {ventaIdDe(mov) && (
+                                                            <a
+                                                                href={`/ventas/${ventaIdDe(mov)}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                                                title="Abrir venta en otra pestaña"
+                                                                aria-label="Abrir venta en otra pestaña"
+                                                            >
+                                                                <ExternalLink className="h-4 w-4" />
+                                                            </a>
+                                                        )}
+                                                        {/* Botón de Imprimir - solo para movimientos que no sean VENTA ni CREDITO */}
+                                                        {mov.tipo_operacion.codigo !== 'VENTA' && mov.tipo_operacion.codigo !== 'CREDITO' && (
+                                                            <button
+                                                                onClick={() => abrirModalImpresion(mov)}
+                                                                className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                                                title="Imprimir/Descargar movimiento"
+                                                            >
+                                                                <Printer className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow className="dark:border-slate-700">
+                                            <TableCell colSpan={15} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                                                No hay movimientos que coincidan con los filtros seleccionados
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow className="dark:border-slate-700">
-                                        <TableCell colSpan={15} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                                            No hay movimientos que coincidan con los filtros seleccionados
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        )}
+
+                        {/* Paginación */}
+                        {totalFilas > 0 && (
+                            <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                    <span>
+                                        {inicioPagina + 1}–{Math.min(inicioPagina + porPagina, totalFilas)} de {totalFilas}{' '}
+                                        {vista === 'ventas' ? 'ventas' : 'movimientos'}
+                                    </span>
+                                    <select
+                                        value={porPagina}
+                                        onChange={(e) => {
+                                            setPorPagina(Number(e.target.value));
+                                            setPagina(1);
+                                        }}
+                                        aria-label="Filas por página"
+                                        className="rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-gray-200"
+                                    >
+                                        {[10, 25, 50, 100].map((n) => (
+                                            <option key={n} value={n}>
+                                                {n} por página
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setPagina(1)}
+                                        disabled={paginaActual === 1}
+                                        aria-label="Primera página"
+                                    >
+                                        <ChevronsLeft className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setPagina(paginaActual - 1)}
+                                        disabled={paginaActual === 1}
+                                        aria-label="Página anterior"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="px-2 text-gray-700 dark:text-gray-300">
+                                        Página {paginaActual} de {totalPaginas}
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setPagina(paginaActual + 1)}
+                                        disabled={paginaActual === totalPaginas}
+                                        aria-label="Página siguiente"
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setPagina(totalPaginas)}
+                                        disabled={paginaActual === totalPaginas}
+                                        aria-label="Última página"
+                                    >
+                                        <ChevronsRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Botones de descarga */}
                 </div>

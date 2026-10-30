@@ -12,6 +12,9 @@ export interface DetalleProducto {
     lote?: string;
     fecha_vencimiento?: string;
     precio_costo?: number; // ✅ NUEVO: Precio de costo registrado
+    // Compras: precio de venta editado por tipo de precio (clave: tipo_precio_id): precio directo, % o ganancia en Bs;
+    // se guarda con la línea (detalle_compras.precios_venta) y se aplica al aprobar la compra
+    precios_nuevos?: Record<string, { precio_id: number; precio?: number; porcentaje?: number; monto?: number }>;
     unidad_venta_id?: number | string; // ✅ NUEVO: Unidad de venta para productos fraccionados
     conversiones?: Array<{
         unidad_destino_id: number | string;

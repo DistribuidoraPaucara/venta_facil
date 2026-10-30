@@ -646,6 +646,16 @@ export default function VentaShow() {
                                         </span>
                                     </div>
                                 )}
+
+                                {/* ✅ NUEVO (2026-10-29): Cambio entregado al cliente (mismo cálculo que el VUELTO registrado en caja) */}
+                                {Number(venta.monto_pagado ?? 0) - Number(venta.total) > 0.01 && (
+                                    <div className="mt-2 flex justify-between rounded bg-amber-50 p-2 dark:bg-amber-900/20">
+                                        <span className="font-medium text-amber-700 dark:text-amber-400">Cambio (efectivo)</span>
+                                        <span className="font-semibold text-amber-600 dark:text-amber-400">
+                                            {formatCurrencyWith2Decimals(Number(venta.monto_pagado) - Number(venta.total), venta.moneda.codigo)}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

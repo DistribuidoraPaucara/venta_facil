@@ -139,9 +139,12 @@ class MermaDistribucionService
                     $cantidadDisponibleAnterior = (float) $lote->cantidad_disponible;
                     $cantidadReservadaAnterior = (float) $lote->cantidad_reservada;
 
-                    // Actualizar stock
-                    $lote->decrement('cantidad', $cantidadAMermarDelLote);
-                    $lote->decrement('cantidad_disponible', $cantidadAMermarDelLote);
+                    // Actualizar stock en UNA sola sentencia: chk_suma_consistente exige
+                    // cantidad = cantidad_disponible + cantidad_reservada en cada UPDATE
+                    StockProducto::whereKey($lote->id)->decrementEach([
+                        'cantidad'            => $cantidadAMermarDelLote,
+                        'cantidad_disponible' => $cantidadAMermarDelLote,
+                    ]);
 
                     // Recargar para obtener DESPUÉS
                     $lote->refresh();

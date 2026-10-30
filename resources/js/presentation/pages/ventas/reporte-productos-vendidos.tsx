@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatCurrencyWith2Decimals } from '@/lib/utils';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import SearchSelect from '@/presentation/components/ui/search-select';
+import InputSearch from '@/presentation/components/ui/input-search';
 import EntregaDetallesModal from '@/presentation/components/ventas/entrega-detalles-modal';
 
 interface Producto {
@@ -115,6 +116,9 @@ interface PageProps {
         fecha_hasta?: string;
         usuario_creador_id?: string;
         cliente_id?: string;
+        producto?: string;
+        producto_id?: string;
+        producto_nombre?: string | null;
     };
     usuarios: Array<{ id: number; name: string; email: string }>;
     clientes: Array<{ id: number; nombre: string; email: string }>;
@@ -150,6 +154,16 @@ export default function ReporteProductosVendidos({
     const [clienteId, setClienteId] = useState(
         filtros.cliente_id ? String(filtros.cliente_id) : 'TODOS'
     );
+    // Producto elegido en el autocompletado (sugerencias: ID > código de barras > SKU > nombre)
+    const [productoId, setProductoId] = useState<string | number | null>(filtros.producto_id || null);
+    const [productoNombre, setProductoNombre] = useState(filtros.producto_nombre || '');
+
+    const buscarProductos = async (query: string) => {
+        const response = await fetch(`/ventas/reporte-productos-vendidos/buscar-productos?q=${encodeURIComponent(query)}`, {
+            headers: { Accept: 'application/json' },
+        });
+        return response.ok ? response.json() : [];
+    };
 
     // ✅ NUEVO: Estados para impresión automática
     const [impresoras, setImpresoras] = useState<string[]>([]);
@@ -216,6 +230,7 @@ export default function ReporteProductosVendidos({
         if (fechaHasta) params.append('fecha_hasta', fechaHasta);
         if (usuarioId && usuarioId !== 'TODOS') params.append('usuario_creador_id', usuarioId);
         if (clienteId && clienteId !== 'TODOS') params.append('cliente_id', clienteId);
+        if (productoId) params.append('producto_id', String(productoId));
 
         const queryString = params.toString();
         const url = queryString ? `/ventas/reporte-productos-vendidos?${queryString}` : '/ventas/reporte-productos-vendidos';
@@ -229,6 +244,7 @@ export default function ReporteProductosVendidos({
         if (fechaHasta) params.append('fecha_hasta', fechaHasta);
         if (usuarioId && usuarioId !== 'TODOS') params.append('usuario_creador_id', usuarioId);
         if (clienteId && clienteId !== 'TODOS') params.append('cliente_id', clienteId);
+        if (productoId) params.append('producto_id', String(productoId));
 
         const url = `/ventas/reporte-productos-vendidos/imprimir?${params.toString()}`;
 
@@ -257,6 +273,7 @@ export default function ReporteProductosVendidos({
             if (fechaHasta) params.append('fecha_hasta', fechaHasta);
             if (usuarioId && usuarioId !== 'TODOS') params.append('usuario_creador_id', usuarioId);
             if (clienteId && clienteId !== 'TODOS') params.append('cliente_id', clienteId);
+            if (productoId) params.append('producto_id', String(productoId));
             params.append('impresora', impresoraSeleccionada);
 
             const response = await fetch('/ventas/reporte-productos-vendidos/imprimir-directo', {
@@ -270,6 +287,7 @@ export default function ReporteProductosVendidos({
                     fecha_hasta: fechaHasta,
                     usuario_creador_id: usuarioId !== 'TODOS' ? usuarioId : null,
                     cliente_id: clienteId !== 'TODOS' ? clienteId : null,
+                    producto_id: productoId || null,
                     impresora: impresoraSeleccionada,
                 }),
             });
@@ -293,6 +311,8 @@ export default function ReporteProductosVendidos({
         setFechaHasta(fecha_hasta);
         setUsuarioId('TODOS');
         setClienteId('TODOS');
+        setProductoId(null);
+        setProductoNombre('');
         router.visit('/ventas/reporte-productos-vendidos');
     };
 
@@ -306,7 +326,7 @@ export default function ReporteProductosVendidos({
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                                📊 Reporte de Productos Vendidos del Preventista
+                                📊 Reportess de Productos Vendidos del Preventista
                             </h1>
                             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                                 Análisis de productos vendidos en proformas convertidas a ventas aprobadas, para los preventistas
@@ -334,7 +354,7 @@ export default function ReporteProductosVendidos({
                 <div className="rounded-lg shadow-md p-2">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">🔍 Filtros</h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-5">
                         {/* Preventista/Usuario Creador */}
                         <div>
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -376,6 +396,27 @@ export default function ReporteProductosVendidos({
                                 allowClear={true}
                             />
                         </div>
+                        {/* Producto */}
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                📦 Producto
+                            </label>
+                            <InputSearch
+                                id="producto_search"
+                                value={productoId}
+                                displayValue={productoNombre}
+                                onSearch={buscarProductos}
+                                onChange={(value, option) => {
+                                    setProductoId(value);
+                                    setProductoNombre(option?.label ?? '');
+                                }}
+                                placeholder="ID, código de barras, SKU o nombre"
+                                emptyText="No se encontraron productos"
+                                isSelected={!!productoId}
+                                allowScanner={false}
+                            />
+                        </div>
+
                         {/* Fecha Desde */}
                         <div>
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

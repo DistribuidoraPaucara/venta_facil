@@ -39,6 +39,13 @@ class StoreCompraRequest extends FormRequest
             'detalles.*.subtotal'          => 'required|numeric|min:0.01',
             'detalles.*.lote'              => 'nullable|string|max:50',
             'detalles.*.fecha_vencimiento' => 'nullable|date|after:today',
+            // Precios de venta editados en la tabla: se guardan con la línea y se aplican al aprobar la compra
+            'detalles.*.precios_venta'                  => 'nullable|array',
+            'detalles.*.precios_venta.*.tipo_precio_id' => 'required|integer',
+            'detalles.*.precios_venta.*.precio_id'      => 'required|integer|exists:precios_producto,id',
+            'detalles.*.precios_venta.*.precio'         => 'nullable|numeric|min:0',
+            'detalles.*.precios_venta.*.porcentaje'     => 'nullable|numeric|min:-100',
+            'detalles.*.precios_venta.*.monto'          => 'nullable|numeric',
         ];
     }
 

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\TipoMerma;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreMermaRequest extends FormRequest
 {
@@ -15,6 +17,18 @@ class StoreMermaRequest extends FormRequest
     }
 
     /**
+     * Si no se especifica motivo, usar el nombre del tipo de merma
+     */
+    protected function prepareForValidation(): void
+    {
+        if (blank($this->input('motivo')) && filled($this->input('tipo_merma'))) {
+            $this->merge([
+                'motivo' => TipoMerma::where('clave', $this->input('tipo_merma'))->value('label') ?? $this->input('tipo_merma'),
+            ]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
@@ -22,7 +36,12 @@ class StoreMermaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'almacen_id' => ['required', 'integer', 'exists:almacenes,id'],
+            // ✅ CRÍTICO: El almacén debe pertenecer a la empresa del usuario
+            'almacen_id' => [
+                'required',
+                'integer',
+                Rule::exists('almacenes', 'id')->where('empresa_id', $this->user()->empresa_id),
+            ],
             'tipo_merma' => ['required', 'string', 'max:100'],
             'motivo' => ['required', 'string', 'max:500'],
             'observaciones' => ['nullable', 'string', 'max:1000'],

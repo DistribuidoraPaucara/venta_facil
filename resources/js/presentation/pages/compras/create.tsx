@@ -37,6 +37,10 @@ interface DetalleForm {
   unidad_venta_id?: number; // ✅ NUEVO: ID de unidad de compra (conversión principal)
   es_fraccionado?: boolean; // ✅ NUEVO: Indica si producto es fraccionado
   conversiones?: any[]; // ✅ NUEVO: Conversiones del producto
+  // Precio de venta editado por tipo de precio (clave: tipo_precio_id): precio directo, o la ganancia en
+  // % (precio = costo × (1 + %)) o en Bs (precio = costo + monto). Se guarda con la línea y el backend lo
+  // aplica a precios_producto al APROBAR la compra, sobre el precio unitario (nuevo costo)
+  precios_nuevos?: Record<string, { precio_id: number; precio?: number; porcentaje?: number; monto?: number }>;
   producto?: { // ✅ NUEVO: Información completa del producto
     id: number | string;
     nombre: string;
@@ -93,6 +97,36 @@ const formatearNumero = (valor: number | string | null | undefined): string | nu
   if (!str.includes('.')) return str;
   // Remover ceros finales y el punto si es necesario
   return str.replace(/\.?0+$/, '');
+};
+
+// Precios de venta editados en la tabla → formato del backend (detalle_compras.precios_venta).
+// Se guardan con la línea y el backend los aplica al APROBAR la compra (junto con el costo = precio de compra)
+const preciosVentaParaEnviar = (detalle: DetalleForm) => {
+  const editados = Object.entries(detalle.precios_nuevos || {});
+  if (editados.length === 0) return null;
+  return editados.map(([tipoPrecioId, { precio_id, precio, porcentaje, monto }]) => ({
+    tipo_precio_id: Number(tipoPrecioId),
+    precio_id,
+    precio: precio ?? null,
+    porcentaje: porcentaje ?? null,
+    monto: monto ?? null,
+  }));
+};
+
+// Formato del backend → estado de la tabla (al editar una compra guardada)
+const preciosVentaDesdeBackend = (preciosVenta: any[] | null | undefined): DetalleForm['precios_nuevos'] => {
+  if (!preciosVenta || preciosVenta.length === 0) return undefined;
+  return Object.fromEntries(
+    preciosVenta.map((p) => [
+      String(p.tipo_precio_id),
+      {
+        precio_id: Number(p.precio_id),
+        ...(p.precio != null ? { precio: Number(p.precio) } : {}),
+        ...(p.porcentaje != null ? { porcentaje: Number(p.porcentaje) } : {}),
+        ...(p.monto != null ? { monto: Number(p.monto) } : {}),
+      },
+    ]),
+  );
 };
 
 // ✅ HELPER FUNCTION: Obtener fecha actual en zona horaria local (yyyy-MM-dd)
@@ -243,6 +277,9 @@ export default function CompraForm() {
       lote: d.lote ?? '',
       // ✅ FIX 2026-03-19: Normalizar fecha ISO a formato yyyy-MM-dd para inputs type="date"
       fecha_vencimiento: normalizeDateForInput(d.fecha_vencimiento),
+      precio_costo: Number((d.producto as any)?.precio_costo) || 0,
+      // Precios de venta editados y guardados con la línea (se aplican al aprobar)
+      precios_nuevos: preciosVentaDesdeBackend((d as any).precios_venta),
       // ✅ NUEVO 2026-03-06: Incluir información del producto para que ProductosTable lo reconozca
       producto: d.producto ? {
         id: d.producto.id,
@@ -258,7 +295,10 @@ export default function CompraForm() {
         // ✅ NUEVO 2026-03-19: Incluir stock disponible desde backend
         stock_total: d.producto.stock_total ?? 0,
         stock_disponible: d.producto.stock_disponible ?? 0,
-      } : undefined,
+        // Precios registrados para las columnas de precios de venta
+        precio_costo: Number((d.producto as any).precio_costo) || 0,
+        precios: (d.producto as any).precios || [],
+      } as any : undefined,
     })) ?? [],
   });
 
@@ -396,6 +436,7 @@ export default function CompraForm() {
             subtotal: parseFloat(String(detalle.subtotal)),
             lote: detalle.lote || '',
             fecha_vencimiento: detalle.fecha_vencimiento || null,
+            precios_venta: preciosVentaParaEnviar(detalle),
           })),
         _autoguardado: true, // Flag para indicar que es autoguardado
       };
@@ -639,7 +680,7 @@ export default function CompraForm() {
     setData('detalles', data.detalles.filter((_: DetalleForm, i: number) => i !== idx));
   };
 
-  const updateDetalle = (idx: number, field: keyof DetalleForm, value: string | number) => {
+  const updateDetalle = (idx: number, field: keyof DetalleForm, value: any) => {
     const newDetalles = [...data.detalles];
     newDetalles[idx] = { ...newDetalles[idx], [field]: value };
 
@@ -852,6 +893,7 @@ export default function CompraForm() {
         subtotal: subtotalCalculado,
         lote: detalle.lote || '',
         fecha_vencimiento: detalle.fecha_vencimiento || null,
+        precios_venta: preciosVentaParaEnviar(detalle), // se aplican al aprobar la compra
       };
 
       // ✅ Solo incluir id si existe (para detalles existentes)
@@ -979,6 +1021,7 @@ export default function CompraForm() {
             subtotal: parseFloat(String(detalle.subtotal)),
             lote: detalle.lote || '',
             fecha_vencimiento: detalle.fecha_vencimiento || null,
+            precios_venta: preciosVentaParaEnviar(detalle),
           }));
 
           console.log('🟢 transform() - Enviando detalles en modo edición', {
@@ -996,6 +1039,7 @@ export default function CompraForm() {
             subtotal: parseFloat(String(detalle.subtotal)),
             lote: detalle.lote || '',
             fecha_vencimiento: detalle.fecha_vencimiento || null,
+            precios_venta: preciosVentaParaEnviar(detalle),
           }));
         }
 
@@ -1155,8 +1199,8 @@ export default function CompraForm() {
           );
         })() : null} */}
 
-        {/* Información general */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-2">
+        {/* Información general (mismo fondo que el resumen del total) */}
+        <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
           {/* <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información General</h3> */}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -1440,37 +1484,47 @@ export default function CompraForm() {
           />
         </div>
 
-        {/* Resumen financiero */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-2">
-          {/* <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Resumen</h3> */}
-          <div className="flex justify-end">
-            <div className="w-64 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
-                <span className="font-mono">{formatCurrencyMinimalDecimals(parseFloat(String(formatearNumero(data.subtotal))), selectedMoneda?.simbolo)}</span>
+        {/* Resumen financiero (mismo diseño que en ventas): descuento general y total a pagar */}
+        {data.detalles.some(d => d.producto_id !== '') && (
+        <div className="rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-zinc-900/30">
+            {/* Subtotal (solo si hay descuento, para ver de dónde sale el total) */}
+            {Number(data.descuento) > 0 && (
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                <span>Subtotal:</span>
+                <span className="font-medium">{formatCurrencyMinimalDecimals(Number(data.subtotal), selectedMoneda?.simbolo)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Descuento:</span>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    inputMode="decimal" // ✅ Mostrar teclado decimal en móvil
-                    className="w-20 px-2 py-1 text-right text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    value={formatearNumero(data.descuento)}
-                    onChange={e => {
-                      // ✅ Solo permitir números decimales positivos
-                      const valor = e.target.value;
-                      if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
-                        const num = valor === '' ? 0 : parseFloat(valor);
-                        if (num >= 0) {
-                          setData('descuento', num);
-                        }
-                      }
-                    }}
-                  />
-                  <span className="font-mono">{formatCurrencyMinimalDecimals(parseFloat(String(formatearNumero(data.descuento))), selectedMoneda?.simbolo)}</span>
-                </div>
-              </div>
+            )}
+
+            {/* Descuento general: misma fila que el total (texto a la izquierda, input a la derecha) */}
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="descuento_general" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Descuento general:
+              </label>
+              <input
+                id="descuento_general"
+                type="text"
+                inputMode="decimal" // ✅ Mostrar teclado decimal en móvil
+                disabled={soloLectura}
+                className={`w-40 rounded-md border p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:bg-zinc-800 dark:text-white ${
+                  Number(data.descuento) > 0
+                    ? 'border-red-400 text-red-600 dark:border-red-600 dark:text-red-400'
+                    : 'border-gray-300 dark:border-zinc-600'
+                }`}
+                value={data.descuento ? formatearNumero(data.descuento) : ''}
+                placeholder="0.00"
+                onChange={e => {
+                  // ✅ Solo permitir números decimales positivos
+                  const valor = e.target.value.replace(',', '.');
+                  if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                    const num = valor === '' ? 0 : parseFloat(valor) || 0;
+                    if (num >= 0) {
+                      setData('descuento', num);
+                    }
+                  }
+                }}
+              />
+            </div>
               {/* <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Impuestos:</span>
                 <div className="flex items-center space-x-2">
@@ -1485,15 +1539,16 @@ export default function CompraForm() {
                   <span className="font-mono">{formatCurrency(data.impuesto, selectedMoneda?.simbolo)}</span>
                 </div>
               </div> */}
-              <div className="border-t pt-2">
-                <div className="flex justify-between font-semibold">
-                  <span>Total:</span>
-                  <span className="font-mono text-lg">{formatCurrencyMinimalDecimals(parseFloat(String(formatearNumero(data.total))), selectedMoneda?.simbolo)}</span>
-                </div>
-              </div>
+            {/* Total (siempre visible) */}
+            <div className="flex items-center justify-between border-t border-gray-200 py-2 dark:border-zinc-700">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">Total a Pagar:</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                {formatCurrencyMinimalDecimals(Number(data.total), selectedMoneda?.simbolo)}
+              </span>
             </div>
           </div>
         </div>
+        )}
       </form>
 
       {/* Modal para crear proveedor */}

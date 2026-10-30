@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\Venta;
 use App\Models\User;
@@ -19,6 +20,47 @@ class ReporteVentasController extends Controller
      * Mostrar reporte de productos vendidos
      * GET /ventas/reporte-productos-vendidos
      */
+    /**
+     * IDs de productos a filtrar: ?producto_id= (elegido en el autocompletado) tiene prioridad;
+     * si no, ?producto= se busca con prioridad ID > código de barras > SKU > nombre.
+     * Sin coincidencias devuelve [] para que el reporte quede vacío en lugar de mostrar todo.
+     */
+    private function productoIdsPorBusqueda(Request $request): array
+    {
+        if ($request->filled('producto_id')) {
+            // El scope global de Producto limita a la empresa del usuario
+            return Producto::whereKey($request->integer('producto_id'))->pluck('id')->all();
+        }
+
+        return Producto::buscarPrioridad((string) $request->string('producto'))
+            ->pluck('productos.id')
+            ->all();
+    }
+
+    /**
+     * Sugerencias para el filtro de producto del reporte (InputSearch)
+     * GET /ventas/reporte-productos-vendidos/buscar-productos?q=
+     */
+    public function buscarProductos(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->string('q'));
+        if (mb_strlen($q) < 2 && ! ctype_digit($q)) {
+            return response()->json([]);
+        }
+
+        $productos = Producto::buscarPrioridad($q)
+            ->with(['codigosBarra' => fn($cq) => $cq->where('activo', true)])
+            ->limit(15)
+            ->get(['productos.id', 'productos.nombre', 'productos.sku']);
+
+        return response()->json($productos->map(fn($p) => [
+            'value'          => $p->id,
+            'label'          => $p->nombre,
+            'description'    => collect(["ID: {$p->id}", $p->sku ? "SKU: {$p->sku}" : null])->filter()->implode(' · '),
+            'codigos_barras' => $p->codigosBarra->pluck('codigo')->implode(', '),
+        ]));
+    }
+
     public function productosVendidos(Request $request): InertiaResponse
     {
         try {
@@ -44,6 +86,10 @@ class ReporteVentasController extends Controller
             // Determinar cliente_id
             if ($request->filled('cliente_id')) {
                 $filtros['cliente_id'] = $request->integer('cliente_id');
+            }
+
+            if ($request->filled('producto_id') || $request->filled('producto')) {
+                $filtros['producto_ids'] = $this->productoIdsPorBusqueda($request);
             }
 
             // Obtener productos vendidos del service
@@ -206,6 +252,12 @@ class ReporteVentasController extends Controller
                 'fecha_hasta' => $request->input('fecha_hasta'),
                 'usuario_creador_id' => $request->input('usuario_creador_id'),
                 'cliente_id' => $request->input('cliente_id'),
+                'producto' => $request->input('producto'),
+                'producto_id' => $request->input('producto_id'),
+                // Nombre para mostrar el producto elegido en el InputSearch al recargar
+                'producto_nombre' => $request->filled('producto_id')
+                    ? Producto::whereKey($request->integer('producto_id'))->value('nombre')
+                    : null,
             ];
 
             return Inertia::render('ventas/reporte-productos-vendidos', [
@@ -748,6 +800,11 @@ class ReporteVentasController extends Controller
                 $productosDirectos->where('proformas.cliente_id', $request->cliente_id);
             }
 
+            $productoIds = ($request->filled('producto_id') || $request->filled('producto')) ? $this->productoIdsPorBusqueda($request) : null;
+            if ($productoIds !== null) {
+                $productosDirectos->whereIn('productos.id', $productoIds);
+            }
+
             $productosDirectos = $productosDirectos->groupBy('productos.id', 'productos.nombre', 'productos.sku', 'proformas.usuario_creador_id')
                 ->get();
 
@@ -779,6 +836,10 @@ class ReporteVentasController extends Controller
 
             if ($request->filled('cliente_id')) {
                 $productosEnCombos->where('proformas.cliente_id', $request->cliente_id);
+            }
+
+            if ($productoIds !== null) {
+                $productosEnCombos->whereIn('productos.id', $productoIds);
             }
 
             $productosEnCombos = $productosEnCombos->groupBy('productos.id', 'productos.nombre', 'productos.sku', 'proformas.usuario_creador_id')
@@ -1032,6 +1093,10 @@ class ReporteVentasController extends Controller
 
             if ($request->filled('cliente_id')) {
                 $filtros['cliente_id'] = $request->integer('cliente_id');
+            }
+
+            if ($request->filled('producto_id') || $request->filled('producto')) {
+                $filtros['producto_ids'] = $this->productoIdsPorBusqueda($request);
             }
 
             // Obtener productos vendidos del service

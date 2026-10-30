@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/pre
 import { Badge } from '@/presentation/components/ui/badge';
 import { Textarea } from '@/presentation/components/ui/textarea';
 import { Label } from '@/presentation/components/ui/label';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/presentation/components/ui/table';
+import { formatCurrencyMinimalDecimals } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/presentation/components/ui/dialog';
 import { ArrowLeft, CheckCircle, XCircle, Calendar, MapPin, AlertTriangle, FileText, Printer } from 'lucide-react';
 import { useAuth } from '@/application/hooks/use-auth';
@@ -14,15 +16,19 @@ import type { MermaInventario } from '@/domain/entities/mermas-inventario';
 import { TIPOS_MERMA, ESTADOS_MERMA } from '@/presentation/config/inventory.config';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 
+// Muestra solo los decimales necesarios (10 → "10", 2.5 → "2,5"), hasta 6 para productos fraccionados
+const formatCantidad = (valor: unknown) =>
+    new Intl.NumberFormat('es-BO', { maximumFractionDigits: 6 }).format(Number(valor) || 0);
+
 // Componente EstadoBadge simple para mermas
 const EstadoBadge = ({ estado }: { estado: string }) => {
     const configs = {
-        'pendiente': { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800' },
-        'aprobada': { label: 'Aprobada', className: 'bg-green-100 text-green-800' },
-        'rechazada': { label: 'Rechazada', className: 'bg-red-100 text-red-800' },
+        'PENDIENTE': { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800' },
+        'APROBADO': { label: 'Aprobada', className: 'bg-green-100 text-green-800' },
+        'RECHAZADO': { label: 'Rechazada', className: 'bg-red-100 text-red-800' },
     };
 
-    const config = configs[estado as keyof typeof configs] || configs.pendiente;
+    const config = configs[estado as keyof typeof configs] || configs.PENDIENTE;
 
     return (
         <Badge className={config.className}>
@@ -46,24 +52,34 @@ export default function VerMerma({ merma }: VerMermaProps) {
     const [dialogType, setDialogType] = useState<'aprobar' | 'rechazar'>('aprobar');
     const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
 
+    // Las rutas de aprobar/rechazar responden JSON (no Inertia), por eso se usa fetch
+    const enviarDecision = async (accion: 'aprobar' | 'rechazar', body: Record<string, string>) => {
+        const response = await fetch(`/inventario/mermas/${merma.id}/${accion}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+            body: JSON.stringify(body),
+        });
+        return response.json();
+    };
+
     const handleAprobar = async () => {
         setIsApproving(true);
         try {
-            await router.post(
-                `/inventario/mermas/${merma.id}/aprobar`,
-                { observaciones_aprobacion: observacionesAprobacion },
-                {
-                    onSuccess: () => {
-                        NotificationService.success('Merma aprobada exitosamente');
-                        setDialogOpen(false);
-                        setObservacionesAprobacion('');
-                    },
-                    onError: (errors) => {
-                        NotificationService.error('Error al aprobar la merma');
-                        console.error(errors);
-                    },
-                }
-            );
+            const result = await enviarDecision('aprobar', { observaciones_aprobacion: observacionesAprobacion });
+            if (result.success) {
+                NotificationService.success('Merma aprobada exitosamente');
+                setDialogOpen(false);
+                setObservacionesAprobacion('');
+                router.reload();
+            } else {
+                NotificationService.error(result.message || 'Error al aprobar la merma');
+            }
+        } catch {
+            NotificationService.error('Error al aprobar la merma');
         } finally {
             setIsApproving(false);
         }
@@ -72,21 +88,17 @@ export default function VerMerma({ merma }: VerMermaProps) {
     const handleRechazar = async () => {
         setIsRejecting(true);
         try {
-            await router.post(
-                `/inventario/mermas/${merma.id}/rechazar`,
-                { observaciones_rechazo: observacionesRechazo },
-                {
-                    onSuccess: () => {
-                        NotificationService.success('Merma rechazada exitosamente');
-                        setDialogOpen(false);
-                        setObservacionesRechazo('');
-                    },
-                    onError: (errors) => {
-                        NotificationService.error('Error al rechazar la merma');
-                        console.error(errors);
-                    },
-                }
-            );
+            const result = await enviarDecision('rechazar', { observaciones_rechazo: observacionesRechazo });
+            if (result.success) {
+                NotificationService.success('Merma rechazada exitosamente');
+                setDialogOpen(false);
+                setObservacionesRechazo('');
+                router.reload();
+            } else {
+                NotificationService.error(result.message || 'Error al rechazar la merma');
+            }
+        } catch {
+            NotificationService.error('Error al rechazar la merma');
         } finally {
             setIsRejecting(false);
         }
@@ -201,6 +213,22 @@ export default function VerMerma({ merma }: VerMermaProps) {
                                         <div className="mt-1">
                                             <EstadoBadge estado={merma.estado} />
                                         </div>
+                                        {merma.estado === 'PENDIENTE' && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                El stock se descontará al aprobarla
+                                            </p>
+                                        )}
+                                        {merma.aprobado_por && merma.estado !== 'PENDIENTE' && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {merma.estado === 'RECHAZADO' ? 'Rechazada' : 'Aprobada'} por {merma.aprobado_por.name}
+                                                {merma.fecha_aprobacion && ` el ${new Date(merma.fecha_aprobacion).toLocaleString('es-BO')}`}
+                                                {merma.observacion_aprobacion && (
+                                                    <span className="block">
+                                                        {merma.estado === 'RECHAZADO' ? 'Motivo: ' : 'Obs.: '}{merma.observacion_aprobacion}
+                                                    </span>
+                                                )}
+                                            </p>
+                                        )}
                                     </div>
                                     <div>
                                         <Label className="text-sm font-medium text-muted-foreground">
@@ -272,54 +300,77 @@ export default function VerMerma({ merma }: VerMermaProps) {
                             </CardHeader>
                             <CardContent>
                                 {merma.detalles && merma.detalles.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {merma.detalles.map((detalle, index) => (
-                                            <div
-                                                key={index}
-                                                className="border rounded-lg p-4 space-y-2"
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <h4 className="font-medium">
-                                                            {detalle.producto?.nombre || 'Producto no especificado'}
-                                                        </h4>
-                                                        <div className="mt-1 space-y-1">
-                                                            {detalle.producto?.sku && (
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    SKU: <span className="font-mono font-medium">{detalle.producto.sku}</span>
-                                                                </p>
+                                    <div className="overflow-x-auto rounded-lg border">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-16">ID</TableHead>
+                                                    <TableHead>Producto</TableHead>
+                                                    <TableHead>Lote</TableHead>
+                                                    <TableHead className="text-right">Cantidad</TableHead>
+                                                    <TableHead className="text-right">Costo Unit.</TableHead>
+                                                    <TableHead className="text-right">Subtotal</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {merma.detalles.map((detalle, index) => (
+                                                    <TableRow key={index}>
+                                                        <TableCell className="font-mono text-muted-foreground">
+                                                            {can('productos.manage') ? (
+                                                                <a
+                                                                    href={`/productos/${detalle.producto?.id || detalle.producto_id}/edit`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-blue-600 hover:underline dark:text-blue-400"
+                                                                    title="Abrir producto en otra pestaña"
+                                                                >
+                                                                    {detalle.producto?.id || detalle.producto_id}
+                                                                </a>
+                                                            ) : (
+                                                                detalle.producto?.id || detalle.producto_id
                                                             )}
-                                                            {detalle.producto?.codigo && (
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Código: {detalle.producto.codigo}
-                                                                </p>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="font-medium">
+                                                                {detalle.producto?.nombre || 'Producto no especificado'}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {[detalle.producto?.sku && `SKU: ${detalle.producto.sku}`, detalle.producto?.codigo && `Código: ${detalle.producto.codigo}`]
+                                                                    .filter(Boolean)
+                                                                    .join(' · ')}
+                                                            </div>
+                                                            {detalle.observaciones && (
+                                                                <div className="text-xs text-muted-foreground mt-1">{detalle.observaciones}</div>
                                                             )}
-                                                        </div>
-                                                        {detalle.lote && (
-                                                            <p className="text-sm text-muted-foreground mt-2">
-                                                                Lote: {detalle.lote}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-right ml-4">
-                                                        <p className="font-medium">
-                                                            {detalle.cantidad} uds
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            @ Bs. {detalle.costo_unitario?.toFixed(2) || '0.00'}
-                                                        </p>
-                                                        <p className="text-sm font-medium text-red-600 mt-1">
-                                                            Bs. {detalle.costo_total?.toFixed(2) || '0.00'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                {detalle.observaciones && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {detalle.observaciones}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ))}
+                                                        </TableCell>
+                                                        <TableCell className="text-muted-foreground">
+                                                            {detalle.lote || '—'}
+                                                        </TableCell>
+                                                        <TableCell className="text-right whitespace-nowrap">
+                                                            {formatCantidad(detalle.cantidad)}
+                                                        </TableCell>
+                                                        <TableCell className="text-right whitespace-nowrap">
+                                                            {formatCurrencyMinimalDecimals(Number(detalle.costo_unitario) || 0)}
+                                                        </TableCell>
+                                                        <TableCell className="text-right font-medium text-red-600 whitespace-nowrap">
+                                                            {formatCurrencyMinimalDecimals(Number(detalle.costo_total) || 0)}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                            <TableFooter>
+                                                <TableRow>
+                                                    <TableCell colSpan={3} className="text-right font-medium">Total</TableCell>
+                                                    <TableCell className="text-right font-medium whitespace-nowrap">
+                                                        {formatCantidad(merma.detalles.reduce((total, d) => total + (Number(d.cantidad) || 0), 0))}
+                                                    </TableCell>
+                                                    <TableCell />
+                                                    <TableCell className="text-right font-semibold text-red-600 whitespace-nowrap">
+                                                        {formatCurrencyMinimalDecimals(merma.detalles.reduce((total, d) => total + (Number(d.costo_total) || 0), 0))}
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableFooter>
+                                        </Table>
                                     </div>
                                 ) : (
                                     <div className="text-center py-8 text-muted-foreground">

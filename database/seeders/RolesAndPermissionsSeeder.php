@@ -173,6 +173,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'inventario.transferencias.index', 'inventario.transferencias.crear', 'inventario.transferencias.ver', 'inventario.transferencias.edit',
                 'inventario.transferencias.enviar', 'inventario.transferencias.recibir', 'inventario.transferencias.cancelar',
                 'inventario.tipos-ajuste.manage', 'inventario.tipos-ajuste.index', 'inventario.tipos-ajuste.create', 'inventario.tipos-ajuste.store', 'inventario.tipos-ajuste.edit', 'inventario.tipos-ajuste.update', 'inventario.tipos-ajuste.destroy',
+                'inventario.tipos-merma.manage', 'inventario.estados-merma.manage',
                 'inventario.vehiculos.manage', 'inventario.vehiculos.index', 'inventario.vehiculos.create', 'inventario.vehiculos.store', 'inventario.vehiculos.ver', 'inventario.vehiculos.edit', 'inventario.vehiculos.update', 'inventario.vehiculos.destroy',
                 'inventario.analisis.manage', // ✅ NUEVO: Análisis ABC del inventario
             ],
@@ -358,6 +359,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'inventario.transferencias.enviar', 'inventario.transferencias.recibir',
                 'inventario.mermas.index', 'inventario.mermas.registrar', 'inventario.mermas.store', 'inventario.mermas.show',
                 'inventario.tipos-ajuste.index', 'inventario.tipos-ajuste.manage',
+                'inventario.tipos-merma.manage', 'inventario.estados-merma.manage',
                 'almacenes.manage',
                 'productos.manage',
                 'reportes.inventario.stock-actual', 'reportes.inventario.vencimientos', 'reportes.inventario.movimientos',

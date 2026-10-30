@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ReporteController::ventasPorProducto
- * @see app/Http/Controllers/ReporteController.php:19
+ * @see app/Http/Controllers/ReporteController.php:18
  * @route '/ventas/reportes/ventas-por-producto'
  */
 export const ventasPorProducto = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ ventasPorProducto.definition = {
 
 /**
 * @see \App\Http\Controllers\ReporteController::ventasPorProducto
- * @see app/Http/Controllers/ReporteController.php:19
+ * @see app/Http/Controllers/ReporteController.php:18
  * @route '/ventas/reportes/ventas-por-producto'
  */
 ventasPorProducto.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ ventasPorProducto.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ReporteController::ventasPorProducto
- * @see app/Http/Controllers/ReporteController.php:19
+ * @see app/Http/Controllers/ReporteController.php:18
  * @route '/ventas/reportes/ventas-por-producto'
  */
 ventasPorProducto.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ ventasPorProducto.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
 })
 /**
 * @see \App\Http\Controllers\ReporteController::ventasPorProducto
- * @see app/Http/Controllers/ReporteController.php:19
+ * @see app/Http/Controllers/ReporteController.php:18
  * @route '/ventas/reportes/ventas-por-producto'
  */
 ventasPorProducto.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ ventasPorProducto.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
     /**
 * @see \App\Http\Controllers\ReporteController::ventasPorProducto
- * @see app/Http/Controllers/ReporteController.php:19
+ * @see app/Http/Controllers/ReporteController.php:18
  * @route '/ventas/reportes/ventas-por-producto'
  */
     const ventasPorProductoForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ ventasPorProducto.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
             /**
 * @see \App\Http\Controllers\ReporteController::ventasPorProducto
- * @see app/Http/Controllers/ReporteController.php:19
+ * @see app/Http/Controllers/ReporteController.php:18
  * @route '/ventas/reportes/ventas-por-producto'
  */
         ventasPorProductoForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ ventasPorProducto.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
         })
             /**
 * @see \App\Http\Controllers\ReporteController::ventasPorProducto
- * @see app/Http/Controllers/ReporteController.php:19
+ * @see app/Http/Controllers/ReporteController.php:18
  * @route '/ventas/reportes/ventas-por-producto'
  */
         ventasPorProductoForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

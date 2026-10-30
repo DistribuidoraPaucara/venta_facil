@@ -34,6 +34,7 @@ export interface MermaInventario extends BaseEntity {
     estado: EstadoMerma;
     fecha_aprobacion?: string | null;
     aprobado_por_id?: Id;
+    observacion_aprobacion?: string | null; // Observación al aprobar o motivo del rechazo
 
     // Relaciones
     almacen: Almacen;

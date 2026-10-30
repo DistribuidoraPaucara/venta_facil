@@ -18,6 +18,7 @@ class DetalleCompra extends Model
         'lote',
         'fecha_vencimiento',
         'unidad_medida_id',
+        'precios_venta', // Precios de venta editados en la compra; se aplican al aprobarla
     ];
 
     protected function casts(): array
@@ -28,6 +29,7 @@ class DetalleCompra extends Model
             'descuento' => 'float',
             'subtotal' => 'float',
             'fecha_vencimiento' => 'date',
+            'precios_venta' => 'array',
         ];
     }
 

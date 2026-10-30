@@ -949,7 +949,9 @@ class Venta extends Model
                     }
 
                     MovimientoCaja::create([
+                        'apertura_caja_id'    => $vueltoOriginal->apertura_caja_id,
                         'caja_id'             => $vueltoOriginal->caja_id,
+                        'tipo_pago_id'        => $vueltoOriginal->tipo_pago_id,
                         'user_id'             => Auth::id(),
                         'fecha'               => now(),
                         'monto'               => abs($vueltoOriginal->monto), // Positivo (opuesto del vuelto)

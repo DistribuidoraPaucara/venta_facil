@@ -1,11 +1,56 @@
 import { preciosService } from '@/application/services/precios.service';
 import type { Producto } from '@/domain/entities/ventas';
 import { ModalComprasDiferenciaCostoComponent } from '@/presentation/components/precios/modal-compras-diferencia-costo';
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import FarmaciaMedicamentoModal from './components/FarmaciaMedicamentoModal';
 import ProductSearchBar from './components/ProductSearchBar';
 import ProductoTableRow from './components/ProductoTableRow';
 import { DetalleProducto, ProductosTableProps } from './types';
+
+export interface PrecioVentaRegistrado {
+    id: number;
+    precio: number;
+    tipo_precio_id: number;
+    nombre: string;
+}
+
+/** Nombre corto del tipo de precio para encabezados: "Precio de Venta" → "Pr. Venta", "Precio Mayorista" → "Pr. Mayorista" */
+export function abreviarTipoPrecio(nombre: string): string {
+    return nombre.replace(/^precio\s+(de\s+)?/i, 'Pr. ');
+}
+
+/**
+ * ¿Es el precio de costo? Mismo criterio que el backend (ProductoController::mapearProductos):
+ * código COSTO, o "COSTO" en el nombre del tipo de precio o del precio.
+ */
+export function esPrecioCosto(p: any): boolean {
+    const codigo = p?.tipo_precio?.codigo ?? p?.tipo?.codigo ?? '';
+    const nombreTipo = p?.tipo_precio?.nombre ?? p?.tipo?.nombre ?? '';
+    return codigo === 'COSTO' || /costo/i.test(nombreTipo) || /costo/i.test(p?.nombre ?? '');
+}
+
+/**
+ * Precios de venta registrados de una línea de compra, por tipo de precio (sin COSTO).
+ * Solo los de la unidad base del producto: los de otras unidades (fraccionados) se siguen editando en el modal de cascada.
+ */
+export function obtenerPreciosVentaPorTipo(detalle: DetalleProducto, productoInfo: any): Record<number, PrecioVentaRegistrado> {
+    const precios: any[] = productoInfo?.precios || [];
+    const unidadBase = detalle.unidad_medida_id ?? productoInfo?.unidad_medida_id ?? productoInfo?.unidad?.id;
+    const resultado: Record<number, PrecioVentaRegistrado> = {};
+
+    for (const p of precios) {
+        if (!p.tipo_precio_id || esPrecioCosto(p)) continue;
+        const esUnidadBase = p.unidad_medida_id == null || unidadBase == null || Number(p.unidad_medida_id) === Number(unidadBase);
+        if (!esUnidadBase || resultado[p.tipo_precio_id]) continue;
+        resultado[p.tipo_precio_id] = {
+            id: p.id,
+            precio: Number(p.precio) || 0,
+            tipo_precio_id: p.tipo_precio_id,
+            nombre: p.tipo_precio?.nombre || p.nombre || 'Precio',
+        };
+    }
+    return resultado;
+}
 
 // ✅ HELPER FUNCTION: Normalizar fechas para inputs type="date"
 const normalizeDateForInput = (date: string | null | undefined): string => {
@@ -382,6 +427,20 @@ export default function ProductosTable({
     };
 
     // ✅ Handler para actualizar detalle (con lógica de combos)
+    // Compras: columnas de precios de venta = todos los tipos de precio que tengan los productos de la compra
+    const tiposPrecioVenta: Array<{ tipo_precio_id: number; nombre: string }> =
+        tipo === 'compra'
+            ? Object.values(
+                  detalles.reduce<Record<number, { tipo_precio_id: number; nombre: string }>>((acc, detalle) => {
+                      const productoInfo = detalle.producto || productos.find((p) => p.id === detalle.producto_id);
+                      for (const p of Object.values(obtenerPreciosVentaPorTipo(detalle, productoInfo))) {
+                          acc[p.tipo_precio_id] ??= { tipo_precio_id: p.tipo_precio_id, nombre: p.nombre };
+                      }
+                      return acc;
+                  }, {}),
+              ).sort((a, b) => a.tipo_precio_id - b.tipo_precio_id)
+            : [];
+
     const handleUpdateDetail = (index: number, field: keyof DetalleProducto, value: number | string) => {
         // ✅ NUEVO: Si se actualiza precio_unitario, validar si corresponde a un tipo de precio
         // ✅ IMPORTANTE (2026-06-15): En modo COMPRA, permitir edición libre del precio sin validaciones de tipos de precios
@@ -508,39 +567,58 @@ export default function ProductosTable({
                     )}
 
                     {/* Tabla de productos */}
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
+                    {/* Compras: modo compacto (celdas y inputs más chicos) para que entren más columnas en pantalla.
+                        Celdas alineadas arriba: así todos los inputs quedan en la misma línea aunque alguno tenga texto debajo (ej. el stock).
+                        Los selectores de descendientes tienen más especificidad que las clases de cada input, así no hay que tocarlos uno por uno */}
+                    <table
+                        className={`min-w-full divide-y divide-gray-200 dark:divide-zinc-700 ${
+                            tipo === 'compra'
+                                ? '[&_input]:h-7 [&_input]:rounded-md [&_input]:px-1.5 [&_input]:py-0 [&_input]:text-xs [&_input:not([type=date])]:max-w-[5.5rem] [&_input[type=date]]:w-[7.5rem] [&_td]:px-1.5 [&_td]:py-1 [&_td]:align-top [&_th]:px-1.5 [&_th]:py-1.5 [&_th]:whitespace-nowrap'
+                                : ''
+                        }`}
+                    >
                         <thead className="border-b-2 border-gray-300 bg-gradient-to-b from-gray-100 to-gray-50 dark:border-zinc-600 dark:from-zinc-700 dark:to-zinc-800">
                             <tr>
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">ID</th>
+                                {/* En compras, el código / SKU se muestra debajo del nombre del producto */}
+                                {tipo !== 'compra' && (
+                                    <th
+                                        className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                        title="Código de barras; si no tiene, el SKU"
+                                    >
+                                        Código/SKU
+                                    </th>
+                                )}
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Producto</th>
+                                {/* El disponible se muestra dentro de la columna Cantidad (se recalcula al escribir) */}
                                 <th
                                     className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
-                                    title="Código de barras; si no tiene, el SKU"
+                                    title={tipo === 'compra' ? 'Cantidad y stock que quedará después de la compra' : undefined}
                                 >
-                                    Código/SKU
-                                </th>
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Producto</th>
-                                {/* En ventas, el disponible se muestra dentro de la columna Cantidad (se recalcula al escribir) */}
-                                {tipo !== 'venta' && (
-                                    <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disponible</th>
-                                )}
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
-                                    {tipo === 'venta' && !proformaConvertida ? 'Cantidad / Disp.' : 'Cantidad'}
+                                    {tipo === 'compra' ? 'Cant./Stock' : !proformaConvertida ? 'Cantidad / Disp.' : 'Cantidad'}
                                 </th>
                                 {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">PRECIO</th> */}
                                 {tipo === 'compra' && (
                                     <>
-                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
-                                            Precio Compra
+                                        <th
+                                            className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                            title="Precio unitario de compra (nuevo costo al aprobar). Debajo, el costo registrado actualmente"
+                                        >
+                                            Precio U.
+                                        </th>
+                                        
+                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
+                                        <th
+                                            className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                            title="Fecha de vencimiento"
+                                        >
+                                            Venc.
                                         </th>
                                         <th
                                             className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
-                                            title="Descuento de la línea en monto (no en %): se resta de cantidad × precio"
+                                            title="Descuento de la línea en monto Bs (no en %): se resta de cantidad × precio"
                                         >
-                                            Desc. (Bs)
-                                        </th>
-                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
-                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
-                                            Vencimiento
+                                            Desc.
                                         </th>
                                     </>
                                 )}
@@ -550,6 +628,37 @@ export default function ProductosTable({
                                     </th>
                                 )}
                                 <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Subtotal</th>
+                                {/* Compras: costo registrado y una columna por tipo de precio de venta (% editable sobre el nuevo costo) */}
+                                {tipo === 'compra' && (
+                                    <>
+                                        
+                                        {/* Por cada tipo de precio: precio (nuevo y debajo el registrado), % ganancia y ganancia Bs */}
+                                        {tiposPrecioVenta.map((tp) => (
+                                            <Fragment key={tp.tipo_precio_id}>
+                                                <th
+                                                    className="px-2 py-2 text-left text-xs font-bold text-blue-700 uppercase dark:text-blue-300"
+                                                    title={`Nuevo ${tp.nombre} (editable). Debajo, el precio registrado actualmente`}
+                                                >
+                                                    {abreviarTipoPrecio(tp.nombre)}
+                                                </th>
+                                                <th
+                                                    className="px-2 py-2 text-left text-xs font-bold text-blue-700 uppercase dark:text-blue-300"
+                                                    title={`% de ganancia de ${tp.nombre} sobre el precio de compra`}
+                                                >
+                                                    % Gan.
+                                                    <div className="text-[10px] font-semibold normal-case opacity-75">{abreviarTipoPrecio(tp.nombre)}</div>
+                                                </th>
+                                                <th
+                                                    className="px-2 py-2 text-left text-xs font-bold text-blue-700 uppercase dark:text-blue-300"
+                                                    title={`Ganancia de ${tp.nombre} en Bs sobre el precio de compra`}
+                                                >
+                                                    Gan. Bs
+                                                    <div className="text-[10px] font-semibold normal-case opacity-75">{abreviarTipoPrecio(tp.nombre)}</div>
+                                                </th>
+                                            </Fragment>
+                                        ))}
+                                    </>
+                                )}
                                 {/* <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">
                                     Cat.
                                 </th> */}
@@ -597,6 +706,8 @@ export default function ProductosTable({
                                         normalizeDateForInput={normalizeDateForInput}
                                         onUpdateDetailUnidadConPrecio={onUpdateDetailUnidadConPrecio}
                                         proformaConvertida={proformaConvertida}
+                                        tiposPrecioVenta={tiposPrecioVenta}
+                                        preciosVentaPorTipo={tipo === 'compra' ? obtenerPreciosVentaPorTipo(detalle, productoInfo) : undefined}
                                     />
                                 );
                             })}

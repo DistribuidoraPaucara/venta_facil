@@ -537,6 +537,10 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::get('reporte-productos-vendidos/imprimir', [\App\Http\Controllers\ReporteVentasController::class, 'imprimirReporte'])
             ->name('reporte-productos-vendidos.imprimir');
 
+        // Sugerencias del filtro de producto (ID > código de barras > SKU > nombre)
+        Route::get('reporte-productos-vendidos/buscar-productos', [\App\Http\Controllers\ReporteVentasController::class, 'buscarProductos'])
+            ->name('reporte-productos-vendidos.buscar-productos');
+
         Route::get('reporte-productos-vendidos', [\App\Http\Controllers\ReporteVentasController::class, 'productosVendidos'])
             ->name('reporte-productos-vendidos');
 
@@ -928,12 +932,17 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::get('historial-cargas', [\App\Http\Controllers\InventarioController::class, 'historialCargasForm'])->middleware('permission:inventario.ajuste.form')->name('historial-cargas.form');
         Route::get('reportes', [\App\Http\Controllers\InventarioController::class, 'reportes'])->middleware('permission:inventario.reportes')->name('reportes');
         Route::get('ajuste/imprimir', [\App\Http\Controllers\InventarioController::class, 'imprimirAjustes'])->middleware('permission:inventario.ajuste.form')->name('ajuste.imprimir');
+        Route::get('ajustes/{ajuste}', [\App\Http\Controllers\InventarioController::class, 'verAjuste'])->whereNumber('ajuste')->middleware('permission:inventario.ajuste.form')->name('ajustes.show');
 
         // ✅ Rutas para mermas de inventario
         Route::get('merma', [\App\Http\Controllers\InventarioController::class, 'mermaForm'])->middleware('permission:inventario.mermas.registrar')->name('merma.form');
 
         // Rutas para gestión de tipos de ajuste de inventario
         Route::resource('tipos-ajuste-inventario', \App\Http\Controllers\TipoAjusteInventarioController::class)->parameters(['tipos-ajuste-inventario' => 'tipoAjusteInventario'])->middleware('permission:inventario.tipos-ajuste.manage');
+
+        // Rutas para gestión de tipos y estados de merma
+        Route::resource('tipos-merma', \App\Http\Controllers\TipoMermaController::class)->except(['show'])->parameters(['tipos-merma' => 'tipoMerma'])->middleware('permission:inventario.tipos-merma.manage');
+        Route::resource('estados-merma', \App\Http\Controllers\EstadoMermaController::class)->except(['show'])->parameters(['estados-merma' => 'estadoMerma'])->middleware('permission:inventario.estados-merma.manage');
 
         // Rutas para gestión de vehículos desde inventario
         Route::prefix('vehiculos')->name('vehiculos.')->group(function () {

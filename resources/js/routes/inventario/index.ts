@@ -8,8 +8,11 @@ import fraccionamientosMasivos from './fraccionamientos-masivos'
 import ajusteTabla from './ajuste-tabla'
 import ajusteMasivo from './ajuste-masivo'
 import historialCargas from './historial-cargas'
+import ajustes from './ajustes'
 import merma from './merma'
 import tiposAjusteInventario from './tipos-ajuste-inventario'
+import tiposMerma from './tipos-merma'
+import estadosMerma from './estados-merma'
 import vehiculos from './vehiculos'
 import transferencias from './transferencias'
 import reposiciones from './reposiciones'
@@ -568,7 +571,7 @@ movimientos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     movimientos.form = movimientosForm
 /**
 * @see \App\Http\Controllers\InventarioController::reportes
- * @see app/Http/Controllers/InventarioController.php:1590
+ * @see app/Http/Controllers/InventarioController.php:1651
  * @route '/inventario/reportes'
  */
 export const reportes = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -583,7 +586,7 @@ reportes.definition = {
 
 /**
 * @see \App\Http\Controllers\InventarioController::reportes
- * @see app/Http/Controllers/InventarioController.php:1590
+ * @see app/Http/Controllers/InventarioController.php:1651
  * @route '/inventario/reportes'
  */
 reportes.url = (options?: RouteQueryOptions) => {
@@ -592,7 +595,7 @@ reportes.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\InventarioController::reportes
- * @see app/Http/Controllers/InventarioController.php:1590
+ * @see app/Http/Controllers/InventarioController.php:1651
  * @route '/inventario/reportes'
  */
 reportes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -601,7 +604,7 @@ reportes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\InventarioController::reportes
- * @see app/Http/Controllers/InventarioController.php:1590
+ * @see app/Http/Controllers/InventarioController.php:1651
  * @route '/inventario/reportes'
  */
 reportes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -611,7 +614,7 @@ reportes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\InventarioController::reportes
- * @see app/Http/Controllers/InventarioController.php:1590
+ * @see app/Http/Controllers/InventarioController.php:1651
  * @route '/inventario/reportes'
  */
     const reportesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -621,7 +624,7 @@ reportes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\InventarioController::reportes
- * @see app/Http/Controllers/InventarioController.php:1590
+ * @see app/Http/Controllers/InventarioController.php:1651
  * @route '/inventario/reportes'
  */
         reportesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -630,7 +633,7 @@ reportes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\InventarioController::reportes
- * @see app/Http/Controllers/InventarioController.php:1590
+ * @see app/Http/Controllers/InventarioController.php:1651
  * @route '/inventario/reportes'
  */
         reportesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -660,8 +663,11 @@ fraccionamientosMasivos,
 ajusteTabla,
 ajusteMasivo,
 historialCargas,
+ajustes,
 merma,
 tiposAjusteInventario,
+tiposMerma,
+estadosMerma,
 vehiculos,
 transferencias,
 reposiciones,

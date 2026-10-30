@@ -969,7 +969,7 @@ class CierreCajaService
             ->filter(fn($m) => $m->tipoOperacion?->codigo === 'ANULACION')
             ->sum('monto'));
 
-        // ✅ Vueltos (cambio dado al cliente - INFORMATIVO SOLAMENTE)
+        // ✅ Vueltos (cambio dado al cliente, siempre en EFECTIVO) de ventas aprobadas
         $vueltos = $this->calcularVueltos($aperturaCaja);
 
         // ✅ REFACTORIZADO (2026-06-27): Totales usando SUMA DINÁMICA de dirección
@@ -979,9 +979,36 @@ class CierreCajaService
         // Suma TODOS los movimientos ENTRADA dinámicamente (incluye DEVOLUCION-INGRESO, SERVICIO, etc.)
         $totalIngresos = array_sum($desgloseIngresos);
 
-        // ✅ ACTUALIZADO (2026-06-27): Vueltos NO se restan (informativo solamente)
-        // La fórmula es: Apertura + Ingresos(dinámico por dirección) - Egresos(dinámico por dirección)
-        $efectivoEsperado = $montoApertura + $totalIngresos - $totalEgresos;
+        // ✅ CORREGIDO (2026-10-29): Los vueltos SÍ se restan.
+        // El movimiento VENTA registra lo que entregó el cliente (ej: 50 por una venta de 6)
+        // y el VUELTO (-44) es el efectivo que sale de caja; sin restarlo el esperado queda inflado.
+        $efectivoEsperado = $montoApertura + $totalIngresos - $totalEgresos - $vueltos;
+
+        // ✅ NUEVO (2026-10-29): Esperado separado por medio de pago
+        // Efectivo = Apertura + ENTRADA(efectivo) - SALIDA(efectivo) - Vueltos
+        // Otros medios (Transferencia / QR, etc.) = ENTRADA - SALIDA de ese medio
+        $esEfectivo = fn($m) => ($m->tipoPago?->codigo ?? 'EFECTIVO') === 'EFECTIVO';
+        $movimientosIngreso = $this->obtenerMovimientosPorDireccion($movimientos, 'ENTRADA')
+            ->filter(fn($m) => $this->esPagoValido($m));
+        $movimientosEgreso = $this->obtenerMovimientosPorDireccion($movimientos, 'SALIDA')
+            ->filter(fn($m) =>
+                $this->esPagoValido($m) &&
+                !in_array($m->tipoOperacion?->codigo, ['ANULACION', 'VUELTO'])
+            );
+
+        $esperadoEfectivo = $montoApertura
+            + $movimientosIngreso->filter($esEfectivo)->sum(fn($m) => abs((float) $m->monto))
+            - $movimientosEgreso->filter($esEfectivo)->sum(fn($m) => abs((float) $m->monto))
+            - $vueltos;
+
+        $esperadoOtrosMedios = $movimientosIngreso->reject($esEfectivo)
+            ->map(fn($m) => ['tipo' => $m->tipoPago?->nombre ?? 'Otro', 'monto' => abs((float) $m->monto)])
+            ->concat($movimientosEgreso->reject($esEfectivo)
+                ->map(fn($m) => ['tipo' => $m->tipoPago?->nombre ?? 'Otro', 'monto' => -abs((float) $m->monto)]))
+            ->groupBy('tipo')
+            ->map(fn($grupo, $tipo) => ['tipo' => $tipo, 'total' => round((float) $grupo->sum('monto'), 2)])
+            ->values()
+            ->toArray();
 
         // ✅ REFACTORIZADO (2026-06-27): Logs detallados con suma DINÁMICA por dirección
         Log::info('═══════════════════════════════════════════════════════════');
@@ -1006,11 +1033,12 @@ class CierreCajaService
         Log::info('    - Devoluciones: Bs. ' . number_format($devoluciones, 2));
         Log::info('───────────────────────────────────────────────────────────');
         Log::info('📋 DATOS INFORMATIVOS (no afectan totales):');
-        Log::info('  - Vueltos (Cambios): Bs. ' . number_format($vueltos, 2) . ' [INFORMATIVO]');
+        Log::info('  - Vueltos (Cambios): Bs. ' . number_format($vueltos, 2) . ' [SE RESTA DEL EFECTIVO]');
         Log::info('  - Anulaciones: Bs. ' . number_format($anulaciones, 2) . ' [REFERENCIAL]');
         Log::info('───────────────────────────────────────────────────────────');
-        Log::info('✅ FÓRMULA: Apertura + Σ(dirección=ENTRADA) - Σ(dirección=SALIDA)');
-        Log::info('✅ CÁLCULO: ' . number_format($montoApertura, 2) . ' + ' . number_format($totalIngresos, 2) . ' - ' . number_format($totalEgresos, 2));
+        Log::info('✅ FÓRMULA: Apertura + Σ(dirección=ENTRADA) - Σ(dirección=SALIDA) - Vueltos');
+        Log::info('✅ CÁLCULO: ' . number_format($montoApertura, 2) . ' + ' . number_format($totalIngresos, 2) . ' - ' . number_format($totalEgresos, 2) . ' - ' . number_format($vueltos, 2));
+        Log::info('  - Efectivo esperado: Bs. ' . number_format($esperadoEfectivo, 2) . ' | Otros medios: ' . json_encode($esperadoOtrosMedios));
         Log::info('═══════════════════════════════════════════════════════════');
         Log::info('💵 EFECTIVO ESPERADO EN CAJA: Bs. ' . number_format($efectivoEsperado, 2));
         Log::info('═══════════════════════════════════════════════════════════');
@@ -1033,7 +1061,10 @@ class CierreCajaService
             'anulaciones' => $anulaciones,
             'total_ingresos' => $totalIngresos,  // ✅ ACTUALIZADO (2026-06-27): Suma dinámica de ENTRADA
             'total_egresos' => $totalEgresos,   // ✅ ACTUALIZADO (2026-06-27): Suma dinámica de SALIDA
-            // ✅ ACTUALIZADO (2026-06-27): efectivoEsperado = Apertura + Σ(ENTRADA) - Σ(SALIDA)
+            // ✅ NUEVO (2026-10-29): Desglose del esperado por medio de pago (efectivo + otros = total)
+            'efectivo' => round($esperadoEfectivo, 2),
+            'otros_medios' => $esperadoOtrosMedios,
+            // ✅ ACTUALIZADO (2026-10-29): total = Apertura + Σ(ENTRADA) - Σ(SALIDA) - Vueltos
             // Suma DINÁMICAMENTE todos los tipos de operación sin hardcodear códigos
             // Incluye automáticamente: DEVOLUCION-INGRESO, DEVOLUCION-SALIDA, y nuevos tipos
             'total' => $efectivoEsperado,
@@ -1575,8 +1606,8 @@ class CierreCajaService
      * - VENTA: +96 (desglosado por tipo de pago)
      * - VUELTO: -14 (como movimiento único)
      *
-     * Esta función suma TODOS los vueltos del período de la caja
-     * para que el frontend pueda mostrar: totalIngresos - vueltos = neto real
+     * Esta función suma los vueltos de ventas aprobadas del período de la caja.
+     * El vuelto siempre sale en EFECTIVO y se resta del efectivo esperado.
      */
     private function calcularVueltos(AperturaCaja $aperturaCaja): float
     {
@@ -1585,14 +1616,22 @@ class CierreCajaService
             // Si una venta está anulada, sus vueltos NO deben contarse
             $totalVueltos = DB::table('movimientos_caja')
                 ->join('tipo_operacion_caja', 'movimientos_caja.tipo_operacion_id', '=', 'tipo_operacion_caja.id')
-                ->leftJoin('ventas', 'movimientos_caja.venta_id', '=', 'ventas.id')
+                // ✅ CORREGIDO (2026-10-29): Los vueltos antiguos se guardaron sin venta_id,
+                // se vinculan a su venta por numero_documento (= ventas.numero)
+                ->leftJoin('ventas', function ($join) {
+                    $join->on('movimientos_caja.venta_id', '=', 'ventas.id')
+                         ->orWhere(function ($q) {
+                             $q->whereNull('movimientos_caja.venta_id')
+                               ->whereColumn('movimientos_caja.numero_documento', 'ventas.numero');
+                         });
+                })
                 ->leftJoin('estados_documento', 'ventas.estado_documento_id', '=', 'estados_documento.id')
                 ->where('movimientos_caja.caja_id', $aperturaCaja->caja_id)
                 ->where('tipo_operacion_caja.codigo', 'VUELTO')
                 ->whereBetween('movimientos_caja.fecha', [$this->fechaInicio, $this->fechaFin])
                 // ✅ SOLO vueltos de ventas APROBADAS (no anuladas, no rechazadas)
                 ->where(function ($query) {
-                    $query->whereNull('movimientos_caja.venta_id')  // Vueltos sin venta asociada
+                    $query->whereNull('ventas.id')  // Vueltos sin venta asociada
                           ->orWhere('estados_documento.codigo', self::ESTADO_APROBADO);  // O ventas aprobadas
                 })
                 ->sum(DB::raw('ABS(movimientos_caja.monto)'));  // ABS porque se registran como negativos

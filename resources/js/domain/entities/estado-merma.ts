@@ -4,17 +4,19 @@ import type { BaseEntity, BaseFormData } from './generic';
 
 export interface EstadoMerma extends BaseEntity {
   id: Id;
-  nombre: string;
-  descripcion?: string | null;
+  clave: string;
+  label: string;
   color?: string | null;
+  bg_color?: string | null;
+  text_color?: string | null;
   activo: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface EstadoMermaFormData extends BaseFormData {
-  nombre: string;
-  descripcion?: string;
+  clave: string;
+  label: string;
   color?: string;
   activo?: boolean;
 }

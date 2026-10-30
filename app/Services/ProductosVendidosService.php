@@ -19,7 +19,8 @@ class ProductosVendidosService
      *     'fecha_desde': Carbon|string (default: hace 30 días),
      *     'fecha_hasta': Carbon|string (default: hoy),
      *     'preventista_id': int (opcional),
-     *     'cliente_id': int (opcional)
+     *     'cliente_id': int (opcional),
+     *     'producto_ids': int[] (opcional, ej. resultado de Producto::buscarPrioridad)
      * }
      * @return array Con estructura: ['productos' => [...], 'ventas' => [...], 'totales' => [...]]
      */
@@ -30,6 +31,7 @@ class ProductosVendidosService
             $fechaHasta = $filtros['fecha_hasta'] ?? now();
             $preventistaId = $filtros['preventista_id'] ?? null;
             $clienteId = $filtros['cliente_id'] ?? null;
+            $productoIds = $filtros['producto_ids'] ?? null;
 
             // Obtener el ID del estado APROBADO
             $estadoAprobadoId = DB::table('estados_documento')
@@ -72,6 +74,10 @@ class ProductosVendidosService
                 $productosDirectos->where('ventas.cliente_id', $clienteId);
             }
 
+            if ($productoIds !== null) {
+                $productosDirectos->whereIn('productos.id', $productoIds);
+            }
+
             $productosDirectos = $productosDirectos
                 ->groupBy('productos.id', 'productos.nombre', 'productos.sku', 'ventas.preventista_id')
                 ->get();
@@ -103,6 +109,10 @@ class ProductosVendidosService
 
             if ($clienteId) {
                 $productosEnCombos->where('ventas.cliente_id', $clienteId);
+            }
+
+            if ($productoIds !== null) {
+                $productosEnCombos->whereIn('productos.id', $productoIds);
             }
 
             $productosEnCombos = $productosEnCombos
@@ -192,6 +202,20 @@ class ProductosVendidosService
             // Filtro por cliente
             if ($clienteId) {
                 $ventasQuery->where('ventas.cliente_id', $clienteId);
+            }
+
+            // Filtro por producto: ventas que lo incluyen directo o dentro de un combo
+            if ($productoIds !== null) {
+                $ventasQuery->whereExists(function ($q) use ($productoIds) {
+                    $q->selectRaw('1')
+                        ->from('detalle_ventas')
+                        ->leftJoin('combo_items', 'detalle_ventas.producto_id', '=', 'combo_items.combo_id')
+                        ->whereColumn('detalle_ventas.venta_id', 'ventas.id')
+                        ->where(function ($w) use ($productoIds) {
+                            $w->whereIn('detalle_ventas.producto_id', $productoIds)
+                                ->orWhereIn('combo_items.producto_id', $productoIds);
+                        });
+                });
             }
 
             $ventas = $ventasQuery

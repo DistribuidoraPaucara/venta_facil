@@ -23,6 +23,7 @@ import {
   TrendingDown,
   AlertCircle,
   Printer,
+  MoreVertical,
 } from 'lucide-react';
 import { Button } from '@/presentation/components/ui/button';
 import { Card } from '@/presentation/components/ui/card';
@@ -35,6 +36,12 @@ import {
   TableRow,
 } from '@/presentation/components/ui/table';
 import { Badge } from '@/presentation/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/presentation/components/ui/dropdown-menu';
 import { Pagination } from '@/presentation/components/ui/pagination';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { format, parseISO } from 'date-fns';
@@ -45,12 +52,15 @@ interface CierreDiarioGeneral {
   apertura_caja_id: number;
   usuario_id: number;
   fecha_ejecucion: string;
+  fecha_apertura: string | null;
+  fecha_cierre: string | null;
   total_cajas_procesadas: number;
   total_cajas_cerradas: number;
   total_cajas_con_discrepancia: number;
   total_monto_esperado: number;
   total_monto_real: number;
   total_diferencias: number;
+  observaciones?: string | null;
   usuario: {
     id: number;
     name: string;
@@ -172,12 +182,12 @@ export default function ReportesDiarios({
       <Head title="Reportes Diarios de Cajas" />
 
       <div className="py-1">
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div className="p-2 space-y-2">
           {/* Header */}
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Reportes de Cierres Diarios
+                Reportes de Cierres Diarioss
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
                 Histórico de todos los cierres diarios generales realizados
@@ -187,7 +197,7 @@ export default function ReportesDiarios({
 
           {/* Estadísticas */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="p-4 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
+            <Card className="p-2 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -201,7 +211,7 @@ export default function ReportesDiarios({
               </div>
             </Card>
 
-            <Card className="p-4 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
+            <Card className="p-2 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -215,7 +225,7 @@ export default function ReportesDiarios({
               </div>
             </Card>
 
-            <Card className="p-4 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
+            <Card className="p-2 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -229,7 +239,7 @@ export default function ReportesDiarios({
               </div>
             </Card>
 
-            <Card className="p-4 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
+            <Card className="p-2 dark:bg-slate-800 border dark:border-slate-700 shadow-sm dark:shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -245,7 +255,7 @@ export default function ReportesDiarios({
           </div>
 
           {/* Filtros */}
-          <Card className="p-4 dark:bg-slate-800 border dark:border-slate-700">
+          <div className="p-2 dark:bg-slate-800 border dark:border-slate-700 rounded-lg shadow-sm dark:shadow-lg">
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Filtros</h3>
               {/* Otros filtros */}
@@ -322,8 +332,6 @@ export default function ReportesDiarios({
                     <span className="text-gray-700 dark:text-gray-300">Solo cierres con discrepancias</span>
                   </label>
                 </div>
-
-                
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
                   <Button
@@ -350,20 +358,21 @@ export default function ReportesDiarios({
                 Busca en ID del cierre, ID de apertura o nombre de usuario
               </p>
             </div>
-          </Card>
+          </div>
 
           {/* Tabla de cierres */}
-          <Card className="dark:bg-slate-800 border dark:border-slate-700 overflow-hidden">
+          <div className="dark:bg-slate-800 border dark:border-slate-700 overflow-hidden rounded-lg shadow-sm dark:shadow-lg">
             <Table>
               <TableHeader>
                 <TableRow className="dark:border-slate-700 dark:bg-slate-900">
                   <TableHead className="dark:text-gray-300 font-semibold">Folio</TableHead>
                   <TableHead className="dark:text-gray-300 font-semibold">Apertura ID</TableHead>
-                  <TableHead className="dark:text-gray-300 font-semibold">Fecha/Hora</TableHead>
+                  {/* <TableHead className="dark:text-gray-300 font-semibold">Fecha/Hora</TableHead> */}
+                  <TableHead className="dark:text-gray-300 font-semibold">Apertura</TableHead>
+                  <TableHead className="dark:text-gray-300 font-semibold">Cierre</TableHead>
                   <TableHead className="dark:text-gray-300 font-semibold">Ejecutado por</TableHead>
-                  <TableHead className="dark:text-gray-300 text-right font-semibold">Cajas Cerradas</TableHead>
-                  <TableHead className="dark:text-gray-300 text-right font-semibold">Con Discrepancias</TableHead>
-                  <TableHead className="dark:text-gray-300 text-right font-semibold">Total Monto</TableHead>
+                  <TableHead className="dark:text-gray-300 text-right font-semibold">Esperado</TableHead>
+                  <TableHead className="dark:text-gray-300 text-right font-semibold">Real (contado)</TableHead>
                   <TableHead className="dark:text-gray-300 text-right font-semibold">Diferencia</TableHead>
                   <TableHead className="text-right dark:text-gray-300 font-semibold">Acciones</TableHead>
                 </TableRow>
@@ -374,77 +383,90 @@ export default function ReportesDiarios({
                     <TableRow key={cierre.id} className="dark:border-slate-700 dark:hover:bg-slate-700 transition-colors">
                       <TableCell className="dark:text-gray-300 font-mono text-sm">
                         #{cierre.id}
+                        {cierre.observaciones && (
+                          <span className="ml-1 cursor-help" title={cierre.observaciones} aria-label={`Observaciones: ${cierre.observaciones}`}>
+                            💬
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="dark:text-gray-300 font-mono text-sm">
                         <Badge variant="secondary" className="dark:bg-slate-700 dark:text-gray-300">
                           #{cierre.apertura_caja_id}
                         </Badge>
                       </TableCell>
-                      <TableCell className="dark:text-gray-300">
+                      {/* <TableCell className="dark:text-gray-300">
                         {format(parseISO(cierre.fecha_ejecucion), 'dd/MM/yyyy HH:mm', { locale: es })}
+                      </TableCell> */}
+                      <TableCell className="dark:text-gray-300">
+                        {cierre.fecha_apertura
+                          ? format(parseISO(cierre.fecha_apertura), 'dd/MM/yyyy HH:mm:ss', { locale: es })
+                          : '—'}
+                      </TableCell>
+                      <TableCell className="dark:text-gray-300">
+                        {cierre.fecha_cierre
+                          ? format(parseISO(cierre.fecha_cierre), 'dd/MM/yyyy HH:mm:ss', { locale: es })
+                          : '—'}
                       </TableCell>
                       <TableCell className="dark:text-gray-300">{cierre.usuario.name}</TableCell>
-                      <TableCell className="text-right dark:text-gray-300">
-                        <Badge className="bg-green-600 dark:bg-green-700 dark:text-green-100">
-                          {cierre.total_cajas_cerradas}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right dark:text-gray-300">
-                        {cierre.total_cajas_con_discrepancia > 0 ? (
-                          <Badge variant="destructive" className="dark:bg-red-900 dark:text-red-100">
-                            {cierre.total_cajas_con_discrepancia}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="dark:bg-slate-700 dark:text-gray-300">
-                            0
-                          </Badge>
-                        )}
+                      <TableCell className="text-right text-gray-600 dark:text-gray-400">
+                        Bs. {Number(cierre.total_monto_esperado).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right dark:text-gray-300 font-semibold">
                         Bs. {Number(cierre.total_monto_real).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span
-                          className={`font-semibold ${cierre.total_diferencias === 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-orange-600 dark:text-orange-400'
-                            }`}
-                        >
-                          {cierre.total_diferencias === 0
-                            ? '✓ Bs. 0.00'
-                            : `Bs. ${Number(cierre.total_diferencias).toFixed(2)}`}
-                        </span>
+                        {Math.abs(Number(cierre.total_diferencias)) < 0.01 ? (
+                          <span className="font-semibold text-green-600 dark:text-green-400">✓ Cuadra</span>
+                        ) : Number(cierre.total_diferencias) > 0 ? (
+                          <span className="font-semibold text-blue-600 dark:text-blue-400" title="Sobrante">
+                            +Bs. {Number(cierre.total_diferencias).toFixed(2)}
+                            <span className="block text-xs font-normal">Sobrante</span>
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-red-600 dark:text-red-400" title="Faltante">
+                            −Bs. {Math.abs(Number(cierre.total_diferencias)).toFixed(2)}
+                            <span className="block text-xs font-normal">Faltante</span>
+                          </span>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right space-x-2 flex justify-end">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => router.visit(`/cajas/admin/reportes-diarios/${cierre.id}`)}
-                          className="dark:hover:bg-slate-600 dark:text-gray-300 dark:hover:text-white transition-colors"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setCierreSeleccionado(cierre);
-                            setModalImpresionAbierto(true);
-                          }}
-                          className="dark:hover:bg-slate-600 dark:text-gray-300 dark:hover:text-white transition-colors"
-                        >
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            window.location.href = `/cajas/admin/reportes-diarios/${cierre.id}/descargar?formato=A4`;
-                          }}
-                          className="dark:hover:bg-slate-600 dark:text-gray-300 dark:hover:text-white transition-colors"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              aria-label="Acciones"
+                              className="dark:hover:bg-slate-600 dark:text-gray-300 dark:hover:text-white transition-colors"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => router.visit(`/cajas/admin/reportes-diarios/${cierre.id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                              Ver detalle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setCierreSeleccionado(cierre);
+                                setModalImpresionAbierto(true);
+                              }}
+                            >
+                              <Printer className="h-4 w-4" />
+                              Imprimir
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                window.location.href = `/cajas/admin/reportes-diarios/${cierre.id}/descargar?formato=A4`;
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                              Descargar PDF
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
@@ -459,7 +481,7 @@ export default function ReportesDiarios({
             </Table>
 
             {/* Paginación */}
-            <div className="p-4 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+            <div className="p-1 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
               <Pagination
                 links={cierres.links}
                 onPageChange={handlePageChange}
@@ -469,7 +491,7 @@ export default function ReportesDiarios({
                 itemsPerPage={cierres.per_page}
               />
             </div>
-          </Card>
+          </div>
         </div>
       </div>
 

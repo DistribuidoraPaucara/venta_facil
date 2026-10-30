@@ -55,6 +55,13 @@ class UpdateCompraRequest extends FormRequest
                 $rules['detalles.*.subtotal'] = 'required|numeric|min:0.01';
                 $rules['detalles.*.lote'] = 'nullable|string|max:50';
                 $rules['detalles.*.fecha_vencimiento'] = 'nullable|date|after:today';
+                // Precios de venta editados en la tabla: se guardan con la línea y se aplican al aprobar la compra
+                $rules['detalles.*.precios_venta'] = 'nullable|array';
+                $rules['detalles.*.precios_venta.*.tipo_precio_id'] = 'required|integer';
+                $rules['detalles.*.precios_venta.*.precio_id'] = 'required|integer|exists:precios_producto,id';
+                $rules['detalles.*.precios_venta.*.precio'] = 'nullable|numeric|min:0';
+                $rules['detalles.*.precios_venta.*.porcentaje'] = 'nullable|numeric|min:-100';
+                $rules['detalles.*.precios_venta.*.monto'] = 'nullable|numeric';
             }
         }
 

@@ -986,6 +986,61 @@ class Producto extends Model
     }
 
     /**
+     * Scope: Búsqueda con prioridad ID > código de barras > SKU > nombre
+     * - Si hay coincidencia exacta (ID, cualquier código de barras activo o SKU), solo devuelve esas
+     *   (útil con lector de códigos de barras).
+     * - Si no, busca parcial en códigos de barras, SKU y nombre.
+     * - Ordena por relevancia y luego por nombre.
+     * Uso: Producto::buscarPrioridad('7840118010095')->get()
+     */
+    public function scopeBuscarPrioridad($query, string $termino)
+    {
+        $busqueda = mb_strtolower(trim($termino));
+        if ($busqueda === '') {
+            return $query;
+        }
+
+        $esId = ctype_digit($busqueda) && strlen($busqueda) <= 9;
+        $codigosActivos = fn($q, string $op, string $valor) => $q->where('activo', true)
+            ->whereRaw("LOWER(codigo) {$op} ?", [$valor]);
+
+        // Paso 1: coincidencia exacta
+        $exacta = fn($q) => $q->where(function ($eq) use ($busqueda, $esId, $codigosActivos) {
+            if ($esId) {
+                $eq->where('productos.id', (int) $busqueda);
+            }
+            $eq->orWhereHas('codigosBarra', fn($cq) => $codigosActivos($cq, '=', $busqueda))
+                ->orWhereRaw('LOWER(productos.sku) = ?', [$busqueda]);
+        });
+
+        if ((clone $query)->where($exacta)->exists()) {
+            $query->where($exacta);
+        } else {
+            // Paso 2: coincidencia parcial
+            $like = "%{$busqueda}%";
+            $query->where(function ($q) use ($like, $codigosActivos) {
+                $q->whereHas('codigosBarra', fn($cq) => $codigosActivos($cq, 'like', $like))
+                    ->orWhereRaw('LOWER(productos.sku) like ?', [$like])
+                    ->orWhereRaw('LOWER(productos.nombre) like ?', [$like]);
+            });
+        }
+
+        // Orden por relevancia (también en SQL para que la paginación respete la prioridad)
+        return $query->orderByRaw(
+            'CASE
+                WHEN productos.id = ? THEN 0
+                WHEN EXISTS (SELECT 1 FROM codigos_barra cb WHERE cb.producto_id = productos.id AND cb.activo = true AND LOWER(cb.codigo) = ?) THEN 1
+                WHEN LOWER(productos.sku) = ? THEN 2
+                WHEN EXISTS (SELECT 1 FROM codigos_barra cb WHERE cb.producto_id = productos.id AND cb.activo = true AND LOWER(cb.codigo) LIKE ?) THEN 3
+                WHEN LOWER(productos.sku) LIKE ? THEN 4
+                WHEN LOWER(productos.nombre) LIKE ? THEN 5
+                ELSE 6
+            END',
+            [$esId ? (int) $busqueda : 0, $busqueda, $busqueda, "%{$busqueda}%", "%{$busqueda}%", "{$busqueda}%"]
+        )->orderBy('productos.nombre');
+    }
+
+    /**
      * Scope: Productos con stock
      * Uso: Producto::conStock()->get()
      */
