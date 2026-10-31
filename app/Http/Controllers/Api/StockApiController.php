@@ -80,6 +80,10 @@ class StockApiController extends Controller
                 'estadoMerma:id,label',
             ]);
 
+            // Solo movimientos de la empresa del usuario (igual que la pantalla de movimientos);
+            // sin esto, imprimir sin filtro de producto traía los movimientos de todas las empresas
+            $query->whereHas('stockProductoHistorico.producto', fn ($q) => $q->where('empresa_id', auth()->user()?->empresa_id));
+
             // ✅ Aplicar filtros dinámicamente
             if (!empty($filtros['almacen_id'])) {
                 $query->whereHas('stockProducto', fn($q) => $q->where('almacen_id', $filtros['almacen_id']));

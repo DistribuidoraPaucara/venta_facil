@@ -196,10 +196,17 @@ export default function ProductosTable({
                 // ✅ FIJO (2026-09-09): Si es fraccionado y la unidad_venta_id es diferente de unidad_medida_id,
                 // incluir la unidad en el valor para evitar conflictos con múltiples precios del mismo tipo
                 let valorTipoPrecio = String(ultimoDetalle.tipo_precio_id);
+                // El valor debe coincidir con el de la opción del select: lleva "_unidad" cuando el precio tiene unidad
+                // (también si es la unidad del propio producto, ej. paquete "10_9")
+                const tienePrecioConUnidad = ((ultimoDetalle as any).producto?.precios || []).some(
+                    (p: any) =>
+                        String(p.tipo_precio_id) === String(ultimoDetalle.tipo_precio_id) &&
+                        Number(p.unidad_medida_id) === Number(ultimoDetalle.unidad_venta_id),
+                );
                 if (
                     (ultimoDetalle as any).es_fraccionado &&
                     ultimoDetalle.unidad_venta_id &&
-                    ultimoDetalle.unidad_venta_id !== ultimoDetalle.unidad_medida_id
+                    (ultimoDetalle.unidad_venta_id !== ultimoDetalle.unidad_medida_id || tienePrecioConUnidad)
                 ) {
                     valorTipoPrecio = `${ultimoDetalle.tipo_precio_id}_${ultimoDetalle.unidad_venta_id}`;
                 }

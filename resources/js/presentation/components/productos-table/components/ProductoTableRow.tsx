@@ -459,9 +459,20 @@ export default function ProductoTableRow({
                 <td className="font-small px-2 py-2 text-xs text-left">
                     {(() => {
                         const precios = detalle.producto?.precios || [];
+                        // Unidades que son otro producto (conversión con producto destino, ej. paquete 2125 → unidad 209):
+                        // sus precios se venden desde ese producto, así que no se ofrecen aquí
+                        const unidadesConProductoPropio = new Set(
+                            (productoInfo?.conversiones || [])
+                                .filter((c: any) => c.producto_destino_id && c.activo !== false)
+                                .map((c: any) => Number(c.unidad_destino_id)),
+                        );
                         const preciosVenta = precios.filter((p) => {
                             const nombre = (p.nombre || '').toLowerCase();
-                            return !nombre.includes('costo') && !nombre.includes('cost');
+                            return (
+                                !nombre.includes('costo') &&
+                                !nombre.includes('cost') &&
+                                !(p.unidad_medida_id && unidadesConProductoPropio.has(Number(p.unidad_medida_id)))
+                            );
                         });
 
                         // ✅ Si solo hay un tipo de precio, mostrar solo lectura

@@ -53,6 +53,8 @@ export interface UsePreciosActions {
     obtenerResumen: () => Promise<void>;
     obtenerComprasConDiferenciaCosto: (productoId: number) => Promise<void>;
     actualizarPrecio: (precioId: number | string, precioNuevo: number, motivo: string) => Promise<void>;
+    actualizarPrecioEnLinea: (productoId: number | string, precioId: number | string, precioNuevo: number, motivo: string) => Promise<void>;
+    eliminarPrecioEnLinea: (productoId: number | string, precioId: number | string) => Promise<void>;
     actualizarLote: (precios: Array<{
         precio_id: number;
         precio_nuevo: number;
@@ -183,6 +185,55 @@ export function usePrecios(): [UsePreciosState, UsePreciosActions] {
         [obtenerPrecios]
     );
 
+    // Edición en línea desde la tabla: guarda y actualiza solo los precios de ese producto, sin recargar la lista
+    const actualizarPrecioEnLinea = useCallback(
+        async (productoId: number | string, precioId: number | string, precioNuevo: number, motivo: string) => {
+            const respuesta = await preciosService.actualizarPrecio(precioId, precioNuevo, motivo);
+            const actualizados = new Map((respuesta.precios ?? []).map(p => [p.id, p]));
+            setEstado(prev => {
+                if (!prev.precios) return prev;
+                return {
+                    ...prev,
+                    precios: {
+                        ...prev.precios,
+                        data: prev.precios.data.map(producto =>
+                            producto.id !== productoId
+                                ? producto
+                                : {
+                                    ...producto,
+                                    precios: producto.precios.map(pr => {
+                                        const nuevo = actualizados.get(pr.id);
+                                        const editado = pr.id === precioId
+                                            ? { precio_actual: precioNuevo, actualizado_recientemente: true, requiere_revision: false }
+                                            : {};
+                                        return { ...pr, ...editado, ...nuevo };
+                                    }),
+                                }
+                        ),
+                    },
+                };
+            });
+        },
+        []
+    );
+
+    // Quitar un precio desde la tabla: lo saca solo de ese producto, sin recargar la lista
+    const eliminarPrecioEnLinea = useCallback(async (productoId: number | string, precioId: number | string) => {
+        await preciosService.eliminarPrecio(precioId);
+        setEstado(prev => {
+            if (!prev.precios) return prev;
+            return {
+                ...prev,
+                precios: {
+                    ...prev.precios,
+                    data: prev.precios.data.map(producto =>
+                        producto.id !== productoId ? producto : { ...producto, precios: producto.precios.filter(pr => pr.id !== precioId) }
+                    ),
+                },
+            };
+        });
+    }, []);
+
     // Actualizar lote
     const actualizarLote = useCallback(
         async (precios: Array<{
@@ -291,6 +342,8 @@ export function usePrecios(): [UsePreciosState, UsePreciosActions] {
         obtenerResumen,
         obtenerComprasConDiferenciaCosto,
         actualizarPrecio,
+        actualizarPrecioEnLinea,
+        eliminarPrecioEnLinea,
         actualizarLote,
         limpiarError,
         seleccionarPrecio,

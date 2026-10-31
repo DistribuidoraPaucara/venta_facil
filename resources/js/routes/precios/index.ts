@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\PrecioController::management
- * @see app/Http/Controllers/PrecioController.php:27
+ * @see app/Http/Controllers/PrecioController.php:67
  * @route '/precios'
  */
 export const management = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ management.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::management
- * @see app/Http/Controllers/PrecioController.php:27
+ * @see app/Http/Controllers/PrecioController.php:67
  * @route '/precios'
  */
 management.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ management.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\PrecioController::management
- * @see app/Http/Controllers/PrecioController.php:27
+ * @see app/Http/Controllers/PrecioController.php:67
  * @route '/precios'
  */
 management.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ management.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\PrecioController::management
- * @see app/Http/Controllers/PrecioController.php:27
+ * @see app/Http/Controllers/PrecioController.php:67
  * @route '/precios'
  */
 management.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ management.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\PrecioController::management
- * @see app/Http/Controllers/PrecioController.php:27
+ * @see app/Http/Controllers/PrecioController.php:67
  * @route '/precios'
  */
     const managementForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ management.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\PrecioController::management
- * @see app/Http/Controllers/PrecioController.php:27
+ * @see app/Http/Controllers/PrecioController.php:67
  * @route '/precios'
  */
         managementForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ management.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\PrecioController::management
- * @see app/Http/Controllers/PrecioController.php:27
+ * @see app/Http/Controllers/PrecioController.php:67
  * @route '/precios'
  */
         managementForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

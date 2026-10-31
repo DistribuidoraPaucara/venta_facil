@@ -55,6 +55,7 @@ export interface PrecioProducto extends BaseEntity {
 export interface PrecioProductoDTO {
     id: Id;
     tipo_precio_id: Id;
+    unidad_medida?: string | null;
     precio_actual: number;
     margen_ganancia: number;
     porcentaje_ganancia: number;
@@ -76,6 +77,7 @@ export interface ProductoConPreciosDTO extends BaseEntity {
     id: Id;
     nombre: string;
     sku?: string;
+    codigos_barra?: string[];
     categoria?: {
         id: Id;
         nombre: string;
@@ -90,9 +92,14 @@ export interface ProductoConPreciosDTO extends BaseEntity {
 export interface FiltrosPrecio {
     q?: string;
     tipo_precio_id?: Id;
+    sin_precios?: boolean;
     ordenar_por?: 'producto' | 'tipo_precio' | 'cambio_reciente' | 'precio';
+    orden?: OrdenTablaPrecios;
+    direccion?: 'asc' | 'desc';
     per_page?: number;
 }
+
+export type OrdenTablaPrecios = 'id' | 'nombre' | 'categoria' | 'tipos';
 
 export interface PreciosListaResponse {
     data: ProductoConPreciosDTO[];

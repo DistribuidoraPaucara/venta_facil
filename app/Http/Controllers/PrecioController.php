@@ -9,7 +9,9 @@ use App\Models\Producto;
 use App\Models\TipoPrecio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class PrecioController extends Controller
@@ -21,6 +23,44 @@ class PrecioController extends Controller
     }
 
     /**
+     * ✅ NUEVO (2026-10-30): El precio debe ser de un producto de la empresa del usuario.
+     * Producto tiene scope global por empresa, así que un producto ajeno no se encuentra.
+     */
+    private function autorizarPrecio(PrecioProducto $precio): void
+    {
+        abort_unless(Producto::whereKey($precio->producto_id)->exists(), 404);
+    }
+
+    /**
+     * ✅ NUEVO (2026-10-30): Coincidencia exacta de un producto activo de la empresa, en orden de prioridad:
+     * id, código de barras, SKU. Devuelve null si no hay coincidencia exacta.
+     */
+    private function buscarProductoExacto(string $termino): ?int
+    {
+        if ($termino === '') {
+            return null;
+        }
+
+        $activos = fn() => Producto::where('activo', true);
+
+        if (ctype_digit($termino) && strlen($termino) <= 9) {
+            $id = $activos()->whereKey((int) $termino)->value('id');
+            if ($id) {
+                return $id;
+            }
+        }
+
+        $id = $activos()
+            ->whereHas('codigosBarra', fn($q) => $q->where('activo', true)->whereRaw('LOWER(codigo) = ?', [mb_strtolower($termino)]))
+            ->value('id');
+        if ($id) {
+            return $id;
+        }
+
+        return $activos()->whereRaw('UPPER(sku) = ?', [mb_strtoupper($termino)])->value('id');
+    }
+
+    /**
      * Página principal de gestión de precios - Vista web
      * GET /precios
      */
@@ -29,7 +69,8 @@ class PrecioController extends Controller
         // Filtros validados
         $filtros = $request->validate([
             'q'              => ['nullable', 'string', 'max:255'],
-            'tipo_precio_id' => ['nullable', 'exists:tipos_precio,id'],
+            'tipo_precio_id' => ['nullable', Rule::exists('tipos_precio', 'id')->where('empresa_id', auth()->user()?->empresa_id)],
+            'sin_precios'    => ['nullable', 'boolean'],
             'ordenar_por'    => ['nullable', 'string', 'in:producto,tipo_precio,cambio_reciente,precio'],
             'per_page'       => ['nullable', 'integer', 'min:10', 'max:100'],
         ]);
@@ -48,7 +89,7 @@ class PrecioController extends Controller
                 'links' => $productos->links()->render(),
             ],
             'filtros'      => $filtros,
-            'tipos_precio' => TipoPrecio::where('activo', true)
+            'tipos_precio' => TipoPrecio::porEmpresa()->where('activo', true)
                 ->orderBy('orden')
                 ->get(['id', 'codigo', 'nombre', 'color', 'es_ganancia']),
         ]);
@@ -62,8 +103,11 @@ class PrecioController extends Controller
     {
         $filtros = $request->validate([
             'q'              => ['nullable', 'string', 'max:255'],
-            'tipo_precio_id' => ['nullable', 'exists:tipos_precio,id'],
+            'tipo_precio_id' => ['nullable', Rule::exists('tipos_precio', 'id')->where('empresa_id', auth()->user()?->empresa_id)],
+            'sin_precios'    => ['nullable', 'boolean'],
             'ordenar_por'    => ['nullable', 'string', 'in:producto,tipo_precio,cambio_reciente,precio'],
+            'orden'          => ['nullable', 'string', 'in:id,nombre,categoria,tipos'],
+            'direccion'      => ['nullable', 'string', 'in:asc,desc'],
             'per_page'       => ['nullable', 'integer', 'min:10', 'max:100'],
             'page'           => ['nullable', 'integer', 'min:1'],
         ]);
@@ -92,32 +136,66 @@ class PrecioController extends Controller
         $query = Producto::with([
             'precios' => function ($q) {
                 $q->where('activo', true)
-                    ->with('tipoPrecio')
+                    ->with('tipoPrecio', 'unidadMedida')
                     ->with(['historialPrecios' => function ($q2) {
                         $q2->latest('fecha_cambio')->limit(3);
                     }]);
             },
             'categoria:id,nombre',
+            'codigosBarra' => fn($q) => $q->where('activo', true)->orderByDesc('es_principal')->orderBy('id'),
         ])
             ->where('activo', true);
 
-        // Búsqueda por nombre o SKU
+        // ✅ ACTUALIZADO (2026-10-30): Búsqueda con prioridad: id → código de barras → SKU (exactos) → nombre
         if (! empty($filtros['q'])) {
-            $termino = $filtros['q'];
-            $query->where(function ($q) use ($termino) {
-                $q->where('nombre', 'ilike', "%{$termino}%")
-                    ->orWhere('sku', 'ilike', "%{$termino}%");
-            });
+            $termino    = trim($filtros['q']);
+            $productoId = $this->buscarProductoExacto($termino);
+
+            if ($productoId) {
+                $query->whereKey($productoId);
+            } else {
+                $query->where(function ($q) use ($termino) {
+                    $q->where('nombre', 'ilike', "%{$termino}%")
+                        ->orWhere('sku', 'ilike', "%{$termino}%");
+                });
+            }
         }
 
-        // Filtrar por tipo de precio
+        // Filtrar por tipo de precio (solo precios activos: uno quitado no cuenta)
         if (! empty($filtros['tipo_precio_id'])) {
             $query->whereHas('precios', function ($q) use ($filtros) {
-                $q->where('tipo_precio_id', $filtros['tipo_precio_id']);
+                $q->where('activo', true)->where('tipo_precio_id', $filtros['tipo_precio_id']);
             });
         }
 
-        // Ordenamiento
+        // Productos sin ningún precio activo registrado
+        if (! empty($filtros['sin_precios'])) {
+            $query->whereDoesntHave('precios', fn($q) => $q->where('activo', true));
+        }
+
+        // Ordenamiento por columna de la tabla (id, nombre, categoria, tipos); el id desempata para paginar estable
+        if (! empty($filtros['orden'])) {
+            $direccion = ($filtros['direccion'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+            switch ($filtros['orden']) {
+                case 'nombre':
+                    $query->orderBy('nombre', $direccion);
+                    break;
+                case 'categoria':
+                    $query->orderBy(
+                        \App\Models\Categoria::select('nombre')->whereColumn('categorias.id', 'productos.categoria_id'),
+                        $direccion
+                    );
+                    break;
+                case 'tipos':
+                    $query->withCount(['precios as tipos_count' => fn($q) => $q->where('activo', true)])
+                        ->orderBy('tipos_count', $direccion);
+                    break;
+            }
+            $query->orderBy('productos.id', $direccion);
+
+            return $query->paginate($filtros['per_page'] ?? 20);
+        }
+
         $ordenar_por = $filtros['ordenar_por'] ?? 'producto';
         switch ($ordenar_por) {
             case 'cambio_reciente':
@@ -202,6 +280,7 @@ class PrecioController extends Controller
             'id'                               => $producto->id,
             'nombre'                           => $producto->nombre,
             'sku'                              => $producto->sku,
+            'codigos_barra'                    => $producto->relationLoaded('codigosBarra') ? $producto->codigosBarra->pluck('codigo')->values() : [],
             'categoria'                        => $producto->categoria ? [
                 'id'     => $producto->categoria->id,
                 'nombre' => $producto->categoria->nombre,
@@ -215,6 +294,7 @@ class PrecioController extends Controller
                 return [
                     'id'                        => $precio->id,
                     'tipo_precio_id'            => $precio->tipo_precio_id,
+                    'unidad_medida'             => $precio->unidadMedida?->nombre,
                     'precio_actual'             => (float) $precio->precio,
                     'margen_ganancia'           => (float) $precio->margen_ganancia,
                     'porcentaje_ganancia'       => (float) $precio->porcentaje_ganancia,
@@ -285,6 +365,8 @@ class PrecioController extends Controller
      */
     public function update(Request $request, PrecioProducto $precio)
     {
+        $this->autorizarPrecio($precio);
+
         $validated = $request->validate([
             'precio_nuevo' => ['required', 'numeric', 'min:0'],
             'motivo'       => ['required', 'string', 'max:500'],
@@ -302,6 +384,16 @@ class PrecioController extends Controller
                 'success' => true,
                 'message' => 'Precio actualizado correctamente',
                 'precio'  => $precio->fresh(),
+                // Ganancias de todos los precios activos del producto (cambian si se editó el costo)
+                'precios' => $precio->producto->precios()->activos()->get(['id', 'precio', 'margen_ganancia', 'porcentaje_ganancia', 'motivo_cambio', 'updated_at'])
+                    ->map(fn($p) => [
+                        'id'                  => $p->id,
+                        'precio_actual'       => (float) $p->precio,
+                        'margen_ganancia'     => (float) $p->margen_ganancia,
+                        'porcentaje_ganancia' => (float) $p->porcentaje_ganancia,
+                        'motivo_cambio'       => $p->motivo_cambio,
+                        'updated_at'          => $p->updated_at,
+                    ]),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -312,11 +404,45 @@ class PrecioController extends Controller
     }
 
     /**
+     * API: Quitar un precio del producto
+     * DELETE /api/precios/{precio_id}
+     * Se desactiva (como al quitarlo en la edición del producto) y queda en historial_precios con valor nuevo 0
+     */
+    public function destroy(PrecioProducto $precio)
+    {
+        $this->autorizarPrecio($precio);
+
+        if (! $precio->activo) {
+            return response()->json(['success' => false, 'message' => 'El precio ya estaba quitado'], 422);
+        }
+
+        DB::transaction(function () use ($precio) {
+            $anterior = (float) $precio->precio;
+            $precio->updateQuietly(['activo' => false]);
+
+            HistorialPrecio::create([
+                'precio_producto_id' => $precio->id,
+                'valor_anterior'     => $anterior,
+                'valor_nuevo'        => 0,
+                'porcentaje_cambio'  => $anterior != 0 ? -100 : 0,
+                'fecha_cambio'       => now(),
+                'motivo'             => 'Precio quitado en tabla de precios',
+                'usuario'            => Auth::user()?->name ?? 'sistema',
+                'tipo_precio_id'     => $precio->tipo_precio_id,
+            ]);
+        });
+
+        return response()->json(['success' => true, 'message' => 'Precio quitado correctamente']);
+    }
+
+    /**
      * API: Obtener historial completo de un precio
      * GET /api/precios/{precio_id}/historial
      */
     public function historial(PrecioProducto $precio)
     {
+        $this->autorizarPrecio($precio);
+
         $historial = $precio->historialPrecios()
             ->with('tipoPrecio')
             ->latest('fecha_cambio')
@@ -344,6 +470,7 @@ class PrecioController extends Controller
             },
             'tipoPrecio',
         ])
+            ->whereHas('precioProducto.producto') // Producto tiene scope global por empresa
             ->whereNotNull('tipo_precio_id')
             ->where('fecha_cambio', '>=', now()->subDays($dias))
             ->latest('fecha_cambio')
@@ -369,6 +496,7 @@ class PrecioController extends Controller
             },
             'tipoPrecio',
         ])
+            ->whereHas('precioProducto.producto') // Producto tiene scope global por empresa
             ->whereNotNull('tipo_precio_id')
             ->where('fecha_cambio', '>=', now()->subDays(7))
             ->latest('fecha_cambio')
@@ -596,7 +724,7 @@ class PrecioController extends Controller
 
             foreach ($validated['precios'] as $item) {
                 try {
-                    $precio     = PrecioProducto::findOrFail($item['precio_id']);
+                    $precio     = PrecioProducto::whereHas('producto')->findOrFail($item['precio_id']); // solo de la empresa
                     $tipoPrecio = $precio->tipoPrecio;
 
                     Log::info('🔄 Actualizando precio', [

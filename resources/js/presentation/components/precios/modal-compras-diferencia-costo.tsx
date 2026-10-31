@@ -86,12 +86,19 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
         inicializarConPreciosActuales, // ✅ Nueva función para no auto-calcular
         actualizarPrecioPropuesto,
         actualizarGananciaPropuesta,
-        validarCambios
+        validarCambios,
+        limpiar: limpiarCascada,
     } = useCascadaPreciosCompra(
         preciosCompletos,
         precioActual,
         precioCostoNuevo
     );
+
+    // Al abrir otro producto (o cerrar), descartar la propuesta y el error del anterior:
+    // si no, un producto sin precios mostraría (y podría guardar) los precios del producto abierto antes
+    useEffect(() => {
+        limpiarCascada();
+    }, [isOpen, producto?.id, limpiarCascada]);
 
     // Proponer precios a partir del precio unitario de la compra (nuevo costo).
     // Si no hay nuevo costo, mostrar los precios registrados sin cambios.
@@ -349,7 +356,24 @@ export const ModalComprasDiferenciaCostoComponent: React.FC<ModalComprasDiferenc
                             </div>
                         )} */}
 
-                        {cargandoPreciosApi || preciosPropuestos.length === 0 ? (
+                        {/* Sin precios (o si falla la carga/el cálculo) se muestra un aviso en vez de quedar cargando indefinidamente */}
+                        {!cargandoPreciosApi && (!preciosCompletos || preciosCompletos.length === 0) ? (
+                            <div className="py-8 text-center">
+                                <div className="mb-4 text-4xl">📭</div>
+                                <p className="font-medium text-gray-800 dark:text-slate-200">Este producto no tiene precios registrados.</p>
+                                <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
+                                    Agrégalos desde la{' '}
+                                    <a
+                                        href={`/productos/${producto.id}/edit`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                    >
+                                        edición del producto ↗
+                                    </a>
+                                </p>
+                            </div>
+                        ) : cargandoPreciosApi || preciosPropuestos.length === 0 ? (
                             <div className="py-8 text-center">
                                 <div className="mb-4 text-4xl">⏳</div>
                                 <p className="text-gray-600 dark:text-slate-400">

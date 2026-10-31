@@ -1,5 +1,4 @@
-import { Link } from '@inertiajs/react';
-import { Badge } from '@/presentation/components/ui/badge';
+import { router } from '@inertiajs/react';
 import {
   Table,
   TableBody,
@@ -8,96 +7,133 @@ import {
   TableHeader,
   TableRow,
 } from '@/presentation/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Button } from '@/presentation/components/ui/button';
-import { formatCurrency, formatDateOnly, getColorClass } from '@/lib/reportes.utils';
+import { formatCurrency } from '@/lib/reportes.utils';
 import type { PreciosPaginatedData } from '@/domain/entities/reportes';
 
 interface PreciosTableProps {
-  precios: PreciosPaginatedData;
+  cambios: PreciosPaginatedData;
 }
 
-export function PreciosTable({ precios }: PreciosTableProps) {
+const formatFecha = (fecha: string | null) => {
+  if (!fecha) return '—';
+  const d = new Date(fecha.replace(' ', 'T'));
+  return isNaN(d.getTime())
+    ? fecha
+    : d.toLocaleString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+export function PreciosTable({ cambios }: PreciosTableProps) {
   return (
     <div>
       <div className="p-2">
-        <h3>Lista de Precios</h3>
+        <div className="flex items-baseline justify-between">
+          <h3 className="font-semibold">Actualizaciones de precios</h3>
+          {cambios.total > 0 && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {cambios.from}–{cambios.to} de {cambios.total}
+            </span>
+          )}
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Fecha</TableHead>
               <TableHead>Producto</TableHead>
-              <TableHead>Categoría</TableHead>
-              <TableHead>Tipo de Precio</TableHead>
-              <TableHead>Nombre del Precio</TableHead>
-              <TableHead className="text-right">Precio</TableHead>
-              <TableHead className="text-center">Última Actualización</TableHead>
+              <TableHead>Tipo de precio</TableHead>
+              <TableHead className="text-right">Anterior</TableHead>
+              <TableHead className="text-right">Nuevo</TableHead>
+              <TableHead className="text-right">Variación</TableHead>
+              <TableHead>Motivo</TableHead>
+              <TableHead>Usuario</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {precios.data.length === 0 ? (
+            {cambios.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  No se encontraron precios con los filtros seleccionados
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  No hay cambios de precio con los filtros seleccionados
                 </TableCell>
               </TableRow>
             ) : (
-              precios.data.map((precio) => (
-                <TableRow key={precio.id}>
-                  <TableCell>
-                    <Link
-                      href={`/productos/${precio.producto.id}/edit`}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
-                    >
-                      {precio.producto.nombre}
-                    </Link>
-                  </TableCell>
+              cambios.data.map((c) => {
+                const sube = c.valor_nuevo > c.valor_anterior;
+                const baja = c.valor_nuevo < c.valor_anterior;
+                return (
+                  <TableRow key={c.id}>
+                    <TableCell className="whitespace-nowrap text-gray-600 dark:text-gray-400">{formatFecha(c.fecha_cambio)}</TableCell>
 
-                  <TableCell>
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {precio.producto.categoria?.nombre || 'Sin categoría'}
-                    </span>
-                  </TableCell>
+                    <TableCell>
+                      {c.producto ? (
+                        <>
+                          <a
+                            href={`/productos/${c.producto.id}/edit`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          >
+                            {c.producto.nombre}
+                          </a>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            #{c.producto.id}
+                            {c.producto.sku && <> · {c.producto.sku}</>}
+                          </div>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
 
-                  <TableCell>
-                    <Badge className={getColorClass(precio.tipo_precio.color)}>
-                      <span className="mr-1">
-                        {precio.tipo_precio.configuracion?.icono || '💰'}
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1">
+                        <span
+                          className="inline-block h-2 w-2 rounded-full"
+                          style={{ backgroundColor: c.tipo_precio?.color || '#999999' }}
+                        />
+                        {c.tipo_precio?.nombre ?? '—'}
                       </span>
-                      {precio.tipo_precio.nombre}
-                    </Badge>
-                  </TableCell>
+                      {c.unidad_medida && <div className="text-xs text-gray-500 dark:text-gray-400">{c.unidad_medida}</div>}
+                      {!c.precio_activo && <div className="text-xs text-gray-400">(precio inactivo)</div>}
+                    </TableCell>
 
-                  <TableCell>
-                    <span className="text-gray-900 dark:text-gray-100">{precio.nombre}</span>
-                  </TableCell>
+                    <TableCell className="text-right text-gray-500 dark:text-gray-400">{formatCurrency(c.valor_anterior)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatCurrency(c.valor_nuevo)}</TableCell>
 
-                  <TableCell className="text-right font-semibold">
-                    {formatCurrency(precio.precio)}
-                  </TableCell>
+                    <TableCell
+                      className={`text-right whitespace-nowrap font-medium ${
+                        sube ? 'text-green-600 dark:text-green-400' : baja ? 'text-red-600 dark:text-red-400' : 'text-gray-500'
+                      }`}
+                    >
+                      {sube ? '▲ +' : baja ? '▼ ' : ''}
+                      {formatCurrency(c.variacion)}
+                      {c.porcentaje_cambio !== null && (
+                        <div className="text-xs font-normal">
+                          {c.porcentaje_cambio > 0 ? '+' : ''}
+                          {c.porcentaje_cambio.toFixed(1)}%
+                        </div>
+                      )}
+                    </TableCell>
 
-                  <TableCell className="text-center text-gray-600 dark:text-gray-400">
-                    {precio.fecha_ultima_actualizacion
-                      ? formatDateOnly(precio.fecha_ultima_actualizacion)
-                      : 'N/A'
-                    }
-                  </TableCell>
-                </TableRow>
-              ))
+                    <TableCell className="text-gray-700 dark:text-gray-300">{c.motivo || '—'}</TableCell>
+                    <TableCell className="whitespace-nowrap text-gray-700 dark:text-gray-300">{c.usuario || '—'}</TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
       </div>
 
       {/* Paginación */}
-      {precios.links && precios.links.length > 3 && (
-        <div className="flex justify-center gap-1 p-4">
-          {precios.links.map((link, index) => (
+      {cambios.links && cambios.links.length > 3 && (
+        <div className="flex flex-wrap justify-center gap-1 p-4">
+          {cambios.links.map((link, index) => (
             <Button
               key={index}
-              variant={link.active ? "default" : "outline"}
+              variant={link.active ? 'default' : 'outline'}
               size="sm"
               disabled={!link.url}
-              onClick={() => link.url && (window.location.href = link.url)}
+              onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })}
               dangerouslySetInnerHTML={{ __html: link.label }}
             />
           ))}

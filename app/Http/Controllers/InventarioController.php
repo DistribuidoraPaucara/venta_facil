@@ -666,8 +666,42 @@ class InventarioController extends Controller
             $movimientosParaComparacion = $query->orderByDesc('id')->get();
         }
 
+        // Enlace al documento de origen (venta, compra, proforma, ajuste...). Algunas compras y transferencias
+        // solo guardan el número: se resuelven por número en una sola consulta por tipo.
+        $sinId = $movimientosPaginados->getCollection()->filter(fn ($m) => ! $m->referencia_id && $m->numero_documento);
+        $comprasPorNumero = \App\Models\Compra::whereIn('numero', $sinId->where('referencia_tipo', 'compra')->pluck('numero_documento')->unique())
+            ->pluck('id', 'numero');
+        $transferenciasPorNumero = \App\Models\TransferenciaInventario::whereIn('numero', $sinId->filter(fn ($m) => str_starts_with((string) $m->numero_documento, 'TRF-'))->pluck('numero_documento')->unique())
+            ->pluck('id', 'numero');
+
+        $urlDocumento = function ($m) use ($comprasPorNumero, $transferenciasPorNumero): ?string {
+            $id   = $m->referencia_id;
+            $tipo = $m->referencia_tipo;
+            if (! $id && $tipo === 'compra') {
+                $id = $comprasPorNumero[$m->numero_documento] ?? null;
+            }
+            if (! $id && str_starts_with((string) $m->numero_documento, 'TRF-')) {
+                $id   = $transferenciasPorNumero[$m->numero_documento] ?? null;
+                $tipo = 'transferencia';
+            }
+            if (! $id) {
+                return null;
+            }
+
+            return match ($tipo) {
+                'venta', 'venta_devolucion', 'venta_anulacion' => "/ventas/{$id}",
+                'compra'                                       => "/compras/{$id}",
+                'proforma'                                     => "/proformas/{$id}",
+                'ajuste', 'ajuste_inventario'                  => "/inventario/ajustes/{$id}",
+                'transferencia'                                => "/inventario/transferencias/{$id}",
+                'merma'                                        => "/inventario/mermas/{$id}",
+                'EDICION_PRODUCTO'                             => "/productos/{$id}/edit",
+                default                                        => null,
+            };
+        };
+
         // Mapear datos de movimientos
-        $movimientos = $movimientosPaginados->map(function ($movimiento) {
+        $movimientos = $movimientosPaginados->map(function ($movimiento) use ($urlDocumento) {
             // ✅ Validar que stockProducto existe (puede ser null si se eliminó el lote)
             $stockProducto = $movimiento->stockProductoHistorico;
 
@@ -722,6 +756,7 @@ class InventarioController extends Controller
                     'referencia'        => $movimiento->numero_documento,
                     'referencia_tipo'   => $movimiento->referencia_tipo,
                     'referencia_id'     => $movimiento->referencia_id,
+                    'documento_url'     => $urlDocumento($movimiento),
                     'observaciones'     => $movimiento->observacion,
                     'anulado'           => (bool) $movimiento->anulado,
                     'motivo_anulacion'  => $movimiento->motivo_anulacion,
@@ -780,6 +815,7 @@ class InventarioController extends Controller
                 'referencia'        => $movimiento->numero_documento,
                 'referencia_tipo'   => $movimiento->referencia_tipo,
                 'referencia_id'     => $movimiento->referencia_id,
+                'documento_url'     => $urlDocumento($movimiento),
                 'observaciones'     => $movimiento->observacion,
                 'anulado'           => (bool) $movimiento->anulado,
                 'motivo_anulacion'  => $movimiento->motivo_anulacion,
@@ -868,7 +904,7 @@ class InventarioController extends Controller
         usort($productosVendidosHoy, fn($a, $b) => strcmp($a['nombre'], $b['nombre']));
 
         // Datos para filtros
-        $almacenes = Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        $almacenes = Almacen::porEmpresa()->where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
         $productos = Producto::where('activo', true)
             ->orderBy('nombre')
             ->get(['id', 'nombre'])

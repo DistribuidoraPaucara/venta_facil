@@ -56,7 +56,7 @@ export const PaginacionPreciosComponent: React.FC<PaginacionPreciosProps> = ({
     };
 
     return (
-        <div className="flex flex-col items-center justify-between gap-4 mt-8 px-6 py-4">
+        <div className="flex flex-col items-center justify-between gap-4 mt-1 px-2 py-2">
             {/* Información de registros */}
             <div className="text-sm text-gray-600 dark:text-slate-400">
                 Mostrando {startItem} a {endItem} de {total} productos

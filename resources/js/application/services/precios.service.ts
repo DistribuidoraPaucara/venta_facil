@@ -3,7 +3,7 @@
  * Maneja todas las operaciones relacionadas con precios de productos
  */
 
-import type { PrecioProducto, FiltrosPrecio, PreciosListaResponse, HistorialPrecio } from '@/domain/entities/precios';
+import type { PrecioProducto, PrecioProductoDTO, FiltrosPrecio, PreciosListaResponse, HistorialPrecio } from '@/domain/entities/precios';
 
 export class PreciosService {
     private readonly baseUrl = '/api/precios';
@@ -24,7 +24,10 @@ export class PreciosService {
             const params = new URLSearchParams();
             if (filtros?.q) params.append('q', filtros.q);
             if (filtros?.tipo_precio_id) params.append('tipo_precio_id', String(filtros.tipo_precio_id));
+            if (filtros?.sin_precios) params.append('sin_precios', '1');
             if (filtros?.ordenar_por) params.append('ordenar_por', filtros.ordenar_por);
+            if (filtros?.orden) params.append('orden', filtros.orden);
+            if (filtros?.direccion) params.append('direccion', filtros.direccion);
             if (filtros?.per_page) params.append('per_page', String(filtros.per_page));
             params.append('page', String(page));
 
@@ -93,7 +96,8 @@ export class PreciosService {
             }
 
             const data = await response.json();
-            return data.historial;
+            // La API devuelve el historial paginado ({ data: [...] })
+            return Array.isArray(data.historial) ? data.historial : (data.historial?.data ?? []);
         } catch (error) {
             console.error('Error al obtener historial de precio:', error);
             throw error;
@@ -107,7 +111,7 @@ export class PreciosService {
         precioId: number | string,
         precioNuevo: number,
         motivo: string
-    ): Promise<{ success: boolean; message: string; precio: PrecioProducto }> {
+    ): Promise<{ success: boolean; message: string; precio: PrecioProducto; precios?: Array<Pick<PrecioProductoDTO, 'id' | 'precio_actual' | 'margen_ganancia' | 'porcentaje_ganancia' | 'motivo_cambio' | 'updated_at'>> }> {
         try {
             const response = await fetch(`${this.baseUrl}/${precioId}`, {
                 method: 'PUT',
@@ -129,6 +133,23 @@ export class PreciosService {
         } catch (error) {
             console.error('Error al actualizar precio:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Quitar (desactivar) un precio; queda registrado en el historial
+     */
+    async eliminarPrecio(precioId: number | string): Promise<void> {
+        const response = await fetch(`${this.baseUrl}/${precioId}`, {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': this.getCsrfToken(),
+            },
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => null);
+            throw new Error(data?.message || `Error ${response.status}: ${response.statusText}`);
         }
     }
 

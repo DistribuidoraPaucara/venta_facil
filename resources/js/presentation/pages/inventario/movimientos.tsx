@@ -75,6 +75,7 @@ const MovimientosInventarioPage: React.FC<PageProps> = ({
     // ✅ Estado de UI
     const [activeTab, setActiveTab] = useState<'lista' | 'estadisticas'>('lista');
     const [mostrarValoresPorLote, setMostrarValoresPorLote] = useState(false); // ✅ NUEVO (2026-06-28): Toggle para valores por lote
+    const [mostrarDisponibleReservado, setMostrarDisponibleReservado] = useState(false); // Disponible/Reservado ocultos al iniciar
 
     // ✅ Hook de aplicación para manejo de acciones
     const { handleCreateAjuste, handleGoToReportes } = useMovimientosInventario();
@@ -140,6 +141,26 @@ const MovimientosInventarioPage: React.FC<PageProps> = ({
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {/* Switch: mostrar/ocultar disponible y reservado en la tabla */}
+                        <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={mostrarDisponibleReservado}
+                                onClick={() => setMostrarDisponibleReservado(!mostrarDisponibleReservado)}
+                                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                                    mostrarDisponibleReservado ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                                        mostrarDisponibleReservado ? 'translate-x-4' : 'translate-x-0.5'
+                                    }`}
+                                />
+                            </button>
+                            Disponible / Reservado
+                        </label>
+
                         {/* ✅ Dropdown con acciones flotante */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -307,6 +328,7 @@ const MovimientosInventarioPage: React.FC<PageProps> = ({
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             movimientos={movimientos.data as any}
                             mostrarValoresPorLote={mostrarValoresPorLote}
+                            mostrarDisponibleReservado={mostrarDisponibleReservado}
                             pagination={{
                                 current_page: movimientos.current_page,
                                 last_page: movimientos.last_page,

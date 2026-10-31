@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/presentation/components/ui/button';
@@ -15,10 +15,9 @@ export default function ReporteGananciasIndex({
   estadisticas,
   filtros,
   tipos_precio,
-  categorias,
   error
 }: GananciasPageProps) {
-  const { formData, handleFilter, clearFilters, updateField, ALL_VALUE } = useGananciasFilters(filtros);
+  const { formData, handleFilter, clearFilters, updateField, updateFields, getParams, ordenar, ALL_VALUE } = useGananciasFilters(filtros);
   const isFirstRenderRef = useRef(true);
 
   // ✅ Filtrado automático cuando cambian las fechas (pero no en el primer render)
@@ -34,36 +33,24 @@ export default function ReporteGananciasIndex({
     }
   }, [formData.fecha_desde, formData.fecha_hasta]);
 
-  // ✅ Logging para ver datos del backend
-  useEffect(() => {
-    console.group('💰 [Reporte Ganancias] Datos del Backend');
-    console.log('📊 Estadísticas:', estadisticas);
-    console.log('📦 Estructura Paginación:', {
-      total: ganancias.total,
-      current_page: ganancias.current_page,
-      last_page: ganancias.last_page,
-      per_page: ganancias.per_page,
-      data_count: ganancias.data?.length,
-      links_count: ganancias.links?.length,
-    });
-    console.log('📋 Total productos en BD:', ganancias.total, '| Página:', ganancias.current_page, 'de', ganancias.last_page);
-    console.table(ganancias.data?.slice(0, 5).map((g: any) => ({
-      producto: g.producto?.nombre || 'N/A',
-      tipo_precio: g.tipo_precio?.nombre || 'N/A',
-      ganancia: g.ganancia?.toFixed(2),
-      porcentaje: g.porcentaje_ganancia?.toFixed(2) + '%',
-    })) || []);
-    console.log('🔗 Enlaces de Paginación:', ganancias.links);
-    console.log('🎯 Filtros:', filtros);
-    console.log('⚠️ Error:', error);
-    console.groupEnd();
-  }, [ganancias, estadisticas, filtros, error]);
+  // Mostrar solo los productos sin costo, manteniendo el resto de filtros
+  const handleVerSinCosto = () => {
+    updateFields({ costo: 'sin_costo' });
+    router.get('/reportes/ganancias', { ...getParams(), costo: 'sin_costo' }, { preserveState: true, preserveScroll: true });
+  };
+
+  // Excel y PDF usan los filtros y el orden aplicados en pantalla (filtros vienen del servidor, ya con el periodo por defecto)
+  const paramsAplicados = () =>
+    new URLSearchParams(
+      Object.entries(filtros).filter(([, v]) => v !== undefined && v !== null && v !== '') as [string, string][]
+    ).toString();
 
   const handleExport = () => {
-    const params = Object.fromEntries(
-      Object.entries(formData).filter(([, value]) => value !== '')
-    );
-    window.open('/reportes/ganancias/export?' + new URLSearchParams(params).toString());
+    window.location.href = '/reportes/ganancias/export?' + paramsAplicados();
+  };
+
+  const handlePdf = () => {
+    window.open('/reportes/ganancias/pdf?' + paramsAplicados(), '_blank', 'noopener');
   };
 
   // Error state
@@ -110,14 +97,20 @@ export default function ReporteGananciasIndex({
 
       <div className="space-y-6 p-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Reporte de Ganancias</h1>
-            <p className="text-gray-600 dark:text-gray-400">Análisis de rentabilidad por producto y tipo de precio</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Ventas aprobadas y facturadas, con el costo vigente a la fecha de cada venta
+            </p>
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handleExport} variant="outline">
+            <Button onClick={handlePdf} variant="outline" disabled={ganancias.total === 0}>
+              🖨 Imprimir PDF
+            </Button>
+
+            <Button onClick={handleExport} variant="outline" disabled={ganancias.total === 0}>
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -136,13 +129,15 @@ export default function ReporteGananciasIndex({
         </div>
 
         {/* Estadísticas */}
-        <EstadisticasCard estadisticas={estadisticas} />
+        <EstadisticasCard
+          estadisticas={estadisticas}
+          onVerSinCosto={filtros.costo === 'sin_costo' ? undefined : handleVerSinCosto}
+        />
 
         {/* Filtros */}
         <FiltrosCard
           formData={formData}
           tipos_precio={tipos_precio}
-          categorias={categorias}
           ALL_VALUE={ALL_VALUE}
           onUpdateField={updateField}
           onFilter={handleFilter}
@@ -150,7 +145,7 @@ export default function ReporteGananciasIndex({
         />
 
         {/* Tabla de Ganancias */}
-        <GananciasTable ganancias={ganancias} />
+        <GananciasTable ganancias={ganancias} orden={formData.orden} direccion={formData.direccion} onOrdenar={ordenar} />
 
         {/* Paginación */}
         <PaginationLinks links={ganancias.links} />

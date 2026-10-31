@@ -3,54 +3,61 @@ import type { Id } from './shared';
 
 // =============== GANANCIAS REPORT ===============
 
-export interface ProductoGanancia {
-  id: number;
-  nombre: string;
-  categoria?: {
-    nombre: string;
-  };
-}
-
-export interface TipoPrecioGanancia {
-  id: number;
-  nombre: string;
-  color: string;
-  configuracion: {
-    icono?: string;
-  };
-}
+/** completo: todas las ventas tienen costo · parcial: algunas sí · sin_costo: ninguna */
+export type EstadoCostoGanancia = 'completo' | 'parcial' | 'sin_costo';
 
 export interface Ganancia {
-  producto: ProductoGanancia;
-  tipo_precio: TipoPrecioGanancia;
-  precio_venta: number;
-  precio_costo: number;
+  key: string;
+  producto: { id: number; nombre: string; sku: string | null };
+  unidad_medida: string | null;
+  tipo_precio: { id: number | null; nombre: string; color: string | null };
+  cantidad_vendida: number;
+  ingresos_totales: number;
+  ingresos_con_costo: number;
+  ingresos_sin_costo: number;
+  costos_totales: number;
+  precio_promedio: number;
+  costo_promedio: number | null;
   ganancia: number;
-  porcentaje_ganancia: number;
-  fecha_actualizacion: string;
+  /** Ganancia / ventas con costo × 100 */
+  margen: number | null;
+  /** Ganancia / costo × 100 */
+  markup: number | null;
+  estado_costo: EstadoCostoGanancia;
+  ultima_venta: string | null;
 }
 
 export interface GananciasEstadisticas {
-  total_productos: number;
+  ingresos_totales: number;
+  ingresos_con_costo: number;
+  costos_totales: number;
   ganancia_total: number;
-  ganancia_promedio: number;
-  porcentaje_promedio: number;
-  mejor_ganancia: number;
-  peor_ganancia: number;
+  margen: number | null;
+  ingresos_sin_costo: number;
+  productos_sin_costo: number;
+  productos_vendidos: number;
+  productos_con_perdida: number;
 }
 
 export interface GananciasFilterOptions {
   fecha_desde?: string;
   fecha_hasta?: string;
-  tipo_precio_id?: number;
-  categoria_id?: number;
+  tipo_precio_id?: number | string;
+  costo?: 'con_costo' | 'sin_costo';
+  q?: string;
+  orden?: OrdenGanancias;
+  direccion?: 'asc' | 'desc';
 }
+
+export type OrdenGanancias = 'ganancia' | 'margen' | 'cantidad' | 'ingresos' | 'producto';
 
 export interface GananciasPaginatedData {
   data: Ganancia[];
   current_page: number;
   last_page: number;
   per_page: number;
+  from: number | null;
+  to: number | null;
   total: number;
   links: Array<{
     url: string | null;
@@ -67,10 +74,6 @@ export interface GananciasPageProps {
     id: number;
     nombre: string;
     color: string;
-  }>;
-  categorias: Array<{
-    id: number;
-    nombre: string;
   }>;
   error?: string;
 }
@@ -466,65 +469,58 @@ export const ESTADO_VENCIMIENTO_CONFIG = {
   },
 } as const;
 
-// =============== PRECIOS REPORT ===============
+// =============== PRECIOS REPORT (actualizaciones desde historial_precios) ===============
 
-export interface PrecioItem {
+export interface CambioPrecioItem {
   id: number;
-  nombre: string;
-  precio: number;
-  fecha_ultima_actualizacion: string;
-  producto: {
-    id: number;
-    nombre: string;
-    categoria?: {
-      nombre: string;
-    };
-  };
-  tipo_precio: {
-    id: number;
-    nombre: string;
-    color: string;
-    configuracion: {
-      icono?: string;
-    };
-  };
+  fecha_cambio: string | null;
+  producto: { id: number; nombre: string; sku: string | null } | null;
+  tipo_precio: { id: number; nombre: string; color: string | null } | null;
+  unidad_medida: string | null;
+  precio_activo: boolean;
+  valor_anterior: number;
+  valor_nuevo: number;
+  variacion: number;
+  porcentaje_cambio: number | null;
+  motivo: string | null;
+  usuario: string | null;
 }
 
 export interface PreciosEstadisticas {
-  total_precios: number;
-  precio_promedio: number;
-  precio_minimo: number;
-  precio_maximo: number;
-  total_productos_con_precio: number;
+  total_cambios: number;
+  productos_afectados: number;
+  subidas: number;
+  bajadas: number;
+  variacion_promedio: number | null;
+  por_usuario: Array<{ usuario: string; cambios: number }>;
 }
 
 export interface PreciosFilterOptions {
   fecha_desde?: string;
   fecha_hasta?: string;
-  tipo_precio_id?: number;
-  categoria_id?: number;
-  producto_id?: number;
+  tipo_precio_id?: number | string;
+  usuario?: string;
+  motivo?: string;
+  variacion?: 'sube' | 'baja';
+  q?: string;
 }
 
 export interface PreciosPaginatedData {
-  data: PrecioItem[];
+  data: CambioPrecioItem[];
   links: Array<{
     url: string | null;
     label: string;
     active: boolean;
   }>;
-  meta: {
-    current_page?: number;
-    from?: number;
-    last_page?: number;
-    per_page?: number;
-    to?: number;
-    total?: number;
-  };
+  current_page: number;
+  last_page: number;
+  from: number | null;
+  to: number | null;
+  total: number;
 }
 
 export interface PreciosPageProps {
-  precios: PreciosPaginatedData;
+  cambios: PreciosPaginatedData;
   estadisticas: PreciosEstadisticas;
   filtros: PreciosFilterOptions;
   tipos_precio: Array<{
@@ -532,8 +528,6 @@ export interface PreciosPageProps {
     nombre: string;
     color: string;
   }>;
-  categorias: Array<{
-    id: number;
-    nombre: string;
-  }>;
+  usuarios: string[];
+  motivos: string[];
 }

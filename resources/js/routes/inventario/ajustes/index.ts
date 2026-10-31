@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\InventarioController::show
- * @see app/Http/Controllers/InventarioController.php:1082
+ * @see app/Http/Controllers/InventarioController.php:1118
  * @route '/inventario/ajustes/{ajuste}'
  */
 export const show = (args: { ajuste: string | number } | [ajuste: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\InventarioController::show
- * @see app/Http/Controllers/InventarioController.php:1082
+ * @see app/Http/Controllers/InventarioController.php:1118
  * @route '/inventario/ajustes/{ajuste}'
  */
 show.url = (args: { ajuste: string | number } | [ajuste: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ show.url = (args: { ajuste: string | number } | [ajuste: string | number ] | str
 
 /**
 * @see \App\Http\Controllers\InventarioController::show
- * @see app/Http/Controllers/InventarioController.php:1082
+ * @see app/Http/Controllers/InventarioController.php:1118
  * @route '/inventario/ajustes/{ajuste}'
  */
 show.get = (args: { ajuste: string | number } | [ajuste: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ show.get = (args: { ajuste: string | number } | [ajuste: string | number ] | str
 })
 /**
 * @see \App\Http\Controllers\InventarioController::show
- * @see app/Http/Controllers/InventarioController.php:1082
+ * @see app/Http/Controllers/InventarioController.php:1118
  * @route '/inventario/ajustes/{ajuste}'
  */
 show.head = (args: { ajuste: string | number } | [ajuste: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ show.head = (args: { ajuste: string | number } | [ajuste: string | number ] | st
 
     /**
 * @see \App\Http\Controllers\InventarioController::show
- * @see app/Http/Controllers/InventarioController.php:1082
+ * @see app/Http/Controllers/InventarioController.php:1118
  * @route '/inventario/ajustes/{ajuste}'
  */
     const showForm = (args: { ajuste: string | number } | [ajuste: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ show.head = (args: { ajuste: string | number } | [ajuste: string | number ] | st
 
             /**
 * @see \App\Http\Controllers\InventarioController::show
- * @see app/Http/Controllers/InventarioController.php:1082
+ * @see app/Http/Controllers/InventarioController.php:1118
  * @route '/inventario/ajustes/{ajuste}'
  */
         showForm.get = (args: { ajuste: string | number } | [ajuste: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ show.head = (args: { ajuste: string | number } | [ajuste: string | number ] | st
         })
             /**
 * @see \App\Http\Controllers\InventarioController::show
- * @see app/Http/Controllers/InventarioController.php:1082
+ * @see app/Http/Controllers/InventarioController.php:1118
  * @route '/inventario/ajustes/{ajuste}'
  */
         showForm.head = (args: { ajuste: string | number } | [ajuste: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import type { GananciasFilterOptions } from '@/domain/entities/reportes';
+import type { GananciasFilterOptions, OrdenGanancias } from '@/domain/entities/reportes';
 
 const ALL_VALUE = 'all';
 
@@ -8,7 +8,10 @@ interface FilterState {
   fecha_desde: string;
   fecha_hasta: string;
   tipo_precio_id: string;
-  categoria_id: string;
+  costo: string;
+  q: string;
+  orden: string;
+  direccion: string;
 }
 
 /**
@@ -32,55 +35,62 @@ export function useGananciasFilters(
     return `${year}-${month}-${day}`;
   };
 
-  const fechaDesdeDefault = formatDate(primerDiaDelMes);
-  const fechaHastaDefault = formatDate(hoy);
-
   const [formData, setFormData] = useState<FilterState>({
-    fecha_desde: initialFilters.fecha_desde || fechaDesdeDefault,
-    fecha_hasta: initialFilters.fecha_hasta || fechaHastaDefault,
+    fecha_desde: initialFilters.fecha_desde || formatDate(primerDiaDelMes),
+    fecha_hasta: initialFilters.fecha_hasta || formatDate(hoy),
     tipo_precio_id: initialFilters.tipo_precio_id?.toString() || ALL_VALUE,
-    categoria_id: initialFilters.categoria_id?.toString() || ALL_VALUE,
+    costo: initialFilters.costo || ALL_VALUE,
+    q: initialFilters.q || '',
+    orden: initialFilters.orden || 'ganancia',
+    direccion: initialFilters.direccion || 'desc',
   });
 
   /**
-   * Maneja el filtrado de datos
-   * Limpia valores "all" y envía parámetros al servidor
+   * Parámetros limpios: sin valores "all" ni vacíos
    */
-  const handleFilter = () => {
-    const paramsRaw = { ...formData } as Record<string, string>;
-
-    // Eliminar valores "all"
-    if (paramsRaw.tipo_precio_id === ALL_VALUE) delete paramsRaw.tipo_precio_id;
-    if (paramsRaw.categoria_id === ALL_VALUE) delete paramsRaw.categoria_id;
-
-    // Eliminar valores vacíos
-    const params = Object.fromEntries(
-      Object.entries(paramsRaw).filter(([, v]) => v !== '')
+  const getParams = (datos: FilterState = formData): Record<string, string> =>
+    Object.fromEntries(
+      Object.entries(datos).filter(([, v]) => v !== '' && v !== ALL_VALUE)
     );
 
+  const navegar = (params: Record<string, string>) => {
     if (onNavigate) {
       onNavigate(params);
     } else {
-      router.get('/reportes/ganancias', params);
+      router.get('/reportes/ganancias', params, { preserveState: true, preserveScroll: true });
     }
   };
 
   /**
-   * Limpia todos los filtros
+   * Maneja el filtrado de datos
+   */
+  const handleFilter = () => navegar(getParams());
+
+  /**
+   * Limpia los filtros y vuelve al mes actual (el periodo por defecto del servidor)
    */
   const clearFilters = () => {
     setFormData({
-      fecha_desde: '',
-      fecha_hasta: '',
+      fecha_desde: formatDate(primerDiaDelMes),
+      fecha_hasta: formatDate(hoy),
       tipo_precio_id: ALL_VALUE,
-      categoria_id: ALL_VALUE,
+      costo: ALL_VALUE,
+      q: '',
+      orden: 'ganancia',
+      direccion: 'desc',
     });
+    navegar({});
+  };
 
-    if (onNavigate) {
-      onNavigate({});
-    } else {
-      router.get('/reportes/ganancias');
-    }
+  /**
+   * Ordena por una columna: el primer clic usa el sentido más útil (desc en números, asc en producto), el siguiente lo invierte
+   */
+  const ordenar = (columna: OrdenGanancias) => {
+    const inicial = columna === 'producto' ? 'asc' : 'desc';
+    const direccion = formData.orden === columna ? (formData.direccion === 'asc' ? 'desc' : 'asc') : inicial;
+    const nuevo = { ...formData, orden: columna, direccion };
+    setFormData(nuevo);
+    navegar(getParams(nuevo));
   };
 
   /**
@@ -104,6 +114,8 @@ export function useGananciasFilters(
     clearFilters,
     updateField,
     updateFields,
+    getParams,
+    ordenar,
     ALL_VALUE,
   };
 }

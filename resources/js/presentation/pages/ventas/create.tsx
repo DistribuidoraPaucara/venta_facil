@@ -784,11 +784,13 @@ export default function VentaForm() {
 
         let unidadBuscada = unidadBaseProducto;
 
-        // Si es fraccionado, priorizar la unidad destino (la unidad fraccionada)
+        // Si es fraccionado, priorizar la unidad destino (la unidad fraccionada)...
+        // ...salvo que la conversión tenga producto destino: esa unidad es otro producto con su propio ID
+        // (ej. 2125 paquete → 209 unidad), así que este producto se vende en su propia unidad y con su propio precio.
         if (esProductoFraccionado && conversiones.length > 0) {
             const conversionPrincipal = conversiones.find((c: any) => c.es_conversion_principal);
             const conversion = conversionPrincipal || conversiones[0];
-            if (conversion?.unidad_destino_id) {
+            if (conversion?.unidad_destino_id && !conversion.producto_destino_id) {
                 unidadBuscada = conversion.unidad_destino_id;
             }
         }
@@ -915,8 +917,8 @@ export default function VentaForm() {
             }
         });
 
-        // Recalcular subtotal si fue necesario
-        if (updates.cantidad || updates.precio_unitario || updates.descuento) {
+        // Recalcular subtotal si cambió alguno de sus componentes (incluido un valor 0, que antes no recalculaba)
+        if (updates.cantidad !== undefined || updates.precio_unitario !== undefined || updates.descuento !== undefined) {
             const cantidad =
                 updates.cantidad !== undefined
                     ? typeof updates.cantidad === 'string'

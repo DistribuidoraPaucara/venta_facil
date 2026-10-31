@@ -111,7 +111,7 @@ prepararImpresionMovimientos.post = (options?: RouteQueryOptions): RouteDefiniti
     prepararImpresionMovimientos.form = prepararImpresionMovimientosForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionVentas
- * @see app/Http/Controllers/Api/StockApiController.php:178
+ * @see app/Http/Controllers/Api/StockApiController.php:182
  * @route '/api/stock/preparar-impresion-ventas'
  */
 export const prepararImpresionVentas = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -126,7 +126,7 @@ prepararImpresionVentas.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionVentas
- * @see app/Http/Controllers/Api/StockApiController.php:178
+ * @see app/Http/Controllers/Api/StockApiController.php:182
  * @route '/api/stock/preparar-impresion-ventas'
  */
 prepararImpresionVentas.url = (options?: RouteQueryOptions) => {
@@ -135,7 +135,7 @@ prepararImpresionVentas.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionVentas
- * @see app/Http/Controllers/Api/StockApiController.php:178
+ * @see app/Http/Controllers/Api/StockApiController.php:182
  * @route '/api/stock/preparar-impresion-ventas'
  */
 prepararImpresionVentas.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -145,7 +145,7 @@ prepararImpresionVentas.post = (options?: RouteQueryOptions): RouteDefinition<'p
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionVentas
- * @see app/Http/Controllers/Api/StockApiController.php:178
+ * @see app/Http/Controllers/Api/StockApiController.php:182
  * @route '/api/stock/preparar-impresion-ventas'
  */
     const prepararImpresionVentasForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -155,7 +155,7 @@ prepararImpresionVentas.post = (options?: RouteQueryOptions): RouteDefinition<'p
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionVentas
- * @see app/Http/Controllers/Api/StockApiController.php:178
+ * @see app/Http/Controllers/Api/StockApiController.php:182
  * @route '/api/stock/preparar-impresion-ventas'
  */
         prepararImpresionVentasForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -166,7 +166,7 @@ prepararImpresionVentas.post = (options?: RouteQueryOptions): RouteDefinition<'p
     prepararImpresionVentas.form = prepararImpresionVentasForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionCompras
- * @see app/Http/Controllers/Api/StockApiController.php:305
+ * @see app/Http/Controllers/Api/StockApiController.php:309
  * @route '/api/stock/preparar-impresion-compras'
  */
 export const prepararImpresionCompras = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -181,7 +181,7 @@ prepararImpresionCompras.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionCompras
- * @see app/Http/Controllers/Api/StockApiController.php:305
+ * @see app/Http/Controllers/Api/StockApiController.php:309
  * @route '/api/stock/preparar-impresion-compras'
  */
 prepararImpresionCompras.url = (options?: RouteQueryOptions) => {
@@ -190,7 +190,7 @@ prepararImpresionCompras.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionCompras
- * @see app/Http/Controllers/Api/StockApiController.php:305
+ * @see app/Http/Controllers/Api/StockApiController.php:309
  * @route '/api/stock/preparar-impresion-compras'
  */
 prepararImpresionCompras.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -200,7 +200,7 @@ prepararImpresionCompras.post = (options?: RouteQueryOptions): RouteDefinition<'
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionCompras
- * @see app/Http/Controllers/Api/StockApiController.php:305
+ * @see app/Http/Controllers/Api/StockApiController.php:309
  * @route '/api/stock/preparar-impresion-compras'
  */
     const prepararImpresionComprasForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -210,7 +210,7 @@ prepararImpresionCompras.post = (options?: RouteQueryOptions): RouteDefinition<'
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionCompras
- * @see app/Http/Controllers/Api/StockApiController.php:305
+ * @see app/Http/Controllers/Api/StockApiController.php:309
  * @route '/api/stock/preparar-impresion-compras'
  */
         prepararImpresionComprasForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -221,7 +221,7 @@ prepararImpresionCompras.post = (options?: RouteQueryOptions): RouteDefinition<'
     prepararImpresionCompras.form = prepararImpresionComprasForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionProductosVendidos
- * @see app/Http/Controllers/Api/StockApiController.php:339
+ * @see app/Http/Controllers/Api/StockApiController.php:343
  * @route '/api/stock/preparar-impresion-productos-vendidos'
  */
 export const prepararImpresionProductosVendidos = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -236,7 +236,7 @@ prepararImpresionProductosVendidos.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionProductosVendidos
- * @see app/Http/Controllers/Api/StockApiController.php:339
+ * @see app/Http/Controllers/Api/StockApiController.php:343
  * @route '/api/stock/preparar-impresion-productos-vendidos'
  */
 prepararImpresionProductosVendidos.url = (options?: RouteQueryOptions) => {
@@ -245,7 +245,7 @@ prepararImpresionProductosVendidos.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionProductosVendidos
- * @see app/Http/Controllers/Api/StockApiController.php:339
+ * @see app/Http/Controllers/Api/StockApiController.php:343
  * @route '/api/stock/preparar-impresion-productos-vendidos'
  */
 prepararImpresionProductosVendidos.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -255,7 +255,7 @@ prepararImpresionProductosVendidos.post = (options?: RouteQueryOptions): RouteDe
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionProductosVendidos
- * @see app/Http/Controllers/Api/StockApiController.php:339
+ * @see app/Http/Controllers/Api/StockApiController.php:343
  * @route '/api/stock/preparar-impresion-productos-vendidos'
  */
     const prepararImpresionProductosVendidosForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -265,7 +265,7 @@ prepararImpresionProductosVendidos.post = (options?: RouteQueryOptions): RouteDe
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::prepararImpresionProductosVendidos
- * @see app/Http/Controllers/Api/StockApiController.php:339
+ * @see app/Http/Controllers/Api/StockApiController.php:343
  * @route '/api/stock/preparar-impresion-productos-vendidos'
  */
         prepararImpresionProductosVendidosForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -276,7 +276,7 @@ prepararImpresionProductosVendidos.post = (options?: RouteQueryOptions): RouteDe
     prepararImpresionProductosVendidos.form = prepararImpresionProductosVendidosForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirVentasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:495
+ * @see app/Http/Controllers/Api/StockApiController.php:499
  * @route '/api/stock/imprimir-ventas'
  */
 export const imprimirVentasDesdeSession = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -291,7 +291,7 @@ imprimirVentasDesdeSession.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirVentasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:495
+ * @see app/Http/Controllers/Api/StockApiController.php:499
  * @route '/api/stock/imprimir-ventas'
  */
 imprimirVentasDesdeSession.url = (options?: RouteQueryOptions) => {
@@ -300,7 +300,7 @@ imprimirVentasDesdeSession.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirVentasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:495
+ * @see app/Http/Controllers/Api/StockApiController.php:499
  * @route '/api/stock/imprimir-ventas'
  */
 imprimirVentasDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -309,7 +309,7 @@ imprimirVentasDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition<
 })
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirVentasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:495
+ * @see app/Http/Controllers/Api/StockApiController.php:499
  * @route '/api/stock/imprimir-ventas'
  */
 imprimirVentasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -319,7 +319,7 @@ imprimirVentasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirVentasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:495
+ * @see app/Http/Controllers/Api/StockApiController.php:499
  * @route '/api/stock/imprimir-ventas'
  */
     const imprimirVentasDesdeSessionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -329,7 +329,7 @@ imprimirVentasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirVentasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:495
+ * @see app/Http/Controllers/Api/StockApiController.php:499
  * @route '/api/stock/imprimir-ventas'
  */
         imprimirVentasDesdeSessionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -338,7 +338,7 @@ imprimirVentasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition
         })
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirVentasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:495
+ * @see app/Http/Controllers/Api/StockApiController.php:499
  * @route '/api/stock/imprimir-ventas'
  */
         imprimirVentasDesdeSessionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -354,7 +354,7 @@ imprimirVentasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition
     imprimirVentasDesdeSession.form = imprimirVentasDesdeSessionForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirMovimientosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:523
+ * @see app/Http/Controllers/Api/StockApiController.php:527
  * @route '/api/stock/imprimir-movimientos'
  */
 export const imprimirMovimientosDesdeSession = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -369,7 +369,7 @@ imprimirMovimientosDesdeSession.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirMovimientosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:523
+ * @see app/Http/Controllers/Api/StockApiController.php:527
  * @route '/api/stock/imprimir-movimientos'
  */
 imprimirMovimientosDesdeSession.url = (options?: RouteQueryOptions) => {
@@ -378,7 +378,7 @@ imprimirMovimientosDesdeSession.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirMovimientosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:523
+ * @see app/Http/Controllers/Api/StockApiController.php:527
  * @route '/api/stock/imprimir-movimientos'
  */
 imprimirMovimientosDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -387,7 +387,7 @@ imprimirMovimientosDesdeSession.get = (options?: RouteQueryOptions): RouteDefini
 })
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirMovimientosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:523
+ * @see app/Http/Controllers/Api/StockApiController.php:527
  * @route '/api/stock/imprimir-movimientos'
  */
 imprimirMovimientosDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -397,7 +397,7 @@ imprimirMovimientosDesdeSession.head = (options?: RouteQueryOptions): RouteDefin
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirMovimientosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:523
+ * @see app/Http/Controllers/Api/StockApiController.php:527
  * @route '/api/stock/imprimir-movimientos'
  */
     const imprimirMovimientosDesdeSessionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -407,7 +407,7 @@ imprimirMovimientosDesdeSession.head = (options?: RouteQueryOptions): RouteDefin
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirMovimientosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:523
+ * @see app/Http/Controllers/Api/StockApiController.php:527
  * @route '/api/stock/imprimir-movimientos'
  */
         imprimirMovimientosDesdeSessionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -416,7 +416,7 @@ imprimirMovimientosDesdeSession.head = (options?: RouteQueryOptions): RouteDefin
         })
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirMovimientosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:523
+ * @see app/Http/Controllers/Api/StockApiController.php:527
  * @route '/api/stock/imprimir-movimientos'
  */
         imprimirMovimientosDesdeSessionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -432,7 +432,7 @@ imprimirMovimientosDesdeSession.head = (options?: RouteQueryOptions): RouteDefin
     imprimirMovimientosDesdeSession.form = imprimirMovimientosDesdeSessionForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirStockDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:551
+ * @see app/Http/Controllers/Api/StockApiController.php:555
  * @route '/api/stock/imprimir-stock'
  */
 export const imprimirStockDesdeSession = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -447,7 +447,7 @@ imprimirStockDesdeSession.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirStockDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:551
+ * @see app/Http/Controllers/Api/StockApiController.php:555
  * @route '/api/stock/imprimir-stock'
  */
 imprimirStockDesdeSession.url = (options?: RouteQueryOptions) => {
@@ -456,7 +456,7 @@ imprimirStockDesdeSession.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirStockDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:551
+ * @see app/Http/Controllers/Api/StockApiController.php:555
  * @route '/api/stock/imprimir-stock'
  */
 imprimirStockDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -465,7 +465,7 @@ imprimirStockDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition<'
 })
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirStockDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:551
+ * @see app/Http/Controllers/Api/StockApiController.php:555
  * @route '/api/stock/imprimir-stock'
  */
 imprimirStockDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -475,7 +475,7 @@ imprimirStockDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirStockDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:551
+ * @see app/Http/Controllers/Api/StockApiController.php:555
  * @route '/api/stock/imprimir-stock'
  */
     const imprimirStockDesdeSessionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -485,7 +485,7 @@ imprimirStockDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirStockDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:551
+ * @see app/Http/Controllers/Api/StockApiController.php:555
  * @route '/api/stock/imprimir-stock'
  */
         imprimirStockDesdeSessionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -494,7 +494,7 @@ imprimirStockDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<
         })
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirStockDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:551
+ * @see app/Http/Controllers/Api/StockApiController.php:555
  * @route '/api/stock/imprimir-stock'
  */
         imprimirStockDesdeSessionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -510,7 +510,7 @@ imprimirStockDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<
     imprimirStockDesdeSession.form = imprimirStockDesdeSessionForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirComprasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:581
+ * @see app/Http/Controllers/Api/StockApiController.php:585
  * @route '/api/stock/imprimir-compras'
  */
 export const imprimirComprasDesdeSession = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -525,7 +525,7 @@ imprimirComprasDesdeSession.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirComprasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:581
+ * @see app/Http/Controllers/Api/StockApiController.php:585
  * @route '/api/stock/imprimir-compras'
  */
 imprimirComprasDesdeSession.url = (options?: RouteQueryOptions) => {
@@ -534,7 +534,7 @@ imprimirComprasDesdeSession.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirComprasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:581
+ * @see app/Http/Controllers/Api/StockApiController.php:585
  * @route '/api/stock/imprimir-compras'
  */
 imprimirComprasDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -543,7 +543,7 @@ imprimirComprasDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition
 })
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirComprasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:581
+ * @see app/Http/Controllers/Api/StockApiController.php:585
  * @route '/api/stock/imprimir-compras'
  */
 imprimirComprasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -553,7 +553,7 @@ imprimirComprasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinitio
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirComprasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:581
+ * @see app/Http/Controllers/Api/StockApiController.php:585
  * @route '/api/stock/imprimir-compras'
  */
     const imprimirComprasDesdeSessionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -563,7 +563,7 @@ imprimirComprasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinitio
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirComprasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:581
+ * @see app/Http/Controllers/Api/StockApiController.php:585
  * @route '/api/stock/imprimir-compras'
  */
         imprimirComprasDesdeSessionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -572,7 +572,7 @@ imprimirComprasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinitio
         })
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirComprasDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:581
+ * @see app/Http/Controllers/Api/StockApiController.php:585
  * @route '/api/stock/imprimir-compras'
  */
         imprimirComprasDesdeSessionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -588,7 +588,7 @@ imprimirComprasDesdeSession.head = (options?: RouteQueryOptions): RouteDefinitio
     imprimirComprasDesdeSession.form = imprimirComprasDesdeSessionForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirProductosVendidosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:610
+ * @see app/Http/Controllers/Api/StockApiController.php:614
  * @route '/api/stock/imprimir-productos-vendidos'
  */
 export const imprimirProductosVendidosDesdeSession = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -603,7 +603,7 @@ imprimirProductosVendidosDesdeSession.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirProductosVendidosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:610
+ * @see app/Http/Controllers/Api/StockApiController.php:614
  * @route '/api/stock/imprimir-productos-vendidos'
  */
 imprimirProductosVendidosDesdeSession.url = (options?: RouteQueryOptions) => {
@@ -612,7 +612,7 @@ imprimirProductosVendidosDesdeSession.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirProductosVendidosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:610
+ * @see app/Http/Controllers/Api/StockApiController.php:614
  * @route '/api/stock/imprimir-productos-vendidos'
  */
 imprimirProductosVendidosDesdeSession.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -621,7 +621,7 @@ imprimirProductosVendidosDesdeSession.get = (options?: RouteQueryOptions): Route
 })
 /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirProductosVendidosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:610
+ * @see app/Http/Controllers/Api/StockApiController.php:614
  * @route '/api/stock/imprimir-productos-vendidos'
  */
 imprimirProductosVendidosDesdeSession.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -631,7 +631,7 @@ imprimirProductosVendidosDesdeSession.head = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirProductosVendidosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:610
+ * @see app/Http/Controllers/Api/StockApiController.php:614
  * @route '/api/stock/imprimir-productos-vendidos'
  */
     const imprimirProductosVendidosDesdeSessionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -641,7 +641,7 @@ imprimirProductosVendidosDesdeSession.head = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirProductosVendidosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:610
+ * @see app/Http/Controllers/Api/StockApiController.php:614
  * @route '/api/stock/imprimir-productos-vendidos'
  */
         imprimirProductosVendidosDesdeSessionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -650,7 +650,7 @@ imprimirProductosVendidosDesdeSession.head = (options?: RouteQueryOptions): Rout
         })
             /**
 * @see \App\Http\Controllers\Api\StockApiController::imprimirProductosVendidosDesdeSession
- * @see app/Http/Controllers/Api/StockApiController.php:610
+ * @see app/Http/Controllers/Api/StockApiController.php:614
  * @route '/api/stock/imprimir-productos-vendidos'
  */
         imprimirProductosVendidosDesdeSessionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -666,7 +666,7 @@ imprimirProductosVendidosDesdeSession.head = (options?: RouteQueryOptions): Rout
     imprimirProductosVendidosDesdeSession.form = imprimirProductosVendidosDesdeSessionForm
 /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
 export const destroy = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -681,7 +681,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
 destroy.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -709,7 +709,7 @@ destroy.url = (args: { id: string | number } | [id: string | number ] | string |
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
 destroy.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -719,7 +719,7 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
     const destroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -734,7 +734,7 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
         destroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

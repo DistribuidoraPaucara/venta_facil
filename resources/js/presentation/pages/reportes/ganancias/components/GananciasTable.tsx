@@ -1,130 +1,147 @@
-import type { Ganancia } from '@/domain/entities/reportes';
-import { formatCurrency, formatPercentage, getColorClass, getEstadoGanancia, getGananciaColor } from '@/lib/reportes.utils';
-import { Badge } from '@/presentation/components/ui/badge';
-import { Card, CardContent } from '@/presentation/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/presentation/components/ui/table';
-import { Link } from '@inertiajs/react';
+import type { GananciasPaginatedData, OrdenGanancias } from '@/domain/entities/reportes';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/presentation/components/ui/table';
+import { formatCurrency } from '@/lib/reportes.utils';
 
 interface GananciasTableProps {
-    ganancias: Ganancia[] | any;
-    isLoading?: boolean;
-    onPageChange?: (page: number) => void;
+  ganancias: GananciasPaginatedData;
+  orden: string;
+  direccion: string;
+  onOrdenar: (columna: OrdenGanancias) => void;
 }
 
+const formatCantidad = (n: number) => (Number.isInteger(n) ? n.toString() : n.toFixed(2));
+
 /**
- * Componente que muestra la tabla de ganancias con análisis detallado
+ * Ganancia por producto, unidad y tipo de precio sobre ventas reales
  */
-export function GananciasTable({ ganancias, isLoading = false }: GananciasTableProps) {
-    if (isLoading) {
-        return (
-            <Card>
-                <CardContent className="p-8 text-center">
-                    <p className="text-gray-600 dark:text-gray-400">Cargando datos...</p>
-                </CardContent>
-            </Card>
-        );
-    }
+export function GananciasTable({ ganancias, orden, direccion, onOrdenar }: GananciasTableProps) {
+  // Encabezado clicable: ordena por la columna y alterna asc/desc
+  const encabezado = (columna: OrdenGanancias, texto: string, derecha = true) => (
+    <TableHead className={derecha ? 'text-right' : ''}>
+      <button
+        type="button"
+        onClick={() => onOrdenar(columna)}
+        className="inline-flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400"
+        title={`Ordenar por ${texto.toLowerCase()}`}
+      >
+        {texto}
+        <span className={orden === columna ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}>
+          {orden === columna ? (direccion === 'asc' ? '▲' : '▼') : '↕'}
+        </span>
+      </button>
+    </TableHead>
+  );
 
-    return (
-        <div className="overflow-x-auto">
-            <h3>Análisis de Ganancias</h3>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="text-left">ID</TableHead>
-                        <TableHead>Producto</TableHead>
-                        {/* <TableHead>Categoría</TableHead> */}
-                        <TableHead>Tipo de Precio</TableHead>
-                        <TableHead className="text-right">Costo</TableHead>
-                        <TableHead className="text-right">Venta</TableHead>
-                        <TableHead className="text-right">Ganancia</TableHead>
-                        <TableHead className="text-right">% Ganancia</TableHead>
-                        <TableHead className="text-center">Estado</TableHead>
-                        <TableHead className="text-center">Fecha de Venta</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {!ganancias.data || ganancias.data.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={9} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                                No se encontraron datos de ganancia con los filtros seleccionados
-                            </TableCell>
-                        </TableRow>
-                    ) : (
-                        ganancias.data.map((item: Ganancia, index: number) => {
-                            const estadoGanancia = getEstadoGanancia(item.porcentaje_ganancia);
+  return (
+    <div className="p-2">
+      <div className="flex items-baseline justify-between">
+        <h3 className="font-semibold">Ganancia por producto</h3>
+        {ganancias.total > 0 && (
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {ganancias.from}–{ganancias.to} de {ganancias.total}
+          </span>
+        )}
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {encabezado('producto', 'Producto', false)}
+            <TableHead>Tipo de precio</TableHead>
+            {encabezado('cantidad', 'Cantidad')}
+            <TableHead className="text-right">Precio prom.</TableHead>
+            <TableHead className="text-right">Costo prom.</TableHead>
+            {encabezado('ingresos', 'Vendido')}
+            <TableHead className="text-right">Costo total</TableHead>
+            {encabezado('ganancia', 'Ganancia')}
+            {encabezado('margen', 'Margen')}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {ganancias.data.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={9} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No hay ventas con los filtros seleccionados
+              </TableCell>
+            </TableRow>
+          ) : (
+            ganancias.data.map((g) => {
+              const sinCosto = g.estado_costo === 'sin_costo';
+              return (
+                <TableRow key={g.key} className={sinCosto ? 'bg-amber-50/60 dark:bg-amber-950/10' : ''}>
+                  <TableCell>
+                    <a
+                      href={`/productos/${g.producto.id}/edit`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      title="Editar producto en otra pestaña"
+                    >
+                      {g.producto.nombre}
+                    </a>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      #{g.producto.id}
+                      {g.producto.sku && <> · {g.producto.sku}</>}
+                      {g.unidad_medida && <> · {g.unidad_medida}</>}
+                    </div>
+                  </TableCell>
 
-                            return (
-                                <TableRow key={index}>
-                                    <TableCell className="text-left">#{item.producto.id}</TableCell>
-                                    {/* Producto */}
-                                    <TableCell>
-                                        <Link
-                                            href={`/productos/${item.producto.id}/edit`}
-                                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
-                                        >
-                                            {item.producto.nombre}
-                                        </Link>
-                                    </TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: g.tipo_precio.color || '#999999' }} />
+                      {g.tipo_precio.nombre}
+                    </span>
+                  </TableCell>
 
-                                    {/* Categoría */}
-                                    {/* <TableCell>
-                        <span className="text-gray-600 dark:text-gray-400">
-                          {item.producto.categoria?.nombre || 'Sin categoría'}
-                        </span>
-                      </TableCell> */}
+                  <TableCell className="text-right">{formatCantidad(g.cantidad_vendida)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(g.precio_promedio)}</TableCell>
+                  <TableCell className="text-right text-gray-600 dark:text-gray-400">
+                    {g.costo_promedio === null ? '—' : formatCurrency(g.costo_promedio)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">{formatCurrency(g.ingresos_totales)}</TableCell>
 
-                                    {/* Tipo de Precio */}
-                                    <TableCell>
-                                        <Badge className={getColorClass(item.tipo_precio.color)}>
-                                            <span className="mr-1">{item.tipo_precio.configuracion?.icono || '💰'}</span>
-                                            {item.tipo_precio.nombre}
-                                        </Badge>
-                                    </TableCell>
-
-                                    {/* Precio Costo */}
-                                    <TableCell className="text-right font-medium">{formatCurrency(item.precio_costo)}</TableCell>
-
-                                    {/* Precio Venta */}
-                                    <TableCell className="text-right font-medium">{formatCurrency(item.precio_venta)}</TableCell>
-
-                                    {/* Ganancia */}
-                                    <TableCell
-                                        className={`text-right font-semibold ${
-                                            item.ganancia >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                                        }`}
-                                    >
-                                        {formatCurrency(item.ganancia)}
-                                    </TableCell>
-
-                                    {/* % Ganancia */}
-                                    <TableCell className={`text-right font-bold ${getGananciaColor(item.porcentaje_ganancia)}`}>
-                                        {formatPercentage(item.porcentaje_ganancia)}
-                                    </TableCell>
-
-                                    {/* Estado */}
-                                    <TableCell className="text-center">
-                                        <Badge className={estadoGanancia.badge}>
-                                            {estadoGanancia.icon} {estadoGanancia.label}
-                                        </Badge>
-                                    </TableCell>
-
-                                    {/* Fecha de Venta */}
-                                    <TableCell className="text-center text-sm text-gray-600 dark:text-gray-400">
-                                        {item.fecha_actualizacion
-                                            ? new Date(item.fecha_actualizacion).toLocaleDateString('es-ES', {
-                                                  year: 'numeric',
-                                                  month: 'short',
-                                                  day: 'numeric',
-                                              })
-                                            : '-'}
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })
-                    )}
-                </TableBody>
-            </Table>
-        </div>
-    );
+                  {sinCosto ? (
+                    <TableCell colSpan={3} className="text-center text-amber-700 dark:text-amber-300">
+                      ⚠ Sin costo registrado
+                    </TableCell>
+                  ) : (
+                    <>
+                      <TableCell className="text-right text-gray-600 dark:text-gray-400">{formatCurrency(g.costos_totales)}</TableCell>
+                      <TableCell
+                        className={`text-right font-semibold ${g.ganancia < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}
+                      >
+                        {formatCurrency(g.ganancia)}
+                        {g.estado_costo === 'parcial' && (
+                          <div
+                            className="text-xs font-normal text-amber-700 dark:text-amber-300"
+                            title="Parte de las ventas no tiene costo para su fecha o unidad y no se suma a la ganancia"
+                          >
+                            ⚠ {formatCurrency(g.ingresos_sin_costo)} sin costo
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {g.margen === null ? '—' : `${g.margen.toFixed(1)}%`}
+                        {g.markup !== null && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400" title="Ganancia sobre el costo">
+                            {g.markup.toFixed(1)}% s/costo
+                          </div>
+                        )}
+                      </TableCell>
+                    </>
+                  )}
+                </TableRow>
+              );
+            })
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
 }

@@ -9,6 +9,7 @@ use App\Models\CargoCSVProducto;
 use App\Models\Categoria;
 use App\Models\CodigoBarra;
 use App\Models\Empresa;
+use App\Models\HistorialPrecio;
 use App\Models\ImagenProducto;
 use App\Models\Marca;
 use App\Models\MovimientoInventario;
@@ -142,18 +143,25 @@ class ProductoController extends Controller
         );
     }
 
-    public function historialPrecios(Producto $producto): JsonResponse
+    public function historialPrecios(Request $request, Producto $producto): JsonResponse
     {
-        $producto->load(['precios' => function ($q) {
-            $q->where('activo', true)->with(['tipoPrecio', 'historialPrecios' => function ($h) {
-                $h->orderByDesc('fecha_cambio');
-            }]);
+        // ✅ NUEVO (2026-10-30): ?incluir_inactivos=1 incluye el historial de precios quitados o reemplazados
+        $incluirInactivos = $request->boolean('incluir_inactivos');
+
+        $producto->load(['precios' => function ($q) use ($incluirInactivos) {
+            $q->when(! $incluirInactivos, fn($q) => $q->where('activo', true))
+                ->with(['tipoPrecio', 'unidadMedida', 'historialPrecios' => function ($h) {
+                    $h->orderByDesc('fecha_cambio');
+                }]);
         }]);
         $historial = [];
         foreach ($producto->precios as $precio) {
             foreach ($precio->historialPrecios as $h) {
                 $historial[] = [
                     'id'                 => $h->id,
+                    'precio_producto_id' => $precio->id,
+                    'precio_activo'      => (bool) $precio->activo,
+                    'unidad_medida'      => $precio->unidadMedida?->nombre,
                     'tipo_precio_id'     => $precio->tipo_precio_id,
                     'tipo_precio_nombre' => $precio->tipoPrecio?->nombre,
                     'valor_anterior'     => $h->valor_anterior,
@@ -165,6 +173,9 @@ class ProductoController extends Controller
                 ];
             }
         }
+
+        // Todos los tipos de precio juntos, del cambio más reciente al más antiguo
+        usort($historial, fn($a, $b) => [$b['fecha_cambio'], $b['id']] <=> [$a['fecha_cambio'], $a['id']]);
 
         return ApiResponse::success($historial);
     }
@@ -1336,6 +1347,8 @@ class ProductoController extends Controller
 
                 // Precios s��lo si vienen
                 if ($request->has('precios')) {
+                    // ✅ NUEVO (2026-10-30): Recordar los precios activos para registrar en historial los que se quitan
+                    $preciosActivosAntes = $producto->precios()->where('activo', true)->get();
                     $producto->precios()->update(['activo' => false]);
                     if (! empty($data['precios']) && is_array($data['precios'])) {
                         $montoBase = 0.0;
@@ -1385,6 +1398,7 @@ class ProductoController extends Controller
                                     'margen_ganancia'            => $margen,
                                     'porcentaje_ganancia'        => $porcentaje,
                                     'activo'                     => true,
+                                    'motivo_cambio'              => 'Edición de producto', // Lo usa PrecioProductoObserver en historial_precios
                                     // ✅ NOTA: updated_at se actualiza automáticamente por Laravel
                                 ]);
                                 continue;
@@ -1399,7 +1413,7 @@ class ProductoController extends Controller
                             $nombre = $precioData['nombre'] ?? $tipoPrecio->nombre;
 
 
-                            PrecioProducto::create([
+                            $precioNuevo = PrecioProducto::create([
                                 'producto_id'                => $producto->id,
                                 'nombre'                     => $nombre,
                                 'precio'                     => $monto,
@@ -1411,7 +1425,17 @@ class ProductoController extends Controller
                                 'activo'                     => true,
                                 'fecha_ultima_actualizacion' => now(),
                             ]);
+
+                            // ✅ NUEVO (2026-10-30): El observer solo registra actualizaciones; registrar también el alta
+                            $this->registrarHistorialPrecio($precioNuevo, 0, $monto, 'Precio agregado en edición de producto');
                         }
+                    }
+
+                    // ✅ NUEVO (2026-10-30): Precios que estaban activos y se quitaron en el formulario
+                    $idsQuitados = $preciosActivosAntes->pluck('id')
+                        ->diff($producto->precios()->where('activo', true)->pluck('id'));
+                    foreach ($preciosActivosAntes->whereIn('id', $idsQuitados) as $precioQuitado) {
+                        $this->registrarHistorialPrecio($precioQuitado, (float) $precioQuitado->precio, 0, 'Precio quitado en edición de producto');
                     }
                 }
 
@@ -1524,9 +1548,26 @@ class ProductoController extends Controller
                     }, $data['almacenes']));
 
                     // Soft delete almacenes que no están en el nuevo array
-                    StockProducto::where('producto_id', $producto->id)
+                    // ✅ ACTUALIZADO (2026-10-30): Registrar la salida del stock que se quita en movimientos_inventario
+                    $stocksQuitados = StockProducto::where('producto_id', $producto->id)
                         ->whereNotIn('almacen_id', $nuevosAlmacenIds)
-                        ->delete(); // SoftDelete
+                        ->get();
+                    foreach ($stocksQuitados as $stockQuitado) {
+                        $antes = $stockQuitado->only(['cantidad', 'cantidad_disponible', 'cantidad_reservada']);
+                        $stockQuitado->delete(); // SoftDelete
+                        $this->registrarMovimientoEdicionStock(
+                            $stockQuitado,
+                            $antes,
+                            ['cantidad' => 0, 'cantidad_disponible' => 0, 'cantidad_reservada' => 0],
+                            'Almacén quitado en edición de producto'
+                        );
+                    }
+
+                    // Stocks que el formulario ya identifica por id (no deben emparejarse con filas nuevas)
+                    $idsStockEnRequest = array_values(array_filter(array_map(
+                        fn($a) => ! empty($a['id']) ? (int) $a['id'] : null,
+                        $data['almacenes']
+                    )));
 
                     // Crear o actualizar StockProducto para cada almacén en el array
                     foreach ($data['almacenes'] as $almacenData) {
@@ -1583,10 +1624,19 @@ class ProductoController extends Controller
                         } else {
                             // Si no viene ID, buscar SOLO por producto, almacén y lote (NO por sector)
                             // Esto permite actualizar el sector de lotes existentes sin crear duplicados
+                            // ✅ CORREGIDO (2026-10-30): "sin lote" se guarda como NULL; buscar '' no lo encontraba y
+                            // se creaba un StockProducto duplicado. Se excluyen los stocks que vienen con id en este request.
                             $stockExistente = StockProducto::withTrashed()
                                 ->where('producto_id', $producto->id)
                                 ->where('almacen_id', $almacenId)
-                                ->where('lote', $lote)
+                                ->when(
+                                    $lote === '' || $lote === null,
+                                    fn($q) => $q->where(fn($q) => $q->whereNull('lote')->orWhere('lote', '')),
+                                    fn($q) => $q->where('lote', $lote)
+                                )
+                                ->whereNotIn('id', $idsStockEnRequest)
+                                ->orderByRaw('deleted_at IS NOT NULL') // preferir el activo
+                                ->orderBy('id')
                                 ->first();
                             Log::info('✅ Búsqueda por combinación (sin sector):', [
                                 'encontrado'    => $stockExistente ? 'SÍ' : 'NO',
@@ -1608,6 +1658,11 @@ class ProductoController extends Controller
                                 'anterior_cantidad' => $stockExistente->cantidad,
                                 'nueva_cantidad'    => $cantidadTotal,
                             ]);
+                            // ✅ NUEVO (2026-10-30): Un stock eliminado no cuenta; su salida ya se registró al quitarlo
+                            $stockAntes = $stockExistente->trashed()
+                                ? ['cantidad' => 0, 'cantidad_disponible' => 0, 'cantidad_reservada' => 0]
+                                : $stockExistente->only(['cantidad', 'cantidad_disponible', 'cantidad_reservada']);
+
                             // Restaurar si estaba soft-deleted, luego actualizar
                             $stockExistente->restore();
 
@@ -1623,6 +1678,12 @@ class ProductoController extends Controller
 
                             Log::debug('🔄 Datos a actualizar en StockProducto:', $updateData);
                             $stockExistente->update($updateData);
+                            $this->registrarMovimientoEdicionStock(
+                                $stockExistente,
+                                $stockAntes,
+                                $stockExistente->only(['cantidad', 'cantidad_disponible', 'cantidad_reservada']),
+                                'Stock modificado en edición de producto'
+                            );
                             Log::info('✅ StockProducto actualizado exitosamente:', [
                                 'stock_id' => $stockExistente->id,
                                 'sector_actualizado' => $stockExistente->fresh()->sector_id,
@@ -1678,6 +1739,13 @@ class ProductoController extends Controller
                                 'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : null,
                                 'fecha_actualizacion' => now(),
                             ]);
+
+                            $this->registrarMovimientoEdicionStock(
+                                $nuevoStock,
+                                ['cantidad' => 0, 'cantidad_disponible' => 0, 'cantidad_reservada' => 0],
+                                $nuevoStock->only(['cantidad', 'cantidad_disponible', 'cantidad_reservada']),
+                                'Almacén agregado en edición de producto'
+                            );
 
                             Log::info('✅ StockProducto CREADO EXITOSAMENTE:', [
                                 'stock_id'            => $nuevoStock->id,
@@ -1805,6 +1873,59 @@ class ProductoController extends Controller
         $producto->delete();
 
         return redirect()->route('productos.index')->with('success', 'Producto eliminado');
+    }
+
+    /**
+     * ✅ NUEVO (2026-10-30): Registrar en movimientos_inventario un cambio de stock hecho desde la edición del producto.
+     * No hace nada si la cantidad total no cambió.
+     */
+    private function registrarMovimientoEdicionStock(StockProducto $stock, array $antes, array $despues, string $observacion): void
+    {
+        $diferencia = (float) $despues['cantidad'] - (float) $antes['cantidad'];
+        if (abs($diferencia) < 0.0001) {
+            return;
+        }
+
+        $tipoAjuste = TipoAjusteInventario::where('clave', 'CORRECCION')->first();
+
+        MovimientoInventario::create([
+            'stock_producto_id'             => $stock->id,
+            'cantidad'                      => $diferencia,
+            'cantidad_anterior'             => $antes['cantidad'],
+            'cantidad_posterior'            => $despues['cantidad'],
+            'cantidad_total_anterior'       => $antes['cantidad'],
+            'cantidad_total_posterior'      => $despues['cantidad'],
+            'cantidad_disponible_anterior'  => $antes['cantidad_disponible'],
+            'cantidad_disponible_posterior' => $despues['cantidad_disponible'],
+            'cantidad_reservada_anterior'   => $antes['cantidad_reservada'],
+            'cantidad_reservada_posterior'  => $despues['cantidad_reservada'],
+            'fecha'                         => now(),
+            'observacion'                   => $observacion,
+            'tipo'                          => $diferencia > 0 ? MovimientoInventario::TIPO_ENTRADA_AJUSTE : MovimientoInventario::TIPO_SALIDA_AJUSTE,
+            'user_id'                       => Auth::id(),
+            'tipo_ajuste_inventario_id'     => $tipoAjuste?->id,
+            'referencia_tipo'               => 'EDICION_PRODUCTO',
+            'referencia_id'                 => $stock->producto_id,
+            'ip_dispositivo'                => request()->ip(),
+        ]);
+    }
+
+    /**
+     * ✅ NUEVO (2026-10-30): Registrar en historial_precios el alta o baja de un precio desde la edición del producto.
+     * Las modificaciones de un precio existente las registra PrecioProductoObserver.
+     */
+    private function registrarHistorialPrecio(PrecioProducto $precio, float $anterior, float $nuevo, string $motivo): void
+    {
+        HistorialPrecio::create([
+            'precio_producto_id' => $precio->id,
+            'valor_anterior'     => $anterior,
+            'valor_nuevo'        => $nuevo,
+            'porcentaje_cambio'  => $anterior != 0 ? (($nuevo - $anterior) / $anterior) * 100 : 100,
+            'fecha_cambio'       => now(),
+            'motivo'             => $motivo,
+            'usuario'            => Auth::user()?->name ?? 'sistema',
+            'tipo_precio_id'     => $precio->tipo_precio_id,
+        ]);
     }
 
     /**
@@ -3896,7 +4017,7 @@ class ProductoController extends Controller
                 'unidad:id,nombre,codigo',
                 'conversiones' => function ($q) {
                     $q->where('activo', true)
-                        ->select('id', 'producto_id', 'unidad_base_id', 'unidad_destino_id', 'factor_conversion', 'nombre_cuando_se_vende_como', 'activo', 'es_conversion_principal') // ✅ CORREGIDO: Agregar nombre_cuando_se_vende_como
+                        ->select('id', 'producto_id', 'unidad_base_id', 'unidad_destino_id', 'factor_conversion', 'nombre_cuando_se_vende_como', 'activo', 'es_conversion_principal', 'producto_destino_id') // ✅ CORREGIDO: Agregar nombre_cuando_se_vende_como
                         ->with('unidadDestino:id,nombre,codigo');
                 },
                 'precios'      => function ($q) {
@@ -4259,6 +4380,7 @@ class ProductoController extends Controller
                             'unidad_destino_id'       => $c->unidad_destino_id,
                             'factor_conversion'       => (float) $c->factor_conversion,
                             'nombre_cuando_se_vende_como' => $c->nombre_cuando_se_vende_como, // ✅ AGREGADO
+                            'producto_destino_id'     => $c->producto_destino_id, // La unidad es otro producto: la venta usa la unidad propia
                             'unidad_destino_nombre'   => $c->unidadDestino?->nombre ?? null,
                             'unidad_destino'          => $c->unidadDestino ? [ // ✅ AGREGADO: objeto completo
                                 'id'     => $c->unidadDestino->id,

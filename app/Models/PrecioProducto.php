@@ -96,10 +96,13 @@ class PrecioProducto extends Model
 
     public function scopePrecioBase($query)
     {
-        return $query->where('es_precio_base', true)
-            ->orWhereHas('tipoPrecio', function ($q) {
-                $q->where('es_precio_base', true);
-            });
+        // Agrupado: sin el where() externo el orWhereHas escapaba del filtro por producto/activo
+        return $query->where(function ($q) {
+            $q->where('es_precio_base', true)
+                ->orWhereHas('tipoPrecio', function ($q2) {
+                    $q2->where('es_precio_base', true);
+                });
+        });
     }
 
     /**
@@ -138,27 +141,28 @@ class PrecioProducto extends Model
      */
     public function actualizarPrecio(float $nuevoPrecio, ?string $motivo = null, ?string $usuario = null): void
     {
-        $valorAnterior = $this->precio;
+        // El historial lo registra PrecioProductoObserver::updating (antes se creaba aquí también y quedaba duplicado).
+        // Se asigna el precio nuevo antes de calcular para que la ganancia no use el valor anterior.
+        $esBase = $this->es_precio_base || $this->tipoPrecio?->es_precio_base;
 
-        // Registrar en historial antes de actualizar
-        HistorialPrecio::create([
-            'precio_producto_id' => $this->id,
-            'valor_anterior'     => $valorAnterior,
-            'valor_nuevo'        => $nuevoPrecio,
-            'fecha_cambio'       => now(),
-            'motivo'             => $motivo,
-            'usuario'            => $usuario,
-            'tipo_precio_id'     => $this->tipo_precio_id, // Usar tipo_precio_id en lugar de tipo_precio
-        ]);
+        $this->precio                     = $nuevoPrecio;
+        $this->fecha_ultima_actualizacion = now();
+        $this->motivo_cambio              = $motivo;
+        // El precio base (costo) no tiene ganancia sobre sí mismo
+        $this->margen_ganancia            = $esBase ? 0 : $this->calcularGanancia();
+        $this->porcentaje_ganancia        = $esBase ? 0 : $this->calcularPorcentajeGanancia();
+        $this->save();
 
-        // Actualizar precio
-        $this->update([
-            'precio'                     => $nuevoPrecio,
-            'fecha_ultima_actualizacion' => now(),
-            'motivo_cambio'              => $motivo,
-            'margen_ganancia'            => $this->calcularGanancia(),
-            'porcentaje_ganancia'        => $this->calcularPorcentajeGanancia(),
-        ]);
+        // Si cambió el precio base (costo), recalcular la ganancia de los demás precios activos del producto
+        if ($esBase) {
+            $this->producto->precios()->activos()->whereKeyNot($this->id)->get()
+                ->each(function (PrecioProducto $otro) {
+                    $otro->updateQuietly([
+                        'margen_ganancia'     => $otro->calcularGanancia(),
+                        'porcentaje_ganancia' => $otro->calcularPorcentajeGanancia(),
+                    ]);
+                });
+        }
     }
 
     /**

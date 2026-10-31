@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ReportePreciosController::index
- * @see app/Http/Controllers/ReportePreciosController.php:66
+ * @see app/Http/Controllers/ReportePreciosController.php:48
  * @route '/reportes/ganancias'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\ReportePreciosController::index
- * @see app/Http/Controllers/ReportePreciosController.php:66
+ * @see app/Http/Controllers/ReportePreciosController.php:48
  * @route '/reportes/ganancias'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ReportePreciosController::index
- * @see app/Http/Controllers/ReportePreciosController.php:66
+ * @see app/Http/Controllers/ReportePreciosController.php:48
  * @route '/reportes/ganancias'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ReportePreciosController::index
- * @see app/Http/Controllers/ReportePreciosController.php:66
+ * @see app/Http/Controllers/ReportePreciosController.php:48
  * @route '/reportes/ganancias'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ReportePreciosController::index
- * @see app/Http/Controllers/ReportePreciosController.php:66
+ * @see app/Http/Controllers/ReportePreciosController.php:48
  * @route '/reportes/ganancias'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ReportePreciosController::index
- * @see app/Http/Controllers/ReportePreciosController.php:66
+ * @see app/Http/Controllers/ReportePreciosController.php:48
  * @route '/reportes/ganancias'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ReportePreciosController::index
- * @see app/Http/Controllers/ReportePreciosController.php:66
+ * @see app/Http/Controllers/ReportePreciosController.php:48
  * @route '/reportes/ganancias'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\ReportePreciosController::exportMethod
- * @see app/Http/Controllers/ReportePreciosController.php:311
+ * @see app/Http/Controllers/ReportePreciosController.php:156
  * @route '/reportes/ganancias/export'
  */
 export const exportMethod = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ exportMethod.definition = {
 
 /**
 * @see \App\Http\Controllers\ReportePreciosController::exportMethod
- * @see app/Http/Controllers/ReportePreciosController.php:311
+ * @see app/Http/Controllers/ReportePreciosController.php:156
  * @route '/reportes/ganancias/export'
  */
 exportMethod.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ exportMethod.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ReportePreciosController::exportMethod
- * @see app/Http/Controllers/ReportePreciosController.php:311
+ * @see app/Http/Controllers/ReportePreciosController.php:156
  * @route '/reportes/ganancias/export'
  */
 exportMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ exportMethod.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\ReportePreciosController::exportMethod
- * @see app/Http/Controllers/ReportePreciosController.php:311
+ * @see app/Http/Controllers/ReportePreciosController.php:156
  * @route '/reportes/ganancias/export'
  */
 exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\ReportePreciosController::exportMethod
- * @see app/Http/Controllers/ReportePreciosController.php:311
+ * @see app/Http/Controllers/ReportePreciosController.php:156
  * @route '/reportes/ganancias/export'
  */
     const exportMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\ReportePreciosController::exportMethod
- * @see app/Http/Controllers/ReportePreciosController.php:311
+ * @see app/Http/Controllers/ReportePreciosController.php:156
  * @route '/reportes/ganancias/export'
  */
         exportMethodForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\ReportePreciosController::exportMethod
- * @see app/Http/Controllers/ReportePreciosController.php:311
+ * @see app/Http/Controllers/ReportePreciosController.php:156
  * @route '/reportes/ganancias/export'
  */
         exportMethodForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -155,9 +155,88 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     exportMethod.form = exportMethodForm
+/**
+* @see \App\Http\Controllers\ReportePreciosController::pdf
+ * @see app/Http/Controllers/ReportePreciosController.php:224
+ * @route '/reportes/ganancias/pdf'
+ */
+export const pdf = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: pdf.url(options),
+    method: 'get',
+})
+
+pdf.definition = {
+    methods: ["get","head"],
+    url: '/reportes/ganancias/pdf',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\ReportePreciosController::pdf
+ * @see app/Http/Controllers/ReportePreciosController.php:224
+ * @route '/reportes/ganancias/pdf'
+ */
+pdf.url = (options?: RouteQueryOptions) => {
+    return pdf.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\ReportePreciosController::pdf
+ * @see app/Http/Controllers/ReportePreciosController.php:224
+ * @route '/reportes/ganancias/pdf'
+ */
+pdf.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: pdf.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\ReportePreciosController::pdf
+ * @see app/Http/Controllers/ReportePreciosController.php:224
+ * @route '/reportes/ganancias/pdf'
+ */
+pdf.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: pdf.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\ReportePreciosController::pdf
+ * @see app/Http/Controllers/ReportePreciosController.php:224
+ * @route '/reportes/ganancias/pdf'
+ */
+    const pdfForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: pdf.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ReportePreciosController::pdf
+ * @see app/Http/Controllers/ReportePreciosController.php:224
+ * @route '/reportes/ganancias/pdf'
+ */
+        pdfForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: pdf.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ReportePreciosController::pdf
+ * @see app/Http/Controllers/ReportePreciosController.php:224
+ * @route '/reportes/ganancias/pdf'
+ */
+        pdfForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: pdf.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    pdf.form = pdfForm
 const ganancias = {
     index,
 export: exportMethod,
+pdf,
 }
 
 export default ganancias

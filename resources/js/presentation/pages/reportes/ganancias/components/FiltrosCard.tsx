@@ -1,29 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
+import { CardTitle } from '@/presentation/components/ui/card';
 import { Button } from '@/presentation/components/ui/button';
 import { Input } from '@/presentation/components/ui/input';
 import { Label } from '@/presentation/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select';
-
-interface Categoria {
-  id: number;
-  nombre: string;
-}
-
-interface TipoPrecio {
-  id: number;
-  nombre: string;
-  color: string;
-}
 
 interface FiltrosCardProps {
   formData: {
     fecha_desde: string;
     fecha_hasta: string;
     tipo_precio_id: string;
-    categoria_id: string;
+    costo: string;
+    q: string;
   };
-  tipos_precio: TipoPrecio[];
-  categorias: Categoria[];
+  tipos_precio: Array<{ id: number; nombre: string; color: string }>;
   ALL_VALUE: string;
   onUpdateField: (key: string, value: string) => void;
   onFilter: () => void;
@@ -31,119 +20,76 @@ interface FiltrosCardProps {
 }
 
 /**
- * Componente que muestra los filtros del reporte de ganancias
+ * Filtros del reporte de ganancias
  */
-export function FiltrosCard({
-  formData,
-  tipos_precio,
-  categorias,
-  ALL_VALUE,
-  onUpdateField,
-  onFilter,
-  onClear,
-}: FiltrosCardProps) {
+export function FiltrosCard({ formData, tipos_precio, ALL_VALUE, onUpdateField, onFilter, onClear }: FiltrosCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Filtros</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Fecha Desde */}
-          <div>
-            <Label>Fecha Desde</Label>
-            <Input
-              type="date"
-              value={formData.fecha_desde}
-              onChange={(e) => onUpdateField('fecha_desde', e.target.value)}
-            />
-          </div>
-
-          {/* Fecha Hasta */}
-          <div>
-            <Label>Fecha Hasta</Label>
-            <Input
-              type="date"
-              value={formData.fecha_hasta}
-              onChange={(e) => onUpdateField('fecha_hasta', e.target.value)}
-            />
-          </div>
-
-          {/* Tipo de Precio */}
-          <div>
-            <Label>Tipo de Precio</Label>
-            <Select
-              value={formData.tipo_precio_id}
-              onValueChange={(value) => onUpdateField('tipo_precio_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos los tipos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_VALUE}>Todos los tipos</SelectItem>
-                {tipos_precio.map(tipo => (
-                  <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                    {tipo.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Categoría */}
-          <div>
-            <Label>Categoría</Label>
-            <Select
-              value={formData.categoria_id}
-              onValueChange={(value) => onUpdateField('categoria_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas las categorías" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_VALUE}>Todas las categorías</SelectItem>
-                {categorias.map(categoria => (
-                  <SelectItem key={categoria.id} value={categoria.id.toString()}>
-                    {categoria.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Botones */}
-          <div className="flex items-end gap-2">
-            <Button onClick={onFilter} className="flex-1">
-              Filtrar
-            </Button>
-            <Button variant="outline" onClick={onClear} className="flex-1">
-              Limpiar
-            </Button>
-          </div>
+    <form
+      className="p-4 space-y-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onFilter();
+      }}
+    >
+      <CardTitle>Filtros</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className="md:col-span-2">
+          <Label>Producto</Label>
+          <Input
+            value={formData.q}
+            placeholder="ID, código de barras, SKU o nombre"
+            onChange={(e) => onUpdateField('q', e.target.value)}
+          />
         </div>
 
-        {/* Resumen de fechas seleccionadas */}
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            <strong>📅 Período de búsqueda:</strong>{' '}
-            {formData.fecha_desde
-              ? new Date(formData.fecha_desde).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })
-              : 'Sin fecha inicial'}
-            {' hasta '}
-            {formData.fecha_hasta
-              ? new Date(formData.fecha_hasta).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })
-              : 'Sin fecha final'}
-          </p>
+        <div>
+          <Label>Fecha Desde</Label>
+          <Input type="date" value={formData.fecha_desde} onChange={(e) => onUpdateField('fecha_desde', e.target.value)} />
         </div>
-      </CardContent>
-    </Card>
+
+        <div>
+          <Label>Fecha Hasta</Label>
+          <Input type="date" value={formData.fecha_hasta} onChange={(e) => onUpdateField('fecha_hasta', e.target.value)} />
+        </div>
+
+        <div>
+          <Label>Tipo de Precio</Label>
+          <Select value={formData.tipo_precio_id} onValueChange={(value) => onUpdateField('tipo_precio_id', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos los tipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUE}>Todos los tipos</SelectItem>
+              {tipos_precio.map((tipo) => (
+                <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                  {tipo.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Costo</Label>
+          <Select value={formData.costo} onValueChange={(value) => onUpdateField('costo', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUE}>Todos</SelectItem>
+              <SelectItem value="con_costo">Con costo registrado</SelectItem>
+              <SelectItem value="sin_costo">⚠ Sin costo registrado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="md:col-span-6 flex justify-end gap-2">
+          <Button type="submit">Filtrar</Button>
+          <Button type="button" variant="outline" onClick={onClear}>
+            Limpiar
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }

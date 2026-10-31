@@ -25,8 +25,8 @@ class ImpresionProductosVendidosController extends Controller
             $productosVendidos = session('productos_vendidos_impresion', []);
             $fecha = session('productos_vendidos_fecha', now()->toDateString());
 
-            // Obtener datos de la empresa
-            $empresa = Empresa::first();
+            // Empresa del usuario (Empresa::first() ponía la cabecera de otra empresa)
+            $empresa = auth()->user()?->empresa ?? Empresa::first();
 
             Log::info('📦 [ImpresionProductosVendidosController] Imprimiendo productos vendidos', [
                 'formato' => $formato,

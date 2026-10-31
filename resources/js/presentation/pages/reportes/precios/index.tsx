@@ -8,17 +8,26 @@ import { PreciosTable } from './components/PreciosTable';
 import { Button } from '@/presentation/components/ui/button';
 
 export default function ReportePreciosIndex({
-  precios,
+  cambios,
   estadisticas,
   filtros,
   tipos_precio,
-  categorias
+  usuarios,
+  motivos,
 }: PreciosPageProps) {
-  const { formData, handleFilter, clearFilters, updateField, getExportParams, ALL_VALUE } = usePreciosFilters(filtros);
+  const { formData, handleFilter, clearFilters, updateField, ALL_VALUE } = usePreciosFilters(filtros);
+
+  // Exporta/imprime lo que está aplicado en la URL (no lo que se escribió sin pulsar Filtrar)
+  const paramsAplicados = () =>
+    new URLSearchParams(Object.entries(filtros).filter(([, v]) => v !== undefined && v !== null && v !== '') as [string, string][]).toString();
 
   const handleExport = () => {
-    const params = getExportParams();
-    window.open('/reportes/precios/export?' + new URLSearchParams(params).toString());
+    window.location.href = '/reportes/precios/export?' + paramsAplicados();
+  };
+
+  // El PDF se abre en otra pestaña, listo para imprimir
+  const handlePdf = () => {
+    window.open('/reportes/precios/pdf?' + paramsAplicados(), '_blank', 'noopener');
   };
 
   return (
@@ -27,18 +36,22 @@ export default function ReportePreciosIndex({
       { title: 'Reportes', href: '#' },
       { title: 'Precios', href: '#' }
     ]}>
-      <Head title="Reporte de Precios" />
+      <Head title="Actualizaciones de Precios" />
 
       <div className="space-y-6 p-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Reporte de Precios</h1>
-            <p className="text-gray-600 dark:text-gray-400">Análisis detallado de precios por producto y tipo</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Actualizaciones de Precios</h1>
+            <p className="text-gray-600 dark:text-gray-400">Cada cambio de precio registrado: anterior → nuevo, motivo y usuario</p>
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handleExport} variant="outline">
+            <Button onClick={handlePdf} variant="outline" disabled={estadisticas.total_cambios === 0}>
+              🖨 Imprimir PDF
+            </Button>
+
+            <Button onClick={handleExport} variant="outline" disabled={estadisticas.total_cambios === 0}>
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -63,15 +76,16 @@ export default function ReportePreciosIndex({
         <PreciosFiltrosCard
           formData={formData}
           tipos_precio={tipos_precio}
-          categorias={categorias}
+          usuarios={usuarios}
+          motivos={motivos}
           ALL_VALUE={ALL_VALUE}
           onUpdateField={updateField}
           onFilter={handleFilter}
           onClear={clearFilters}
         />
 
-        {/* Tabla de Precios */}
-        <PreciosTable precios={precios} />
+        {/* Tabla de cambios */}
+        <PreciosTable cambios={cambios} />
       </div>
     </AppLayout>
   );

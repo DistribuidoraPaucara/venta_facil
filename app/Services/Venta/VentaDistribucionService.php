@@ -104,6 +104,17 @@ class VentaDistribucionService
             ];
         }
 
+        // 🔷 PASO 4b: Conversión de fraccionamiento (tiene producto destino, ej. paquete → "SKOL 269ml"):
+        // sirve para fraccionar stock, no para vender. Cada presentación es su propio producto (la unidad se vende
+        // con su propio ID), así que se descuenta 1 a 1 del producto vendido, sin convertir (antes 1 → 0.0667 paquetes).
+        if ($conversion->producto_destino_id) {
+            return [
+                'cantidad_consumir' => $cantidadSolicitada,
+                'conversion_aplicada' => false,
+                'factor' => null,
+            ];
+        }
+
         // 🔷 PASO 5: Convertir cantidad de unidad de venta a unidad de almacenamiento
         $cantidadAConsumir = $conversion->convertirABase($cantidadSolicitada);
 

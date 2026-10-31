@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
 export const destroy = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -16,7 +16,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
 destroy.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ destroy.url = (args: { id: string | number } | [id: string | number ] | string |
 
 /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
 destroy.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -54,7 +54,7 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
 
     /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
     const destroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -69,7 +69,7 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
 
             /**
 * @see \App\Http\Controllers\Api\StockApiController::destroy
- * @see app/Http/Controllers/Api/StockApiController.php:452
+ * @see app/Http/Controllers/Api/StockApiController.php:456
  * @route '/api/stock/productos/{id}'
  */
         destroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProductoController::destroy
- * @see app/Http/Controllers/ProductoController.php:1218
+ * @see app/Http/Controllers/ProductoController.php:1229
  * @route '/productos/{producto}/stock-limites/{limite}'
  */
 export const destroy = (args: { producto: number | { id: number }, limite: string | number } | [producto: number | { id: number }, limite: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -16,7 +16,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\ProductoController::destroy
- * @see app/Http/Controllers/ProductoController.php:1218
+ * @see app/Http/Controllers/ProductoController.php:1229
  * @route '/productos/{producto}/stock-limites/{limite}'
  */
 destroy.url = (args: { producto: number | { id: number }, limite: string | number } | [producto: number | { id: number }, limite: string | number ], options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ destroy.url = (args: { producto: number | { id: number }, limite: string | numbe
 
 /**
 * @see \App\Http\Controllers\ProductoController::destroy
- * @see app/Http/Controllers/ProductoController.php:1218
+ * @see app/Http/Controllers/ProductoController.php:1229
  * @route '/productos/{producto}/stock-limites/{limite}'
  */
 destroy.delete = (args: { producto: number | { id: number }, limite: string | number } | [producto: number | { id: number }, limite: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -54,7 +54,7 @@ destroy.delete = (args: { producto: number | { id: number }, limite: string | nu
 
     /**
 * @see \App\Http\Controllers\ProductoController::destroy
- * @see app/Http/Controllers/ProductoController.php:1218
+ * @see app/Http/Controllers/ProductoController.php:1229
  * @route '/productos/{producto}/stock-limites/{limite}'
  */
     const destroyForm = (args: { producto: number | { id: number }, limite: string | number } | [producto: number | { id: number }, limite: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -69,7 +69,7 @@ destroy.delete = (args: { producto: number | { id: number }, limite: string | nu
 
             /**
 * @see \App\Http\Controllers\ProductoController::destroy
- * @see app/Http/Controllers/ProductoController.php:1218
+ * @see app/Http/Controllers/ProductoController.php:1229
  * @route '/productos/{producto}/stock-limites/{limite}'
  */
         destroyForm.delete = (args: { producto: number | { id: number }, limite: string | number } | [producto: number | { id: number }, limite: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

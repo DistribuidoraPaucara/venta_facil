@@ -1291,9 +1291,11 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     // Rutas para reportes de precios
     Route::prefix('reportes')->name('reportes.')->group(function () {
         Route::get('precios', [\App\Http\Controllers\ReportePreciosController::class, 'index'])->middleware('permission:reportes.precios.index')->name('precios.index');
-        Route::get('precios/export', [\App\Http\Controllers\ReportePreciosController::class, 'export'])->name('precios.export');
-        Route::get('ganancias', [\App\Http\Controllers\ReportePreciosController::class, 'ganancias'])->name('ganancias.index');
-        Route::get('ganancias/export', [\App\Http\Controllers\ReportePreciosController::class, 'exportGanancias'])->name('ganancias.export');
+        Route::get('precios/export', [\App\Http\Controllers\ReportePreciosController::class, 'export'])->middleware('permission:reportes.precios.index')->name('precios.export');
+        Route::get('precios/pdf', [\App\Http\Controllers\ReportePreciosController::class, 'pdf'])->middleware('permission:reportes.precios.index')->name('precios.pdf');
+        Route::get('ganancias', [\App\Http\Controllers\ReportePreciosController::class, 'ganancias'])->middleware('permission:reportes.ganancias.index')->name('ganancias.index');
+        Route::get('ganancias/export', [\App\Http\Controllers\ReportePreciosController::class, 'exportGanancias'])->middleware('permission:reportes.ganancias.index')->name('ganancias.export');
+        Route::get('ganancias/pdf', [\App\Http\Controllers\ReportePreciosController::class, 'pdfGanancias'])->middleware('permission:reportes.ganancias.index')->name('ganancias.pdf');
 
         // Reportes de crédito
         Route::get('credito', [\App\Http\Controllers\ReporteCreditoController::class, 'index'])->middleware('permission:reportes.credito.index')->name('credito.index');

@@ -648,6 +648,9 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
         // API: Actualizar un precio específico
         Route::put('/{precio}', [PrecioController::class, 'update'])->name('api.precios.update');
 
+        // API: Quitar (desactivar) un precio específico
+        Route::delete('/{precio}', [PrecioController::class, 'destroy'])->name('api.precios.destroy');
+
         // API: Obtener historial completo de un precio
         Route::get('/{precio}/historial', [PrecioController::class, 'historial'])->name('api.precios.historial');
 
