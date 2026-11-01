@@ -136,6 +136,30 @@ class VentaDistribucionService
     }
 
     /**
+     * Almacenes de los que puede salir una línea, en orden de preferencia.
+     * La línea descuenta de su almacén (ej. REFRIGERADOR para precio FRIO); si no es el de la empresa y no alcanza,
+     * completa con el almacén de la empresa (la sala). Las líneas del almacén de la empresa no tocan otros almacenes.
+     */
+    private function almacenesDeLinea(array $item, int $almacenEmpresa): array
+    {
+        $almacenLinea = (int) ($item['almacen_id'] ?? 0) ?: $almacenEmpresa;
+
+        return $almacenLinea === $almacenEmpresa ? [$almacenEmpresa] : [$almacenLinea, $almacenEmpresa];
+    }
+
+    /**
+     * Primero las líneas que solo pueden usar el almacén de la empresa, luego las que tienen respaldo:
+     * así una línea FRIO que completa desde la sala no deja sin stock a una línea natural de la misma venta.
+     */
+    private function ordenarPorAlmacen(array $detalles, int $almacenEmpresa): array
+    {
+        $estrictas = array_filter($detalles, fn ($d) => count($this->almacenesDeLinea($d, $almacenEmpresa)) === 1);
+        $conRespaldo = array_filter($detalles, fn ($d) => count($this->almacenesDeLinea($d, $almacenEmpresa)) > 1);
+
+        return array_values(array_merge($estrictas, $conRespaldo));
+    }
+
+    /**
      * ✅ NUEVO (2026-03-27): Servicio centralizado para registrar movimientos
      */
     private MovimientoInventarioService $movimientoService;
@@ -185,7 +209,11 @@ class VentaDistribucionService
         $productosProcessados = [];
 
         return DB::transaction(function () use ($detalles, $numeroVenta, $ventaId, $almacenId, $permitirStockNegativo, $esFarmacia, &$movimientos, &$productosProcessados) {
-            foreach ($detalles as $item) {
+            foreach ($this->ordenarPorAlmacen($detalles, (int) $almacenId) as $item) {
+                // Almacén(es) de la línea: el suyo y, si es otro (ej. REFRIGERADOR), la sala como respaldo
+                $almacenesLinea = $this->almacenesDeLinea($item, (int) $almacenId);
+                $almacenLinea   = $almacenesLinea[0];
+
                 $productoId = $item['producto_id'] ?? $item['id'];
                 // ✅ CAMBIO (2026-02-16): Permitir decimales en lugar de truncar a entero
                 $cantidad = (float) ($item['cantidad'] ?? 0);
@@ -233,7 +261,7 @@ class VentaDistribucionService
                 // ✅ FIFO: ordenar por fecha_vencimiento ASC (vence primero), luego id (creado primero)
                 // ✅ NUEVO (2026-05-08): Para farmacias sin stock, permitir cantidad_disponible <= 0
                 $stockQuery = StockProducto::where('producto_id', $productoId)
-                    ->where('almacen_id', $almacenId);
+                    ->whereIn('almacen_id', $almacenesLinea);
 
                 // Solo filtrar por cantidad_disponible si NO es farmacia con venta sin stock
                 if (!$permitirSinStock) {
@@ -241,6 +269,7 @@ class VentaDistribucionService
                 }
 
                 $stocks = $stockQuery
+                    ->orderByRaw('CASE WHEN almacen_id = ? THEN 0 ELSE 1 END', [$almacenLinea]) // ← Su almacén antes que el respaldo
                     ->orderBy('fecha_vencimiento', 'asc')  // ← Vencimiento más cercano primero
                     ->orderBy('id', 'asc')                  // ← Creado primero
                     ->lockForUpdate()                       // ← Lock pesimista
@@ -285,7 +314,7 @@ class VentaDistribucionService
                     $stock = StockProducto::firstOrCreate(
                         [
                             'producto_id' => $productoId,
-                            'almacen_id' => $almacenId,
+                            'almacen_id' => $almacenLinea,
                             'lote' => null,
                         ],
                         [
@@ -304,7 +333,8 @@ class VentaDistribucionService
 
                     // Recargar stocks para incluir el nuevo registro
                     $stocks = StockProducto::where('producto_id', $productoId)
-                        ->where('almacen_id', $almacenId)
+                        ->whereIn('almacen_id', $almacenesLinea)
+                        ->orderByRaw('CASE WHEN almacen_id = ? THEN 0 ELSE 1 END', [$almacenLinea])
                         ->orderBy('fecha_vencimiento', 'asc')
                         ->orderBy('id', 'asc')
                         ->lockForUpdate()
@@ -699,8 +729,10 @@ class VentaDistribucionService
 
         $almacenId = auth()->user()?->empresa?->almacen_id ?? 1;
         $errores = [];
+        // Stock aún libre por producto|almacén: varias líneas del mismo producto comparten el mismo stock
+        $libre = [];
 
-        foreach ($detalles as $item) {
+        foreach ($this->ordenarPorAlmacen($detalles, (int) $almacenId) as $item) {
             $productoId = $item['producto_id'] ?? $item['id'];
             // ✅ CAMBIO (2026-02-16): Permitir decimales en lugar de truncar a entero
             $cantidad = (float) ($item['cantidad'] ?? 0);
@@ -765,11 +797,21 @@ class VentaDistribucionService
                 continue;  // Saltarse validación de stock para este producto
             }
 
-            $stockTotal = StockProducto::where('producto_id', $productoId)
-                ->where('almacen_id', $almacenId)
-                ->sum('cantidad_disponible');
+            // Repartir igual que consumirStock: primero el almacén de la línea, luego el respaldo (la sala)
+            $pendiente  = (float) $cantidadAValidar;
+            $stockTotal = 0.0;
+            foreach ($this->almacenesDeLinea($item, (int) $almacenId) as $almacenLinea) {
+                $clave = $productoId . '|' . $almacenLinea;
+                $libre[$clave] ??= (float) StockProducto::where('producto_id', $productoId)
+                    ->where('almacen_id', $almacenLinea)
+                    ->sum('cantidad_disponible');
+                $stockTotal    += $libre[$clave];
+                $tomar          = min($pendiente, max(0.0, $libre[$clave]));
+                $libre[$clave] -= $tomar;
+                $pendiente     -= $tomar;
+            }
 
-            if ($stockTotal < $cantidadAValidar) {
+            if ($pendiente > 0.0000001) {
                 $errores[] = [
                     'producto_id' => $productoId,
                     'cantidad_necesaria' => $cantidadAValidar,

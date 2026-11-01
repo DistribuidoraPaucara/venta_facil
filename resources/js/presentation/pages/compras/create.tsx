@@ -40,7 +40,7 @@ interface DetalleForm {
   // Precio de venta editado por tipo de precio (clave: tipo_precio_id): precio directo, o la ganancia en
   // % (precio = costo × (1 + %)) o en Bs (precio = costo + monto). Se guarda con la línea y el backend lo
   // aplica a precios_producto al APROBAR la compra, sobre el precio unitario (nuevo costo)
-  precios_nuevos?: Record<string, { precio_id: number; precio?: number; porcentaje?: number; monto?: number }>;
+  precios_nuevos?: Record<string, { precio_id: number | null; precio?: number; porcentaje?: number; monto?: number }>; // precio_id null = precio nuevo
   producto?: { // ✅ NUEVO: Información completa del producto
     id: number | string;
     nombre: string;
@@ -120,7 +120,7 @@ const preciosVentaDesdeBackend = (preciosVenta: any[] | null | undefined): Detal
     preciosVenta.map((p) => [
       String(p.tipo_precio_id),
       {
-        precio_id: Number(p.precio_id),
+        precio_id: p.precio_id ? Number(p.precio_id) : null,
         ...(p.precio != null ? { precio: Number(p.precio) } : {}),
         ...(p.porcentaje != null ? { porcentaje: Number(p.porcentaje) } : {}),
         ...(p.monto != null ? { monto: Number(p.monto) } : {}),
@@ -298,6 +298,7 @@ export default function CompraForm() {
         // Precios registrados para las columnas de precios de venta
         precio_costo: Number((d.producto as any).precio_costo) || 0,
         precios: (d.producto as any).precios || [],
+        proveedores_producto: (d.producto as any).proveedores_producto || [], // Código de catálogo y último precio por proveedor
       } as any : undefined,
     })) ?? [],
   });
@@ -1400,6 +1401,7 @@ export default function CompraForm() {
           <ProductosTable
             tipo="compra" // ✅ NUEVO: Indicar que es una compra (no filtrar por stock)
             almacen_id={Number(data.almacen_id) || undefined} // ✅ CRÍTICO: Pasar almacén seleccionado para traer stock correcto
+            proveedor_id={Number(data.proveedor_id) || null} // Para mostrar el código de catálogo de ese proveedor
             productos={props.productos.map(p => ({
               id: p.id,
               nombre: p.nombre,
@@ -1461,6 +1463,7 @@ export default function CompraForm() {
                   categoria: (producto as any).categoria || null, // Para el tooltip del nombre en la tabla
                   unidad: (producto as any).unidad || null,
                   precios: (producto as any).precios || [],
+                  proveedores_producto: producto.proveedores_producto || [], // Código de catálogo y último precio por proveedor
                   // ✅ NUEVO: Agregar tipo_precio_id_recomendado para búsqueda correcta en useProductSearch
                   tipo_precio_id_recomendado: (producto as any).tipo_precio_id_recomendado || undefined,
                   tipo_precio_nombre_recomendado: (producto as any).tipo_precio_nombre_recomendado || undefined

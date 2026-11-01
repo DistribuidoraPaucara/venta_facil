@@ -38,6 +38,7 @@ interface Producto {
   cantidad_sugerida?: number;
   sector?: Sector;
   codigos_barra?: CodigoBarra[];
+  proveedores_producto?: Array<{ id: number; nombre: string }>; // todos sus proveedores, el principal primero
 }
 
 interface Props {
@@ -75,6 +76,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'criticos' | 'alerta' | 'seleccionados'>('todos');
   const [filtroSector, setFiltroSector] = useState('');
+  const [filtroProveedor, setFiltroProveedor] = useState(''); // '' = todos, 'sin' = sin proveedor, o id
 
   // Al llegar los productos: cargar la cantidad sugerida de TODOS (así "Seleccionar todos"
   // muestra lo mismo que se envía) y auto-seleccionar los que tienen sugerencia > 0
@@ -211,10 +213,22 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
     new Set(productosStockBajo.map((p) => p.sector?.nombre).filter((s): s is string => !!s))
   ).sort((a, b) => a.localeCompare(b));
 
-  // Búsqueda y sector se aplican primero, para que los contadores de las pestañas los reflejen
+  // Proveedores de los productos de la lista, con cuántos productos tiene cada uno
+  const opcionesProveedor = Array.from(
+    productosStockBajo
+      .flatMap((p) => p.proveedores_producto ?? [])
+      .reduce((m, pr) => m.set(pr.id, { id: pr.id, nombre: pr.nombre, cantidad: (m.get(pr.id)?.cantidad ?? 0) + 1 }), new Map<number, { id: number; nombre: string; cantidad: number }>())
+      .values(),
+  ).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const sinProveedor = productosStockBajo.filter((p) => !p.proveedores_producto?.length).length;
+
+  // Búsqueda, sector y proveedor se aplican primero, para que los contadores de las pestañas los reflejen
   const termino = normalizar(busqueda.trim());
   const productosBuscados = productosStockBajo.filter((p) => {
     if (filtroSector && p.sector?.nombre !== filtroSector) return false;
+    // Proveedor: cualquiera de los suyos, no solo el principal
+    if (filtroProveedor === 'sin' && p.proveedores_producto?.length) return false;
+    if (filtroProveedor && filtroProveedor !== 'sin' && !p.proveedores_producto?.some((pr) => String(pr.id) === filtroProveedor)) return false;
     if (!termino) return true;
     const codigos = (p.codigos_barra ?? []).map((c) => c.codigo).join(' ');
     return normalizar(`${p.nombre} ${p.sku ?? ''} ${p.id} ${codigos}`).includes(termino);
@@ -236,7 +250,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
     })
     .sort((a, b) => nivelStock(a) - nivelStock(b));
 
-  const hayFiltros = termino !== '' || filtroSector !== '' || filtroEstado !== 'todos';
+  const hayFiltros = termino !== '' || filtroSector !== '' || filtroProveedor !== '' || filtroEstado !== 'todos';
   const seleccionadosOcultos = productosElegidos.filter((p) => !productosFiltrados.some((f) => f.id === p.id)).length;
   const todosVisiblesSeleccionados =
     productosFiltrados.length > 0 && productosFiltrados.every((p) => productosSeleccionados.has(p.id));
@@ -244,6 +258,7 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
   const limpiarFiltros = () => {
     setBusqueda('');
     setFiltroSector('');
+    setFiltroProveedor('');
     setFiltroEstado('todos');
   };
 
@@ -426,6 +441,20 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
                       </option>
                     ))}
                   </select>
+                  <select
+                    value={filtroProveedor}
+                    onChange={(e) => setFiltroProveedor(e.target.value)}
+                    title="Productos que se le compran a ese proveedor (no solo los que lo tienen como principal)"
+                    className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm md:w-56"
+                  >
+                    <option value="">Todos los proveedores</option>
+                    {opcionesProveedor.map((pr) => (
+                      <option key={pr.id} value={String(pr.id)}>
+                        {pr.nombre} ({pr.cantidad})
+                      </option>
+                    ))}
+                    {sinProveedor > 0 && <option value="sin">Sin proveedor ({sinProveedor})</option>}
+                  </select>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -549,7 +578,14 @@ function ReposicionesCreate({ almacenes, productosStockBajo: productosStockBajoP
                               <ExternalLink size={12} />
                             </a>
                           </td>
-                          <td className="py-3 px-4">{producto.nombre}</td>
+                          <td className="py-3 px-4">
+                            {producto.nombre}
+                            {!!producto.proveedores_producto?.length && (
+                              <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400" title="Proveedores del producto">
+                                🚚 {producto.proveedores_producto.map((pr) => pr.nombre).join(', ')}
+                              </div>
+                            )}
+                          </td>
                           <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                             <div>{producto.sku}</div>
                             {(() => {

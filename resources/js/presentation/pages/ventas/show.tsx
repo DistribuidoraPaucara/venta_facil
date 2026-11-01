@@ -493,6 +493,13 @@ export default function VentaShow() {
                                                             {esCombo && <span className="mr-2">📦</span>}
                                                             {detalle.producto.nombre}
                                                         </div>
+                                                        {/* Almacén del que salió la línea y precio usado (ej. FRIO desde REFRIGERADOR) */}
+                                                        {(detalle as any).almacen?.nombre && (
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                                {(detalle as any).tipo_precio_nombre ? `${(detalle as any).tipo_precio_nombre} · ` : ''}
+                                                                desde {(detalle as any).almacen.nombre}
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                                                         {(detalle.producto as any).sku || '-'}

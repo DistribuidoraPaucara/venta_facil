@@ -45,6 +45,15 @@ const appName = getAppName();
 // Configurar axios con interceptadores para autenticación
 configureAxios();
 
+// Evitar que la rueda del mouse cambie el valor de los inputs numéricos (montos, cantidades):
+// al girar la rueda sobre un input enfocado se le quita el foco y la página hace scroll normal.
+document.addEventListener('wheel', (e) => {
+    const el = document.activeElement;
+    if (el instanceof HTMLInputElement && el.type === 'number' && e.target === el) {
+        el.blur();
+    }
+}, { passive: true });
+
 // ✅ NUEVO: Obtener token CSRF de Sanctum antes de hacer peticiones
 // Esto configura la cookie XSRF-TOKEN que axios usa en todas las peticiones
 const initializeCsrfToken = async () => {

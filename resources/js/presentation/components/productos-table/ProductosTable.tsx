@@ -96,6 +96,7 @@ export default function ProductosTable({
     onUpdateDetailMultiple,
     onRemoveDetail,
     almacen_id,
+    proveedor_id = null,
     cliente_id,
     isClienteGeneral = false,
     manuallySelectedTipoPrecio = {},
@@ -111,6 +112,8 @@ export default function ProductosTable({
     es_farmacia = false,
     permitirProductosSinStock = false, // ✅ NUEVO (2026-05-26): Permitir productos sin stock
     proformaConvertida = false, // ✅ NUEVO (2026-05-29): Ocultar disponibilidad si está convertida
+    almacenesVenta = [],
+    onDuplicarLinea,
 }: ProductosTableProps) {
     // ✅ DEBUG (2026-05-26): Verificar que permitirProductosSinStock llegue correctamente
     // console.log('📦 [ProductosTable] permitirProductosSinStock recibido:', permitirProductosSinStock);
@@ -118,8 +121,8 @@ export default function ProductosTable({
     // ✅ Estados para edición de campos
     const [editingField, setEditingField] = useState<{ index: number; field: string; value: string } | null>(null);
 
-    // ✅ Estado para tipos de precio seleccionados
-    const [selectedTipoPrecio, setSelectedTipoPrecio] = useState<Record<number, string | number>>({});
+    // ✅ Estado para tipos de precio seleccionados (clave: linea_id si la línea lo tiene, si no producto_id)
+    const [selectedTipoPrecio, setSelectedTipoPrecio] = useState<Record<string, string | number>>({});
 
     // ✅ Estado para combos expandidos
     const [expandedCombos, setExpandedCombos] = useState<Record<number, boolean>>({});
@@ -190,7 +193,8 @@ export default function ProductosTable({
 
         // ✅ Inicializar select de tipo de precio (PRIORIDAD del backend)
         // ✅ REFACTORIZADO (2026-07-03): Usar producto_id como clave en lugar de index
-        if (tipo === 'venta' && !selectedTipoPrecio[ultimoDetalle.producto_id]) {
+        const claveUltimo = ultimoDetalle.linea_id ?? ultimoDetalle.producto_id;
+        if (tipo === 'venta' && !selectedTipoPrecio[claveUltimo]) {
             // 1️⃣ PRIORIDAD: Si el detalle YA viene con tipo_precio_id del backend, usarlo
             if (ultimoDetalle.tipo_precio_id) {
                 // ✅ FIJO (2026-09-09): Si es fraccionado y la unidad_venta_id es diferente de unidad_medida_id,
@@ -213,7 +217,7 @@ export default function ProductosTable({
                 console.log(`✅ [ProductosTable] Inicializando selectedTipoPrecio con backend: ${valorTipoPrecio}`);
                 setSelectedTipoPrecio((prev) => ({
                     ...prev,
-                    [ultimoDetalle.producto_id]: valorTipoPrecio,
+                    [claveUltimo]: valorTipoPrecio,
                 }));
             }
             // 2️⃣ Si no, usar el recomendado
@@ -221,7 +225,7 @@ export default function ProductosTable({
                 console.log(`ℹ️ [ProductosTable] Inicializando selectedTipoPrecio con recomendado: ${ultimoDetalle.tipo_precio_id_recomendado}`);
                 setSelectedTipoPrecio((prev) => ({
                     ...prev,
-                    [ultimoDetalle.producto_id]: String(ultimoDetalle.tipo_precio_id_recomendado),
+                    [claveUltimo]: String(ultimoDetalle.tipo_precio_id_recomendado),
                 }));
                 // ✅ IMPORTANTE: Sincronizar el detalle con el valor del selector
                 if (onUpdateDetail) {
@@ -243,7 +247,7 @@ export default function ProductosTable({
                     console.log(`ℹ️ [ProductosTable] Inicializando selectedTipoPrecio con preciosVenta: ${precioVenta.tipo_precio_id}`);
                     setSelectedTipoPrecio((prev) => ({
                         ...prev,
-                        [ultimoDetalle.producto_id]: String(precioVenta.tipo_precio_id),
+                        [claveUltimo]: String(precioVenta.tipo_precio_id),
                     }));
                 }
             }
@@ -434,14 +438,20 @@ export default function ProductosTable({
     };
 
     // ✅ Handler para actualizar detalle (con lógica de combos)
-    // Compras: columnas de precios de venta = todos los tipos de precio que tengan los productos de la compra
-    const tiposPrecioVenta: Array<{ tipo_precio_id: number; nombre: string }> =
+    // Compras: columnas de precios de venta = todos los tipos de precio que tengan los productos de la compra, en cualquier
+    // unidad (un producto sin ese precio en la unidad de compra lo puede cargar ahí y se crea al aprobar)
+    const tiposPrecioVenta: Array<{ tipo_precio_id: number; nombre: string; porcentaje_ganancia?: number }> =
         tipo === 'compra'
             ? Object.values(
-                  detalles.reduce<Record<number, { tipo_precio_id: number; nombre: string }>>((acc, detalle) => {
-                      const productoInfo = detalle.producto || productos.find((p) => p.id === detalle.producto_id);
-                      for (const p of Object.values(obtenerPreciosVentaPorTipo(detalle, productoInfo))) {
-                          acc[p.tipo_precio_id] ??= { tipo_precio_id: p.tipo_precio_id, nombre: p.nombre };
+                  detalles.reduce<Record<number, { tipo_precio_id: number; nombre: string; porcentaje_ganancia?: number }>>((acc, detalle) => {
+                      const productoInfo: any = detalle.producto || productos.find((p) => p.id === detalle.producto_id);
+                      for (const p of (productoInfo?.precios || []) as any[]) {
+                          if (!p.tipo_precio_id || esPrecioCosto(p)) continue;
+                          acc[p.tipo_precio_id] ??= {
+                              tipo_precio_id: p.tipo_precio_id,
+                              nombre: p.tipo_precio?.nombre || p.nombre || 'Precio',
+                              porcentaje_ganancia: Number(p.tipo_precio?.porcentaje_ganancia) || undefined,
+                          };
                       }
                       return acc;
                   }, {}),
@@ -553,6 +563,7 @@ export default function ProductosTable({
             <ProductSearchBar
                 tipo={tipo}
                 almacen_id={almacen_id}
+                proveedor_id={proveedor_id}
                 cliente_id={cliente_id}
                 isClienteGeneral={isClienteGeneral}
                 readOnly={readOnly}
@@ -683,7 +694,7 @@ export default function ProductosTable({
 
                                 return (
                                     <ProductoTableRow
-                                        key={`${detalle.producto_id}-${index}`}
+                                        key={detalle.linea_id ?? `${detalle.producto_id}-${index}`}
                                         detalle={detalle}
                                         index={index}
                                         tipo={tipo}
@@ -693,6 +704,9 @@ export default function ProductosTable({
                                         manuallySelectedTipoPrecio={manuallySelectedTipoPrecio}
                                         selectedTipoPrecio={selectedTipoPrecio}
                                         setSelectedTipoPrecio={setSelectedTipoPrecio}
+                                        almacenesVenta={almacenesVenta}
+                                        proveedorId={proveedor_id}
+                                        onDuplicarLinea={onDuplicarLinea}
                                         expandedCombos={expandedCombos}
                                         setExpandedCombos={setExpandedCombos}
                                         tieneDiferencia={tieneDiferencia}

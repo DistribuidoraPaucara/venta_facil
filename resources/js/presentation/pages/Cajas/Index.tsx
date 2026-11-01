@@ -25,7 +25,7 @@ import { OutputSelectionModal, type TipoDocumento } from '@/presentation/compone
 import { CajaEstadoCard, MovimientosDelDiaTable, HistorialAperturasTable, DesglosePageosCard } from './components';
 import { ResumenCajaCard } from './components/resumen-caja-card';
 import { useCajas } from '@/application/hooks/use-cajas';
-import { toNumber } from '@/lib/cajas.utils';
+import { formatCurrency } from '@/lib/cajas.utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/presentation/components/ui/tabs';
 import {
     AlertDialog,
@@ -35,38 +35,23 @@ import {
     AlertDialogDescription,
     AlertDialogTitle,
 } from '@/presentation/components/ui/alert-dialog';
-import type { CajasIndexProps } from '@/domain/entities/cajas';
+import type { AperturaHistorico, CajasIndexProps } from '@/domain/entities/cajas';
 
 
+
+// Respuesta del modal de movimientos: uno o varios (pago mixto efectivo + transferencia)
+interface MovimientoRegistrado {
+    ids?: number[];
+    movimientos_count?: number;
+}
+
+const CLAVE_PESTANA = 'cajas.pestana';
+const REFRESCO_MS = 2 * 60 * 1000; // Recarga automática de los totales de la caja
+
+// Monto en bolivianos, igual que el resto de la caja (decimales solo si los tiene)
+const bs = (monto: unknown) => formatCurrency(Number(monto || 0));
 
 export default function Index(props: CajasIndexProps) {
-    // ✅ DEBUG: Ver todos los props que llegan del backend
-    console.log('🔍 [Cajas/Index] Props recibidos del backend:', props);
-
-    // ✅ NUEVO: Mostrar sumatorias detalladas en consola
-    useEffect(() => {
-        const datosResumen = props.datosResumen;
-        if (datosResumen) {
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('💰 SUMATORIAS - CAJA DEL DÍA');
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('📊 Monto de Apertura:', `Bs. ${datosResumen.montoApertura?.toFixed(2) || '0.00'}`);
-            console.log('📈 Total Ventas:', `Bs. ${datosResumen.totalVentas?.toFixed(2) || '0.00'}`);
-            console.log('❌ Ventas Anuladas:', `Bs. ${datosResumen.ventasAnuladas?.toFixed(2) || '0.00'}`);
-            console.log('🔄 Devoluciones:', `Bs. ${datosResumen.devoluciones?.toFixed(2) || '0.00'}`);
-            console.log('💳 Depósitos:', `Bs. ${datosResumen.depositos?.toFixed(2) || '0.00'}`);
-            console.log('💸 Gastos:', `Bs. ${datosResumen.sumatorialGastos?.toFixed(2) || '0.00'}`);
-            console.log('💼 Pagos de Sueldo:', `Bs. ${datosResumen.sumatorialPagosSueldo?.toFixed(2) || '0.00'}`);
-            console.log('🛒 Compras:', `Bs. ${datosResumen.sumatorialCompras?.toFixed(2) || '0.00'}`);
-            console.log('───────────────────────────────────────────────────────────');
-            console.log('✅ Total de Egresos:', `Bs. ${datosResumen.totalEgresos?.toFixed(2) || '0.00'}`);
-            console.log('💵 Efectivo Esperado:', `Bs. ${datosResumen.efectivoEsperado?.toFixed(2) || '0.00'}`);
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('📋 Datos Referenciales:', datosResumen.datos_ref);
-            console.log('═══════════════════════════════════════════════════════════');
-        }
-    }, [props.datosResumen]);
-
     const {
         showAperturaModal,
         showCierreModal,
@@ -83,17 +68,49 @@ export default function Index(props: CajasIndexProps) {
     const [showConsolidateDialog, setShowConsolidateDialog] = useState(false);
     const [outputModal, setOutputModal] = useState<{ isOpen: boolean; printType?: 'cierre' | 'movimientos'; movimientoId?: number }>({ isOpen: false });
 
+    // Pestaña activa recordada en este navegador
+    const [pestana, setPestana] = useState<string>(() => {
+        try {
+            return localStorage.getItem(CLAVE_PESTANA) || 'movimientos';
+        } catch {
+            return 'movimientos';
+        }
+    });
+    const cambiarPestana = (valor: string) => {
+        setPestana(valor);
+        try {
+            localStorage.setItem(CLAVE_PESTANA, valor);
+        } catch {
+            // Sin almacenamiento: no se recuerda
+        }
+    };
+
+    // Totales al día: si se vende en otra pestaña o caja, aquí quedaban viejos hasta recargar la página.
+    // Se recargan solo los datos de la caja (no catálogos ni historial) con el botón o cada REFRESCO_MS.
+    const [actualizando, setActualizando] = useState(false);
+    const [ultimaActualizacion, setUltimaActualizacion] = useState(() => new Date());
+    const hayModalAbierto = showAperturaModal || showCierreModal || showMovimientoModal || showConsolidateDialog || outputModal.isOpen;
+    const actualizarDatos = () => {
+        if (actualizando) return;
+        setActualizando(true);
+        router.reload({
+            except: ['tiposOperacion', 'tiposOperacionClasificados', 'tiposPago', 'cajas', 'historicoAperturas', 'historialFiltro'],
+            onSuccess: () => setUltimaActualizacion(new Date()),
+            onFinish: () => setActualizando(false),
+        });
+    };
+    useEffect(() => {
+        const id = window.setInterval(() => {
+            // No recargar con un modal abierto (se perdería lo que se está escribiendo) ni con la pestaña oculta
+            if (!hayModalAbierto && document.visibilityState === 'visible') actualizarDatos();
+        }, REFRESCO_MS);
+        return () => window.clearInterval(id);
+    }, [hayModalAbierto, actualizando]);
+
     const { movimientosHoy, totalMovimientos, esVistaAdmin = false, usuarioDestino, historicoAperturas, ventasCreditoTotales } = props;
 
     // ✅ NUEVO: Callback cuando se registra exitosamente un movimiento (puede ser 1 o múltiples)
-    const handleMovimientoRegistrado = (movimiento: any) => {
-        console.log('✅ [Cajas/Index] Movimiento(s) registrado(s):', {
-            movimientosIds: movimiento?.ids,
-            movimientosCount: movimiento?.movimientos_count,
-            tipo: movimiento?.tipo_operacion?.nombre || movimiento?.tipo_operacion?.codigo,
-            montoTotal: movimiento?.monto_total,
-        });
-
+    const handleMovimientoRegistrado = (movimiento: MovimientoRegistrado | null | undefined) => {
         // ✅ Obtener array de IDs (nuevo formato multi-pago)
         const movimientosIds = movimiento?.ids || [];
 
@@ -104,22 +121,21 @@ export default function Index(props: CajasIndexProps) {
         }
 
         // ✅ Usar el primer ID para impresión (todos son del mismo tipo de operación)
-        const primerMovimientoId = movimientosIds[0];
+        const primerMovimientoId = Number(movimientosIds[0]);
 
-        // ✅ VALIDAR que el ID es válido (número razonable)
-        if (primerMovimientoId > 1000000) {
-            console.error('❌ [Cajas/Index] ID inválido (demasiado grande):', primerMovimientoId);
+        // Solo descartar IDs que no sean un número entero positivo (antes también rechazaba los mayores a 1.000.000)
+        if (!Number.isInteger(primerMovimientoId) || primerMovimientoId <= 0) {
+            console.error('❌ [Cajas/Index] ID de movimiento inválido:', movimientosIds[0]);
             toast.error('Error: ID de movimiento inválido');
             return;
         }
 
         // ✅ Mostrar notificación según cantidad de movimientos
-        const mensaje = movimiento?.movimientos_count > 1
-            ? `${movimiento.movimientos_count} movimientos registrados (Efectivo + Transferencia)`
+        const cantidad = movimiento?.movimientos_count ?? 1;
+        const mensaje = cantidad > 1
+            ? `${cantidad} movimientos registrados (Efectivo + Transferencia)`
             : 'Movimiento registrado';
         toast.success(mensaje);
-
-        console.log('🖨️ [Cajas/Index] Abriendo OutputSelectionModal para movimiento:', primerMovimientoId);
 
         // ✅ NUEVO: Abrir OutputSelectionModal para que el usuario seleccione formato
         setOutputModal({
@@ -129,21 +145,24 @@ export default function Index(props: CajasIndexProps) {
         });
     };
 
-    // ✅ Usar datos del servidor desde props
-    const efectivoEsperadoActual = props.datosResumen?.efectivoEsperado || props.efectivoEsperado;
-
     // ✅ Título dinámico según contexto
     const titulo = esVistaAdmin ? `Caja de ${usuarioDestino?.name}` : 'Gestión de Cajas';
 
-    // ✅ NUEVO: Contar cajas CERRADAS con estado PENDIENTE (listos para consolidar)
-    const cierresPendientes = historicoAperturas?.filter((a: any) =>
-        a.estado === 'Cerrada' && a.estado_cierre === 'PENDIENTE'
-    ).length || 0;
+    // Cajas CERRADAS con estado PENDIENTE (listas para consolidar) y su cantidad
+    const cierresPendientesDetalle: AperturaHistorico[] = (historicoAperturas ?? []).filter(
+        (a) => a.estado === 'Cerrada' && a.estado_cierre === 'PENDIENTE',
+    );
+    const cierresPendientes = cierresPendientesDetalle.length;
 
-    // ✅ NUEVO: Obtener detalles de cajas CERRADAS PENDIENTE para mostrar en modal
-    const cierresPendientesDetalle = historicoAperturas?.filter((a: any) =>
-        a.estado === 'Cerrada' && a.estado_cierre === 'PENDIENTE'
-    ) || [];
+    // Totales de los cierres pendientes (diálogo de consolidación), calculados una sola vez
+    const totalesPendientes = cierresPendientesDetalle.reduce(
+        (t, c) => ({
+            real: t.real + Number(c.monto_real || 0),
+            esperado: t.esperado + Number(c.monto_esperado || 0),
+            diferencia: t.diferencia + Number(c.diferencia || 0),
+        }),
+        { real: 0, esperado: 0, diferencia: 0 },
+    );
 
     // ✅ NUEVO: Función para consolidar la caja del usuario
     const handleConsolidarCaja = () => {
@@ -171,16 +190,15 @@ export default function Index(props: CajasIndexProps) {
                     setIsConsolidating(false);
 
                     // Obtener el mensaje desde flash (Inertia lo proporciona en page.props.flash)
-                    const successMessage = (page?.props?.flash as any)?.success ||
+                    const successMessage = (page?.props?.flash as { success?: string } | undefined)?.success ||
                         `✅ Cajas consolidadas exitosamente\n${cierresPendientes} cierre(s) consolidado(s)`;
 
-                    console.log('Éxito:', successMessage);
                     toast.success(successMessage, {
                         duration: 5000,
                         icon: '✅',
                     });
                 },
-                onError: (errors: any) => {
+                onError: (errors: Record<string, string>) => {
                     toast.dismiss(loadingToast);
                     setIsConsolidating(false);
 
@@ -207,7 +225,7 @@ export default function Index(props: CajasIndexProps) {
 
     return (
         <AppLayout breadcrumbs={[
-                { title: 'Mi caja', href: '/#' },
+                { title: esVistaAdmin ? `Caja de ${usuarioDestino?.name ?? ''}` : 'Mi caja', href: '/cajas' },
             ]}>
             <Head title={titulo} />
 
@@ -227,7 +245,6 @@ export default function Index(props: CajasIndexProps) {
                     <CajaEstadoCard
                         cajaAbiertaHoy={cajaAbiertaHoy}
                         totalMovimientos={totalMovimientos}
-                        efectivoEsperado={efectivoEsperadoActual}
                         datosActualizados={props.datosResumen}
                         cargandoDatos={false}
                         ventasCreditoTotales={ventasCreditoTotales}
@@ -235,6 +252,7 @@ export default function Index(props: CajasIndexProps) {
                         desgloseEgresos={props.desgloseEgresos}   // ✅ NUEVO (2026-06-20)
                         ventasPorTipoPago={props.ventasPorTipoPago} // ✅ NUEVO: Resumen de ventas por tipo de pago
                         desgloseMovimientos={props.desgloseMovimientos} // ✅ NUEVO (2026-07-24): Desglose por tipo de pago
+                        detallesPagoDesglosado={props.detallesPagoDesglosado}
                         onAbrirClick={handleAbrirModal}
                         onCerrarClick={handleAbrirCierreModal}
                         onGastoClick={() => setShowMovimientoModal(true)}
@@ -246,7 +264,7 @@ export default function Index(props: CajasIndexProps) {
                     />
 
                     {/* Tabs: Movimientos del Día vs Historial de Cajas */}
-                    <Tabs defaultValue="movimientos" className="space-y-2">
+                    <Tabs value={pestana} onValueChange={cambiarPestana} className="space-y-2">
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                             <div className="px-2 pb-0 flex justify-between items-center">
                                 <TabsList className="bg-transparent border-gray-200 dark:border-gray-700">
@@ -259,7 +277,19 @@ export default function Index(props: CajasIndexProps) {
                                 </TabsList>
 
                                 {/* ✅ NUEVO: Botones de impresión */}
-                                <div className="flex gap-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="hidden text-xs text-gray-500 sm:inline dark:text-gray-400" title="Se actualiza sola cada 2 minutos">
+                                        Actualizado {ultimaActualizacion.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    <button
+                                        onClick={actualizarDatos}
+                                        disabled={actualizando}
+                                        className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition disabled:opacity-60 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                                        title="Traer los totales y movimientos más recientes"
+                                    >
+                                        {actualizando ? '⏳ Actualizando…' : '🔄 Actualizar'}
+                                    </button>
+
                                     {/* Impresión de movimientos */}
                                     {cajaAbiertaHoy && movimientosHoy && movimientosHoy.length > 0 && (
                                         <button
@@ -288,7 +318,6 @@ export default function Index(props: CajasIndexProps) {
                             <MovimientosDelDiaTable
                                 cajaAbiertaHoy={cajaAbiertaHoy}
                                 movimientosHoy={movimientosHoy}
-                                efectivoEsperado={efectivoEsperadoActual}
                                 ventasPorTipoPago={props.ventasPorTipoPago}
                                 ventasPorEstado={props.ventasPorEstado}
                                 pagosPorTipoPago={props.pagosPorTipoPago}
@@ -308,7 +337,10 @@ export default function Index(props: CajasIndexProps) {
                         {/* Tab: Historial de Aperturas */}
                         <TabsContent value="historial">
                             {props.historicoAperturas && (
-                                <HistorialAperturasTable historicoAperturas={props.historicoAperturas} />
+                                <HistorialAperturasTable
+                                    historicoAperturas={props.historicoAperturas}
+                                    historialFiltro={props.historialFiltro}
+                                />
                             )}
                             {!props.historicoAperturas && (
                                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
@@ -332,7 +364,6 @@ export default function Index(props: CajasIndexProps) {
                 show={showCierreModal}
                 onClose={handleCerrarModalCierre}
                 cajaAbierta={cajaAbiertaHoy}
-                montoEsperado={cajaAbiertaHoy ? toNumber(cajaAbiertaHoy.monto_apertura) + toNumber(totalMovimientos) : 0}
             />
 
             <RegistrarMovimientoModal
@@ -395,9 +426,9 @@ export default function Index(props: CajasIndexProps) {
                                     📋 Detalles de cierres pendientes:
                                 </p>
                                 <div className="space-y-2 max-h-52 overflow-y-auto">
-                                    {cierresPendientesDetalle.map((cierre: any, idx: number) => (
+                                    {cierresPendientesDetalle.map((cierre) => (
                                         <div
-                                            key={idx}
+                                            key={cierre.id}
                                             className="bg-gray-50 dark:bg-gray-700 rounded p-3 text-xs space-y-2 border-l-4 border-yellow-400"
                                         >
                                             {/* Encabezado: Caja y ID */}
@@ -439,35 +470,35 @@ export default function Index(props: CajasIndexProps) {
                                             <div className="grid grid-cols-3 gap-2">
                                                 <div className="bg-white dark:bg-gray-600 rounded p-1">
                                                     <p className="text-gray-600 dark:text-gray-300">💰 Real</p>
-                                                    <p className="font-semibold">${Number(cierre.monto_real || 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                    <p className="font-semibold">{bs(cierre.monto_real)}</p>
                                                 </div>
                                                 <div className="bg-white dark:bg-gray-600 rounded p-1">
                                                     <p className="text-gray-600 dark:text-gray-300">📊 Esperado</p>
-                                                    <p className="font-semibold">${Number(cierre.monto_esperado || 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                    <p className="font-semibold">{bs(cierre.monto_esperado)}</p>
                                                 </div>
-                                                <div className={`rounded p-1 ${cierre.diferencia > 0
+                                                <div className={`rounded p-1 ${Number(cierre.diferencia) > 0
                                                     ? 'bg-green-100 dark:bg-green-900'
-                                                    : cierre.diferencia < 0
+                                                    : Number(cierre.diferencia) < 0
                                                         ? 'bg-red-100 dark:bg-red-900'
                                                         : 'bg-blue-100 dark:bg-blue-900'
                                                     }`}>
                                                     <p className="text-gray-600 dark:text-gray-300">Δ Diferencia</p>
-                                                    <p className={`font-semibold ${cierre.diferencia > 0
+                                                    <p className={`font-semibold ${Number(cierre.diferencia) > 0
                                                         ? 'text-green-700 dark:text-green-300'
-                                                        : cierre.diferencia < 0
+                                                        : Number(cierre.diferencia) < 0
                                                             ? 'text-red-700 dark:text-red-300'
                                                             : 'text-blue-700 dark:text-blue-300'
                                                         }`}>
-                                                        {cierre.diferencia > 0 ? '+' : ''}{Number(cierre.diferencia || 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        {Number(cierre.diferencia) > 0 ? '+' : ''}{bs(cierre.diferencia)}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             {/* Observaciones si existen */}
-                                            {cierre.observaciones && (
+                                            {cierre.observaciones_cierre && (
                                                 <div className="bg-white dark:bg-gray-600 rounded p-2 border-l-2 border-blue-400">
                                                     <p className="text-gray-600 dark:text-gray-300 font-medium">📝 Notas:</p>
-                                                    <p className="text-gray-700 dark:text-gray-200">{cierre.observaciones}</p>
+                                                    <p className="text-gray-700 dark:text-gray-200">{cierre.observaciones_cierre}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -489,25 +520,21 @@ export default function Index(props: CajasIndexProps) {
                                     </div>
                                     <div className="text-center">
                                         <p className="text-slate-600 dark:text-slate-400">Total Real</p>
-                                        <p className="font-bold text-slate-900 dark:text-white">
-                                            ${cierresPendientesDetalle.reduce((sum: number, c: any) => sum + Number(c.monto_real || 0), 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </p>
+                                        <p className="font-bold text-slate-900 dark:text-white">{bs(totalesPendientes.real)}</p>
                                     </div>
                                     <div className="text-center">
                                         <p className="text-slate-600 dark:text-slate-400">Total Esperado</p>
-                                        <p className="font-bold text-slate-900 dark:text-white">
-                                            ${cierresPendientesDetalle.reduce((sum: number, c: any) => sum + Number(c.monto_esperado || 0), 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </p>
+                                        <p className="font-bold text-slate-900 dark:text-white">{bs(totalesPendientes.esperado)}</p>
                                     </div>
                                     <div className="text-center">
                                         <p className="text-slate-600 dark:text-slate-400">Δ Total</p>
-                                        <p className={`font-bold ${cierresPendientesDetalle.reduce((sum: number, c: any) => sum + Number(c.diferencia || 0), 0) > 0
+                                        <p className={`font-bold ${totalesPendientes.diferencia > 0
                                             ? 'text-green-600'
-                                            : cierresPendientesDetalle.reduce((sum: number, c: any) => sum + Number(c.diferencia || 0), 0) < 0
+                                            : totalesPendientes.diferencia < 0
                                                 ? 'text-red-600'
                                                 : 'text-slate-900 dark:text-white'
                                             }`}>
-                                            ${cierresPendientesDetalle.reduce((sum: number, c: any) => sum + Number(c.diferencia || 0), 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            {totalesPendientes.diferencia > 0 ? '+' : ''}{bs(totalesPendientes.diferencia)}
                                         </p>
                                     </div>
                                 </div>

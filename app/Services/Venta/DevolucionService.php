@@ -100,6 +100,10 @@ class DevolucionService
             ]);
 
             // Crear detalles de devolución y devolver stock
+            // Agrupado por el almacén de la línea vendida: un frío devuelto vuelve al REFRIGERADOR;
+            // líneas sin almacén (ventas anteriores) vuelven al almacén de la empresa como siempre
+            $almacenesLinea = \App\Models\DetalleVenta::whereIn('id', collect($dto->detalles)->pluck('detalle_venta_id')->filter())
+                ->pluck('almacen_id', 'id');
             $productosADevolver = [];
             foreach ($dto->detalles as $detalle) {
                 DetalleDevolucion::create([
@@ -111,22 +115,25 @@ class DevolucionService
                     'subtotal' => $detalle['cantidad_devuelta'] * $detalle['precio_unitario'],
                 ]);
 
-                $productosADevolver[] = [
+                $almacenDevolucion = $almacenesLinea[$detalle['detalle_venta_id'] ?? 0] ?? null ?: $almacenId;
+                $productosADevolver[$almacenDevolucion][] = [
                     'producto_id' => $detalle['producto_id'],
                     'cantidad' => $detalle['cantidad_devuelta'],
                 ];
             }
 
-            // Devolver stock
-            $this->stockService->devolverStock(
-                $productosADevolver,
-                $devolucion->numero,
-                $almacenId
-            );
+            // Devolver stock (una llamada por almacén de origen)
+            foreach ($productosADevolver as $almacenDevolucion => $productos) {
+                $this->stockService->devolverStock(
+                    $productos,
+                    $devolucion->numero,
+                    (int) $almacenDevolucion
+                );
+            }
 
             Log::info('✅ [DevolucionService::crear] Stock devuelto', [
                 'devolucion_numero' => $devolucion->numero,
-                'productos_count' => count($productosADevolver),
+                'productos_count' => collect($productosADevolver)->flatten(1)->count(),
             ]);
 
             // Si es CAMBIO, procesar productos nuevos

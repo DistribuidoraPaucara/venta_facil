@@ -214,6 +214,8 @@ export function useProductSearch({
             stock_disponible_calc: stockDisponible,
             stock_total_calc: p.stock_total || 0,
             stock_reservado: p.stock_reservado || 0,
+            // Disponible por almacén: la línea de venta muestra el del almacén elegido (ej. FRIO)
+            stock_por_almacen: p.stock_por_almacen || {},
             capacidad: p.capacidad || null,
             peso: p.peso,
             codigos_barras: codigosBarrasExtraidos,
@@ -227,7 +229,9 @@ export function useProductSearch({
                 nombre: pr.nombre || pr.tipoPrecio?.nombre,
                 precio: pr.precio,
                 unidad_medida_id: pr.unidad_medida_id, // ✅ IMPORTANTE para productos fraccionados
+                tipo_precio: pr.tipo_precio ?? null, // código (COSTO) y % de ganancia por defecto (compras)
             })) || [],
+            proveedores_producto: p.proveedores_producto || [], // Compras: código de catálogo y último precio por proveedor
             tipo_precio_id_recomendado: tipoPrecioSeleccionado || p.tipo_precio_id_recomendado,
             tipo_precio_nombre_recomendado: tipoPrecioUsado || p.tipo_precio_nombre_recomendado,
             es_combo: p.es_combo || false,

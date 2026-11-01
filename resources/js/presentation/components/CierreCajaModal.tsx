@@ -8,6 +8,7 @@ import { Textarea } from '@/presentation/components/ui/textarea';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/presentation/components/ui/table';
 import toast from 'react-hot-toast';
 import { OutputSelectionModal, type TipoDocumento } from '@/presentation/components/impresion/OutputSelectionModal';
+import { formatCurrency as formatearMonto } from '@/lib/cajas.utils';
 
 interface AperturaCaja {
     id: number;
@@ -62,7 +63,7 @@ interface Props {
     show: boolean;
     onClose: () => void;
     cajaAbierta: AperturaCaja | null;
-    montoEsperado: number;
+    // El efectivo esperado lo calcula el servidor (datos-cierre); no se recibe por props
 }
 
 type Formato = (monto: number) => string;
@@ -106,7 +107,7 @@ function CeldaDiferencia({ valor, formato }: { valor: number | null; formato: Fo
     );
 }
 
-export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsperado }: Props) {
+export default function CierreCajaModal({ show, onClose, cajaAbierta }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm({
         monto_real: '',
         observaciones: '',
@@ -185,13 +186,8 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
         }
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('es-BO', {
-            style: 'currency',
-            currency: 'BOB',
-            minimumFractionDigits: 2
-        }).format(amount);
-    };
+    // Mismo formato que el resto de la caja (decimales solo si el monto los tiene)
+    const formatCurrency = (amount: number) => formatearMonto(amount);
 
     // Nota: Los cálculos ahora vienen del servidor (CierreCajaService)
     // Los métodos locales han sido eliminados para evitar duplicación de lógica
@@ -257,10 +253,11 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
     const egresos = desgloseEgresos.reduce((sum: number, egreso: any) => sum + (egreso.total || 0), 0);
     const apertura = datosCierre?.apertura || cajaAbierta?.monto_apertura || 0;
 
-    // ✅ CORREGIDO (2026-10-29): Total Esperado = Apertura + Ingresos - Egresos - Vueltos
-    // Las ventas registran lo que entregó el cliente; el vuelto es efectivo que sale de caja
-    const vueltos = efectivoEsperado.vueltos ?? 0;
-    const totalEsperadoMejorado = apertura + ingresos - egresos - vueltos;
+    // Total esperado = el que calcula el servidor (CierreCajaService: efectivo + otros medios), el mismo que
+    // usa al guardar el cierre. No restar vueltos aquí: el ingreso "Venta" ya es el total de cada venta,
+    // neto de vuelto, y restarlo de nuevo dejaba el total por debajo justo en el monto de los vueltos.
+    const totalEsperadoMejorado = efectivoEsperado.total ?? apertura + ingresos - egresos;
+    const vueltos = efectivoEsperado.vueltos ?? 0; // Solo informativo en el resumen
     const esperadoEfectivo = efectivoEsperado.efectivo;
     const esperadoOtrosMedios = efectivoEsperado.otros_medios ?? [];
 
@@ -418,12 +415,14 @@ export default function CierreCajaModal({ show, onClose, cajaAbierta, montoEsper
                                             <FilaResumen concepto="CxC (pagos de créditos)" monto={pagosDeCredito} signo="+" formato={formatCurrency} />
                                             {serviciosTotales > 0 && <FilaResumen concepto="Servicios" monto={serviciosTotales} signo="+" formato={formatCurrency} />}
                                             <FilaResumen concepto="Total ingresos" monto={ingresos} signo="+" formato={formatCurrency} subtotal />
-                                            <FilaResumen concepto="Anulaciones de ventas" monto={ventasAnuladas} signo="-" formato={formatCurrency} />
+                                            <FilaResumen concepto="Anulaciones de ventas (referencial)" monto={ventasAnuladas} formato={formatCurrency} />
                                             {devolucionesTotales > 0 && (
                                                 <FilaResumen concepto="Devoluciones de productos" monto={devolucionesTotales} signo="-" formato={formatCurrency} />
                                             )}
                                             <FilaResumen concepto="Total egresos" monto={egresos} signo="-" formato={formatCurrency} subtotal />
-                                            {vueltos > 0 && <FilaResumen concepto="Vueltos / cambio (efectivo)" monto={vueltos} signo="-" formato={formatCurrency} />}
+                                            {vueltos > 0 && (
+                                                <FilaResumen concepto="Vueltos / cambio (ya descontados de las ventas)" monto={vueltos} formato={formatCurrency} />
+                                            )}
                                             <FilaResumen concepto="Ventas a crédito (no ingresan a caja)" monto={ventasCredito} formato={formatCurrency} />
                                         </TableBody>
                                         <TableFooter>

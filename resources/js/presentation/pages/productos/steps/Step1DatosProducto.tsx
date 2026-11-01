@@ -5,7 +5,9 @@ import InputSearch from '@/presentation/components/ui/input-search';
 import { Label } from '@/presentation/components/ui/label';
 import SearchSelect from '@/presentation/components/ui/search-select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
-import { useState, useEffect } from 'react';
+import type { ProveedorProducto } from '@/domain/entities/productos';
+import { useState, useEffect, useRef } from 'react';
+import ProveedoresProducto from './ProveedoresProducto';
 
 interface Option {
     value: number | string;
@@ -24,6 +26,7 @@ export interface Step1Props {
         marca_id?: number | string;
         proveedor_id?: number | string;
         proveedor?: { id: number; nombre: string; razon_social?: string } | null;
+        proveedores?: ProveedorProducto[];
         activo?: boolean;
         stock_minimo?: number | null;
         stock_maximo?: number | null;
@@ -87,6 +90,37 @@ function Step1DatosProducto({
     // Estados para controlar la búsqueda de proveedores
     const [lastSearchQuery, setLastSearchQuery] = useState<string>('');
     const [searchResultsFound, setSearchResultsFound] = useState<boolean>(false);
+    // El buscador de proveedores agrega a la lista; la key lo vacía después de cada alta
+    const [buscadorProveedorKey, setBuscadorProveedorKey] = useState(0);
+    const proveedores = data.proveedores ?? [];
+    // Código del proveedor (PRV0001) de los resultados de búsqueda, para mostrarlo al agregarlo
+    const codigosProveedorRef = useRef<Record<number, string | null>>({});
+
+    // productos.proveedor_id sigue al principal (lo usan filtros y formularios antiguos)
+    const cambiarProveedores = (lista: ProveedorProducto[]) => {
+        setData('proveedores', lista);
+        setData('proveedor_id', lista.find((p) => p.es_principal)?.proveedor_id ?? null);
+    };
+
+    const agregarProveedor = (proveedor: { id: number; nombre: string; razon_social?: string | null; codigo_proveedor?: string | null }) => {
+        setBuscadorProveedorKey((k) => k + 1);
+        if (proveedores.some((p) => p.proveedor_id === proveedor.id)) {
+            NotificationService.warning(`"${proveedor.nombre}" ya está en la lista de proveedores`);
+            return;
+        }
+        cambiarProveedores([
+            ...proveedores,
+            {
+                proveedor_id: proveedor.id,
+                nombre: proveedor.nombre,
+                razon_social: proveedor.razon_social ?? null,
+                codigo: proveedor.codigo_proveedor ?? codigosProveedorRef.current[proveedor.id] ?? null,
+                codigo_proveedor: null,
+                es_principal: proveedores.length === 0,
+                activo: true,
+            },
+        ]);
+    };
 
     // Estados para búsqueda de productos
     const [lastProductSearchQuery, setLastProductSearchQuery] = useState<string>('');
@@ -213,14 +247,17 @@ function Step1DatosProducto({
                 const hasResults = result.data.length > 0;
                 setSearchResultsFound(hasResults);
 
-                return result.data.map((proveedor: any) => ({
+                return result.data.map((proveedor: any) => {
+                    codigosProveedorRef.current[proveedor.id] = proveedor.codigo_proveedor ?? null;
+                    return {
                     value: proveedor.id,
                     label: proveedor.nombre,
                     description: proveedor.razon_social || `NIT: ${proveedor.nit || 'N/A'}`,
                     codigos_barras: undefined,
                     precio_base: undefined,
                     stock_total: undefined,
-                }));
+                    };
+                });
             }
 
             setSearchResultsFound(false);
@@ -248,431 +285,431 @@ function Step1DatosProducto({
 
     return (
         <div>
-            {/* Estado del producto */}
-            <div
-                className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 ${
-                    activo
-                        ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20'
-                        : 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-                }`}
-            >
-                <div>
-                    <p className={`text-sm font-semibold ${activo ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>
-                        {activo ? '● Producto activo' : '● Producto inactivo'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                        {activo
-                            ? 'Aparece en ventas, compras y reposiciones.'
-                            : 'No aparece en ventas, compras ni reposiciones. Su stock e historial se conservan; puede reactivarlo cuando quiera.'}
-                    </p>
-                </div>
-                <button
-                    type="button"
-                    role="switch"
-                    id="activo"
-                    aria-checked={activo}
-                    aria-label={activo ? 'Desactivar producto' : 'Activar producto'}
-                    onClick={() => cambiarActivo(!activo)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
-                        activo ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                >
-                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                </button>
-            </div>
-
             {/* <div className="bg-secondary border border-border rounded p-3">
         <div className="text-sm font-semibold text-foreground">Paso 1: Datos del producto</div>
         <div className="text-xs text-muted-foreground">Complete la información general del producto</div>
       </div> */}
-            {/* 📱 1 fila con 3 columnas responsivas: Nombre, SKU, Proveedor */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                    <div className="flex items-end gap-2">
-                        <div className="flex-1">
-                            <InputSearch
-                                id="nombre"
-                                label="Nombre del Producto *"
-                                value={data.nombre ?? ''}
-                                onChange={(value) => {
-                                    // 🔑 IMPORTANTE: Guardar INMEDIATAMENTE el nombre mientras escribes
-                                    setData('nombre', String(value || ''));
-                                    // Luego procesar la selección (búsqueda, carga de producto existente, etc)
-                                    handleProductoSelection(value);
-                                }}
-                                onSearch={searchProductos}
-                                placeholder="Busca un producto existente o escribe uno nuevo"
-                                emptyText="No se encontró el producto. Puedes crear uno nuevo"
-                                error={errors.nombre}
-                                showCreateIconButton={false}
-                                displayValue={data.nombre}
-                                isSelected={!!(data.nombre && data.nombre.trim().length > 0)}
-                            />
+            {/* Datos a la izquierda; proveedores a la derecha (abajo en pantallas chicas) */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                    {/* 📱 Nombre y SKU */}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <div className="flex items-end gap-2">
+                                <div className="flex-1">
+                                    <InputSearch
+                                        id="nombre"
+                                        label="Nombre del Producto *"
+                                        value={data.nombre ?? ''}
+                                        onChange={(value) => {
+                                            // 🔑 IMPORTANTE: Guardar INMEDIATAMENTE el nombre mientras escribes
+                                            setData('nombre', String(value || ''));
+                                            // Luego procesar la selección (búsqueda, carga de producto existente, etc)
+                                            handleProductoSelection(value);
+                                        }}
+                                        onSearch={searchProductos}
+                                        placeholder="Busca un producto existente o escribe uno nuevo"
+                                        emptyText="No se encontró el producto. Puedes crear uno nuevo"
+                                        error={errors.nombre}
+                                        showCreateIconButton={false}
+                                        displayValue={data.nombre}
+                                        isSelected={!!(data.nombre && data.nombre.trim().length > 0)}
+                                    />
+                                </div>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button className="mb-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Busca productos existentes por nombre para cargarlos automáticamente</TooltipContent>
+                                </Tooltip>
+                            </div>
+                            {/* {lastProductSearchQuery && lastProductSearchQuery.length >= 2 && !productSearchResultsFound && (
+                                <div className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-200">
+                                    ⚠️ No encontramos "{lastProductSearchQuery}". Puedes crear uno nuevo con este nombre.
+                                </div>
+                            )} */}
                         </div>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button className="mb-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent>Busca productos existentes por nombre para cargarlos automáticamente</TooltipContent>
-                        </Tooltip>
+                        <div>
+                            <div className="mb-1 flex items-center gap-2">
+                                <div className="relative flex-1">
+                                    <label
+                                        htmlFor="sku"
+                                        className={`pointer-events-none absolute left-3 transition-all duration-200 ${
+                                            data.sku
+                                                ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
+                                                : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
+                                        }`}
+                                    >
+                                        SKU / Código (opcional)
+                                    </label>
+                                    <Input
+                                        id="sku"
+                                        value={data.sku ?? ''}
+                                        onChange={(e) => setData('sku', e.target.value)}
+                                        placeholder=""
+                                        className={`pt-2 ${getInputClassName('sku')}`}
+                                    />
+                                    {errors.sku && <div className="mt-1 text-sm text-red-500">⚠️ {errors.sku}</div>}
+                                </div>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+                                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Si no lo ingresas, se generará automáticamente (ej.: PRO0001)</TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </div>
                     </div>
-                    {/* {lastProductSearchQuery && lastProductSearchQuery.length >= 2 && !productSearchResultsFound && (
-                        <div className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-200">
-                            ⚠️ No encontramos "{lastProductSearchQuery}". Puedes crear uno nuevo con este nombre.
-                        </div>
-                    )} */}
-                </div>
-                <div>
-                    <div className="mb-1 flex items-center gap-2">
-                        <div className="relative flex-1">
-                            <label
-                                htmlFor="sku"
-                                className={`pointer-events-none absolute left-3 transition-all duration-200 ${
-                                    data.sku
-                                        ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
-                                        : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
-                                }`}
-                            >
-                                SKU / Código (opcional)
-                            </label>
-                            <Input
-                                id="sku"
-                                value={data.sku ?? ''}
-                                onChange={(e) => setData('sku', e.target.value)}
-                                placeholder=""
-                                className={`pt-2 ${getInputClassName('sku')}`}
-                            />
-                            {errors.sku && <div className="mt-1 text-sm text-red-500">⚠️ {errors.sku}</div>}
-                        </div>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
-                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent>Si no lo ingresas, se generará automáticamente (ej.: PRO0001)</TooltipContent>
-                        </Tooltip>
-                    </div>
-                </div>
-                <div>
-                    <div className="mb-1 flex items-center gap-2">
-                        <div className="relative flex-1">
-                            {/* <label
-                                htmlFor="sku"
-                                className={`pointer-events-none absolute left-3 transition-all duration-200 ${
-                                    data.sku
-                                        ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
-                                        : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
-                                }`}
-                            >
-                                Proveedor (opcional)
-                            </label> */}
+                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                                <label className="text-sm font-medium">Categoría</label>
+                                <a
+                                    href="/categorias/create"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                    title="Crear nueva categoría"
+                                >
+                                    <span>+</span>
+                                    <span>Crear</span>
+                                </a>
+                            </div>
                             <InputSearch
-                                id="proveedor"
+                                id="categoria"
                                 label=""
-                                value={data.proveedor_id ?? ''}
-                                onChange={(value) => setData('proveedor_id', value ? Number(value) : null)}
-                                onSearch={searchProveedores}
-                                placeholder="Busca o crea tu Proveedor"
-                                emptyText="No se encontró ningún proveedor. Puedes crear uno nuevo clickeando el botón +"
-                                error={errors.proveedor_id}
-                                showCreateIconButton={true}
-                                createIconButtonTitle="Crear nuevo proveedor con el nombre buscado"
-                                isSelected={!!data.proveedor_id}
-                                onCreateClick={(searchQuery) => {
-                                    if (!searchQuery || searchQuery.length < 2) {
-                                        NotificationService.warning('Por favor escribe al menos 2 caracteres para el proveedor');
-                                        return;
+                                value={data.categoria_id ?? ''}
+                                options={categoriasOptions}
+                                onSearch={onCategoriasSearch || (async () => [])}
+                                onChange={(value) => {
+                                    setData('categoria_id', value ? Number(value) : null);
+                                    // ✨ Actualizar categoría seleccionada con el valor y buscar el nombre
+                                    if (value) {
+                                        const categoriaSeleccionadaTemp = categoriasOptions.find(c => c.value === value);
+                                        if (categoriaSeleccionadaTemp) {
+                                            setCategoriaSeleccionada({ id: Number(value), nombre: categoriaSeleccionadaTemp.label });
+                                        }
+                                    } else {
+                                        setCategoriaSeleccionada(null);
                                     }
-                                    console.log('🚀 onCreateClick ejecutado con query:', searchQuery);
-                                    // Crear nuevo proveedor automáticamente con solo el nombre
-                                    const createProveedor = async (nombre: string) => {
-                                        console.log('🔧 Creando proveedor:', nombre);
-                                        try {
-                                            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                                            console.log('🔑 CSRF Token encontrado:', !!csrfToken);
-                                            const response = await fetch('/api/proveedores', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Content-Type': 'application/json',
-                                                    ...(csrfToken && { 'X-CSRF-TOKEN': csrfToken }),
-                                                },
-                                                body: JSON.stringify({ nombre }),
-                                            });
+                                }}
+                                error={errors.categoria_id}
+                                placeholder="Busca una categoría..."
+                                emptyText="No se encontró la categoría"
+                                displayValue={categoriaSeleccionada?.nombre}  // ✨ Mostrar categoría seleccionada (dinámica)
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                                <label className="text-sm font-medium">Marca</label>
+                                <a
+                                    href="/marcas/create"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                    title="Crear nueva marca"
+                                >
+                                    <span>+</span>
+                                    <span>Crear</span>
+                                </a>
+                            </div>
+                            <InputSearch
+                                id="marca"
+                                label=""
+                                value={data.marca_id ?? ''}
+                                options={marcasOptions}
+                                onSearch={onMarcasSearch || (async () => [])}
+                                onChange={(value) => {
+                                    setData('marca_id', value ? Number(value) : null);
+                                    // ✨ Actualizar marca seleccionada con el valor y buscar el nombre
+                                    if (value) {
+                                        const marcaSeleccionadaTemp = marcasOptions.find(m => m.value === value);
+                                        if (marcaSeleccionadaTemp) {
+                                            setMarcaSeleccionada({ id: Number(value), nombre: marcaSeleccionadaTemp.label });
+                                        }
+                                    } else {
+                                        setMarcaSeleccionada(null);
+                                    }
+                                }}
+                                error={errors.marca_id}
+                                placeholder="Busca una marca..."
+                                emptyText="No se encontró la marca"
+                                displayValue={marcaSeleccionada?.nombre}  // ✨ Mostrar marca seleccionada (dinámica)
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1">
+                                    <label className="text-sm font-medium">
+                                        Unidad de medida {data.es_fraccionado && <span className="text-yellow-600 dark:text-yellow-400">🔒</span>}
+                                    </label>
+                                    {data.es_fraccionado && (
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right">
+                                                La unidad de medida está bloqueada para productos fraccionados. Todas las conversiones deben usar esta misma unidad como base.
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    )}
+                                </div>
+                                <a
+                                    href="/unidades/create"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                    title="Crear nueva unidad de medida"
+                                >
+                                    <span>+</span>
+                                    <span>Crear</span>
+                                </a>
+                            </div>
+                            <SearchSelect
+                                id="unidad_medida_id"
+                                label=""
+                                placeholder="Seleccione una unidad"
+                                value={data.unidad_medida_id ?? unidadesOptions.find((u) => u.description === 'UN')?.value ?? ''}
+                                options={unidadesOptions}
+                                onChange={(value) => setData('unidad_medida_id', value ? Number(value) : null)}
+                                error={errors.unidad_medida_id}
+                                disabled={data.es_fraccionado}
+                                allowClear={true}
+                                emptyText="No se encontraron unidades"
+                                searchPlaceholder="Buscar unidades..."
+                                renderOption={(option, isSelected) => (
+                                    <div
+                                        className={`flex items-center justify-between px-3 py-2 ${isSelected ? 'border-l-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                    >
+                                        <span className="text-sm font-medium">{option.label}</span>
+                                        {option.description && (
+                                            <span className="rounded bg-secondary px-2 py-1 text-xs text-muted-foreground">{option.description}</span>
+                                        )}
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        {/* <div className="space-y-1">
+                            <div className="relative">
+                                <label
+                                    htmlFor="peso"
+                                    className={`pointer-events-none absolute left-3 transition-all duration-200 ${
+                                        data.peso
+                                            ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
+                                            : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
+                                    }`}
+                                >
+                                    Peso (Kg) (opcional para entregas)
+                                </label>
+                                <Input
+                                    id="peso"
+                                    type="number"
+                                    step="0.001"
+                                    value={data.peso ?? ''}
+                                    onChange={(e) => setData('peso', e.target.value ? Number(e.target.value) : null)}
+                                    placeholder=""
+                                    className={`pt-2 ${getInputClassName('peso')}`}
+                                />
+                            </div>
+                            {errors.peso && <div className="mt-1 text-sm text-red-500">⚠️ {errors.peso}</div>}
+                        </div> */}
+                        {/* <div className="space-y-1">
+                            <div className="relative">
+                                <label
+                                    htmlFor="descripcion"
+                                    className={`pointer-events-none absolute left-3 transition-all duration-200 ${
+                                        data.descripcion
+                                            ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
+                                            : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
+                                    }`}
+                                >
+                                    Descripción
+                                </label>
+                                <Input
+                                    id="descripcion"
+                                    value={data.descripcion ?? ''}
+                                    onChange={(e) => setData('descripcion', e.target.value)}
+                                    placeholder=""
+                                    className={`pt-2 ${getInputClassName('descripcion')}`}
+                                />
+                            </div>
+                            {errors.descripcion && <div className="mt-1 text-sm text-red-500">⚠️ {errors.descripcion}</div>}
+                        </div> */}
+                    </div>
+                </div>
+                <aside className="h-fit rounded-lg border border-gray-200 p-3 dark:border-zinc-700">
+                    <h4 className="flex items-center gap-1.5 text-sm font-medium">
+                        Proveedores {proveedores.length > 0 && <span className="text-gray-500">({proveedores.length})</span>}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    aria-label="Ayuda sobre proveedores"
+                                    className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 text-[10px] font-bold text-gray-500 hover:border-gray-500 hover:text-gray-700 dark:border-gray-500 dark:text-gray-400"
+                                >
+                                    ?
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                                <p>Agrega proveedores con el buscador, o se agregan solos al aprobar una compra de este producto.</p>
+                                <p className="mt-1">El último precio de cada uno se actualiza solo al aprobar compras.</p>
+                                <p className="mt-1">El principal es el que se sugiere por defecto.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </h4>
+                    <div className="mt-2">
+                        <div className="mb-1 flex items-center gap-2">
+                            <div className="relative flex-1">
+                                {/* <label
+                                    htmlFor="sku"
+                                    className={`pointer-events-none absolute left-3 transition-all duration-200 ${
+                                        data.sku
+                                            ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
+                                            : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
+                                    }`}
+                                >
+                                    Proveedor (opcional)
+                                </label> */}
+                                <InputSearch
+                                    key={buscadorProveedorKey}
+                                    id="proveedor"
+                                    label=""
+                                    value=""
+                                    onChange={(value, option) => {
+                                        // Solo al elegir de la lista (mientras se escribe llega el texto sin option)
+                                        if (option && typeof value === 'number') {
+                                            agregarProveedor({ id: value, nombre: option.label, razon_social: option.description });
+                                        }
+                                    }}
+                                    onSearch={searchProveedores}
+                                    placeholder="Agregar proveedor (busca o crea)"
+                                    emptyText="No se encontró ningún proveedor. Puedes crear uno nuevo clickeando el botón +"
+                                    error={errors.proveedor_id}
+                                    showCreateIconButton={true}
+                                    createIconButtonTitle="Crear nuevo proveedor con el nombre buscado"
+                                    onCreateClick={(searchQuery) => {
+                                        if (!searchQuery || searchQuery.length < 2) {
+                                            NotificationService.warning('Por favor escribe al menos 2 caracteres para el proveedor');
+                                            return;
+                                        }
+                                        console.log('🚀 onCreateClick ejecutado con query:', searchQuery);
+                                        // Crear nuevo proveedor automáticamente con solo el nombre
+                                        const createProveedor = async (nombre: string) => {
+                                            console.log('🔧 Creando proveedor:', nombre);
+                                            try {
+                                                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                                                console.log('🔑 CSRF Token encontrado:', !!csrfToken);
+                                                const response = await fetch('/api/proveedores', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        ...(csrfToken && { 'X-CSRF-TOKEN': csrfToken }),
+                                                    },
+                                                    body: JSON.stringify({ nombre }),
+                                                });
 
-                                            console.log('📡 Respuesta del servidor:', response.status);
+                                                console.log('📡 Respuesta del servidor:', response.status);
 
-                                            if (response.ok) {
-                                                const result = await response.json();
-                                                console.log('✅ Respuesta completa:', result);
-                                                if (result.success) {
-                                                    setData('proveedor_id', result.data.id);
-                                                    console.log('💾 Proveedor ID actualizado:', result.data.id);
-                                                    // Mostrar notificación de éxito
-                                                    NotificationService.success(result.message || 'Proveedor creado exitosamente');
+                                                if (response.ok) {
+                                                    const result = await response.json();
+                                                    console.log('✅ Respuesta completa:', result);
+                                                    if (result.success) {
+                                                        agregarProveedor(result.data);
+                                                        // Mostrar notificación de éxito
+                                                        NotificationService.success(result.message || 'Proveedor creado exitosamente');
+                                                    } else {
+                                                        console.error('❌ Error del servidor:', result.message);
+
+                                                        // Manejar errores de validación específicos
+                                                        if (result.errors?.nombre) {
+                                                            NotificationService.error(
+                                                                'Ya existe un proveedor con ese nombre. Por favor, elige un nombre diferente.',
+                                                            );
+                                                        } else {
+                                                            NotificationService.error(result.message || 'Error al crear el proveedor');
+                                                        }
+                                                    }
                                                 } else {
-                                                    console.error('❌ Error del servidor:', result.message);
+                                                    const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
+                                                    console.error('❌ Error HTTP:', response.status, errorData.message);
 
                                                     // Manejar errores de validación específicos
-                                                    if (result.errors?.nombre) {
+                                                    if (response.status === 422 && errorData.errors?.nombre) {
                                                         NotificationService.error(
                                                             'Ya existe un proveedor con ese nombre. Por favor, elige un nombre diferente.',
                                                         );
                                                     } else {
-                                                        NotificationService.error(result.message || 'Error al crear el proveedor');
+                                                        NotificationService.error(errorData.message || 'Error al crear el proveedor');
                                                     }
                                                 }
-                                            } else {
-                                                const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
-                                                console.error('❌ Error HTTP:', response.status, errorData.message);
-
-                                                // Manejar errores de validación específicos
-                                                if (response.status === 422 && errorData.errors?.nombre) {
-                                                    NotificationService.error(
-                                                        'Ya existe un proveedor con ese nombre. Por favor, elige un nombre diferente.',
-                                                    );
-                                                } else {
-                                                    NotificationService.error(errorData.message || 'Error al crear el proveedor');
-                                                }
+                                            } catch (error) {
+                                                console.error('❌ Error de red:', error);
+                                                NotificationService.error('Error de conexión al crear el proveedor');
                                             }
-                                        } catch (error) {
-                                            console.error('❌ Error de red:', error);
-                                            NotificationService.error('Error de conexión al crear el proveedor');
-                                        }
-                                    };
+                                        };
 
-                                    createProveedor(searchQuery);
-                                }}
-                                displayValue={
-                                    data.proveedor
-                                        ? `${data.proveedor.nombre}${data.proveedor.razon_social ? ` - ${data.proveedor.razon_social}` : ''}`
-                                        : undefined
-                                }
-                            />
-                        </div>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
-                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                Si no encuentras el proveedor, puedes crearlo haciendo clic en el botón ➕. El sistema evitará crear proveedores con
-                                nombres duplicados.
-                            </TooltipContent>
-                        </Tooltip>
-                    </div>
-                    {/* {lastSearchQuery && lastSearchQuery.length >= 2 && !searchResultsFound && (
-                        <div className="mt-1 px-1 text-xs font-semibold text-amber-700 dark:text-amber-200">
-                            ⚠️ No encontramos "{lastSearchQuery}" en la base de datos. Puedes crearlo haciendo clic en el botón ➕.
-                        </div>
-                    )} */}
-                </div>
-            </div>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-medium">Categoría</label>
-                        <a
-                            href="/categorias/create"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
-                            title="Crear nueva categoría"
-                        >
-                            <span>+</span>
-                            <span>Crear</span>
-                        </a>
-                    </div>
-                    <InputSearch
-                        id="categoria"
-                        label=""
-                        value={data.categoria_id ?? ''}
-                        options={categoriasOptions}
-                        onSearch={onCategoriasSearch || (async () => [])}
-                        onChange={(value) => {
-                            setData('categoria_id', value ? Number(value) : null);
-                            // ✨ Actualizar categoría seleccionada con el valor y buscar el nombre
-                            if (value) {
-                                const categoriaSeleccionadaTemp = categoriasOptions.find(c => c.value === value);
-                                if (categoriaSeleccionadaTemp) {
-                                    setCategoriaSeleccionada({ id: Number(value), nombre: categoriaSeleccionadaTemp.label });
-                                }
-                            } else {
-                                setCategoriaSeleccionada(null);
-                            }
-                        }}
-                        error={errors.categoria_id}
-                        placeholder="Busca una categoría..."
-                        emptyText="No se encontró la categoría"
-                        displayValue={categoriaSeleccionada?.nombre}  // ✨ Mostrar categoría seleccionada (dinámica)
-                    />
-                </div>
-                <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-medium">Marca</label>
-                        <a
-                            href="/marcas/create"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
-                            title="Crear nueva marca"
-                        >
-                            <span>+</span>
-                            <span>Crear</span>
-                        </a>
-                    </div>
-                    <InputSearch
-                        id="marca"
-                        label=""
-                        value={data.marca_id ?? ''}
-                        options={marcasOptions}
-                        onSearch={onMarcasSearch || (async () => [])}
-                        onChange={(value) => {
-                            setData('marca_id', value ? Number(value) : null);
-                            // ✨ Actualizar marca seleccionada con el valor y buscar el nombre
-                            if (value) {
-                                const marcaSeleccionadaTemp = marcasOptions.find(m => m.value === value);
-                                if (marcaSeleccionadaTemp) {
-                                    setMarcaSeleccionada({ id: Number(value), nombre: marcaSeleccionadaTemp.label });
-                                }
-                            } else {
-                                setMarcaSeleccionada(null);
-                            }
-                        }}
-                        error={errors.marca_id}
-                        placeholder="Busca una marca..."
-                        emptyText="No se encontró la marca"
-                        displayValue={marcaSeleccionada?.nombre}  // ✨ Mostrar marca seleccionada (dinámica)
-                    />
-                </div>
-                <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1">
-                            <label className="text-sm font-medium">
-                                Unidad de medida {data.es_fraccionado && <span className="text-yellow-600 dark:text-yellow-400">🔒</span>}
-                            </label>
-                            {data.es_fraccionado && (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        La unidad de medida está bloqueada para productos fraccionados. Todas las conversiones deben usar esta misma unidad como base.
-                                    </TooltipContent>
-                                </Tooltip>
-                            )}
-                        </div>
-                        <a
-                            href="/unidades/create"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
-                            title="Crear nueva unidad de medida"
-                        >
-                            <span>+</span>
-                            <span>Crear</span>
-                        </a>
-                    </div>
-                    <SearchSelect
-                        id="unidad_medida_id"
-                        label=""
-                        placeholder="Seleccione una unidad"
-                        value={data.unidad_medida_id ?? unidadesOptions.find((u) => u.description === 'UN')?.value ?? ''}
-                        options={unidadesOptions}
-                        onChange={(value) => setData('unidad_medida_id', value ? Number(value) : null)}
-                        error={errors.unidad_medida_id}
-                        disabled={data.es_fraccionado}
-                        allowClear={true}
-                        emptyText="No se encontraron unidades"
-                        searchPlaceholder="Buscar unidades..."
-                        renderOption={(option, isSelected) => (
-                            <div
-                                className={`flex items-center justify-between px-3 py-2 ${isSelected ? 'border-l-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                            >
-                                <span className="text-sm font-medium">{option.label}</span>
-                                {option.description && (
-                                    <span className="rounded bg-secondary px-2 py-1 text-xs text-muted-foreground">{option.description}</span>
-                                )}
+                                        createProveedor(searchQuery);
+                                    }}
+                                />
                             </div>
-                        )}
-                    />
-                </div>
-            </div>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {/* <div className="space-y-1">
-                    <div className="relative">
-                        <label
-                            htmlFor="peso"
-                            className={`pointer-events-none absolute left-3 transition-all duration-200 ${
-                                data.peso
-                                    ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
-                                    : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
-                            }`}
-                        >
-                            Peso (Kg) (opcional para entregas)
-                        </label>
-                        <Input
-                            id="peso"
-                            type="number"
-                            step="0.001"
-                            value={data.peso ?? ''}
-                            onChange={(e) => setData('peso', e.target.value ? Number(e.target.value) : null)}
-                            placeholder=""
-                            className={`pt-2 ${getInputClassName('peso')}`}
-                        />
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+                                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                        </svg>
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Si no encuentras el proveedor, puedes crearlo haciendo clic en el botón ➕. El sistema evitará crear proveedores con
+                                    nombres duplicados.
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                        {/* {lastSearchQuery && lastSearchQuery.length >= 2 && !searchResultsFound && (
+                            <div className="mt-1 px-1 text-xs font-semibold text-amber-700 dark:text-amber-200">
+                                ⚠️ No encontramos "{lastSearchQuery}" en la base de datos. Puedes crearlo haciendo clic en el botón ➕.
+                            </div>
+                        )} */}
                     </div>
-                    {errors.peso && <div className="mt-1 text-sm text-red-500">⚠️ {errors.peso}</div>}
-                </div> */}
-                {/* <div className="space-y-1">
-                    <div className="relative">
-                        <label
-                            htmlFor="descripcion"
-                            className={`pointer-events-none absolute left-3 transition-all duration-200 ${
-                                data.descripcion
-                                    ? 'top-[-6px] text-xs font-medium text-blue-600 dark:text-blue-400'
-                                    : 'top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400'
-                            }`}
-                        >
-                            Descripción
-                        </label>
-                        <Input
-                            id="descripcion"
-                            value={data.descripcion ?? ''}
-                            onChange={(e) => setData('descripcion', e.target.value)}
-                            placeholder=""
-                            className={`pt-2 ${getInputClassName('descripcion')}`}
-                        />
-                    </div>
-                    {errors.descripcion && <div className="mt-1 text-sm text-red-500">⚠️ {errors.descripcion}</div>}
-                </div> */}
+                    <ProveedoresProducto proveedores={proveedores} onChange={cambiarProveedores} />
+                    {Object.entries(errors)
+                        .filter(([k]) => k.startsWith('proveedores'))
+                        .map(([k, msg]) => (
+                            <p key={k} className="mt-1 text-xs text-red-600">
+                                {msg}
+                            </p>
+                        ))}
+                </aside>
             </div>
             {/* <div className="mt-2 border-t border-blue-200 p-2">
                 <div className="flex items-start gap-2">
@@ -796,7 +833,41 @@ function Step1DatosProducto({
                 </div>
             </div> */}
 
-            <div className="border-t border-gray-200 pt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <div className="border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm text-muted-foreground mt-2">
+                {/* Estado del producto: desactivar no borra nada, solo lo oculta en ventas, compras y reposiciones */}
+                <div
+                    className={`mt-1 flex items-center justify-between gap-4 rounded-lg border-2 p-2 shadow-sm ${
+                        activo
+                            ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/20'
+                            : 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
+                    }`}
+                    title={
+                        activo
+                            ? 'Aparece en ventas, compras y reposiciones.'
+                            : 'No aparece en ventas, compras ni reposiciones. Su stock e historial se conservan; puede reactivarlo cuando quiera.'
+                    }
+                >
+                    <label
+                        htmlFor="activo"
+                        className={`cursor-pointer text-xs font-semibold ${activo ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}
+                    >
+                        {activo ? '● Producto activo' : '● Producto inactivo'}
+                    </label>
+                    <button
+                        type="button"
+                        role="switch"
+                        id="activo"
+                        aria-checked={activo}
+                        aria-label={activo ? 'Desactivar producto' : 'Activar producto'}
+                        onClick={() => cambiarActivo(!activo)}
+                        className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                            activo ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                    >
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                    </button>
+                </div>
+
                 {/* ✨ NUEVA SECCIÓN: Productos Fraccionados */}
                 {permite_productos_fraccionados && (
                     <FeatureToggle

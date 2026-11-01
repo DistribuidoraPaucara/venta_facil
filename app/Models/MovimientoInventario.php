@@ -93,6 +93,46 @@ class MovimientoInventario extends Model
         ];
     }
 
+    // Nombres legibles de los tipos (pantalla de movimientos, kardex y reportes de inventario)
+    const NOMBRES_TIPO = [
+        'SALIDA_VENTA'            => 'Venta',
+        'CONSUMO_RESERVA'         => 'Venta desde proforma',
+        'ENTRADA_COMPRA'          => 'Compra',
+        'ENTRADA_AJUSTE'          => 'Ajuste (entrada)',
+        'SALIDA_AJUSTE'           => 'Ajuste (salida)',
+        'AJUSTE_MASIVO'           => 'Ajuste masivo',
+        'ENTRADA_TRANSFERENCIA'   => 'Transferencia (entrada)',
+        'SALIDA_TRANSFERENCIA'    => 'Transferencia (salida)',
+        'ENTRADA_FRACCIONAMIENTO' => 'Fraccionamiento (entrada)',
+        'SALIDA_FRACCIONAMIENTO'  => 'Fraccionamiento (salida)',
+        'SALIDA_MERMA'            => 'Merma',
+        'SALIDA_COMIDA_SIN_STOCK' => 'Comida sin stock',
+    ];
+
+    public static function nombreTipoLegible(?string $tipo): string
+    {
+        $tipo = (string) $tipo;
+
+        return self::NOMBRES_TIPO[$tipo] ?? ucfirst(strtolower(str_replace('_', ' ', $tipo)));
+    }
+
+    /**
+     * Observación legible: el texto tal cual, o del JSON técnico solo la razón/motivo/evento.
+     */
+    public static function observacionLegible(?string $observacion, ?string $tipo = null): ?string
+    {
+        if ($observacion === null || ! str_starts_with(ltrim($observacion), '{')) {
+            return $observacion;
+        }
+        $json = json_decode($observacion, true);
+        if (! is_array($json)) {
+            return $observacion;
+        }
+
+        return $json['metadata']['razon'] ?? $json['motivo'] ?? $json['metadata']['motivo']
+            ?? (($json['evento'] ?? $tipo) !== $tipo ? $json['evento'] : null);
+    }
+
     // Constantes para tipos de movimiento
     const TIPO_ENTRADA_AJUSTE = 'ENTRADA_AJUSTE';
     const TIPO_SALIDA_AJUSTE = 'SALIDA_AJUSTE';
@@ -311,16 +351,19 @@ class MovimientoInventario extends Model
             ]);
         }
 
-        // Tipos genéricos que necesitan LIKE
-        $tiposGenericos = ['ENTRADA', 'SALIDA', 'AJUSTE'];
-
-        // Si es un tipo genérico (ENTRADA, SALIDA, AJUSTE), buscar con LIKE
-        if (in_array($tipo, $tiposGenericos)) {
-            return $query->where('tipo', 'LIKE', $tipo . '_%');
-        }
-
-        // Para tipos específicos (TRANSFERENCIA, etc), buscar exacto
-        return $query->where('tipo', $tipo);
+        // Grupos del filtro de movimientos: un grupo abarca varios tipos reales
+        // (ej. TRANSFERENCIA = ENTRADA_TRANSFERENCIA + SALIDA_TRANSFERENCIA; AJUSTE = entrada, salida y masivo)
+        return match ($tipo) {
+            'ENTRADA', 'SALIDA'  => $query->where('tipo', 'LIKE', $tipo . '_%'),
+            'TRANSFERENCIA'      => $query->where('tipo', 'LIKE', '%TRANSFERENCIA%'),
+            'AJUSTE'             => $query->where('tipo', 'LIKE', '%AJUSTE%'),
+            'MERMA'              => $query->where('tipo', 'LIKE', '%MERMA%'),
+            'FRACCIONAMIENTO'    => $query->where('tipo', 'LIKE', '%FRACCIONAMIENTO%'),
+            'DEVOLUCION'         => $query->where('tipo', 'LIKE', '%DEVOLUCION%'),
+            'ANULACION'          => $query->where('tipo', 'LIKE', 'ANULACION%'),
+            'RESERVA'            => $query->where('tipo', 'LIKE', '%RESERVA%')->where('tipo', '<>', 'CONSUMO_RESERVA'),
+            default              => $query->where('tipo', $tipo), // Tipo específico
+        };
     }
 
     public function scopePorFecha($query, $fechaInicio, $fechaFin = null)

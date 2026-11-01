@@ -3,10 +3,12 @@ import { formatCurrencyWith2Decimals } from '@/lib/utils';
 import BarcodeScannerModal from './BarcodeScannerModal';
 import type { Producto } from '@/domain/entities/ventas';
 import { useProductSearch } from '../hooks/useProductSearch';
+import { codigosDeProveedores } from '../types';
 
 interface ProductSearchBarProps {
     tipo: 'compra' | 'venta';
     almacen_id?: number;
+    proveedor_id?: number | null; // Compras: para mostrar el código del producto en el catálogo de ese proveedor
     cliente_id?: number | null;
     isClienteGeneral?: boolean;
     readOnly?: boolean;
@@ -25,6 +27,7 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
         {
     tipo,
     almacen_id,
+    proveedor_id,
     cliente_id,
     isClienteGeneral = false,
     readOnly = false,
@@ -382,6 +385,17 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                                                             </div>
                                                         );
                                                     })()}
+                                                    {tipo === 'compra' &&
+                                                        codigosDeProveedores(producto, proveedor_id).map((cod) => (
+                                                            <div
+                                                                key={`${cod.proveedor}-${cod.codigo}`}
+                                                                className={`text-xs ${cod.esDelProveedor ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400'}`}
+                                                                title={cod.esDelProveedor ? 'Código en el catálogo del proveedor de la compra' : 'Código en el catálogo de otro proveedor'}
+                                                            >
+                                                                🏷️ <span className="font-mono font-semibold">{cod.codigo}</span>{' '}
+                                                                <span className="opacity-80">· {cod.proveedor}</span>
+                                                            </div>
+                                                        ))}
                                                 </td>
                                                 <td className="px-3 py-3 text-sm font-bold text-right text-green-700 dark:text-green-400">
                                                     {formatCurrencyWith2Decimals(producto.precio_venta || 0)}

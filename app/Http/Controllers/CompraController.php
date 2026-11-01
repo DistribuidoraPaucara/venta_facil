@@ -14,6 +14,7 @@ use App\Models\Proveedor;
 use App\Models\StockProducto;
 use App\Models\TipoPago;
 use App\Services\Compra\CompraDistribucionService;
+use App\Services\Compra\ProductoProveedorService;
 use App\Services\DetectarCambiosPrecioService;
 use App\Services\ExcelExportService;
 use App\Services\ImpresionService;
@@ -67,7 +68,7 @@ class CompraController extends Controller
             'sin_proveedor'       => ['nullable', 'boolean'],
             'per_page'            => ['nullable', 'integer', 'min:10', 'max:100'],
             // id/estado/usuario: la tabla ya ordenaba por esas columnas y la validación las rechazaba
-            'sort_by'             => ['nullable', 'string', 'in:id,numero,fecha,proveedor,estado,usuario,total,created_at'],
+            'sort_by'             => ['nullable', 'string', 'in:id,numero,fecha,proveedor,estado,usuario,total,created_at,almacen,productos,pago'],
             'sort_dir'            => ['nullable', 'string', 'in:asc,desc'],
         ]);
 
@@ -174,6 +175,11 @@ class CompraController extends Controller
                 ->orderBy('estados_documento.nombre', $sortDir),
             'usuario'   => $query->leftJoin('users', 'compras.usuario_id', '=', 'users.id')
                 ->orderBy('users.name', $sortDir),
+            'almacen'   => $query->leftJoin('almacenes', 'compras.almacen_id', '=', 'almacenes.id')
+                ->orderBy('almacenes.nombre', $sortDir),
+            'pago'      => $query->leftJoin('tipos_pago', 'compras.tipo_pago_id', '=', 'tipos_pago.id')
+                ->orderBy('tipos_pago.nombre', $sortDir),
+            'productos' => $query->orderBy('detalles_count', $sortDir), // alias de withCount('detalles')
             default     => $query->orderBy("compras.{$sortBy}", $sortDir),
         };
         // withCount() ya deja "compras.*" como columnas: un select() aquí borraría los conteos de detalles
@@ -502,8 +508,10 @@ class CompraController extends Controller
             'detalles.producto.stock:id,producto_id,almacen_id,cantidad,cantidad_disponible',
             // Precios registrados (costo y venta) para las columnas de precios de la tabla de compra
             'detalles.producto.precios' => function ($q) {
-                $q->where('activo', true)->with('tipoPrecio:id,nombre,codigo');
+                $q->where('activo', true)->with('tipoPrecio:id,nombre,codigo,porcentaje_ganancia');
             },
+            'detalles.producto.productoProveedores:id,producto_id,proveedor_id,codigo_proveedor,ultimo_precio,unidad_medida_id,fecha_ultima_compra,activo',
+            'detalles.producto.productoProveedores.proveedor:id,nombre',
             'estadoDocumento',
             'tipoPago',
             'moneda',
@@ -561,6 +569,16 @@ class CompraController extends Controller
                     'codigo_barras'       => $codigoPrincipal,
                     'precio_venta'        => $producto->precio_venta,
                     'precio_compra'       => $producto->precio_compra,
+                    // Proveedores del producto con su código de catálogo y último precio (igual que la búsqueda de productos)
+                    'proveedores_producto' => $producto->productoProveedores->map(fn ($pp) => [
+                        'proveedor_id'        => $pp->proveedor_id,
+                        'proveedor_nombre'    => $pp->proveedor?->nombre,
+                        'codigo_proveedor'    => $pp->codigo_proveedor,
+                        'ultimo_precio'       => $pp->ultimo_precio,
+                        'unidad_medida_id'    => $pp->unidad_medida_id,
+                        'fecha_ultima_compra' => $pp->fecha_ultima_compra?->format('Y-m-d'),
+                        'activo'              => $pp->activo,
+                    ])->values()->all(),
                     // ✅ NUEVO 2026-03-06: Incluir marca y unidad como objetos completos
                     'marca'               => $producto->marca ? [
                         'id'   => $producto->marca->id,
@@ -586,6 +604,7 @@ class CompraController extends Controller
                             'id'     => $p->tipoPrecio->id,
                             'nombre' => $p->tipoPrecio->nombre,
                             'codigo' => $p->tipoPrecio->codigo,
+                            'porcentaje_ganancia' => (float) $p->tipoPrecio->porcentaje_ganancia, // ganancia por defecto
                         ] : null,
                     ])->values()->all(),
                 ],
@@ -819,6 +838,9 @@ class CompraController extends Controller
                 }
                 // Precios de venta editados en la tabla de la compra
                 $servicioPrecios->aplicarPreciosVentaCompra($compra);
+
+                // Relación producto ↔ proveedor con el último precio de compra
+                app(ProductoProveedorService::class)->registrarCompra($compra);
             }
 
             // ✅ NUEVO: Manejo de compras a CRÉDITO vs CONTADO
@@ -862,6 +884,10 @@ class CompraController extends Controller
     {
         $compra = Compra::findOrFail($id);
         $data   = $request->validated();
+
+        // Para recalcular producto_proveedor si la edición cambia el proveedor o quita líneas
+        $proveedorAnterior   = $compra->proveedor_id;
+        $productosAnteriores = $compra->detalles()->pluck('producto_id');
 
         // ✅ DEBUG 2026-03-19: Log completo de lo que recibimos
         Log::info('🔴 CompraController::update() - INICIANDO UPDATE', [
@@ -1304,6 +1330,9 @@ class CompraController extends Controller
                 ]);
             }
 
+            // Relación producto ↔ proveedor: aprobación, anulación, cambio de proveedor o de líneas
+            app(ProductoProveedorService::class)->sincronizarCompra($compra->fresh(), $proveedorAnterior, $productosAnteriores);
+
             // Compra aprobada/facturada: su cuenta por pagar debe reflejar el tipo de pago, el total y el
             // vencimiento actuales (la crea al aprobar a crédito, la ajusta si se editó, la quita si dejó de ser crédito)
             if (in_array($compra->fresh()->estado_documento_id, array_filter([$estadoAprobado?->id, $estadoRecibido?->id]))) {
@@ -1352,7 +1381,11 @@ class CompraController extends Controller
             $this->validarIntegridadReferencialCompra($compra);
 
             $this->revertirMovimientosInventario($compra);
+            $productoIds = $compra->detalles()->pluck('producto_id');
             $compra->delete();
+
+            // El último precio por proveedor vuelve al de la compra vigente anterior
+            app(ProductoProveedorService::class)->recalcularProductos($compra->proveedor_id, $productoIds);
 
             DB::commit();
 
@@ -1645,6 +1678,9 @@ class CompraController extends Controller
                     'estado_documento_id' => $estadoAnulado->id,
                     'observaciones' => $observacionesFinal,
                 ]);
+
+                // El último precio por proveedor vuelve al de la compra vigente anterior
+                app(ProductoProveedorService::class)->recalcularProductos($compra->proveedor_id, $compra->detalles()->pluck('producto_id'));
 
                 Log::info('🟢 [ANULAR COMPRA] COMPLETADO', [
                     'compra_id' => $compra->id,

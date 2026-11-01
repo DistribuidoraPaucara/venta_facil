@@ -13,6 +13,7 @@ export interface TipoPrecio extends BaseEntity {
   orden: number;
   activo: boolean;
   es_sistema: boolean;
+  almacen_id?: number | string | null; // Almacén del que descuenta en ventas (ej. FRIO → REFRIGERADOR); vacío = el de la empresa
   configuracion: {
     icono?: string;
     tooltip?: string;
@@ -32,6 +33,7 @@ export interface TipoPrecioFormData extends BaseFormData {
   orden: number;
   activo: boolean;
   es_sistema: boolean;
+  almacen_id?: number | string | null; // Almacén del que descuenta en ventas (ej. FRIO → REFRIGERADOR); vacío = el de la empresa
   configuracion: {
     icono?: string;
     tooltip?: string;

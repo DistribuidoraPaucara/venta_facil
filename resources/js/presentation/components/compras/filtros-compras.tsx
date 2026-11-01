@@ -68,8 +68,13 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
     );
 
     const aplicarFiltros = () => {
+        // El orden se elige en los encabezados de la tabla: se toma el actual de la URL (props), no la copia local
         const filtrosLimpios = Object.fromEntries(
-            Object.entries(valoresLocales).filter(([, value]) => value !== '' && value != null)
+            Object.entries({
+                ...valoresLocales,
+                sort_by: filtrosSeguras.sort_by || 'created_at',
+                sort_dir: filtrosSeguras.sort_dir || 'desc',
+            }).filter(([, value]) => value !== '' && value != null)
         );
 
         comprasService.search(filtrosLimpios as FiltrosCompras);
@@ -105,7 +110,10 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                 Object.entries(valoresLocales).filter(([key, value]) =>
                     key !== 'q' && key !== 'id' && value !== '' && value != null
                 )
-            )
+            ),
+            // Orden actual de la tabla (encabezados), no la copia local
+            sort_by: filtrosSeguras.sort_by || 'created_at',
+            sort_dir: filtrosSeguras.sort_dir || 'desc',
         };
 
         if (busquedaCombinada) {
@@ -150,17 +158,6 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
         value: a.id,
         label: a.nombre
     }));
-
-    const opcionesOrden = [
-        { value: 'created_at', label: 'Fecha de creación' },
-        { value: 'fecha', label: 'Fecha de compra' },
-        { value: 'id', label: 'Folio' },
-        { value: 'numero', label: 'Número' },
-        { value: 'total', label: 'Total' },
-        { value: 'proveedor', label: 'Proveedor' },
-        { value: 'estado', label: 'Estado' },
-        { value: 'usuario', label: 'Creador' },
-    ];
 
     // 'AAAA-MM-DD' en hora local (new Date() lo toma como UTC y mostraba el día anterior)
     const fechaCorta = (valor: string) => {
@@ -227,7 +224,7 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
             {/* Filtros avanzados */}
             {mostrarFiltrosAvanzados && (
                 <div className="border-t pt-4 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Proveedor */}
                         <div>
                             <Label htmlFor="proveedor_id" className="text-sm font-medium">
@@ -260,22 +257,6 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                             />
                         </div>
 
-                        {/* Moneda */}
-                        {/* <div>
-                            <Label htmlFor="moneda_id" className="text-sm font-medium">
-                                Moneda
-                            </Label>
-                            <SearchSelect
-                                id="moneda_id"
-                                placeholder="Todas las monedas"
-                                value={valoresLocales.moneda_id || ''}
-                                options={opcionesMonedas}
-                                onChange={value => setValoresLocales(prev => ({ ...prev, moneda_id: String(value) }))}
-                                allowClear
-                                emptyText="No hay monedas disponibles"
-                            />
-                        </div> */}
-
                         {/* Tipo de Pago */}
                         <div>
                             <Label htmlFor="tipo_pago_id" className="text-sm font-medium">
@@ -307,9 +288,11 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                                 emptyText="No hay almacenes disponibles"
                             />
                         </div>
+                    </div>
 
+                    <div className="flex flex-wrap gap-4">                       
                         {/* Compras que incluyen un producto */}
-                        <div>
+                        <div className="w-full min-w-0 md:flex-1">
                             <Label htmlFor="producto" className="text-sm font-medium">
                                 Producto
                             </Label>
@@ -329,7 +312,7 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                         </div>
 
                         {/* Borradores todavía sin proveedor */}
-                        <div className="flex items-end">
+                        <div className="flex shrink-0 items-end">
                             <label className="flex cursor-pointer items-center gap-2 pb-2 text-sm">
                                 <input
                                     type="checkbox"
@@ -374,40 +357,6 @@ export default function FiltrosCompras({ filtros, datosParaFiltros, className }:
                                     className="pl-10"
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Ordenamiento */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="sort_by" className="text-sm font-medium">
-                                Ordenar por
-                            </Label>
-                            <SearchSelect
-                                id="sort_by"
-                                placeholder="Campo de ordenamiento"
-                                value={valoresLocales.sort_by || 'created_at'}
-                                options={opcionesOrden}
-                                onChange={value => setValoresLocales(prev => ({ ...prev, sort_by: String(value) }))}
-                                allowClear={false}
-                            />
-                        </div>
-
-                        <div>
-                            <Label htmlFor="sort_dir" className="text-sm font-medium">
-                                Dirección
-                            </Label>
-                            <SearchSelect
-                                id="sort_dir"
-                                placeholder="Dirección"
-                                value={valoresLocales.sort_dir || 'desc'}
-                                options={[
-                                    { value: 'asc', label: 'Ascendente' },
-                                    { value: 'desc', label: 'Descendente' },
-                                ]}
-                                onChange={value => setValoresLocales(prev => ({ ...prev, sort_dir: String(value) }))}
-                                allowClear={false}
-                            />
                         </div>
                     </div>
 

@@ -22,8 +22,9 @@ class StoreTransferenciaInventarioRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'almacen_origen_id' => ['required', 'integer', 'exists:almacenes,id'],
-            'almacen_destino_id' => ['required', 'integer', 'exists:almacenes,id', 'different:almacen_origen_id'],
+            // Solo almacenes de la empresa del usuario (antes bastaba con que existieran)
+            'almacen_origen_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('almacenes', 'id')->where('empresa_id', auth()->user()?->empresa_id)],
+            'almacen_destino_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('almacenes', 'id')->where('empresa_id', auth()->user()?->empresa_id), 'different:almacen_origen_id'],
             'vehiculo_id' => ['nullable', 'integer', 'exists:vehiculos,id'],
             'chofer_id' => ['nullable', 'integer', 'exists:choferes,id'],
             'observaciones' => ['nullable', 'string', 'max:500'],

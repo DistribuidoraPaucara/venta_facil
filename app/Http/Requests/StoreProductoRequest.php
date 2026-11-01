@@ -120,6 +120,14 @@ class StoreProductoRequest extends FormRequest
             'categoria_id'             => ['nullable', 'exists:categorias,id'],
             'marca_id'                 => ['nullable', 'exists:marcas,id'],
             'proveedor_id'             => ['nullable', 'exists:proveedores,id'],
+            // Proveedores del producto (producto_proveedor); proveedores_enviados indica que el formulario manda la lista
+            'proveedores_enviados'                => ['sometimes', 'boolean'],
+            'proveedores'                         => ['sometimes', 'array'],
+            'proveedores.*.proveedor_id'          => ['required', 'integer', 'distinct',
+                \Illuminate\Validation\Rule::exists('proveedores', 'id')->where('empresa_id', auth()->user()?->empresa_id)],
+            'proveedores.*.codigo_proveedor'      => ['nullable', 'string', 'max:100'],
+            'proveedores.*.es_principal'          => ['nullable', 'boolean'],
+            'proveedores.*.activo'                => ['nullable', 'boolean'],
             'stock_minimo'             => ['nullable', 'integer', 'min:0'],
             'stock_maximo'             => ['nullable', 'integer', 'min:0'],
             'limite_venta'             => ['nullable', 'integer', 'min:1'], // ✨ NUEVO
@@ -211,6 +219,8 @@ class StoreProductoRequest extends FormRequest
             'categoria_id.exists'                      => 'La categoría seleccionada no existe.',
             'marca_id.exists'                          => 'La marca seleccionada no existe.',
             'proveedor_id.exists'                      => 'El proveedor seleccionado no existe.',
+            'proveedores.*.proveedor_id.exists'        => 'Uno de los proveedores no existe o no pertenece a la empresa.',
+            'proveedores.*.proveedor_id.distinct'      => 'Un proveedor está repetido en la lista.',
 
             'stock_minimo.integer'                     => 'El stock mínimo debe ser un número entero.',
             'stock_minimo.min'                         => 'El stock mínimo no puede ser negativo.',

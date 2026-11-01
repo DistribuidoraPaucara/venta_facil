@@ -1944,48 +1944,52 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // ==========================================
 // 🧪 TEST: CIERRE CAJA SERVICE (Sin Middleware)
 // ==========================================
-Route::get('/test/cajas/{aperturaCaja}/datos-cierre', function (\App\Models\AperturaCaja $aperturaCaja) {
-    try {
-        $cierreCajaService = new \App\Services\CierreCajaService();
-        $datos = $cierreCajaService->calcularDatos($aperturaCaja);
+// Ruta de prueba SIN autenticación: expone los datos de cierre de cualquier caja de cualquier empresa.
+// Solo existe en desarrollo (APP_ENV=local); en producción no se registra.
+if (app()->environment('local')) {
+    Route::get('/test/cajas/{aperturaCaja}/datos-cierre', function (\App\Models\AperturaCaja $aperturaCaja) {
+        try {
+            $cierreCajaService = new \App\Services\CierreCajaService();
+            $datos = $cierreCajaService->calcularDatos($aperturaCaja);
 
-        return response()->json([
-            'success' => true,
-            'apertura_id' => $aperturaCaja->id,
-            'caja_nombre' => $aperturaCaja->caja->nombre,
-            'usuario' => $aperturaCaja->usuario->name,
-            'data' => [
-                'sumatoria_ventas_total' => (float) ($datos['sumatorialVentas'] ?? 0),
-                'sumatoria_ventas_efectivo' => (float) ($datos['sumatorialVentasEfectivo'] ?? 0),
-                'sumatoria_ventas_credito' => (float) ($datos['sumatorialVentasCredito'] ?? 0),
-                'sumatoria_ventas_anuladas' => (float) ($datos['sumatorialVentasAnuladas'] ?? 0),
-                'sumatoria_gastos' => (float) ($datos['sumatorialGastos'] ?? 0),
-                'sumatoria_pagos_sueldo' => (float) ($datos['sumatorialPagosSueldo'] ?? 0),
-                'sumatoria_anticipos' => (float) ($datos['sumatorialAnticipos'] ?? 0),
-                'sumatoria_anulaciones' => (float) ($datos['sumatorialAnulaciones'] ?? 0),
-                'efectivo_esperado' => $datos['efectivoEsperado'] ?? [],
-                'movimientos_agrupados' => collect($datos['movimientosAgrupados'] ?? [])
-                    ->map(fn($items, $tipo) => [
-                        'tipo' => $tipo,
-                        'total' => (float) $items->sum('monto'),
-                        'cantidad' => (int) $items->count(),
-                    ])
-                    ->values()
-                    ->toArray(),
-                'ventasPorTipoPago' => $datos['ventasPorTipoPago'] ?? [],
-                'sumatoriasVentasPorTipoPago' => $datos['sumatoriasVentasPorTipoPago'] ?? [],
-                'ventasPorEstado' => $datos['ventasPorEstado'] ?? [],
-                'total_ingresos' => (float) ($datos['totalIngresos'] ?? 0),
-                'total_egresos' => (float) ($datos['totalEgresos'] ?? 0),
-            ],
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-        ], 404);
-    }
-});
+            return response()->json([
+                'success' => true,
+                'apertura_id' => $aperturaCaja->id,
+                'caja_nombre' => $aperturaCaja->caja->nombre,
+                'usuario' => $aperturaCaja->usuario->name,
+                'data' => [
+                    'sumatoria_ventas_total' => (float) ($datos['sumatorialVentas'] ?? 0),
+                    'sumatoria_ventas_efectivo' => (float) ($datos['sumatorialVentasEfectivo'] ?? 0),
+                    'sumatoria_ventas_credito' => (float) ($datos['sumatorialVentasCredito'] ?? 0),
+                    'sumatoria_ventas_anuladas' => (float) ($datos['sumatorialVentasAnuladas'] ?? 0),
+                    'sumatoria_gastos' => (float) ($datos['sumatorialGastos'] ?? 0),
+                    'sumatoria_pagos_sueldo' => (float) ($datos['sumatorialPagosSueldo'] ?? 0),
+                    'sumatoria_anticipos' => (float) ($datos['sumatorialAnticipos'] ?? 0),
+                    'sumatoria_anulaciones' => (float) ($datos['sumatorialAnulaciones'] ?? 0),
+                    'efectivo_esperado' => $datos['efectivoEsperado'] ?? [],
+                    'movimientos_agrupados' => collect($datos['movimientosAgrupados'] ?? [])
+                        ->map(fn($items, $tipo) => [
+                            'tipo' => $tipo,
+                            'total' => (float) $items->sum('monto'),
+                            'cantidad' => (int) $items->count(),
+                        ])
+                        ->values()
+                        ->toArray(),
+                    'ventasPorTipoPago' => $datos['ventasPorTipoPago'] ?? [],
+                    'sumatoriasVentasPorTipoPago' => $datos['sumatoriasVentasPorTipoPago'] ?? [],
+                    'ventasPorEstado' => $datos['ventasPorEstado'] ?? [],
+                    'total_ingresos' => (float) ($datos['totalIngresos'] ?? 0),
+                    'total_egresos' => (float) ($datos['totalEgresos'] ?? 0),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 404);
+        }
+    });
+}
 
 // ✅ NUEVO (2026-08-23): Endpoint para verificar caja abierta
 Route::get('/caja/abierta', function () {

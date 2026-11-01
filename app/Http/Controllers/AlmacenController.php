@@ -43,6 +43,7 @@ class AlmacenController extends Controller
             'responsable' => ['nullable', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:50'],
             'activo' => ['boolean'],
+            'permite_venta' => ['boolean'], // Aparece en la pantalla de ventas para descontar de él (ej. REFRIGERADOR)
         ];
     }
 

@@ -100,8 +100,25 @@ export interface ConversionUnidad {
   producto_destino?: { id: Id; nombre: string; sku: string }; // ✨ Relación al producto destino
 }
 
+/** Proveedor del producto (producto_proveedor). ultimo_* son de solo lectura: vienen de las compras aprobadas */
+export type ProveedorProducto = {
+  proveedor_id: number;
+  nombre: string;
+  razon_social?: string | null;
+  codigo?: string | null; // código del proveedor en el sistema (PRV0001)
+  codigo_proveedor?: string | null; // código del producto en el catálogo del proveedor (sus facturas)
+  es_principal: boolean;
+  activo: boolean;
+  ultimo_precio?: number | null;
+  unidad?: string | null;
+  fecha_ultima_compra?: string | null;
+  ultima_compra_id?: number | null;
+  ultima_compra_numero?: string | null;
+};
+
 export interface ProductoFormData extends BaseFormData {
   id?: Id;
+  proveedores: ProveedorProducto[];
   nombre: string;
   sku?: string | null;
   descripcion?: string | null;

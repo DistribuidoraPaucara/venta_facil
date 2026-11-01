@@ -295,6 +295,7 @@ export interface MovimientoUnificado extends BaseEntity {
 export type EstadoMovimiento = 'PENDIENTE' | 'PROCESADO' | 'CANCELADO' | 'APROBADO' | 'RECHAZADO';
 
 export interface FiltrosMovimientos {
+    direccion?: 'asc' | 'desc' | null; // Orden por id de la tabla (no es un filtro: no se muestra como tal)
     // Filtros básicos
     tipo?: TipoMovimientoUnificado;
     tipos?: TipoMovimientoUnificado[];
@@ -366,3 +367,93 @@ export interface EstadisticasMovimientos {
 
 // Alias para compatibilidad
 export type MovimientosStats = EstadisticasMovimientos;
+
+/** Fila del resumen por producto (InventarioController::resumenMovimientosPorProducto) */
+export interface ResumenProductoMovimientos {
+    producto_id: number;
+    nombre: string;
+    sku: string | null;
+    movimientos: number;
+    entradas: number;
+    salidas: number;
+    vendido: number;
+    ajustes: number;
+    transferencias: number;
+    neto: number;
+    stock_actual: number;
+}
+
+/** Kardex de un producto (InventarioController::kardexProducto) */
+export interface KardexFila {
+    tipo_fila: 'movimiento' | 'salto'; // salto = cambio de stock sin movimiento registrado
+    id?: number;
+    fecha: string | null;
+    tipo: string | null;
+    descripcion: string;
+    documento?: string | null;
+    documento_url?: string | null;
+    almacen: string | null;
+    lote: string | null;
+    cantidad: number;
+    saldo: number;
+    usuario?: string | null;
+    anulado?: boolean;
+}
+
+export interface KardexProducto {
+    producto: { id: number; nombre: string; sku: string | null };
+    almacen_id: number | null;
+    desde: string;
+    hasta: string;
+    stock_inicial: number;
+    entradas: number;
+    salidas: number;
+    saltos: number;
+    num_saltos: number;
+    stock_final: number;
+    stock_actual: number | null; // null si el período no llega a hoy
+    truncado: boolean;
+    filas: KardexFila[];
+}
+
+export type GrupoMovimiento = 'venta' | 'compra' | 'transferencia' | 'ajuste' | 'merma' | 'reserva' | 'otro';
+
+/**
+ * Estadísticas del listado de movimientos (InventarioController::estadisticasMovimientos), según el filtro.
+ * Entradas/Salidas excluyen transferencias y reservas; las unidades no cuentan anulados.
+ */
+export interface EstadisticasListadoMovimientos {
+    total_movimientos: number;
+    total_anulados: number;
+    total_entradas: number;
+    unidades_entradas: number;
+    total_salidas: number;
+    unidades_salidas: number;
+    total_ventas: number;
+    unidades_vendidas: number;
+    total_compras: number;
+    unidades_compradas: number;
+    total_transferencias: number;
+    unidades_transferidas: number;
+    total_ajustes: number;
+    total_mermas: number;
+    unidades_mermas: number;
+    productos_afectados: number;
+    almacenes_activos: number;
+    por_tipo: {
+        tipo: string;
+        grupo: GrupoMovimiento;
+        movimientos: number;
+        anulados: number;
+        unidades_entrada: number;
+        unidades_salida: number;
+    }[];
+    tendencia: {
+        fecha: string;
+        entradas: number;
+        salidas: number;
+        ventas: number;
+        transferencias: number;
+        mermas: number;
+    }[];
+}

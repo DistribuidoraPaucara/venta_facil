@@ -19,39 +19,79 @@ interface FiltrosMovimientosProps {
     filtros: IFiltrosMovimientos;
     onFiltrosChange: (filtros: IFiltrosMovimientos) => void;
     almacenes: Array<{ id: number; nombre: string; }>;
+    usuarios?: Array<{ id: number; name: string; }>;
     productos: Array<{ id: number; nombre: string; codigo?: string; }>;
     tiposAjuste?: TipoAjuste[];
     showAdvanced?: boolean;
 }
 
-const tiposMovimiento = [
-    // ✅ Entradas (desde CompraController, AjusteInventario, DevolucionesVenta)
-    { value: 'ENTRADA_COMPRA', label: 'Entrada por Compra' },
-    { value: 'ENTRADA_AJUSTE', label: 'Entrada por Ajuste' },
-    { value: 'ENTRADA_DEVOLUCION', label: 'Entrada por Devolución de Cliente' },
-    // ✅ Salidas (desde VentaController, AjusteInventario, Mermas)
-    { value: 'SALIDA_VENTA', label: 'Salida por Venta' },
-    { value: 'SALIDA_AJUSTE', label: 'Salida por Ajuste' },
-    { value: 'SALIDA_MERMA', label: 'Salida por Merma' },
-    // ✅ Operaciones entre almacenes
-    { value: 'TRANSFERENCIA', label: 'Transferencia entre Almacenes' },
-    // ✅ Ajustes generales
-    { value: 'AJUSTE', label: 'Ajuste General' },
-    // ✅ Reservas de Proforma (desde ReservaDistribucionService)
-    { value: 'RESERVA_PROFORMA', label: 'Reserva de Proforma' },
-    { value: 'LIBERACION_RESERVA', label: 'Liberación de Reserva' },
-    { value: 'CONSUMO_RESERVA', label: 'Consumo de Reserva (Conversión a Venta)' },
-    // ✅ Anulaciones de documentos
-    { value: 'ANULACION_VENTA', label: 'Anulación de Venta' },
-    { value: 'ANULACION_COMPRA', label: 'Anulación de Compra' },
-    { value: 'ANULACION_PROFORMA', label: 'Anulación de Proforma' },
-    { value: 'ANULACION_CONSUMO_RESERVA', label: 'Anulación de Consumo de Reserva' },
+// Grupos primero (abarcan varios tipos reales, ver MovimientoInventario::scopePorTipo) y luego tipos puntuales
+export const tiposMovimiento = [
+    { value: 'SALIDA_VENTA', label: '🛒 Ventas (incluye desde proforma)' },
+    { value: 'ENTRADA_COMPRA', label: '📥 Compras' },
+    { value: 'TRANSFERENCIA', label: '🔄 Transferencias (entrada y salida)' },
+    { value: 'AJUSTE', label: '🔧 Ajustes (entrada, salida y masivos)' },
+    { value: 'MERMA', label: '⚠️ Mermas' },
+    { value: 'FRACCIONAMIENTO', label: '✂️ Fraccionamientos' },
+    { value: 'DEVOLUCION', label: '↩️ Devoluciones' },
+    { value: 'ANULACION', label: '❌ Anulaciones' },
+    { value: 'RESERVA', label: '📋 Reservas de proforma' },
+    { value: 'ENTRADA', label: '⬆️ Todas las entradas' },
+    { value: 'SALIDA', label: '⬇️ Todas las salidas' },
+    { value: 'ENTRADA_AJUSTE', label: 'Solo ajuste de entrada' },
+    { value: 'SALIDA_AJUSTE', label: 'Solo ajuste de salida' },
+    { value: 'AJUSTE_MASIVO', label: 'Solo ajuste masivo' },
 ];
+
+// Períodos rápidos: [desde, hasta] en fecha local (YYYY-MM-DD)
+const fechaLocal = (d: Date) => d.toLocaleDateString('en-CA');
+const sumarDias = (d: Date, dias: number) => {
+    const r = new Date(d);
+    r.setDate(r.getDate() + dias);
+    return r;
+};
+export const periodosRapidos: { clave: string; label: string; rango: () => [string, string] }[] = [
+    { clave: 'hoy', label: 'Hoy', rango: () => [fechaLocal(new Date()), fechaLocal(new Date())] },
+    { clave: 'ayer', label: 'Ayer', rango: () => [fechaLocal(sumarDias(new Date(), -1)), fechaLocal(sumarDias(new Date(), -1))] },
+    {
+        clave: 'semana',
+        label: 'Esta semana',
+        rango: () => {
+            const hoy = new Date();
+            return [fechaLocal(sumarDias(hoy, -((hoy.getDay() + 6) % 7))), fechaLocal(hoy)]; // desde el lunes
+        },
+    },
+    {
+        clave: 'mes',
+        label: 'Este mes',
+        rango: () => {
+            const hoy = new Date();
+            return [fechaLocal(new Date(hoy.getFullYear(), hoy.getMonth(), 1)), fechaLocal(hoy)];
+        },
+    },
+    {
+        clave: 'mes_anterior',
+        label: 'Mes anterior',
+        rango: () => {
+            const hoy = new Date();
+            return [fechaLocal(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)), fechaLocal(new Date(hoy.getFullYear(), hoy.getMonth(), 0))];
+        },
+    },
+    { clave: '30dias', label: 'Últimos 30 días', rango: () => [fechaLocal(sumarDias(new Date(), -29)), fechaLocal(new Date())] },
+];
+
+// Período rápido que coincide con las fechas dadas (para resaltarlo y recordarlo)
+export const periodoDeFechas = (desde?: string, hasta?: string) =>
+    periodosRapidos.find((p) => {
+        const [d, h] = p.rango();
+        return d === (desde || '').slice(0, 10) && h === (hasta || '').slice(0, 10);
+    })?.clave;
 
 export default function FiltrosMovimientos({
     filtros,
     onFiltrosChange,
     almacenes,
+    usuarios = [],
     productos,
     tiposAjuste = [],
     showAdvanced = false
@@ -69,6 +109,11 @@ export default function FiltrosMovimientos({
     const almacenesOptions = almacenes.map(a => ({
         value: a.id.toString(),
         label: a.nombre,
+    }));
+
+    const usuariosOptions = usuarios.map(u => ({
+        value: u.id.toString(),
+        label: u.name,
     }));
 
     const productosOptions = productos.map(p => ({
@@ -112,21 +157,31 @@ export default function FiltrosMovimientos({
         setFiltrosLocal({});
     };
 
-    const hasActiveFilters = Object.keys(filtrosLocal).length > 0;
+    // Aplica un período rápido junto con el resto de filtros en edición
+    const aplicarPeriodo = (rango: [string, string]) => {
+        const nuevos = { ...filtrosLocal, fecha_inicio: rango[0], fecha_fin: rango[1] };
+        setFiltrosLocal(nuevos);
+        onFiltrosChange(nuevos);
+    };
+    const periodoActivo = periodoDeFechas(filtrosLocal.fecha_inicio, filtrosLocal.fecha_fin);
+
+    // "direccion" es el orden de la tabla, no un filtro: se conserva al buscar pero no se cuenta ni se muestra
+    const filtrosConValor = Object.entries(filtrosLocal).filter(([k, v]) => k !== 'direccion' && v !== null && v !== undefined && v !== '');
+    const hasActiveFilters = filtrosConValor.length > 0;
 
     // ✅ NUEVO (2026-03-27): Detectar si está activo el filtro de proformas
     const isProformasFilterActive = (filtrosLocal as any).referencia_tipo === 'proforma';
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
+        <div>
+            <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-md">
+                <div className="flex items-center justify-between space-x-4 w-full">
                     <CardTitle className="flex items-center gap-2">
                         <Filter className="h-5 w-5" />
                         Filtros
                         {hasActiveFilters && (
                             <Badge variant="secondary" className="ml-2">
-                                {Object.keys(filtrosLocal).length}
+                                {filtrosConValor.length}
                             </Badge>
                         )}
                     </CardTitle>
@@ -135,7 +190,7 @@ export default function FiltrosMovimientos({
                             variant="default"
                             size="sm"
                             onClick={aplicarFiltros}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                         >
                             <Search className="h-4 w-4 mr-1" />
                             Buscar
@@ -160,11 +215,28 @@ export default function FiltrosMovimientos({
                         </Collapsible>
                     </div>
                 </div>
-            </CardHeader>
+            </div>
 
             <Collapsible open={isOpen} onOpenChange={setIsOpen}>
                 <CollapsibleContent>
-                    <CardContent className="space-y-4">
+                    <div className="space-y-4 p-2 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700">
+                        {/* Períodos rápidos: aplican de inmediato */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Período:</span>
+                            {periodosRapidos.map((p) => (
+                                <Button
+                                    key={p.clave}
+                                    type="button"
+                                    size="sm"
+                                    variant={periodoActivo === p.clave ? 'default' : 'outline'}
+                                    onClick={() => aplicarPeriodo(p.rango())}
+                                    className="h-7 px-3 text-xs"
+                                >
+                                    {p.label}
+                                </Button>
+                            ))}
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Búsqueda de producto - columna más ancha */}
                             <div className="col-span-1 md:col-span-1 lg:col-span-1 space-y-2">
@@ -244,6 +316,19 @@ export default function FiltrosMovimientos({
                                 />
                             </div>
 
+                            {/* Usuario que hizo el movimiento */}
+                            <div className="space-y-2">
+                                <Label>Usuario</Label>
+                                <SearchSelect
+                                    placeholder="Todos los usuarios..."
+                                    value={filtrosLocal.usuario_id?.toString() || ''}
+                                    options={usuariosOptions}
+                                    onChange={(value) => updateFiltroLocal('usuario_id', value ? Number(value) : undefined)}
+                                    allowClear={true}
+                                    emptyText="No se encontraron usuarios"
+                                />
+                            </div>
+
                             {/* Fecha desde */}
                             <div className="space-y-2">
                                 <Label htmlFor="fecha_inicio">Fecha desde</Label>
@@ -308,14 +393,19 @@ export default function FiltrosMovimientos({
                                 <div className="flex flex-wrap gap-2">
                                     <span className="text-sm text-muted-foreground">Filtros activos:</span>
                                     {Object.entries(filtrosLocal).map(([key, value]) => {
-                                        if (!value) return null;
+                                        if (!value || key === 'direccion') return null;
 
                                         let displayValue = value.toString();
                                         let displayKey = key;
 
                                         // Personalizar la visualización de algunos filtros
-                                        if (key === 'almacen_id') {
-                                            const almacen = almacenes.find(a => a.id === value);
+                                        if (key === 'fecha_inicio' || key === 'fecha_fin') {
+                                            displayKey = key === 'fecha_inicio' ? 'Desde' : 'Hasta';
+                                        } else if (key === 'usuario_id') {
+                                            displayValue = usuarios.find(u => u.id === Number(value))?.name || value.toString();
+                                            displayKey = 'Usuario';
+                                        } else if (key === 'almacen_id') {
+                                            const almacen = almacenes.find(a => a.id === Number(value));
                                             displayValue = almacen?.nombre || value.toString();
                                             displayKey = 'Almacén';
                                         } else if (key === 'producto_id') {
@@ -353,9 +443,9 @@ export default function FiltrosMovimientos({
                                 </div>
                             </div>
                         )}
-                    </CardContent>
+                    </div>
                 </CollapsibleContent>
             </Collapsible>
-        </Card>
+        </div>
     );
 }

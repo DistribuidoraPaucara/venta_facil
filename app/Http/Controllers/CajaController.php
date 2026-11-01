@@ -55,6 +55,31 @@ class CajaController extends Controller
     }
 
     /**
+     * ¿Puede el usuario autenticado ver u operar la caja de $usuario?
+     * Sí si es su propia caja, o si es admin de la MISMA empresa. El Super Admin (plataforma) puede ver cualquiera.
+     * Las tablas de cajas no tienen empresa_id: la empresa se toma del usuario dueño de la caja.
+     */
+    private function puedeGestionarCajaDe(?\App\Models\User $usuario): bool
+    {
+        $actual = Auth::user();
+        if (! $usuario || ! $actual) {
+            return false;
+        }
+        if ((int) $usuario->id === (int) $actual->id || $actual->hasRole('Super Admin')) {
+            return true;
+        }
+
+        return $actual->hasRole(['admin', 'Admin'])
+            && $actual->empresa_id !== null
+            && (int) $usuario->empresa_id === (int) $actual->empresa_id;
+    }
+
+    private function autorizarCajaDe(?\App\Models\User $usuario): void
+    {
+        abort_unless($this->puedeGestionarCajaDe($usuario), 403, 'No tienes permiso para ver las cajas de este usuario');
+    }
+
+    /**
      * Mostrar dashboard de cajas
      *
      * ✅ MODIFICADO: Soporta tres contextos:
@@ -68,26 +93,14 @@ class CajaController extends Controller
 
         // ✅ NUEVO: Determinar el contexto y usuario destino
         if ($aperturaCaja) {
-            // Admin viendo caja de otro usuario vía apertura específica
-            if ($aperturaCaja->user_id !== $usuarioAutenticado->id) {
-                abort_unless(
-                    $usuarioAutenticado->hasRole(['admin', 'Admin', 'Super Admin']),
-                    403,
-                    'No tienes permiso para ver las cajas de otros usuarios'
-                );
-            }
+            // Admin viendo caja de otro usuario vía apertura específica (de su empresa)
+            $this->autorizarCajaDe($aperturaCaja->usuario);
             $usuarioDestino = $aperturaCaja->usuario;
             $cajaAbiertaHoy = $aperturaCaja;
         } elseif ($userId) {
-            // Admin viendo caja de otro usuario vía user_id (sin importar apertura)
-            if ($userId !== $usuarioAutenticado->id) {
-                abort_unless(
-                    $usuarioAutenticado->hasRole(['admin', 'Admin', 'Super Admin']),
-                    403,
-                    'No tienes permiso para ver las cajas de otros usuarios'
-                );
-            }
+            // Admin viendo caja de otro usuario vía user_id (de su empresa)
             $usuarioDestino = \App\Models\User::findOrFail($userId);
+            $this->autorizarCajaDe($usuarioDestino);
             $cajaAbiertaHoy = AperturaCaja::where('user_id', $usuarioDestino->id)
                 ->whereDoesntHave('cierre')
                 ->with(['caja', 'cierre'])
@@ -115,8 +128,8 @@ class CajaController extends Controller
                 ->where('user_id', $usuarioDestino->id)
                 ->where('fecha', '>=', $cajaAbiertaHoy->fecha)
                 ->with(['tipoOperacion', 'tipoPago', 'comprobantes', 'usuario', 'venta' => function($q) {
-                    $q->select('id', 'numero', 'estado_documento_id', 'tipo_entrega', 'total', 'monto_pagado', 'monto_pendiente', 'requiere_envio'); // ✅ Agregar requiere_envio
-                }, 'venta.estadoDocumento', 'pago:id,estado', 'egreso' => function($q) {
+                    $q->select('id', 'numero', 'estado_documento_id', 'tipo_entrega', 'total', 'monto_pagado', 'monto_pendiente', 'requiere_envio', 'cliente_id'); // ✅ Agregar requiere_envio
+                }, 'venta.estadoDocumento', 'venta.cliente:id,nombre', 'pago:id,estado', 'egreso' => function($q) { // venta.cliente: buscador y Excel de movimientos
                     $q->select('id', 'numero', 'estado_documento_id'); // ✅ Cargar egreso con estado_documento_id
                 }, 'egreso.estadoDocumento']) // ✅ Cargar estado_documento del egreso (2026-08-08)
                 ->orderBy('id', 'desc')  // ✅ ACTUALIZADO: Ordenar por ID descendente
@@ -130,33 +143,41 @@ class CajaController extends Controller
                     // Otros tipos (PAGO, GASTOS, etc.) se incluyen siempre
                     return true;
                 })
+                // Del cliente solo se usa el nombre: sin esto, los campos calculados de crédito de Cliente
+                // ($appends) hacían ~4.000 consultas al serializar los movimientos del día
+                ->each(fn ($mov) => $mov->venta?->cliente?->setAppends([]))
                 ->values(); // ✅ Reindexar array después de filter
         }
 
-        // Obtener historial de aperturas del usuario destino
+        // Historial de aperturas del usuario destino: las últimas 50, o las de un rango de fechas
+        // (historial_desde/hasta) para poder consultar meses anteriores.
+        $historialDesde = request()->date('historial_desde');
+        $historialHasta = request()->date('historial_hasta');
+
+        // Ventas aprobadas/anuladas de cada apertura (en su caja, entre la apertura y el cierre o ahora)
+        // como subconsultas: antes eran 2 consultas por fila. Se usa ventas.created_at porque ventas.fecha
+        // es solo el día: contaba todas las ventas de ese día en la caja aunque fueran de otra apertura.
+        $conteoVentas = fn (array $codigos) => DB::table('ventas')
+            ->join('estados_documento', 'ventas.estado_documento_id', '=', 'estados_documento.id')
+            ->whereColumn('ventas.caja_id', 'aperturas_caja.caja_id')
+            ->whereColumn('ventas.created_at', '>=', 'aperturas_caja.fecha')
+            ->whereRaw('ventas.created_at <= COALESCE((SELECT c.created_at FROM cierres_caja c WHERE c.apertura_caja_id = aperturas_caja.id ORDER BY c.id LIMIT 1), LOCALTIMESTAMP)')
+            ->whereIn('estados_documento.codigo', $codigos)
+            ->selectRaw('COUNT(*)');
+
         $historicoAperturas = AperturaCaja::where('user_id', $usuarioDestino->id)
             ->with(['caja', 'cierre'])
+            ->select('aperturas_caja.*')
+            ->selectSub($conteoVentas(['APROBADO', 'APROBADA']), 'ventas_aprobadas_count')
+            ->selectSub($conteoVentas(['ANULADO']), 'ventas_anuladas_count')
+            ->when($historialDesde, fn ($q) => $q->whereDate('fecha', '>=', $historialDesde))
+            ->when($historialHasta, fn ($q) => $q->whereDate('fecha', '<=', $historialHasta))
             ->orderBy('id', 'desc')  // ✅ ACTUALIZADO: Ordenar por ID descendente
-            ->limit(50)
+            ->limit($historialDesde || $historialHasta ? 500 : 50)
             ->get()
             ->map(function ($apertura) {
-                // ✅ NUEVO: Calcular cantidad de ventas aprobadas y anuladas
-                $fechaApertura = $apertura->fecha;
-                $fechaCierre = $apertura->cierre?->created_at ?? now();
-
-                $ventasAprobadas = DB::table('ventas')
-                    ->join('estados_documento', 'ventas.estado_documento_id', '=', 'estados_documento.id')
-                    ->whereBetween('ventas.fecha', [$fechaApertura, $fechaCierre])
-                    ->where('ventas.caja_id', $apertura->caja_id)
-                    ->whereIn('estados_documento.codigo', ['APROBADO', 'APROBADA'])
-                    ->count();
-
-                $ventasAnuladas = DB::table('ventas')
-                    ->join('estados_documento', 'ventas.estado_documento_id', '=', 'estados_documento.id')
-                    ->whereBetween('ventas.fecha', [$fechaApertura, $fechaCierre])
-                    ->where('ventas.caja_id', $apertura->caja_id)
-                    ->where('estados_documento.codigo', 'ANULADO')
-                    ->count();
+                $ventasAprobadas = (int) $apertura->ventas_aprobadas_count;
+                $ventasAnuladas  = (int) $apertura->ventas_anuladas_count;
 
                 return [
                     'id'                     => $apertura->id,
@@ -403,6 +424,10 @@ class CajaController extends Controller
             'cajaAbiertaHoy'            => $cajaAbiertaHoy,
             'movimientosHoy'            => $movimientosHoy,
             'historicoAperturas'        => $historicoAperturas,
+            'historialFiltro'           => [
+                'desde' => $historialDesde?->toDateString(),
+                'hasta' => $historialHasta?->toDateString(),
+            ],
             'tiposOperacion'            => $tiposOperacion,
             'tiposOperacionClasificados' => $tiposOperacionClasificados,
             'tiposPago'                 => $tiposPago,
@@ -449,14 +474,8 @@ class CajaController extends Controller
         $usuarioAutenticado = Auth::user();
         $usuarioDestino     = $userId ? \App\Models\User::findOrFail($userId) : $usuarioAutenticado;
 
-        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin
-        if ($userId && $usuarioDestino->id !== $usuarioAutenticado->id) {
-            abort_unless(
-                $usuarioAutenticado->hasRole(['admin', 'Admin', 'Super Admin']),
-                403,
-                'No tienes permiso para gestionar cajas de otros usuarios'
-            );
-        }
+        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin de su misma empresa
+        $this->autorizarCajaDe($usuarioDestino);
 
         try {
             DB::beginTransaction();
@@ -475,6 +494,13 @@ class CajaController extends Controller
 
             // Verificar que la caja esté disponible
             $caja = Caja::findOrFail($request->caja_id);
+
+            // La caja física debe ser de la misma empresa que el cajero (caja_id llega del formulario)
+            if ((int) $caja->usuario?->empresa_id !== (int) $usuarioDestino->empresa_id) {
+                return back()->withErrors([
+                    'caja' => 'La caja seleccionada no pertenece a tu empresa.',
+                ]);
+            }
 
             if (! $caja->activa) {
                 return back()->withErrors([
@@ -602,14 +628,8 @@ class CajaController extends Controller
         $usuarioAutenticado = Auth::user();
         $usuarioDestino     = $userId ? \App\Models\User::findOrFail($userId) : $usuarioAutenticado;
 
-        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin
-        if ($userId && $usuarioDestino->id !== $usuarioAutenticado->id) {
-            abort_unless(
-                $usuarioAutenticado->hasRole(['admin', 'Admin', 'Super Admin']),
-                403,
-                'No tienes permiso para gestionar cajas de otros usuarios'
-            );
-        }
+        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin de su misma empresa
+        $this->autorizarCajaDe($usuarioDestino);
 
         try {
             DB::beginTransaction();
@@ -755,6 +775,7 @@ class CajaController extends Controller
      */
     public function obtenerDatosCierre(AperturaCaja $aperturaCaja)
     {
+        $this->autorizarCajaDe($aperturaCaja->usuario); // Solo su caja o, si es admin, cajas de su empresa
         try {
             Log::info('🟦 [obtenerDatosCierre] INICIO', ['apertura_id' => $aperturaCaja->id]);
 
@@ -881,14 +902,8 @@ class CajaController extends Controller
         $usuarioAutenticado = Auth::user();
         $usuarioDestino     = $userId ? \App\Models\User::findOrFail($userId) : $usuarioAutenticado;
 
-        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin
-        if ($userId && $usuarioDestino->id !== $usuarioAutenticado->id) {
-            abort_unless(
-                $usuarioAutenticado->hasRole(['admin', 'Admin', 'Super Admin']),
-                403,
-                'No tienes permiso para gestionar cajas de otros usuarios'
-            );
-        }
+        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin de su misma empresa
+        $this->autorizarCajaDe($usuarioDestino);
 
         $fecha = $request->get('fecha', today());
 
@@ -932,7 +947,7 @@ class CajaController extends Controller
         $apertura = AperturaCaja::findOrFail($aperturaId);
 
         // ✅ VALIDACIÓN: El usuario debe ser el propietario o admin
-        if ($apertura->user_id !== $usuarioAutenticado->id && ! $usuarioAutenticado->hasRole(['admin', 'Admin', 'Super Admin'])) {
+        if (! $this->puedeGestionarCajaDe($apertura->usuario)) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
@@ -1248,14 +1263,8 @@ class CajaController extends Controller
         $usuarioAutenticado = Auth::user();
         $usuarioDestino     = \App\Models\User::findOrFail($userId);
 
-        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin
-        if ($usuarioDestino->id !== $usuarioAutenticado->id) {
-            abort_unless(
-                $usuarioAutenticado->hasRole(['admin', 'Admin', 'Super Admin']),
-                403,
-                'No tienes permiso para ver cajas de otros usuarios'
-            );
-        }
+        // ✅ VALIDACIÓN: Si es otro usuario, debe ser admin de su misma empresa
+        $this->autorizarCajaDe($usuarioDestino);
 
         // Obtener cajas del usuario
         $cajas = Caja::where('user_id', $usuarioDestino->id)
@@ -1273,10 +1282,11 @@ class CajaController extends Controller
         $movimientosHoy = MovimientoCaja::where('user_id', $usuarioDestino->id)
             ->whereDate('fecha', today())
             ->with(['tipoOperacion', 'tipoPago', 'caja', 'usuario', 'venta' => function($q) {
-                $q->select('id', 'numero', 'estado_documento_id', 'tipo_entrega', 'total', 'monto_pagado', 'monto_pendiente'); // ✅ Agregar campos de monto
-            }, 'venta.estadoDocumento']) // ✅ Cargar estado_documento con venta
+                $q->select('id', 'numero', 'estado_documento_id', 'tipo_entrega', 'total', 'monto_pagado', 'monto_pendiente', 'cliente_id'); // ✅ Agregar campos de monto
+            }, 'venta.estadoDocumento', 'venta.cliente:id,nombre']) // ✅ Cargar estado_documento y cliente con venta
             ->orderBy('id', 'desc')  // ✅ ACTUALIZADO: Ordenar por ID descendente
             ->get()
+            ->each(fn ($mov) => $mov->venta?->cliente?->setAppends([])) // Solo el nombre: sin los campos calculados de crédito
             // ✅ NUEVO: Filtrar movimientos - Excluir CREDITO si no están APROBADOS
             ->filter(function($mov) {
                 // Si es VENTA o CREDITO, solo incluir si están APROBADAS
@@ -1415,6 +1425,7 @@ class CajaController extends Controller
             403,
             'No tienes permiso para consolidar cajas'
         );
+        $this->autorizarCajaDe($usuarioDestino); // Solo cajas de usuarios de su empresa
 
         try {
             DB::beginTransaction();
@@ -2141,6 +2152,7 @@ class CajaController extends Controller
      */
     public function imprimirCierre(AperturaCaja $aperturaCaja, Request $request)
     {
+        $this->autorizarCajaDe($aperturaCaja->usuario); // Solo su caja o, si es admin, cajas de su empresa
         $this->authorize('cajas.cerrar');
 
         $formato = $request->query('formato', 'TICKET_80');
@@ -2173,6 +2185,7 @@ class CajaController extends Controller
      */
     public function exportarExcelCierre(AperturaCaja $aperturaCaja)
     {
+        $this->autorizarCajaDe($aperturaCaja->usuario); // Solo su caja o, si es admin, cajas de su empresa
         $this->authorize('cajas.cerrar');
 
         \Log::info('📊 [CajaController::exportarExcelCierre] Exportando cierre de caja a Excel', [
@@ -2226,6 +2239,7 @@ class CajaController extends Controller
      */
     public function imprimirMovimientos(AperturaCaja $aperturaCaja, Request $request)
     {
+        $this->autorizarCajaDe($aperturaCaja->usuario); // Solo su caja o, si es admin, cajas de su empresa
         $this->authorize('cajas.transacciones');
 
         $formato = $request->query('formato', 'A4');
@@ -2279,6 +2293,7 @@ class CajaController extends Controller
      */
     public function exportarExcel(Caja $caja)
     {
+        $this->autorizarCajaDe($caja->usuario); // Solo su caja o, si es admin, cajas de su empresa
         Log::info('📊 [CajaController::exportarExcel] Exportando caja a Excel', [
             'caja_id' => $caja->id,
             'user_id' => auth()->id(),
@@ -2301,6 +2316,7 @@ class CajaController extends Controller
      */
     public function exportarPdf(Caja $caja, Request $request)
     {
+        $this->autorizarCajaDe($caja->usuario); // Solo su caja o, si es admin, cajas de su empresa
         Log::info('📄 [CajaController::exportarPdf] Exportando caja a PDF', [
             'caja_id' => $caja->id,
             'user_id' => auth()->id(),
@@ -2340,6 +2356,7 @@ class CajaController extends Controller
      */
     public function imprimirMovimiento(MovimientoCaja $movimiento, Request $request)
     {
+        $this->autorizarCajaDe($movimiento->usuario); // Solo su caja o, si es admin, cajas de su empresa
         $this->authorize('cajas.transacciones');
 
         // Cargar relaciones necesarias para las plantillas
@@ -2385,6 +2402,7 @@ class CajaController extends Controller
      */
     public function eliminarMovimiento(MovimientoCaja $movimiento)
     {
+        $this->autorizarCajaDe($movimiento->usuario); // Solo su caja o, si es admin, cajas de su empresa
         $this->authorize('cajas.transacciones');
 
         try {

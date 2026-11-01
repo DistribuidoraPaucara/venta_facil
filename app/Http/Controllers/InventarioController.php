@@ -37,6 +37,9 @@ use Inertia\Response;
 
 class InventarioController extends Controller
 {
+    // Tope de filas por página en movimientos (incluye "Mostrar todos")
+    private const MAX_MOVIMIENTOS_PAGINA = 1000;
+
     private ExcelExportService $excelExportService;
     private AjusteDistribucionService $ajusteDistribucionService;
     private MermaDistribucionService $mermaDistribucionService;
@@ -581,127 +584,71 @@ class InventarioController extends Controller
         $anulado     = $request->filled('anulado') ? $request->boolean('anulado') : null;
         $esReversión = $request->filled('es_reversión') ? $request->boolean('es_reversión') : null;  // ✅ NUEVO: Filtro de reversiones
         $referenciaTipo = $request->filled('referencia_tipo') ? $request->string('referencia_tipo') : null;  // ✅ NUEVO (2026-03-27): Filtro por tipo de referencia (proforma, venta, etc)
+        $usuarioId   = $request->filled('usuario_id') ? $request->integer('usuario_id') : null; // Quién hizo el movimiento
         $perPage     = $request->integer('per_page', 15); // ✅ Dinámico: permite cambiar items por página
         $mostrarTodos = $perPage >= 999999; // ✅ NUEVO: Flag para mostrar todos sin paginación
 
-        // Construir query con filtros
-        // ✅ MEJORADO (2026-02-18): Incluir información de conversiones de unidades
-        $query = MovimientoInventario::with([
-            'stockProductoHistorico.producto:id,nombre,sku',
-            'stockProductoHistorico.almacen:id,nombre',
-            'user:id,name,email',  // ✅ MODIFICADO: Agregar email
-            'user.roles:id,name',  // ✅ NUEVO: Cargar roles del usuario
-            'unidadVenta:id,nombre',  // ✅ NUEVO (2026-02-18): Relación para conversiones (unidad de venta)
-            'unidadBase:id,nombre',   // ✅ NUEVO (2026-02-18): Relación para conversiones (unidad base)
-        ])->porFecha($fechaInicio, $fechaFin);
+        $query = $this->queryMovimientosFiltrados($request);
 
-        if ($tipo && ! empty($tipo)) {
-            $query->porTipo($tipo);
-        }
+        // Estadísticas reales del filtro (antes eran conteos por prefijo y el resto quedaba fijo en 0)
+        $stats = $this->estadisticasMovimientos($query);
 
-        if ($almacenId && $almacenId > 0) {
-            $query->porAlmacen($almacenId);
-        }
-
-        // Buscar por ID específico O por búsqueda flexible
-        if ($productoId && $productoId > 0) {
-            $query->porProducto($productoId);
-        } elseif ($productoBusqueda && ! empty($productoBusqueda)) {
-            // ✅ MODIFICADO (2026-03-27): Usar búsqueda con PRIORIDAD (ID primero, luego SKU)
-            $query->porProductoBusquedaConPrioridad($productoBusqueda);
-        }
-
-        // Filtrar por observaciones
-        if ($observaciones && ! empty($observaciones)) {
-            $query->porObservaciones($observaciones);
-        }
-
-        // Filtrar por número de documento
-        if ($numeroDocumento && ! empty($numeroDocumento)) {
-            $query->where('numero_documento', 'LIKE', '%' . $numeroDocumento . '%');
-        }
-
-        // Filtrar por estado (anulado)
-        if ($anulado !== null) {
-            $query->where('anulado', $anulado);
-        }
-
-        // ✅ NUEVO: Filtrar por reversiones (es_reversión=true filtra solo ENTRADA_AJUSTE)
-        if ($esReversión === true) {
-            $query->where('tipo', 'ENTRADA_AJUSTE');
-        }
-
-        // ✅ NUEVO (2026-03-27): Filtrar por tipo de referencia (proforma, venta, etc)
-        if ($referenciaTipo && ! empty($referenciaTipo)) {
-            $query->where('referencia_tipo', $referenciaTipo);
-        }
-
-        // ✅ CRÍTICO: Filtrar por empresa del usuario - Solo mostrar movimientos de su empresa
-        $empresaUsuario = auth()->user()?->empresa;
-        if ($empresaUsuario) {
-            $query->whereHas('stockProductoHistorico.producto', function ($q) use ($empresaUsuario) {
-                $q->where('empresa_id', $empresaUsuario->id);
-            });
-        }
-
-        // Obtener total para estadísticas
-        $totalMovimientos = $query->count();
-        $totalEntradas    = (clone $query)->where('tipo', 'like', 'ENTRADA%')->count();
-        $totalSalidas     = (clone $query)->where('tipo', 'like', 'SALIDA%')->count();
-
-        // ✅ Paginar resultados - Laravel obtiene automáticamente la página del request
-        // ✅ ORDENAMIENTO (2026-06-28): Ordenar por id DESC (movimientos más recientes primero)
-        // ✅ NUEVO: Si mostrarTodos=true, paginar con el total de registros (1 sola página)
-        $pageSize = $mostrarTodos ? max($totalMovimientos, 1) : $perPage;
-        $movimientosPaginados = $query->orderByDesc('id')
+        // Orden por id: desc (más recientes primero, por defecto) o asc (clic en la columna Id)
+        // "Mostrar todos" se limita a MAX_MOVIMIENTOS_PAGINA: con rangos grandes cargaba miles de filas de una vez
+        $direccion = $request->input('direccion') === 'asc' ? 'asc' : 'desc';
+        $pageSize = $mostrarTodos ? self::MAX_MOVIMIENTOS_PAGINA : min(max($perPage, 1), self::MAX_MOVIMIENTOS_PAGINA);
+        $movimientosPaginados = $query->orderBy('id', $direccion)
             ->paginate($pageSize);
 
-        // ✅ NUEVO (2026-06-02): Obtener movimientos sin paginar para comparación de inconsistencias
-        $movimientosParaComparacion = null;
-        if ($mostrarTodos) {
-            // Si mostramos todos, ya tenemos todos los movimientos
-            $movimientosParaComparacion = $movimientosPaginados;
-        } else {
-            // Si no, obtener todos los movimientos del filtro actual para detección de inconsistencias
-            $movimientosParaComparacion = $query->orderByDesc('id')->get();
-        }
+        $urlDocumento = $this->resolvedorUrlDocumento($movimientosPaginados->getCollection());
 
-        // Enlace al documento de origen (venta, compra, proforma, ajuste...). Algunas compras y transferencias
-        // solo guardan el número: se resuelven por número en una sola consulta por tipo.
-        $sinId = $movimientosPaginados->getCollection()->filter(fn ($m) => ! $m->referencia_id && $m->numero_documento);
-        $comprasPorNumero = \App\Models\Compra::whereIn('numero', $sinId->where('referencia_tipo', 'compra')->pluck('numero_documento')->unique())
-            ->pluck('id', 'numero');
-        $transferenciasPorNumero = \App\Models\TransferenciaInventario::whereIn('numero', $sinId->filter(fn ($m) => str_starts_with((string) $m->numero_documento, 'TRF-'))->pluck('numero_documento')->unique())
-            ->pluck('id', 'numero');
+        // Lo que se vendió en la unidad de la venta (ej. 8 UND de un producto que se guarda en CJT y descuenta -0.08):
+        // los campos de conversión del movimiento no se llenan, así que se toma del detalle de la venta.
+        $ventaIds = $movimientosPaginados->getCollection()
+            ->filter(fn ($m) => in_array($m->referencia_tipo, ['venta', 'venta_devolucion', 'venta_anulacion'], true) && $m->referencia_id)
+            ->pluck('referencia_id')->unique();
+        $detallesVenta = $ventaIds->isEmpty() ? collect() : DB::table('detalle_ventas as d')
+            ->leftJoin('unidades_medida as u', 'u.id', '=', 'd.unidad_medida_id')
+            ->whereIn('d.venta_id', $ventaIds)
+            ->groupBy('d.venta_id', 'd.producto_id', 'd.unidad_medida_id', 'u.codigo')
+            ->selectRaw('d.venta_id, d.producto_id, d.unidad_medida_id, u.codigo, SUM(d.cantidad) as cantidad')
+            ->get()
+            ->keyBy(fn ($d) => "{$d->venta_id}|{$d->producto_id}");
 
-        $urlDocumento = function ($m) use ($comprasPorNumero, $transferenciasPorNumero): ?string {
-            $id   = $m->referencia_id;
-            $tipo = $m->referencia_tipo;
-            if (! $id && $tipo === 'compra') {
-                $id = $comprasPorNumero[$m->numero_documento] ?? null;
-            }
-            if (! $id && str_starts_with((string) $m->numero_documento, 'TRF-')) {
-                $id   = $transferenciasPorNumero[$m->numero_documento] ?? null;
-                $tipo = 'transferencia';
-            }
-            if (! $id) {
+        // Motivo legible de ajustes, mermas, transferencias, devoluciones... (en ventas no aporta: siempre "Venta directa")
+        $tiposAjuste = \App\Models\TipoAjusteInventario::pluck('label', 'id');
+        $tiposMerma  = \App\Models\TipoMerma::pluck('label', 'id');
+        $motivoLegible = function ($m) use ($tiposAjuste, $tiposMerma): ?string {
+            if (in_array($m->tipo, ['SALIDA_VENTA', 'CONSUMO_RESERVA'], true)) {
                 return null;
             }
+            $obs   = $m->observacion;
+            $texto = $obs;
+            if ($obs && str_starts_with(ltrim($obs), '{')) {
+                $json  = json_decode($obs, true);
+                $texto = is_array($json)
+                    ? ($json['metadata']['razon'] ?? $json['motivo'] ?? $json['metadata']['motivo']
+                        ?? (($json['evento'] ?? $m->tipo) !== $m->tipo ? $json['evento'] : null))
+                    : null;
+            }
+            $tipo = $tiposAjuste[$m->tipo_ajuste_inventario_id] ?? $tiposMerma[$m->tipo_merma_id] ?? null;
 
-            return match ($tipo) {
-                'venta', 'venta_devolucion', 'venta_anulacion' => "/ventas/{$id}",
-                'compra'                                       => "/compras/{$id}",
-                'proforma'                                     => "/proformas/{$id}",
-                'ajuste', 'ajuste_inventario'                  => "/inventario/ajustes/{$id}",
-                'transferencia'                                => "/inventario/transferencias/{$id}",
-                'merma'                                        => "/inventario/mermas/{$id}",
-                'EDICION_PRODUCTO'                             => "/productos/{$id}/edit",
-                default                                        => null,
-            };
+            return implode(' · ', array_filter([$tipo, $texto])) ?: null;
         };
 
+        // Stock mínimo por producto y almacén (stock_limites; si no hay, el mínimo general del producto)
+        // para avisar cuando una salida deja el stock agotado o bajo el mínimo
+        $paresPagina = $movimientosPaginados->getCollection()->map(fn ($m) => $m->stockProductoHistorico)->filter();
+        $minimosAlmacen = $paresPagina->isEmpty() ? collect() : \App\Models\StockLimite::whereIn('producto_id', $paresPagina->pluck('producto_id')->unique())
+            ->whereIn('almacen_id', $paresPagina->pluck('almacen_id')->unique())
+            ->groupBy('producto_id', 'almacen_id')
+            ->selectRaw('producto_id, almacen_id, SUM(stock_minimo) as minimo')
+            ->get()
+            ->mapWithKeys(fn ($l) => ["{$l->producto_id}|{$l->almacen_id}" => (float) $l->minimo]);
+        $minimosProducto = Producto::whereIn('id', $paresPagina->pluck('producto_id')->unique())->pluck('stock_minimo', 'id');
+
         // Mapear datos de movimientos
-        $movimientos = $movimientosPaginados->map(function ($movimiento) use ($urlDocumento) {
+        $movimientos = $movimientosPaginados->map(function ($movimiento) use ($urlDocumento, $detallesVenta, $motivoLegible, $minimosAlmacen, $minimosProducto) {
             // ✅ Validar que stockProducto existe (puede ser null si se eliminó el lote)
             $stockProducto = $movimiento->stockProductoHistorico;
 
@@ -768,9 +715,29 @@ class InventarioController extends Controller
 
             $cantidadesExtraidas = $this->extraerCantidadesDelJSON($movimiento->observacion);
 
+            // Venta en otra unidad que la del stock: se muestra "8 UND → -0.08 CJT"
+            $detalle = $detallesVenta["{$movimiento->referencia_id}|{$stockProducto->producto->id}"] ?? null;
+            $ventaEnOtraUnidad = $detalle && $detalle->unidad_medida_id
+                && (int) $detalle->unidad_medida_id !== (int) $stockProducto->producto->unidad_medida_id;
+
+            // Alerta solo en salidas: el stock del almacén quedó agotado o bajo su mínimo
+            $minimo = $minimosAlmacen["{$stockProducto->producto_id}|{$stockProducto->almacen_id}"]
+                ?? ((float) ($minimosProducto[$stockProducto->producto_id] ?? 0) ?: null);
+            $despues = (float) ($movimiento->cantidad_total_posterior ?? $movimiento->cantidad_posterior ?? 0);
+            $alertaStock = null;
+            if ((float) $movimiento->cantidad < 0 && ! $movimiento->anulado) {
+                $alertaStock = $despues <= 0 ? 'agotado' : ($minimo && $despues < $minimo ? 'bajo_minimo' : null);
+            }
+
             return [
                 'id'                => $movimiento->id,
                 'tipo'              => $movimiento->tipo,  // ✅ CAMBIO: Enviar tipo directo sin transformación
+                'unidad'            => $stockProducto->producto->unidad?->codigo,
+                'cantidad_vendida'  => $ventaEnOtraUnidad ? (float) $detalle->cantidad : null,
+                'unidad_vendida'    => $ventaEnOtraUnidad ? $detalle->codigo : null,
+                'motivo_texto'      => $motivoLegible($movimiento),
+                'stock_minimo'      => $minimo,
+                'alerta_stock'      => $alertaStock,
                 'tipo_ajuste_id'    => $movimiento->tipo_ajuste_inventario_id,
                 'tipo_merma_id'     => $movimiento->tipo_merma_id,
                 'estado_merma_id'   => $movimiento->estado_merma_id,
@@ -832,24 +799,7 @@ class InventarioController extends Controller
         });
 
         // ✅ NUEVO (2026-06-02): Detectar inconsistencias en los movimientos
-        $movimientos = $this->detectarInconsistenciasMovimientos($movimientos, $movimientosParaComparacion);
-
-        // Estadísticas
-        $stats = [
-            'total_movimientos'      => $totalMovimientos,
-            'total_entradas'         => $totalEntradas,
-            'total_salidas'          => $totalSalidas,
-            'total_transferencias'   => 0,
-            'total_mermas'           => 0,
-            'total_ajustes'          => 0,
-            'valor_total_entradas'   => 0,
-            'valor_total_salidas'    => 0,
-            'valor_total_mermas'     => 0,
-            'productos_afectados'    => 0,
-            'almacenes_activos'      => 0,
-            'movimientos_pendientes' => 0,
-            'tendencia_semanal'      => [],
-        ];
+        $movimientos = $this->detectarInconsistenciasMovimientos($movimientos);
 
         // ✅ NUEVO: Obtener productos vendidos hoy (APROBADOS)
         $productosVendidosHoy = [];
@@ -941,8 +891,23 @@ class InventarioController extends Controller
                 'anulado'           => $anulado,
                 'es_reversión'      => $esReversión,  // ✅ NUEVO: Pasar filtro de reversiones al frontend
                 'referencia_tipo'   => $referenciaTipo,  // ✅ NUEVO (2026-03-27): Pasar filtro de referencia_tipo para mantenerlo en navegación
+                'usuario_id'        => $usuarioId,
+                'direccion'         => $direccion === 'asc' ? 'asc' : null, // null = orden por defecto (desc)
             ],
             'almacenes'               => $almacenes,
+            // Usuarios de la empresa para el filtro "Usuario"
+            'usuarios'                => \App\Models\User::where('empresa_id', auth()->user()?->empresa_id)
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            // Solo se calcula al abrir la pestaña "Por producto" (recarga parcial con only=['resumen_productos'])
+            'resumen_productos'       => Inertia::optional(fn () => $this->resumenMovimientosPorProducto(
+                $this->queryMovimientosFiltrados($request),
+                $almacenId
+            )),
+            // Kardex: solo al abrir esa pestaña (recarga parcial con only=['kardex'] y kardex_producto_id)
+            'kardex'                  => Inertia::optional(fn () => $request->filled('kardex_producto_id')
+                ? $this->kardexProducto($request->integer('kardex_producto_id'), $almacenId, $fechaInicio, $fechaFin)
+                : null),
             'productos'               => $productos,
             'productosVendidosHoy'    => $productosVendidosHoy,
             'tipo_mermas'             => $tipo_mermas,
@@ -1686,8 +1651,8 @@ class InventarioController extends Controller
      */
     public function reportes(): Response
     {
-        $categorias = Categoria::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
-        $almacenes  = Almacen::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        $categorias = Categoria::porEmpresa()->where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+        $almacenes  = Almacen::porEmpresa()->where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
 
         return Inertia::render('inventario/reportes', [
             'categorias' => $categorias,
@@ -3075,104 +3040,46 @@ class InventarioController extends Controller
             $fechaDesde  = $request->date('fecha_desde');
             $fechaHasta  = $request->date('fecha_hasta');
 
-            // Query base de movimientos
-            $movimientosQuery = MovimientoInventario::when($almacenId, fn($q) =>
-                $q->whereHas('stockProducto', fn($sq) => $sq->where('almacen_id', $almacenId))
-            )->when($categoriaId, fn($q) =>
-                $q->whereHas('stockProducto.producto', fn($sq) => $sq->where('categoria_id', $categoriaId))
-            )->when($fechaDesde, fn($q) =>
-                $q->whereDate('fecha', '>=', $fechaDesde)
-            )->when($fechaHasta, fn($q) =>
-                $q->whereDate('fecha', '<=', $fechaHasta)
-            );
+            // Solo movimientos de la empresa: lotes en sus almacenes (o el almacén filtrado, si es suyo)
+            $almacenesEmpresa = Almacen::porEmpresa()->pluck('id')->all();
+            $almacenes = $almacenId ? array_values(array_intersect($almacenesEmpresa, [$almacenId])) : $almacenesEmpresa;
 
-            // Estadísticas por tipo de movimiento
-            $totalMovimientos    = (clone $movimientosQuery)->count();
-            $totalEntradas       = (clone $movimientosQuery)->where('tipo', 'like', 'ENTRADA%')->count();
-            $totalSalidas        = (clone $movimientosQuery)->where('tipo', 'like', 'SALIDA%')->count();
-            $totalTransferencias = (clone $movimientosQuery)->where('tipo', 'like', '%TRANSFERENCIA%')->count();
-            $totalMermas         = (clone $movimientosQuery)->where('tipo', 'like', '%MERMA%')->count();
-            $totalAjustes        = (clone $movimientosQuery)->where('tipo', 'like', '%AJUSTE%')->count();
+            $movimientosQuery = MovimientoInventario::query()
+                ->whereHas('stockProductoHistorico', fn ($q) => $q->whereIn('almacen_id', $almacenes)
+                    ->whereHas('producto', fn ($p) => $categoriaId ? $p->where('categoria_id', $categoriaId) : $p))
+                ->when($fechaDesde, fn ($q) => $q->whereDate('fecha', '>=', $fechaDesde))
+                ->when($fechaHasta, fn ($q) => $q->whereDate('fecha', '<=', $fechaHasta));
 
-            // Valor total de movimientos (usando cantidad como aproximación)
-            $valorTotalEntradas = (clone $movimientosQuery)
-                ->where('tipo', 'like', 'ENTRADA%')
-                ->where('cantidad', '>', 0)
-                ->sum(DB::raw('cantidad'));
-
-            $valorTotalSalidas = (clone $movimientosQuery)
-                ->where('tipo', 'like', 'SALIDA%')
-                ->where('cantidad', '>', 0)
-                ->sum(DB::raw('cantidad'));
-
-            $valorTotalMermas = (clone $movimientosQuery)
-                ->where('tipo', 'like', '%MERMA%')
-                ->sum(DB::raw('ABS(cantidad)'));
-
-            // Productos afectados
-            $productosAfectados = (clone $movimientosQuery)
-                ->select('stock_productos.producto_id')
-                ->distinct()
-                ->count();
-
-            // Almacenes activos
-            $almacenesActivos = Almacen::where('activo', true)->count();
-
-            // Stock bajo
-            $stockBajo = Producto::where('activo', true)
-                ->stockBajo()
-                ->count();
-
-            // Próximos a vencer
-            $proximosVencer = Producto::where('activo', true)
-                ->proximosVencer(30)
-                ->count();
-
-            // Vencidos
-            $vencidos = Producto::where('activo', true)
-                ->vencidos()
-                ->count();
-
-            // Tendencia semanal
-            $tendenciaSemanal = (clone $movimientosQuery)
-                ->select(
-                    DB::raw('DATE(fecha) as fecha'),
-                    DB::raw("SUM(CASE WHEN tipo LIKE 'ENTRADA%' THEN ABS(cantidad) ELSE 0 END) as entradas"),
-                    DB::raw("SUM(CASE WHEN tipo LIKE 'SALIDA%' THEN ABS(cantidad) ELSE 0 END) as salidas"),
-                    DB::raw("SUM(CASE WHEN tipo LIKE '%TRANSFERENCIA%' THEN 1 ELSE 0 END) as transferencias"),
-                    DB::raw("SUM(CASE WHEN tipo LIKE '%MERMA%' THEN ABS(cantidad) ELSE 0 END) as mermas")
-                )
-                ->groupBy(DB::raw('DATE(fecha)'))
-                ->orderBy('fecha', 'desc')
-                ->limit(7)
-                ->get()
-                ->sortBy('fecha')
-                ->values()
-                ->map(fn($item) => [
-                    'fecha'          => $item->fecha,
-                    'entradas'       => (int) $item->entradas,
-                    'salidas'        => (int) $item->salidas,
-                    'transferencias' => (int) $item->transferencias,
-                    'mermas'         => (int) $item->mermas,
-                ]);
+            // Mismas reglas que la pantalla de movimientos: entradas/salidas sin transferencias ni reservas, sin anulados
+            $s = $this->estadisticasMovimientos($movimientosQuery);
 
             $estadisticas = [
-                'total_movimientos'      => $totalMovimientos,
-                'total_entradas'         => $totalEntradas,
-                'total_salidas'          => $totalSalidas,
-                'total_transferencias'   => $totalTransferencias,
-                'total_mermas'           => $totalMermas,
-                'total_ajustes'          => $totalAjustes,
-                'valor_total_entradas'   => (float) $valorTotalEntradas,
-                'valor_total_salidas'    => (float) $valorTotalSalidas,
-                'valor_total_mermas'     => (float) $valorTotalMermas,
-                'productos_afectados'    => $productosAfectados,
-                'almacenes_activos'      => $almacenesActivos,
-                'stock_bajo'             => $stockBajo,
-                'proximos_vencer'        => $proximosVencer,
-                'vencidos'               => $vencidos,
-                'movimientos_pendientes' => 0,
-                'tendencia_semanal'      => $tendenciaSemanal,
+                'total_movimientos'      => $s['total_movimientos'],
+                'total_entradas'         => $s['total_entradas'],
+                'total_salidas'          => $s['total_salidas'],
+                'total_transferencias'   => $s['total_transferencias'],
+                'total_mermas'           => $s['total_mermas'],
+                'total_ajustes'          => $s['total_ajustes'],
+                // Unidades (no dinero): el inventario casi no tiene costos cargados para valorizar movimientos
+                'valor_total_entradas'   => $s['unidades_entradas'],
+                'valor_total_salidas'    => $s['unidades_salidas'],
+                'valor_total_mermas'     => $s['unidades_mermas'],
+                'unidades_vendidas'      => $s['unidades_vendidas'],
+                'productos_afectados'    => $s['productos_afectados'],
+                'almacenes_activos'      => Almacen::porEmpresa()->where('activo', true)->count(),
+                // Producto ya filtra por empresa con su scope global
+                'stock_bajo'             => Producto::where('activo', true)->stockBajo()->count(),
+                'proximos_vencer'        => Producto::where('activo', true)->proximosVencer(30)->count(),
+                'vencidos'               => Producto::where('activo', true)->vencidos()->count(),
+                'movimientos_pendientes' => $s['total_anulados'],
+                // Últimos 7 días con movimientos del período
+                'tendencia_semanal'      => collect($s['tendencia'])->take(-7)->values()->map(fn ($d) => [
+                    'fecha'          => $d['fecha'],
+                    'entradas'       => round($d['entradas'], 2),
+                    'salidas'        => round($d['salidas'], 2),
+                    'transferencias' => round($d['transferencias'], 2),
+                    'mermas'         => round($d['mermas'], 2),
+                ]),
             ];
 
             return ApiResponse::success($estadisticas);
@@ -4741,7 +4648,595 @@ class InventarioController extends Controller
      * 4. Continuidad entre filas (posterior anterior = anterior actual)
      * 5. Anulaciones: Verifica coherencia pero considera que invierte movimientos
      */
-    private function detectarInconsistenciasMovimientos($movimientosMapeos, $movimientosModelo)
+    /**
+     * Resumen por producto de los movimientos filtrados: entradas, salidas, vendido, ajustes, transferencias y neto.
+     * Mismas reglas que estadisticasMovimientos (entradas/salidas sin transferencias ni reservas; sin anulados).
+     * stock_actual es el stock de hoy en el almacén filtrado (o en todos).
+     */
+    private function resumenMovimientosPorProducto($query, ?int $almacenId): array
+    {
+        $esTransferencia = "m.tipo LIKE '%TRANSFERENCIA%'";
+        $esReserva       = "(m.tipo LIKE '%RESERVA%' AND m.tipo <> 'CONSUMO_RESERVA')";
+
+        $filas = DB::query()
+            ->fromSub((clone $query)->toBase()->select('stock_producto_id', 'tipo', 'cantidad', 'anulado'), 'm')
+            ->join('stock_productos as sp', 'sp.id', '=', 'm.stock_producto_id')
+            ->join('productos as p', 'p.id', '=', 'sp.producto_id')
+            ->selectRaw("p.id, p.nombre, p.sku,
+                COUNT(*) as movimientos,
+                COALESCE(SUM(m.cantidad) FILTER (WHERE NOT m.anulado AND m.cantidad > 0 AND NOT {$esTransferencia} AND NOT {$esReserva}), 0) as entradas,
+                COALESCE(-SUM(m.cantidad) FILTER (WHERE NOT m.anulado AND m.cantidad < 0 AND NOT {$esTransferencia} AND NOT {$esReserva}), 0) as salidas,
+                COALESCE(-SUM(m.cantidad) FILTER (WHERE NOT m.anulado AND m.tipo IN ('SALIDA_VENTA', 'CONSUMO_RESERVA')), 0) as vendido,
+                COALESCE(SUM(m.cantidad) FILTER (WHERE NOT m.anulado AND m.tipo LIKE '%AJUSTE%'), 0) as ajustes,
+                COALESCE(SUM(m.cantidad) FILTER (WHERE NOT m.anulado AND {$esTransferencia}), 0) as transferencias")
+            ->groupBy('p.id', 'p.nombre', 'p.sku')
+            ->get();
+
+        $stockActual = StockProducto::whereIn('producto_id', $filas->pluck('id'))
+            ->when($almacenId, fn ($q) => $q->where('almacen_id', $almacenId))
+            ->groupBy('producto_id')
+            ->selectRaw('producto_id, SUM(cantidad) as total')
+            ->pluck('total', 'producto_id');
+
+        return $filas->map(fn ($f) => [
+            'producto_id'    => (int) $f->id,
+            'nombre'         => $f->nombre,
+            'sku'            => $f->sku,
+            'movimientos'    => (int) $f->movimientos,
+            'entradas'       => (float) $f->entradas,
+            'salidas'        => (float) $f->salidas,
+            'vendido'        => (float) $f->vendido,
+            'ajustes'        => (float) $f->ajustes,
+            // Neto por transferencias: 0 viendo todos los almacenes; +/- al filtrar uno
+            'transferencias' => (float) $f->transferencias,
+            'neto'           => (float) $f->entradas - (float) $f->salidas + (float) $f->transferencias,
+            'stock_actual'   => (float) ($stockActual[$f->id] ?? 0),
+        ])->sortByDesc('vendido')->values()->all();
+    }
+
+    /**
+     * Excel de los movimientos filtrados: hoja de movimientos, resumen por producto y resumen por tipo.
+     */
+    public function exportarMovimientos(Request $request)
+    {
+        $limite    = 50000;
+        $almacenId = $request->filled('almacen_id') ? $request->integer('almacen_id') : null;
+        $query     = $this->queryMovimientosFiltrados($request);
+
+        $total = (clone $query)->count();
+        abort_if($total > $limite, 422, "Hay {$total} movimientos con estos filtros; el Excel admite hasta {$limite}. Acorta el período.");
+
+        $desde = ($request->date('fecha_inicio') ?? now())->format('d/m/Y');
+        $hasta = ($request->date('fecha_fin') ?? now())->format('d/m/Y');
+        $nombreTipo = fn (string $t) => MovimientoInventario::nombreTipoLegible($t);
+        // Algunas observaciones se guardan como JSON técnico: en el Excel va solo su "evento"
+        $observacionLegible = function (?string $obs): ?string {
+            $json = $obs !== null && str_starts_with(ltrim($obs), '{') ? json_decode($obs, true) : null;
+
+            return is_array($json) ? ($json['evento'] ?? $json['motivo'] ?? $obs) : $obs;
+        };
+
+        $libro = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+
+        // Hoja 1: movimientos
+        $hoja = $libro->getActiveSheet();
+        $hoja->setTitle('Movimientos');
+        $hoja->setCellValue('A1', "Movimientos de inventario del {$desde} al {$hasta}");
+        $hoja->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $hoja->fromArray(['Fecha', 'Tipo', 'ID Producto', 'Producto', 'SKU', 'Almacén', 'Cantidad', 'Stock antes', 'Stock después',
+            'Documento', 'Usuario', 'Observación', 'Anulado'], null, 'A3');
+        $hoja->getStyle('A3:M3')->getFont()->setBold(true);
+
+        $fila = 4;
+        (clone $query)->orderBy('id')->chunk(2000, function ($movimientos) use ($hoja, &$fila, $nombreTipo, $observacionLegible) {
+            foreach ($movimientos as $m) {
+                $stock = $m->stockProductoHistorico;
+                $hoja->fromArray([
+                    $m->fecha ? \Carbon\Carbon::parse($m->fecha)->format('d/m/Y H:i') : '',
+                    $nombreTipo((string) $m->tipo),
+                    $stock?->producto?->id,
+                    $stock?->producto?->nombre,
+                    $stock?->producto?->sku,
+                    $stock?->almacen?->nombre,
+                    (float) $m->cantidad,
+                    (float) ($m->cantidad_total_anterior ?? $m->cantidad_anterior),
+                    (float) ($m->cantidad_total_posterior ?? $m->cantidad_posterior),
+                    $m->numero_documento,
+                    $m->user?->name,
+                    $observacionLegible($m->observacion),
+                    $m->anulado ? 'Sí' : '',
+                ], null, "A{$fila}", true);
+                $fila++;
+            }
+        });
+        $hoja->getStyle('G4:I' . max(4, $fila))->getNumberFormat()->setFormatCode('#,##0.00');
+        // Anchos fijos: el ajuste automático sobre miles de filas tardaba ~20 s
+        foreach (['A' => 16, 'B' => 24, 'C' => 11, 'D' => 40, 'E' => 12, 'F' => 20, 'G' => 10, 'H' => 12, 'I' => 13,
+            'J' => 30, 'K' => 20, 'L' => 50, 'M' => 9] as $col => $ancho) {
+            $hoja->getColumnDimension($col)->setWidth($ancho);
+        }
+        $hoja->freezePane('A4');
+        $hoja->setAutoFilter('A3:M' . max(3, $fila - 1));
+
+        // Hoja 2: resumen por producto
+        $hoja = $libro->createSheet();
+        $hoja->setTitle('Por producto');
+        $hoja->setCellValue('A1', "Resumen por producto del {$desde} al {$hasta}");
+        $hoja->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $hoja->fromArray(['ID Producto', 'Producto', 'SKU', 'Movimientos', 'Entradas', 'Salidas', 'Vendido', 'Ajustes (neto)',
+            'Transferencias (neto)', 'Neto del período', 'Stock actual'], null, 'A3');
+        $hoja->getStyle('A3:K3')->getFont()->setBold(true);
+        $fila = 4;
+        foreach ($this->resumenMovimientosPorProducto($query, $almacenId) as $r) {
+            $hoja->fromArray([$r['producto_id'], $r['nombre'], $r['sku'], $r['movimientos'], $r['entradas'], $r['salidas'],
+                $r['vendido'], $r['ajustes'], $r['transferencias'], $r['neto'], $r['stock_actual']], null, "A{$fila}", true);
+            $fila++;
+        }
+        $hoja->getStyle('E4:K' . max(4, $fila))->getNumberFormat()->setFormatCode('#,##0.00');
+        foreach (range('A', 'K') as $col) {
+            $hoja->getColumnDimension($col)->setAutoSize(true);
+        }
+        $hoja->freezePane('A4');
+        $hoja->setAutoFilter('A3:K' . max(3, $fila - 1));
+
+        // Hoja 3: resumen por tipo
+        $hoja = $libro->createSheet();
+        $hoja->setTitle('Por tipo');
+        $hoja->fromArray(['Tipo', 'Movimientos', 'Anulados', 'Unidades que entran', 'Unidades que salen'], null, 'A1');
+        $hoja->getStyle('A1:E1')->getFont()->setBold(true);
+        $fila = 2;
+        foreach ($this->estadisticasMovimientos($query)['por_tipo'] as $t) {
+            $hoja->fromArray([$nombreTipo($t['tipo']), $t['movimientos'], $t['anulados'], $t['unidades_entrada'], $t['unidades_salida']], null, "A{$fila}", true);
+            $fila++;
+        }
+        $hoja->getStyle('D2:E' . max(2, $fila))->getNumberFormat()->setFormatCode('#,##0.00');
+        foreach (range('A', 'E') as $col) {
+            $hoja->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $libro->setActiveSheetIndex(0);
+        $nombre = 'movimientos_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($libro) {
+            (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($libro))->save('php://output');
+        }, $nombre, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
+    /**
+     * Kardex de un producto en un período (todos los almacenes o uno): stock inicial, cada movimiento con su saldo y stock final.
+     *
+     * Se reconstruye por lote con cantidad_anterior/cantidad_posterior (los campos cantidad_total_* no significan lo mismo
+     * en todos los módulos). Si un movimiento empieza con un stock distinto al que dejó el anterior del mismo lote, hubo un
+     * cambio sin movimiento registrado: se agrega una fila "salto" con la diferencia para que el saldo cuadre y se vea el hueco.
+     */
+    private function kardexProducto(int $productoId, ?int $almacenId, \Carbon\Carbon $desde, \Carbon\Carbon $hasta): ?array
+    {
+        $producto = \App\Models\Producto::find($productoId, ['id', 'nombre', 'sku']); // Scope de empresa: otro tenant da null
+        if (! $producto) {
+            return null;
+        }
+
+        $lotes = StockProducto::withTrashed()
+            ->with('almacen:id,nombre')
+            ->where('producto_id', $productoId)
+            ->when($almacenId, fn ($q) => $q->where('almacen_id', $almacenId))
+            ->get(['id', 'almacen_id', 'lote', 'cantidad', 'deleted_at'])
+            ->keyBy('id');
+        $ids    = $lotes->keys()->all();
+        $inicio = $desde->copy()->startOfDay();
+        $fin    = $hasta->copy()->endOfDay();
+
+        // Estado de cada lote al inicio: último movimiento anterior; si no hay, el primero desde el inicio (su "antes");
+        // si el lote nunca se movió, su cantidad actual.
+        $ultimoAntes = MovimientoInventario::whereIn('stock_producto_id', $ids)->where('fecha', '<', $inicio)
+            ->orderBy('stock_producto_id')->orderByDesc('id')
+            ->selectRaw('DISTINCT ON (stock_producto_id) stock_producto_id, cantidad_posterior')
+            ->pluck('cantidad_posterior', 'stock_producto_id');
+        $primeroDesde = MovimientoInventario::whereIn('stock_producto_id', $ids)->where('fecha', '>=', $inicio)
+            ->orderBy('stock_producto_id')->orderBy('id')
+            ->selectRaw('DISTINCT ON (stock_producto_id) stock_producto_id, cantidad_anterior')
+            ->pluck('cantidad_anterior', 'stock_producto_id');
+
+        $estado = [];
+        foreach ($lotes as $id => $lote) {
+            $estado[$id] = (float) ($ultimoAntes[$id] ?? $primeroDesde[$id] ?? ($lote->trashed() ? 0 : $lote->cantidad));
+        }
+        $stockInicial = array_sum($estado);
+
+        $limite      = 5000;
+        $movimientos = MovimientoInventario::with('user:id,name')
+            ->whereIn('stock_producto_id', $ids)
+            ->whereBetween('fecha', [$inicio, $fin])
+            ->orderBy('id') // Orden de registro: la fecha de una transferencia es la del documento, no la del cambio de stock
+            ->limit($limite + 1)
+            ->get();
+        $truncado = $movimientos->count() > $limite;
+        $movimientos = $movimientos->take($limite);
+
+        $urlDocumento = $this->resolvedorUrlDocumento($movimientos);
+        $nombreTipo   = fn (string $t) => MovimientoInventario::nombreTipoLegible($t);
+        $saldo        = $stockInicial;
+        $filas        = [];
+        $entradas = $salidas = $saltos = 0.0;
+        $numSaltos = 0;
+
+        foreach ($movimientos as $m) {
+            $lote     = $lotes[$m->stock_producto_id];
+            $almacen  = $lote->almacen?->nombre;
+            $antes    = $m->cantidad_anterior !== null ? (float) $m->cantidad_anterior : $estado[$m->stock_producto_id];
+            $cantidad = (float) $m->cantidad;
+
+            $diferencia = $antes - $estado[$m->stock_producto_id];
+            if (abs($diferencia) > 0.0001) {
+                $saldo += $diferencia;
+                $saltos += $diferencia;
+                $numSaltos++;
+                $filas[] = [
+                    'tipo_fila' => 'salto', 'fecha' => $m->fecha?->toISOString(), 'tipo' => null,
+                    'descripcion' => 'Cambio sin movimiento registrado', 'almacen' => $almacen, 'lote' => $lote->lote,
+                    'cantidad' => $diferencia, 'saldo' => $saldo,
+                ];
+            }
+
+            $despues = $m->cantidad_posterior !== null ? (float) $m->cantidad_posterior : $antes + $cantidad;
+            $estado[$m->stock_producto_id] = $despues;
+            $saldo += $despues - $antes;
+            $cantidad > 0 ? $entradas += $cantidad : $salidas -= $cantidad;
+
+            $filas[] = [
+                'tipo_fila'     => 'movimiento',
+                'id'            => $m->id,
+                'fecha'         => $m->fecha?->toISOString(),
+                'tipo'          => $m->tipo,
+                'descripcion'   => $nombreTipo((string) $m->tipo),
+                'documento'     => $m->numero_documento,
+                'documento_url' => $urlDocumento($m),
+                'almacen'       => $almacen,
+                'lote'          => $lote->lote,
+                'cantidad'      => $cantidad,
+                'saldo'         => $saldo,
+                'usuario'       => $m->user?->name,
+                'anulado'       => (bool) $m->anulado,
+            ];
+        }
+
+        $stockActual = (float) $lotes->reject(fn ($l) => $l->trashed())->sum('cantidad');
+
+        return [
+            'producto'      => ['id' => $producto->id, 'nombre' => $producto->nombre, 'sku' => $producto->sku],
+            'almacen_id'    => $almacenId,
+            'desde'         => $inicio->toDateString(),
+            'hasta'         => $fin->toDateString(),
+            'stock_inicial' => $stockInicial,
+            'entradas'      => $entradas,
+            'salidas'       => $salidas,
+            'saltos'        => $saltos,
+            'num_saltos'    => $numSaltos,
+            'stock_final'   => $saldo,
+            // Solo comparable si el período llega a hoy: si difieren, hubo cambios sin movimiento después del último
+            'stock_actual'  => $fin->isToday() || $fin->isFuture() ? $stockActual : null,
+            'truncado'      => $truncado,
+            'filas'         => $filas,
+        ];
+    }
+
+    /**
+     * Excel del kardex: de un producto (kardex_producto_id) o de todos los productos con movimientos según los filtros,
+     * uno debajo de otro en la misma hoja. Período y almacén salen de los filtros de la pantalla.
+     */
+    public function exportarKardex(Request $request)
+    {
+        $limiteProductos = 300;
+        $desde     = $request->date('fecha_inicio') ?? now()->startOfDay();
+        $hasta     = $request->date('fecha_fin') ?? now();
+        $almacenId = $request->filled('almacen_id') ? $request->integer('almacen_id') : null;
+
+        if ($request->filled('kardex_producto_id')) {
+            $productoIds = [$request->integer('kardex_producto_id')];
+        } else {
+            $productoIds = collect($this->resumenMovimientosPorProducto($this->queryMovimientosFiltrados($request), $almacenId))
+                ->sortBy('nombre')->pluck('producto_id')->all();
+            abort_if(count($productoIds) > $limiteProductos, 422,
+                count($productoIds) . " productos con estos filtros; el Excel de kardex admite hasta {$limiteProductos}. Filtra por almacén, tipo o un período más corto.");
+        }
+
+        $libro = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $hoja  = $libro->getActiveSheet();
+        $hoja->setTitle('Kardex');
+        $almacen = $almacenId ? Almacen::porEmpresa()->find($almacenId)?->nombre : 'Todos los almacenes';
+        $hoja->setCellValue('A1', 'Kardex del ' . $desde->format('d/m/Y') . ' al ' . $hasta->format('d/m/Y') . " · {$almacen}");
+        $hoja->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+
+        $fila = 3;
+        foreach ($productoIds as $productoId) {
+            $k = $this->kardexProducto($productoId, $almacenId, $desde, $hasta);
+            if (! $k) {
+                continue;
+            }
+
+            $hoja->setCellValue("A{$fila}", "#{$k['producto']['id']} {$k['producto']['nombre']}" . ($k['producto']['sku'] ? " ({$k['producto']['sku']})" : ''));
+            $hoja->getStyle("A{$fila}")->getFont()->setBold(true)->setSize(12);
+            $fila++;
+            $hoja->fromArray(['Stock inicial', $k['stock_inicial'], 'Entradas', $k['entradas'], 'Salidas', $k['salidas'],
+                'Sin movimiento registrado', $k['saltos'], 'Stock final', $k['stock_final'], 'Stock hoy', $k['stock_actual']], null, "A{$fila}", true);
+            $hoja->getStyle("A{$fila}:L{$fila}")->getFont()->setItalic(true);
+            $fila++;
+            $hoja->fromArray(['Fecha', 'Movimiento', 'Documento', 'Almacén', 'Lote', 'Cantidad', 'Saldo', 'Usuario'], null, "A{$fila}");
+            $hoja->getStyle("A{$fila}:H{$fila}")->getFont()->setBold(true);
+            $hoja->getStyle("A{$fila}:H{$fila}")->getFill()->setFillType('solid')->getStartColor()->setRGB('E5E7EB');
+            $fila++;
+
+            $hoja->fromArray(['', 'Stock inicial', '', '', '', null, $k['stock_inicial']], null, "A{$fila}", true);
+            $fila++;
+            foreach ($k['filas'] as $f) {
+                $hoja->fromArray([
+                    $f['fecha'] ? \Carbon\Carbon::parse($f['fecha'])->timezone(config('app.timezone'))->format('d/m/Y H:i') : '',
+                    ($f['tipo_fila'] === 'salto' ? '⚠ ' : '') . $f['descripcion'] . (! empty($f['anulado']) ? ' (anulado)' : ''),
+                    $f['documento'] ?? '',
+                    $f['almacen'],
+                    $f['lote'],
+                    $f['cantidad'],
+                    $f['saldo'],
+                    $f['usuario'] ?? '',
+                ], null, "A{$fila}", true);
+                if ($f['tipo_fila'] === 'salto') {
+                    $hoja->getStyle("A{$fila}:H{$fila}")->getFill()->setFillType('solid')->getStartColor()->setRGB('FEF3C7');
+                }
+                $fila++;
+            }
+            $hoja->fromArray(['', 'Stock final del período', '', '', '', null, $k['stock_final']], null, "A{$fila}", true);
+            $hoja->getStyle("A{$fila}:H{$fila}")->getFont()->setBold(true);
+            $fila += 2;
+        }
+
+        $hoja->getStyle("B3:L{$fila}")->getNumberFormat()->setFormatCode('#,##0.00');
+        $hoja->getStyle("A3:A{$fila}")->getNumberFormat()->setFormatCode('@');
+        foreach (['A' => 16, 'B' => 30, 'C' => 24, 'D' => 18, 'E' => 10, 'F' => 11, 'G' => 11, 'H' => 22, 'I' => 11, 'J' => 10, 'K' => 10, 'L' => 10] as $col => $ancho) {
+            $hoja->getColumnDimension($col)->setWidth($ancho);
+        }
+
+        $nombre = count($productoIds) === 1 ? "kardex_{$productoIds[0]}_" : 'kardex_productos_';
+
+        return response()->streamDownload(function () use ($libro) {
+            (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($libro))->save('php://output');
+        }, $nombre . now()->format('Y-m-d_His') . '.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
+    /**
+     * Devuelve una función que da el enlace al documento de origen de un movimiento (venta, compra, transferencia...).
+     * Recibe los movimientos a resolver para buscar en una sola consulta los que solo guardan el número.
+     */
+    private function resolvedorUrlDocumento($movimientos): \Closure
+    {
+        // Enlace al documento de origen (venta, compra, proforma, ajuste...). Algunas compras y transferencias
+        // solo guardan el número: se resuelven por número en una sola consulta por tipo.
+        $sinId = $movimientos->filter(fn ($m) => ! $m->referencia_id && $m->numero_documento);
+        $comprasPorNumero = \App\Models\Compra::whereIn('numero', $sinId->where('referencia_tipo', 'compra')->pluck('numero_documento')->unique())
+            ->pluck('id', 'numero');
+        $transferenciasPorNumero = \App\Models\TransferenciaInventario::whereIn('numero', $sinId->filter(fn ($m) => str_starts_with((string) $m->numero_documento, 'TRF-'))->pluck('numero_documento')->unique())
+            ->pluck('id', 'numero');
+
+        return function ($m) use ($comprasPorNumero, $transferenciasPorNumero): ?string {
+            $id   = $m->referencia_id;
+            $tipo = $m->referencia_tipo;
+            if (! $id && $tipo === 'compra') {
+                $id = $comprasPorNumero[$m->numero_documento] ?? null;
+            }
+            if (! $id && str_starts_with((string) $m->numero_documento, 'TRF-')) {
+                $id   = $transferenciasPorNumero[$m->numero_documento] ?? null;
+                $tipo = 'transferencia';
+            }
+            if (! $id) {
+                return null;
+            }
+
+            return match ($tipo) {
+                'venta', 'venta_devolucion', 'venta_anulacion' => "/ventas/{$id}",
+                'compra'                                       => "/compras/{$id}",
+                'proforma'                                     => "/proformas/{$id}",
+                'ajuste', 'ajuste_inventario'                  => "/inventario/ajustes/{$id}",
+                'transferencia'                                => "/inventario/transferencias/{$id}",
+                'merma'                                        => "/inventario/mermas/{$id}",
+                'EDICION_PRODUCTO'                             => "/productos/{$id}/edit",
+                default                                        => null,
+            };
+        };
+    }
+
+    /**
+     * Movimientos filtrados según la request (pantalla, resumen por producto y Excel usan la misma consulta).
+     * Siempre limitado a la empresa del usuario.
+     */
+    private function queryMovimientosFiltrados(Request $request)
+    {
+        $fechaInicio = $request->date('fecha_inicio') ?? now()->startOfDay();
+        $fechaFin    = $request->date('fecha_fin') ?? now();
+        $tipo        = $request->filled('tipo') ? $request->string('tipo') : null;
+        $almacenId   = $request->filled('almacen_id') ? $request->integer('almacen_id') : null;
+        $productoId  = $request->filled('producto_id') ? $request->integer('producto_id') : null;
+        $productoBusqueda = $request->filled('producto_busqueda') ? $request->string('producto_busqueda') : null;
+        $observaciones = $request->filled('observaciones') ? $request->string('observaciones') : null;
+        $numeroDocumento = $request->filled('numero_documento') ? $request->string('numero_documento') : null;
+        $anulado     = $request->filled('anulado') ? $request->boolean('anulado') : null;
+        $esReversión = $request->filled('es_reversión') ? $request->boolean('es_reversión') : null;
+        $referenciaTipo = $request->filled('referencia_tipo') ? $request->string('referencia_tipo') : null;
+        $usuarioId   = $request->filled('usuario_id') ? $request->integer('usuario_id') : null;
+
+        // ✅ MEJORADO (2026-02-18): Incluir información de conversiones de unidades
+        $query = MovimientoInventario::with([
+            'stockProductoHistorico.producto:id,nombre,sku,unidad_medida_id',
+            'stockProductoHistorico.producto.unidad:id,codigo',
+            'stockProductoHistorico.almacen:id,nombre',
+            'user:id,name,email',
+            'user.roles:id,name',
+            'unidadVenta:id,nombre',
+            'unidadBase:id,nombre',
+        ])->porFecha($fechaInicio, $fechaFin);
+
+        if ($tipo && ! empty($tipo)) {
+            $query->porTipo($tipo);
+        }
+
+        if ($almacenId && $almacenId > 0) {
+            $query->porAlmacen($almacenId);
+        }
+
+        // Buscar por ID específico O por búsqueda flexible
+        if ($productoId && $productoId > 0) {
+            $query->porProducto($productoId);
+        } elseif ($productoBusqueda && ! empty($productoBusqueda)) {
+            // ✅ MODIFICADO (2026-03-27): Usar búsqueda con PRIORIDAD (ID primero, luego SKU)
+            $query->porProductoBusquedaConPrioridad($productoBusqueda);
+        }
+
+        // Filtrar por observaciones
+        if ($observaciones && ! empty($observaciones)) {
+            $query->porObservaciones($observaciones);
+        }
+
+        // Filtrar por número de documento
+        if ($numeroDocumento && ! empty($numeroDocumento)) {
+            $query->where('numero_documento', 'LIKE', '%' . $numeroDocumento . '%');
+        }
+
+        // Filtrar por estado (anulado)
+        if ($anulado !== null) {
+            $query->where('anulado', $anulado);
+        }
+
+        // ✅ NUEVO: Filtrar por reversiones (es_reversión=true filtra solo ENTRADA_AJUSTE)
+        if ($esReversión === true) {
+            $query->where('tipo', 'ENTRADA_AJUSTE');
+        }
+
+        // ✅ NUEVO (2026-03-27): Filtrar por tipo de referencia (proforma, venta, etc)
+        if ($referenciaTipo && ! empty($referenciaTipo)) {
+            $query->where('referencia_tipo', $referenciaTipo);
+        }
+
+        if ($usuarioId) {
+            $query->where('user_id', $usuarioId);
+        }
+
+        // ✅ CRÍTICO: Filtrar por empresa del usuario - Solo mostrar movimientos de su empresa
+        $empresaUsuario = auth()->user()?->empresa;
+        if ($empresaUsuario) {
+            $query->whereHas('stockProductoHistorico.producto', function ($q) use ($empresaUsuario) {
+                $q->where('empresa_id', $empresaUsuario->id);
+            });
+        }
+
+        return $query;
+    }
+
+    /**
+     * Estadísticas del filtro actual de movimientos: cantidad de movimientos y de unidades por grupo.
+     * Entradas/Salidas excluyen transferencias (solo mueven stock entre almacenes) y reservas de proformas
+     * (no cambian el total). Las unidades no cuentan movimientos anulados.
+     */
+    private function estadisticasMovimientos($query): array
+    {
+        $filas = (clone $query)->toBase()
+            ->selectRaw("DATE(fecha) as dia, tipo,
+                COUNT(*) as movimientos,
+                COUNT(*) FILTER (WHERE anulado) as anulados,
+                COUNT(*) FILTER (WHERE NOT anulado AND cantidad > 0) as mov_entrada,
+                COUNT(*) FILTER (WHERE NOT anulado AND cantidad < 0) as mov_salida,
+                COALESCE(SUM(cantidad) FILTER (WHERE NOT anulado AND cantidad > 0), 0) as uni_entrada,
+                COALESCE(-SUM(cantidad) FILTER (WHERE NOT anulado AND cantidad < 0), 0) as uni_salida")
+            ->groupByRaw('DATE(fecha), tipo')
+            ->get();
+
+        $grupo = function (string $tipo): string {
+            return match (true) {
+                str_contains($tipo, 'TRANSFERENCIA')                            => 'transferencia',
+                str_contains($tipo, 'RESERVA') && $tipo !== 'CONSUMO_RESERVA' => 'reserva',
+                $tipo === 'SALIDA_VENTA' || $tipo === 'CONSUMO_RESERVA'        => 'venta',
+                str_contains($tipo, 'MERMA')                                    => 'merma',
+                str_contains($tipo, 'AJUSTE')                                   => 'ajuste',
+                str_contains($tipo, 'COMPRA')                                   => 'compra',
+                default                                                         => 'otro',
+            };
+        };
+
+        $s = [
+            'total_movimientos'  => 0, 'total_anulados' => 0,
+            'total_entradas'     => 0, 'unidades_entradas' => 0.0,
+            'total_salidas'      => 0, 'unidades_salidas' => 0.0,
+            'total_ventas'       => 0, 'unidades_vendidas' => 0.0,
+            'total_compras'      => 0, 'unidades_compradas' => 0.0,
+            'total_transferencias' => 0, 'unidades_transferidas' => 0.0,
+            'total_ajustes'      => 0, 'total_mermas' => 0, 'unidades_mermas' => 0.0,
+        ];
+        $porTipo = [];
+        $porDia  = [];
+
+        foreach ($filas as $f) {
+            $g          = $grupo($f->tipo);
+            $movs       = (int) $f->movimientos;
+            $uniEntrada = (float) $f->uni_entrada;
+            $uniSalida  = (float) $f->uni_salida;
+
+            $s['total_movimientos'] += $movs;
+            $s['total_anulados']    += (int) $f->anulados;
+
+            if (! in_array($g, ['transferencia', 'reserva'], true)) {
+                $s['total_entradas']    += (int) $f->mov_entrada;
+                $s['unidades_entradas'] += $uniEntrada;
+                $s['total_salidas']     += (int) $f->mov_salida;
+                $s['unidades_salidas']  += $uniSalida;
+            }
+
+            match ($g) {
+                // Neto: una devolución con signo positivo resta de lo vendido
+                'venta'         => [$s['total_ventas'] += $movs, $s['unidades_vendidas'] += $uniSalida - $uniEntrada],
+                'compra'        => [$s['total_compras'] += $movs, $s['unidades_compradas'] += $uniEntrada - $uniSalida],
+                // Cada transferencia genera una salida y una entrada: se cuenta la salida
+                'transferencia' => [$s['total_transferencias'] += (int) $f->mov_salida, $s['unidades_transferidas'] += $uniSalida],
+                'ajuste'        => $s['total_ajustes'] += $movs,
+                'merma'         => [$s['total_mermas'] += $movs, $s['unidades_mermas'] += $uniSalida],
+                default         => null,
+            };
+
+            $t = $porTipo[$f->tipo] ??= ['tipo' => $f->tipo, 'grupo' => $g, 'movimientos' => 0, 'anulados' => 0, 'unidades_entrada' => 0.0, 'unidades_salida' => 0.0];
+            $t['movimientos']      += $movs;
+            $t['anulados']         += (int) $f->anulados;
+            $t['unidades_entrada'] += $uniEntrada;
+            $t['unidades_salida']  += $uniSalida;
+            $porTipo[$f->tipo] = $t;
+
+            $d = $porDia[$f->dia] ??= ['fecha' => $f->dia, 'entradas' => 0.0, 'salidas' => 0.0, 'ventas' => 0.0, 'transferencias' => 0.0, 'mermas' => 0.0];
+            if (! in_array($g, ['transferencia', 'reserva'], true)) {
+                $d['entradas'] += $uniEntrada;
+                $d['salidas']  += $uniSalida;
+            }
+            match ($g) {
+                'venta'         => $d['ventas'] += $uniSalida - $uniEntrada,
+                'transferencia' => $d['transferencias'] += $uniSalida,
+                'merma'         => $d['mermas'] += $uniSalida,
+                default         => null,
+            };
+            $porDia[$f->dia] = $d;
+        }
+
+        $alcance = DB::query()
+            ->fromSub((clone $query)->toBase()->select('stock_producto_id'), 'm')
+            ->join('stock_productos as sp', 'sp.id', '=', 'm.stock_producto_id')
+            ->selectRaw('COUNT(DISTINCT sp.producto_id) as productos, COUNT(DISTINCT sp.almacen_id) as almacenes')
+            ->first();
+
+        usort($porTipo, fn ($a, $b) => $b['movimientos'] <=> $a['movimientos']);
+        ksort($porDia);
+
+        return $s + [
+            'productos_afectados' => (int) ($alcance->productos ?? 0),
+            'almacenes_activos'   => (int) ($alcance->almacenes ?? 0),
+            'por_tipo'            => array_values($porTipo),
+            'tendencia'           => array_values($porDia),
+        ];
+    }
+
+    private function detectarInconsistenciasMovimientos($movimientosMapeos)
     {
         // Procesar cada movimiento para detectar inconsistencias
         $movimientosProcesados = $movimientosMapeos->map(function ($movimiento, $index) use ($movimientosMapeos) {

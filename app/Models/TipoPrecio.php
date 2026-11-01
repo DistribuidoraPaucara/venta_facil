@@ -24,6 +24,7 @@ class TipoPrecio extends Model
         'es_sistema',
         'configuracion',
         'empresa_id',
+        'almacen_id', // Almacén del que descuenta este precio en ventas (ej. FRIO → REFRIGERADOR); null = el de la empresa
     ];
 
     protected function casts(): array
@@ -45,6 +46,11 @@ class TipoPrecio extends Model
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);
+    }
+
+    public function almacen()
+    {
+        return $this->belongsTo(Almacen::class);
     }
 
     public function precios()

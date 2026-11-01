@@ -11,6 +11,7 @@ export interface Almacen extends BaseEntity {
   activo: boolean;
   ubicacion_fisica?: string | null;
   requiere_transporte_externo?: boolean;
+  permite_venta?: boolean; // Se puede vender desde este almacén (selector por línea en ventas)
 }
 
 export interface AlmacenFormData extends BaseFormData {
@@ -22,4 +23,5 @@ export interface AlmacenFormData extends BaseFormData {
   activo?: boolean;
   ubicacion_fisica?: string | null;
   requiere_transporte_externo?: boolean;
+  permite_venta?: boolean; // Se puede vender desde este almacén (selector por línea en ventas)
 }

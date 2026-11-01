@@ -25,10 +25,13 @@ export function toNumber(value: any): number {
  */
 export function formatCurrency(amount: number | string): string {
     const numAmount = toNumber(amount);
+    // Decimales solo si el monto los tiene: "Bs 2.072" pero "Bs 5.140,49" y "Bs 0,50"
+    const tieneDecimales = Math.round(Math.abs(numAmount) * 100) % 100 !== 0;
     return new Intl.NumberFormat('es-BO', {
         style: 'currency',
         currency: 'BOB',
-        minimumFractionDigits: 2
+        minimumFractionDigits: tieneDecimales ? 2 : 0,
+        maximumFractionDigits: 2,
     }).format(numAmount);
 }
 

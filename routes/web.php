@@ -885,6 +885,8 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::get('vencidos', [\App\Http\Controllers\InventarioController::class, 'vencidos'])->middleware('permission:inventario.vencidos')->name('vencidos');
         Route::get('movimientos', [\App\Http\Controllers\InventarioController::class, 'movimientos'])->middleware('permission:inventario.movimientos')->name('movimientos');
         Route::get('movimientos/imprimir', [\App\Http\Controllers\ImpresionMovimientosController::class, 'imprimir'])->middleware('permission:inventario.movimientos')->name('movimientos.imprimir');
+        Route::get('movimientos/exportar', [\App\Http\Controllers\InventarioController::class, 'exportarMovimientos'])->middleware('permission:inventario.movimientos')->name('movimientos.exportar');
+        Route::get('movimientos/kardex/exportar', [\App\Http\Controllers\InventarioController::class, 'exportarKardex'])->middleware('permission:inventario.movimientos')->name('movimientos.kardex.exportar');
         Route::get('productos-vendidos/imprimir', [\App\Http\Controllers\ImpresionProductosVendidosController::class, 'imprimir'])->middleware('permission:inventario.movimientos')->name('productos-vendidos.imprimir');
         Route::get('ajuste', [\App\Http\Controllers\InventarioController::class, 'ajusteForm'])->middleware('permission:inventario.ajuste.form')->name('ajuste.form');
         Route::post('ajuste', [\App\Http\Controllers\InventarioController::class, 'procesarAjuste'])->middleware('permission:inventario.ajuste.procesar')->name('ajuste.procesar');

@@ -42,6 +42,9 @@ class ComprasController extends Controller
                         ->orderByDesc('es_principal')
                         ->select('id', 'producto_id', 'codigo', 'es_principal'),
                     'sector',
+                    // Proveedores del producto con su último precio (filtro y referencia para comprar)
+                    'producto.productoProveedores:id,producto_id,proveedor_id,ultimo_precio,fecha_ultima_compra,es_principal,activo',
+                    'producto.productoProveedores.proveedor:id,nombre',
                 ])
                 ->get()
                 ->groupBy('producto_id');
@@ -84,6 +87,19 @@ class ComprasController extends Controller
                     // Obtener sector desde stock_limites
                     $sector = $limitesProducto->first()->sector;
                     $producto->sector = $sector;
+
+                    // Todos sus proveedores, el principal primero (no solo productos.proveedor_id)
+                    $producto->proveedores_producto = $producto->productoProveedores
+                        ->sortByDesc('es_principal')
+                        ->map(fn ($pp) => [
+                            'id'                  => $pp->proveedor_id,
+                            'nombre'              => $pp->proveedor?->nombre ?? "Proveedor #{$pp->proveedor_id}",
+                            'ultimo_precio'       => $pp->ultimo_precio,
+                            'fecha_ultima_compra' => $pp->fecha_ultima_compra?->format('Y-m-d'),
+                            'es_principal'        => $pp->es_principal,
+                        ])
+                        ->values();
+                    $producto->unsetRelation('productoProveedores');
 
                     $productosParaComprar->push($producto);
                 }

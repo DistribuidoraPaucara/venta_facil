@@ -82,7 +82,7 @@ class ProveedorController extends Controller
         $searchLower = strtolower($q);
         // ✨ NUEVO: Filtrar por empresa del usuario
         $proveedores = Proveedor::porEmpresa()
-            ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo'])
+            ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo', 'codigo_proveedor'])
             ->where('activo', true)
             ->where(function ($query) use ($searchLower) {
                 $query->whereRaw('LOWER(nombre) like ?', ["%$searchLower%"])
@@ -110,7 +110,7 @@ class ProveedorController extends Controller
         try {
             // ✨ NUEVO: Filtrar por empresa del usuario
             $query = Proveedor::porEmpresa()
-                ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo'])
+                ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'contacto', 'activo', 'codigo_proveedor'])
                 ->where('activo', true)
                 ->orderBy('nombre', 'asc');
 

@@ -2,6 +2,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreVentaRequest extends FormRequest
 {
@@ -76,6 +77,11 @@ class StoreVentaRequest extends FormRequest
             'detalles.*.subtotal'        => 'required|numeric|min:0.01',
             'detalles.*.tipo_precio_id'  => 'nullable|integer|exists:tipos_precio,id',
             'detalles.*.tipo_precio_nombre' => 'nullable|string|max:100',
+            // Almacén del que descuenta la línea (ej. REFRIGERADOR para precio FRIO): de la empresa, activo y de venta
+            'detalles.*.almacen_id'      => ['nullable', 'integer', Rule::exists('almacenes', 'id')
+                ->where('empresa_id', auth()->user()?->empresa_id)
+                ->where('activo', true)
+                ->where('permite_venta', true)],
             // ✅ NUEVO: Validación para combo_items_seleccionados
             'detalles.*.combo_items_seleccionados' => 'nullable|array',
             'detalles.*.combo_items_seleccionados.*.combo_item_id' => 'nullable|integer|exists:combo_items,id',

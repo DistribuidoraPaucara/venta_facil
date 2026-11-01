@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\ComprasController::crearBorrador
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
 export const crearBorrador = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ crearBorrador.definition = {
 
 /**
 * @see \App\Http\Controllers\ComprasController::crearBorrador
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
 crearBorrador.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ crearBorrador.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ComprasController::crearBorrador
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
 crearBorrador.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ crearBorrador.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 
     /**
 * @see \App\Http\Controllers\ComprasController::crearBorrador
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
     const crearBorradorForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ crearBorrador.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 
             /**
 * @see \App\Http\Controllers\ComprasController::crearBorrador
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
         crearBorradorForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -171,6 +171,32 @@ export interface DatosResumen {
     sumatorialAnticipos?: number;
     sumatorialCompras?: number;  // ✅ NUEVO (2026-02-20): Compras a proveedores
     sumatorialAnulaciones?: number;
+    sumatorialDevoluciones?: number;
+    sumatorialServicio?: number;
+}
+
+/** Desglose dinámico de ingresos/egresos de la caja por tipo de operación */
+export interface DesgloseOperacion {
+    codigo: string;
+    nombre: string;
+    total: number;
+    cantidad: number;
+}
+
+/** Movimientos de la caja por medio de pago */
+export interface DesgloseMovimientos {
+    entradas: { efectivo: number; transferencia: number; total: number };
+    salidas: { efectivo: number; transferencia: number; total: number };
+    totales: { efectivo: number; transferencia: number; general: number };
+}
+
+/** Pagos de ventas desde detalles_pago_venta, por tipo de pago */
+export interface DetallePagoDesglosado {
+    tipo_pago_id: number;
+    codigo?: string; // EFECTIVO, TRANSFERENCIA/QR, CREDITO...
+    tipo: string;
+    total: number;
+    cantidad: number;
 }
 
 /**
@@ -198,4 +224,11 @@ export interface CajasIndexProps {
     ventasTotales?: number;  // ✅ NUEVO: Total de ventas
     ventasAnuladas?: number;  // ✅ NUEVO: Ventas anuladas
     ventasCredito?: number;  // ✅ NUEVO: Ventas a crédito
+    ventasCreditoTotales?: number; // Ventas a crédito de esta caja
+    desgloseIngresos?: DesgloseOperacion[];
+    desgloseEgresos?: DesgloseOperacion[];
+    desgloseMovimientos?: DesgloseMovimientos | null;
+    detallesPagoDesglosado?: DetallePagoDesglosado[];
+    totalDetallesPago?: number; // Dinero real pagado por ventas (desde detalles_pago_venta)
+    historialFiltro?: { desde: string | null; hasta: string | null }; // Rango del historial (sin rango: últimas 50)
 }

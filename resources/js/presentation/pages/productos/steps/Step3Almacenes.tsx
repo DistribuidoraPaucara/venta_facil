@@ -421,7 +421,7 @@ export default function Step3Almacenes({
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                     {Array.from(grupos.values()).map((grupo) => {
                         const limite = stockLimites[grupo.key] ?? {};
-                        const sectorId = limite.sector_id ?? grupo.lotes.find(({ a }) => a.sector_id)?.a.sector_id ?? data.globalSectorId;
+                        const sectorId = limite.sector_id ?? grupo.lotes.find(({ a }) => a.sector_id)?.a.sector_id;
                         const total = grupo.lotes.reduce((s, { a }) => s + Number(a.stock ?? 0), 0);
                         const reservadoTotal = grupo.lotes.reduce((s, { a }) => s + Number(a.cantidad_reservada ?? 0), 0);
                         const minimo = limite.stock_minimo !== undefined && limite.stock_minimo !== null && limite.stock_minimo !== '' ? Number(limite.stock_minimo) : null;

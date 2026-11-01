@@ -55,6 +55,28 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
     const [isSearching, setIsSearching] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
 
+    // Lotes del producto en el almacén origen con stock disponible, AGRUPADOS por número de lote (varios registros
+    // "sin lote" en distintos sectores son uno solo para transferir: al enviar se descuenta de todos). Los que vencen antes primero
+    const num = (v: unknown) => parseFloat(String(v ?? 0)) || 0;
+    const lotesOrigen = (producto: any): any[] => {
+        const grupos = new Map<string, { id: string; lote: string | null; fecha_vencimiento: string | null; cantidad_disponible: number }>();
+        for (const s of producto?.stock ?? []) {
+            if (Number(s.almacen_id) !== Number(data.almacen_origen_id) || num(s.cantidad_disponible) <= 0) continue;
+            const clave = s.lote || '';
+            const g = grupos.get(clave) ?? { id: clave || 'sin-lote', lote: s.lote || null, fecha_vencimiento: s.fecha_vencimiento ?? null, cantidad_disponible: 0 };
+            g.cantidad_disponible += num(s.cantidad_disponible);
+            if (s.fecha_vencimiento && (!g.fecha_vencimiento || String(s.fecha_vencimiento) < String(g.fecha_vencimiento))) {
+                g.fecha_vencimiento = s.fecha_vencimiento;
+            }
+            grupos.set(clave, g);
+        }
+        return [...grupos.values()].sort((a, b) => String(a.fecha_vencimiento ?? '9999').localeCompare(String(b.fecha_vencimiento ?? '9999')));
+    };
+    const disponibleOrigen = (producto: any) => lotesOrigen(producto).reduce((t: number, s: any) => t + num(s.cantidad_disponible), 0);
+    const formatearCantidad = (n: number) => (Number.isInteger(n) ? String(n) : parseFloat(n.toFixed(2)).toString());
+    const yaAgregado = (productoId: number, lote?: string | null) =>
+        data.detalles.some((d) => d.producto_id === productoId && (lote ? d.lote === lote : !d.lote));
+
     const productosOptions = productos.map(producto => {
         const stockEnOrigen = data.almacen_origen_id ?
             (producto.stock_por_almacen?.[data.almacen_origen_id] || 0) :
@@ -78,51 +100,53 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
     }));
 
 
-    // ✅ NUEVA: Búsqueda dinámica de productos
+    // Búsqueda de productos en el almacén origen. Devuelve los resultados (para Enter) además de mostrarlos;
+    // las respuestas que llegan después de otra búsqueda se descartan
+    const ultimaBusquedaRef = useRef('');
     const buscarProductos = useCallback(
-        async (term?: string) => {
-            const busqueda = term || searchTerm;
-            if (!busqueda.trim() || !data.almacen_origen_id) {
+        async (term?: string): Promise<any[]> => {
+            const busqueda = (term ?? searchTerm).trim();
+            ultimaBusquedaRef.current = busqueda;
+            if (!busqueda || !data.almacen_origen_id) {
                 setSearchResults([]);
-                return;
+                return [];
             }
 
             try {
                 setIsSearching(true);
-                const url = `/api/productos/buscar?q=${encodeURIComponent(busqueda)}&almacen_id=${data.almacen_origen_id}&limite=10`;
-
-                console.log('🔍 [Transferencias] Buscando productos:', {
-                    termino: busqueda,
-                    almacen_id: data.almacen_origen_id,
-                    url: url,
-                });
-
+                const url = `/api/productos/buscar?q=${encodeURIComponent(busqueda)}&almacen_id=${data.almacen_origen_id}&tipo=compra&limite=20`;
                 const response = await fetch(url, { headers: { Accept: 'application/json' } });
-
                 const resultado = await response.json();
+                if (ultimaBusquedaRef.current !== busqueda) return [];
 
-                console.log('📥 [Transferencias] Respuesta del backend:', {
-                    success: resultado.success,
-                    status: response.status,
-                    respuesta_completa: resultado,
-                    cantidad_productos: resultado.data?.length || 0,
-                    productos: resultado.data,
-                });
-
-                if (resultado.success) {
-                    setSearchResults(resultado.data || []);
-                } else {
-                    setSearchResults([]);
-                }
+                const lista = resultado.success ? resultado.data || [] : [];
+                // Primero los que tienen stock en el origen (se pueden transferir)
+                const ordenada = [...lista].sort((a, b) => Number(disponibleOrigen(b) > 0) - Number(disponibleOrigen(a) > 0));
+                setSearchResults(ordenada);
+                return ordenada;
             } catch (error) {
                 console.error('❌ [Transferencias] Error en búsqueda:', error);
                 setSearchResults([]);
+                return [];
             } finally {
-                setIsSearching(false);
+                if (ultimaBusquedaRef.current === busqueda) setIsSearching(false);
             }
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [data.almacen_origen_id, searchTerm]
     );
+
+    // Búsqueda mientras se escribe (300 ms después de la última tecla); un ID de un dígito también busca
+    useEffect(() => {
+        const termino = searchTerm.trim();
+        if (termino.length < 2 && !/^\d+$/.test(termino)) {
+            setSearchResults([]);
+            return;
+        }
+        const t = setTimeout(() => buscarProductos(termino), 300);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm, data.almacen_origen_id]);
 
     // ✅ Cerrar sugerencias al presionar Escape o hacer click afuera
     useEffect(() => {
@@ -163,8 +187,9 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
 
         // Calcular stock por almacén desde el array stock
         // El endpoint retorna un array stock con los lotes, necesitamos sumar la cantidad
-        const stockPorAlmacen: any = {};
-        if (producto.stock && Array.isArray(producto.stock)) {
+        // stock_por_almacen (disponible en cada almacén) viene de la búsqueda; los lotes de "stock" son solo del origen
+        const stockPorAlmacen: any = { ...(producto.stock_por_almacen ?? {}) };
+        if (!producto.stock_por_almacen && producto.stock && Array.isArray(producto.stock)) {
             producto.stock.forEach((s: any) => {
                 if (!stockPorAlmacen[s.almacen_id]) {
                     stockPorAlmacen[s.almacen_id] = 0;
@@ -179,6 +204,8 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         const nuevoDetalle: DetalleTransferencia & {
             producto_nombre?: string;
             producto_codigo?: string;
+            producto_sku?: string;
+            codigos_barras?: string[];
             stock_por_almacen?: any;
         } = {
             producto_id: producto.id,
@@ -188,6 +215,8 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
             // Guardar también los datos del producto para renderizar en la tabla
             producto_nombre: producto.nombre,
             producto_codigo: producto.codigo,
+            producto_sku: producto.sku,
+            codigos_barras: producto.codigos_barras ?? [],
             // Guardar stock por almacén
             stock_por_almacen: stockPorAlmacen,
         };
@@ -202,52 +231,38 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         NotificationService.success(`✅ ${producto.nombre} agregado a la tabla`);
     };
 
-    // ✅ Manejar búsqueda y mostrar opciones
+    // Enter / botón (o escáner): busca YA y agrega el producto exacto (prioridad como en ventas: ID, SKU, código de barras).
+    // Con un solo lote con stock se agrega directo; con varios, quedan sus lotes en la lista para elegir
     const handleBuscarProducto = async () => {
-        if (!searchTerm.trim() || !data.almacen_origen_id) {
-            return;
+        const termino = searchTerm.trim();
+        if (!termino || !data.almacen_origen_id) return;
+
+        const lista = await buscarProductos(termino);
+        if (ultimaBusquedaRef.current !== termino) return;
+
+        const t = termino.toLowerCase();
+        const exacto =
+            (/^\d+$/.test(t) ? lista.find((p) => String(p.id) === t) : undefined) ??
+            lista.find((p) => (p.sku ?? '').toLowerCase() === t) ??
+            lista.find((p) => (p.codigos_barras ?? []).some((c: string) => String(c).toLowerCase() === t)) ??
+            (lista.length === 1 ? lista[0] : undefined);
+
+        if (!exacto) {
+            if (lista.length === 0) NotificationService.warning(`No se encontró un producto con "${termino}"`);
+            return; // varios: quedan en la lista para elegir
         }
 
-        setIsSearching(true);
-        try {
-            const url = `/api/productos/buscar?q=${encodeURIComponent(searchTerm)}&almacen_id=${data.almacen_origen_id}&limite=10`;
-
-            console.log('🔍 [Transferencias] URL de búsqueda:', url);
-
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            const resultado = await response.json();
-
-            console.log('📥 [Transferencias] RESPUESTA COMPLETA DEL BACKEND:', resultado);
-            console.log('📊 [Transferencias] Primer producto:', resultado.data?.[0]);
-
-            if (resultado.data?.[0]) {
-                console.log('📈 [Transferencias] Stock del producto:', resultado.data[0].stock);
-                console.log('💾 [Transferencias] Stock por almacén:', resultado.data[0].stock_por_almacen);
-                console.log('📦 [Transferencias] Cantidad disponible:', resultado.data[0].cantidad_disponible);
-                console.log('💵 [Transferencias] Precios:', resultado.data[0].precios);
-            }
-
-            if (resultado.success && resultado.data && resultado.data.length > 0) {
-                const producto = resultado.data[0]; // Tomar el primer producto encontrado
-
-                // Si el producto tiene solo 1 lote, agregarlo automáticamente a la tabla
-                if (producto.stock && producto.stock.length === 1) {
-                    agregarProductoATabla(producto, producto.stock[0]);
-                } else if (producto.stock && producto.stock.length > 1) {
-                    // Si hay múltiples lotes, mostrar sugerencias para que elija
-                    setSearchResults([producto]);
-                } else {
-                    // Sin stock disponible
-                    NotificationService.warning('Este producto no tiene stock disponible');
-                }
-            } else {
-                NotificationService.warning('Producto no encontrado');
-            }
-        } catch (error) {
-            console.error('❌ [Transferencias] Error en búsqueda:', error);
-            NotificationService.error('Error al buscar producto');
-        } finally {
-            setIsSearching(false);
+        const lotes = lotesOrigen(exacto);
+        if (lotes.length === 0) {
+            NotificationService.warning(`#${exacto.id} ${exacto.nombre} no tiene stock en el almacén origen`);
+            setSearchResults([exacto]);
+            return;
+        }
+        // Se carga directo; con varios lotes, el que vence primero (o el primero que falte agregar)
+        const lote = lotes.find((l) => !yaAgregado(exacto.id, l.lote)) ?? lotes[0];
+        agregarProductoATabla(exacto, lote);
+        if (lotes.length > 1) {
+            NotificationService.info(`${exacto.nombre} tiene ${lotes.length} lotes: se agregó ${lote.lote ? `el lote ${lote.lote}` : 'el sin lote'}. Busque de nuevo para agregar otro.`);
         }
     };
 
@@ -303,27 +318,17 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Nueva Transferencia" />
 
-            <div className="flex flex-col gap-6 p-4">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                        Nueva Transferencia
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                        Crear una nueva transferencia de productos entre almacenes.
-                    </p>
+            <div className="flex flex-col gap-4 p-4">
+                <div className="flex flex-wrap items-baseline gap-x-3">
+                    <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Nueva Transferencia</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Productos de un almacén a otro</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Información de la Transferencia */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Package className="h-5 w-5" />
-                                    Información de Transferencia
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Origen → destino, observaciones y resumen en una sola tarjeta */}
+                    <Card>
+                        <CardContent className="space-y-3 pt-4">
+                            <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_auto_1fr] lg:grid-cols-[1fr_auto_1fr_1.2fr]">
                                 <div>
                                     <Label htmlFor="almacen_origen_id">Almacén Origen *</Label>
                                     <SearchSelect
@@ -336,7 +341,9 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                         error={errors.almacen_origen_id}
                                     />
                                 </div>
-
+                                <span className="hidden pb-2 text-xl text-gray-400 md:block" aria-hidden>
+                                    →
+                                </span>
                                 <div>
                                     <Label htmlFor="almacen_destino_id">Almacén Destino *</Label>
                                     <SearchSelect
@@ -348,77 +355,44 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                         required
                                         error={errors.almacen_destino_id}
                                     />
-                                </div>                               
-
-                                <div>
+                                </div>
+                                <div className="md:col-span-3 lg:col-span-1">
                                     <Label htmlFor="observaciones">Observaciones</Label>
                                     <Textarea
                                         id="observaciones"
                                         value={data.observaciones}
                                         onChange={(e) => setData('observaciones', e.target.value)}
-                                        placeholder="Observaciones sobre la transferencia..."
-                                        rows={3}
+                                        placeholder="Observaciones (opcional)"
+                                        rows={1}
                                         maxLength={500}
+                                        className="min-h-[2.5rem] resize-y"
                                     />
-                                    {errors.observaciones && (
-                                        <p className="text-sm text-red-600 mt-1">{errors.observaciones}</p>
-                                    )}
+                                    {errors.observaciones && <p className="mt-1 text-sm text-red-600">{errors.observaciones}</p>}
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
 
-                        {/* Resumen */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Resumen de Transferencia</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600 dark:text-gray-400">Total Productos:</span>
-                                        <Badge variant="secondary">{totalProductos}</Badge>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600 dark:text-gray-400">Cantidad Total:</span>
-                                        <Badge variant="secondary">{totalCantidad}</Badge>
-                                    </div>
-                                    {data.almacen_origen_id && data.almacen_destino_id && (
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-600 dark:text-gray-400">Tipo:</span>
-                                            <Badge variant={requiereTransporte ? "default" : "outline"}>
-                                                {requiereTransporte ? "🚛 Física" : "📋 Virtual"}
-                                            </Badge>
-                                        </div>
-                                    )}
-                                </div>
-
+                            {/* Resumen en una línea */}
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <Badge variant="secondary">
+                                    {totalProductos} producto{totalProductos !== 1 ? 's' : ''}
+                                </Badge>
+                                <Badge variant="secondary">Cantidad total: {totalCantidad}</Badge>
                                 {almacenOrigen && almacenDestino && (
-                                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                                            <strong>Transferencia:</strong><br />
-                                            <span className="block">📦 De: {almacenOrigen?.nombre}</span>
-                                            {almacenOrigen?.ubicacion_fisica && (
-                                                <span className="block text-xs ml-4">📍 {almacenOrigen.ubicacion_fisica}</span>
-                                            )}
-                                            <span className="block mt-1">📦 A: {almacenDestino?.nombre}</span>
-                                            {almacenDestino?.ubicacion_fisica && (
-                                                <span className="block text-xs ml-4">📍 {almacenDestino.ubicacion_fisica}</span>
-                                            )}
-
-                                        </p>
-                                    </div>
+                                    <>
+                                        <Badge variant={requiereTransporte ? 'default' : 'outline'}>{requiereTransporte ? '🚛 Física' : '📋 Virtual'}</Badge>
+                                        <span>
+                                            📦 {almacenOrigen.nombre}
+                                            {almacenOrigen.ubicacion_fisica && <span className="text-xs"> (📍 {almacenOrigen.ubicacion_fisica})</span>} → {almacenDestino.nombre}
+                                            {almacenDestino.ubicacion_fisica && <span className="text-xs"> (📍 {almacenDestino.ubicacion_fisica})</span>}
+                                        </span>
+                                    </>
                                 )}
-
                                 {data.detalles.length === 0 && (
-                                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                                        <p className="text-sm text-amber-800 dark:text-amber-200">
-                                            Agregue al menos un producto para continuar.
-                                        </p>
-                                    </div>
+                                    <span className="text-amber-700 dark:text-amber-300">· Agregue al menos un producto para continuar</span>
                                 )}
-                            </CardContent>
-                        </Card>
-                    </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     {/* Productos */}
                     <Card>
@@ -437,12 +411,13 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                                 <Input
                                                     id="producto"
                                                     type="text"
-                                                    placeholder="Código o nombre del producto..."
+                                                    placeholder="ID, SKU o código de barras + Enter para agregarlo · o escribe el nombre y elige"
                                                     value={searchTerm}
                                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                                    onKeyPress={(e) => {
+                                                    onKeyDown={(e) => {
                                                         if (e.key === 'Enter') {
-                                                            buscarProductos(searchTerm);
+                                                            e.preventDefault(); // no enviar el formulario
+                                                            handleBuscarProducto();
                                                         }
                                                     }}
                                                     className="pl-10"
@@ -468,52 +443,86 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                         )}
                                     </div>
 
-                                    {/* Dropdown de sugerencias con lotes */}
+                                    {/* Sugerencias: una fila por producto; los lotes solo si hay más de uno con stock */}
                                     {searchResults.length > 0 && (
                                         <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                                            {searchResults.map((producto, idx) => (
-                                                <div key={idx} className="border-b dark:border-slate-700 last:border-b-0">
-                                                    {/* Header del producto */}
-                                                    <div className="p-3 bg-gray-100 dark:bg-slate-700 sticky top-0">
-                                                        <p className="font-medium text-sm dark:text-white">
-                                                            [{producto.sku || producto.codigo}] {producto.nombre}
-                                                        </p>
-                                                    </div>
+                                            <div className="sticky top-0 z-10 grid grid-cols-[4.5rem_1fr_6rem_7rem] gap-2 border-b bg-gray-50 px-3 py-1.5 text-[11px] font-semibold uppercase text-gray-500 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-400">
+                                                <span>ID</span>
+                                                <span>Producto</span>
+                                                <span className="text-center">Unidad</span>
+                                                <span className="text-right" title="Disponible en el almacén origen">Disponible</span>
+                                            </div>
+                                            {searchResults.map((producto) => {
+                                                const lotes = lotesOrigen(producto);
+                                                const disponible = disponibleOrigen(producto);
+                                                const sinStock = lotes.length === 0;
+                                                const unLote = lotes.length === 1;
+                                                const termino = searchTerm.trim().toLowerCase();
+                                                const codigos: string[] = producto.codigos_barras ?? [];
+                                                // El código que coincide con lo buscado (para ver por qué apareció), si no el principal
+                                                const codigo = (termino && codigos.find((c) => c.toLowerCase().includes(termino))) || codigos[0];
+                                                return (
+                                                    <div key={producto.id} className="border-b last:border-b-0 dark:border-slate-700">
+                                                        <button
+                                                            type="button"
+                                                            disabled={sinStock}
+                                                            onClick={() => agregarProductoATabla(producto, lotes.find((l) => !yaAgregado(producto.id, l.lote)) ?? lotes[0])}
+                                                            title={sinStock ? 'Sin stock en el almacén origen' : unLote ? 'Agregar' : 'Agregar el lote que vence primero (o elija uno abajo)'}
+                                                            className={`grid w-full grid-cols-[4.5rem_1fr_6rem_7rem] items-center gap-2 px-3 py-2 text-left text-sm transition ${
+                                                                sinStock ? 'cursor-not-allowed opacity-50' : 'hover:bg-blue-50 dark:hover:bg-slate-700'
+                                                            }`}
+                                                        >
+                                                            <span className="font-semibold text-blue-600 dark:text-blue-400">#{producto.id}</span>
+                                                            <span className="min-w-0">
+                                                                <span className="block truncate font-medium dark:text-white">
+                                                                    {producto.nombre}
+                                                                    {unLote && yaAgregado(producto.id, lotes[0].lote) && (
+                                                                        <span className="ml-2 text-xs font-normal text-amber-600">(ya agregado)</span>
+                                                                    )}
+                                                                </span>
+                                                                <span className="block truncate font-mono text-xs text-gray-500 dark:text-gray-400">
+                                                                    {producto.sku}
+                                                                    {codigo && <> · ▮▯ {codigo}</>}
+                                                                    {codigos.length > 1 && <span className="font-sans"> +{codigos.length - 1}</span>}
+                                                                </span>
+                                                            </span>
+                                                            <span className="text-center text-xs text-gray-600 dark:text-gray-300">
+                                                                {producto.unidad?.nombre ?? producto.unidad_medida_nombre ?? '-'}
+                                                            </span>
+                                                            <span className={`text-right font-semibold ${sinStock ? 'text-red-500' : 'text-green-700 dark:text-green-400'}`}>
+                                                                {sinStock ? 'Sin stock' : formatearCantidad(disponible)}
+                                                                {lotes.length > 1 && <span className="block text-[11px] font-normal text-gray-500">{lotes.length} lotes</span>}
+                                                            </span>
+                                                        </button>
 
-                                                    {/* Lotes */}
-                                                    {producto.stock && producto.stock.length > 0 ? (
-                                                        <div className="divide-y dark:divide-slate-700">
-                                                            {producto.stock.map((lote, loteIdx) => (
-                                                                <div
-                                                                    key={loteIdx}
-                                                                    onClick={() => agregarProductoATabla(producto, lote)}
-                                                                    className="p-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-600 transition"
-                                                                >
-                                                                    <div className="flex items-center justify-between">
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <p className="text-xs font-medium dark:text-gray-300">
-                                                                                {lote.lote ? `Lote: ${lote.lote}` : '📦 Sin lote'}
-                                                                            </p>
+                                                        {/* Varios lotes con stock: elegir cuál transferir */}
+                                                        {lotes.length > 1 && (
+                                                            <div className="flex flex-wrap gap-2 px-3 pb-2 pl-[5.5rem]">
+                                                                {lotes.map((lote: any) => {
+                                                                    const agregado = yaAgregado(producto.id, lote.lote);
+                                                                    return (
+                                                                        <button
+                                                                            key={lote.id}
+                                                                            type="button"
+                                                                            disabled={agregado}
+                                                                            onClick={() => agregarProductoATabla(producto, lote)}
+                                                                            className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-800 transition hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200"
+                                                                        >
+                                                                            {lote.lote ? `Lote ${lote.lote}` : 'Sin lote'}
                                                                             {lote.fecha_vencimiento && (
-                                                                                <p className="text-xs text-gray-600 dark:text-gray-400">
-                                                                                    📅 Vence: {new Date(lote.fecha_vencimiento).toLocaleDateString('es-ES')}
-                                                                                </p>
+                                                                                <> · vence {String(lote.fecha_vencimiento).slice(0, 10).split('-').reverse().join('/')}</>
                                                                             )}
-                                                                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                                                                                📦 Disponible: <span className="font-semibold text-blue-600 dark:text-blue-400">{lote.cantidad_disponible}</span>
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="p-3 text-xs text-gray-500 dark:text-gray-400">
-                                                            Sin stock disponible
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                                            {' · '}
+                                                                            <b>{formatearCantidad(num(lote.cantidad_disponible))}</b>
+                                                                            {agregado && ' (ya agregado)'}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
@@ -573,7 +582,28 @@ export default function CrearTransferencia({ almacenes, productos = [] }: CrearT
                                                             <td className="p-3">
                                                                 <div>
                                                                     <p className="font-medium">{productoNombre}</p>
-                                                                    <p className="text-xs text-gray-600 dark:text-gray-400">[{productoCodigo}]</p>
+                                                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                                        <a
+                                                                            href={`/productos/${detalle.producto_id}/edit`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                                                                            title="Ver producto (nueva pestaña)"
+                                                                        >
+                                                                            #{detalle.producto_id}
+                                                                        </a>
+                                                                        {((detalle as any).producto_sku || productoCodigo) && (
+                                                                            <span className="font-mono"> · {(detalle as any).producto_sku || productoCodigo}</span>
+                                                                        )}
+                                                                    </p>
+                                                                    {((detalle as any).codigos_barras ?? []).length > 0 && (
+                                                                        <p className="font-mono text-xs text-gray-500 dark:text-gray-400" title={(detalle as any).codigos_barras.join('\n')}>
+                                                                            ▮▯ {(detalle as any).codigos_barras[0]}
+                                                                            {(detalle as any).codigos_barras.length > 1 && (
+                                                                                <span className="font-sans"> +{(detalle as any).codigos_barras.length - 1}</span>
+                                                                            )}
+                                                                        </p>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                             <td className="p-3">

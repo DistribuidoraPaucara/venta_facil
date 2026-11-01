@@ -235,7 +235,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\ReposicionController::store
- * @see app/Http/Controllers/ReposicionController.php:139
+ * @see app/Http/Controllers/ReposicionController.php:149
  * @route '/inventario/reposiciones/crear'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -250,7 +250,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::store
- * @see app/Http/Controllers/ReposicionController.php:139
+ * @see app/Http/Controllers/ReposicionController.php:149
  * @route '/inventario/reposiciones/crear'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -259,7 +259,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::store
- * @see app/Http/Controllers/ReposicionController.php:139
+ * @see app/Http/Controllers/ReposicionController.php:149
  * @route '/inventario/reposiciones/crear'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -269,7 +269,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\ReposicionController::store
- * @see app/Http/Controllers/ReposicionController.php:139
+ * @see app/Http/Controllers/ReposicionController.php:149
  * @route '/inventario/reposiciones/crear'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -279,7 +279,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\ReposicionController::store
- * @see app/Http/Controllers/ReposicionController.php:139
+ * @see app/Http/Controllers/ReposicionController.php:149
  * @route '/inventario/reposiciones/crear'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -290,7 +290,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:256
+ * @see app/Http/Controllers/ReposicionController.php:266
  * @route '/inventario/reposiciones/{reposicion}'
  */
 export const show = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -305,7 +305,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:256
+ * @see app/Http/Controllers/ReposicionController.php:266
  * @route '/inventario/reposiciones/{reposicion}'
  */
 show.url = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -338,7 +338,7 @@ show.url = (args: { reposicion: number | { id: number } } | [reposicion: number 
 
 /**
 * @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:256
+ * @see app/Http/Controllers/ReposicionController.php:266
  * @route '/inventario/reposiciones/{reposicion}'
  */
 show.get = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -347,7 +347,7 @@ show.get = (args: { reposicion: number | { id: number } } | [reposicion: number 
 })
 /**
 * @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:256
+ * @see app/Http/Controllers/ReposicionController.php:266
  * @route '/inventario/reposiciones/{reposicion}'
  */
 show.head = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -357,7 +357,7 @@ show.head = (args: { reposicion: number | { id: number } } | [reposicion: number
 
     /**
 * @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:256
+ * @see app/Http/Controllers/ReposicionController.php:266
  * @route '/inventario/reposiciones/{reposicion}'
  */
     const showForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -367,7 +367,7 @@ show.head = (args: { reposicion: number | { id: number } } | [reposicion: number
 
             /**
 * @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:256
+ * @see app/Http/Controllers/ReposicionController.php:266
  * @route '/inventario/reposiciones/{reposicion}'
  */
         showForm.get = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -376,7 +376,7 @@ show.head = (args: { reposicion: number | { id: number } } | [reposicion: number
         })
             /**
 * @see \App\Http\Controllers\ReposicionController::show
- * @see app/Http/Controllers/ReposicionController.php:256
+ * @see app/Http/Controllers/ReposicionController.php:266
  * @route '/inventario/reposiciones/{reposicion}'
  */
         showForm.head = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -392,7 +392,7 @@ show.head = (args: { reposicion: number | { id: number } } | [reposicion: number
     show.form = showForm
 /**
 * @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:267
+ * @see app/Http/Controllers/ReposicionController.php:277
  * @route '/inventario/reposiciones/{reposicion}/edit'
  */
 export const edit = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -407,7 +407,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:267
+ * @see app/Http/Controllers/ReposicionController.php:277
  * @route '/inventario/reposiciones/{reposicion}/edit'
  */
 edit.url = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -440,7 +440,7 @@ edit.url = (args: { reposicion: number | { id: number } } | [reposicion: number 
 
 /**
 * @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:267
+ * @see app/Http/Controllers/ReposicionController.php:277
  * @route '/inventario/reposiciones/{reposicion}/edit'
  */
 edit.get = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -449,7 +449,7 @@ edit.get = (args: { reposicion: number | { id: number } } | [reposicion: number 
 })
 /**
 * @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:267
+ * @see app/Http/Controllers/ReposicionController.php:277
  * @route '/inventario/reposiciones/{reposicion}/edit'
  */
 edit.head = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -459,7 +459,7 @@ edit.head = (args: { reposicion: number | { id: number } } | [reposicion: number
 
     /**
 * @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:267
+ * @see app/Http/Controllers/ReposicionController.php:277
  * @route '/inventario/reposiciones/{reposicion}/edit'
  */
     const editForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -469,7 +469,7 @@ edit.head = (args: { reposicion: number | { id: number } } | [reposicion: number
 
             /**
 * @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:267
+ * @see app/Http/Controllers/ReposicionController.php:277
  * @route '/inventario/reposiciones/{reposicion}/edit'
  */
         editForm.get = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -478,7 +478,7 @@ edit.head = (args: { reposicion: number | { id: number } } | [reposicion: number
         })
             /**
 * @see \App\Http\Controllers\ReposicionController::edit
- * @see app/Http/Controllers/ReposicionController.php:267
+ * @see app/Http/Controllers/ReposicionController.php:277
  * @route '/inventario/reposiciones/{reposicion}/edit'
  */
         editForm.head = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -494,7 +494,7 @@ edit.head = (args: { reposicion: number | { id: number } } | [reposicion: number
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\ReposicionController::update
- * @see app/Http/Controllers/ReposicionController.php:286
+ * @see app/Http/Controllers/ReposicionController.php:296
  * @route '/inventario/reposiciones/{reposicion}'
  */
 export const update = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -509,7 +509,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::update
- * @see app/Http/Controllers/ReposicionController.php:286
+ * @see app/Http/Controllers/ReposicionController.php:296
  * @route '/inventario/reposiciones/{reposicion}'
  */
 update.url = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -542,7 +542,7 @@ update.url = (args: { reposicion: number | { id: number } } | [reposicion: numbe
 
 /**
 * @see \App\Http\Controllers\ReposicionController::update
- * @see app/Http/Controllers/ReposicionController.php:286
+ * @see app/Http/Controllers/ReposicionController.php:296
  * @route '/inventario/reposiciones/{reposicion}'
  */
 update.put = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -552,7 +552,7 @@ update.put = (args: { reposicion: number | { id: number } } | [reposicion: numbe
 
     /**
 * @see \App\Http\Controllers\ReposicionController::update
- * @see app/Http/Controllers/ReposicionController.php:286
+ * @see app/Http/Controllers/ReposicionController.php:296
  * @route '/inventario/reposiciones/{reposicion}'
  */
     const updateForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -567,7 +567,7 @@ update.put = (args: { reposicion: number | { id: number } } | [reposicion: numbe
 
             /**
 * @see \App\Http\Controllers\ReposicionController::update
- * @see app/Http/Controllers/ReposicionController.php:286
+ * @see app/Http/Controllers/ReposicionController.php:296
  * @route '/inventario/reposiciones/{reposicion}'
  */
         updateForm.put = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -583,7 +583,7 @@ update.put = (args: { reposicion: number | { id: number } } | [reposicion: numbe
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\ReposicionController::enviar
- * @see app/Http/Controllers/ReposicionController.php:341
+ * @see app/Http/Controllers/ReposicionController.php:351
  * @route '/inventario/reposiciones/{reposicion}/enviar'
  */
 export const enviar = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -598,7 +598,7 @@ enviar.definition = {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::enviar
- * @see app/Http/Controllers/ReposicionController.php:341
+ * @see app/Http/Controllers/ReposicionController.php:351
  * @route '/inventario/reposiciones/{reposicion}/enviar'
  */
 enviar.url = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -631,7 +631,7 @@ enviar.url = (args: { reposicion: number | { id: number } } | [reposicion: numbe
 
 /**
 * @see \App\Http\Controllers\ReposicionController::enviar
- * @see app/Http/Controllers/ReposicionController.php:341
+ * @see app/Http/Controllers/ReposicionController.php:351
  * @route '/inventario/reposiciones/{reposicion}/enviar'
  */
 enviar.post = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -641,7 +641,7 @@ enviar.post = (args: { reposicion: number | { id: number } } | [reposicion: numb
 
     /**
 * @see \App\Http\Controllers\ReposicionController::enviar
- * @see app/Http/Controllers/ReposicionController.php:341
+ * @see app/Http/Controllers/ReposicionController.php:351
  * @route '/inventario/reposiciones/{reposicion}/enviar'
  */
     const enviarForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -651,7 +651,7 @@ enviar.post = (args: { reposicion: number | { id: number } } | [reposicion: numb
 
             /**
 * @see \App\Http\Controllers\ReposicionController::enviar
- * @see app/Http/Controllers/ReposicionController.php:341
+ * @see app/Http/Controllers/ReposicionController.php:351
  * @route '/inventario/reposiciones/{reposicion}/enviar'
  */
         enviarForm.post = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -662,7 +662,7 @@ enviar.post = (args: { reposicion: number | { id: number } } | [reposicion: numb
     enviar.form = enviarForm
 /**
 * @see \App\Http\Controllers\ReposicionController::recibir
- * @see app/Http/Controllers/ReposicionController.php:357
+ * @see app/Http/Controllers/ReposicionController.php:367
  * @route '/inventario/reposiciones/{reposicion}/recibir'
  */
 export const recibir = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -677,7 +677,7 @@ recibir.definition = {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::recibir
- * @see app/Http/Controllers/ReposicionController.php:357
+ * @see app/Http/Controllers/ReposicionController.php:367
  * @route '/inventario/reposiciones/{reposicion}/recibir'
  */
 recibir.url = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -710,7 +710,7 @@ recibir.url = (args: { reposicion: number | { id: number } } | [reposicion: numb
 
 /**
 * @see \App\Http\Controllers\ReposicionController::recibir
- * @see app/Http/Controllers/ReposicionController.php:357
+ * @see app/Http/Controllers/ReposicionController.php:367
  * @route '/inventario/reposiciones/{reposicion}/recibir'
  */
 recibir.post = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -720,7 +720,7 @@ recibir.post = (args: { reposicion: number | { id: number } } | [reposicion: num
 
     /**
 * @see \App\Http\Controllers\ReposicionController::recibir
- * @see app/Http/Controllers/ReposicionController.php:357
+ * @see app/Http/Controllers/ReposicionController.php:367
  * @route '/inventario/reposiciones/{reposicion}/recibir'
  */
     const recibirForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -730,7 +730,7 @@ recibir.post = (args: { reposicion: number | { id: number } } | [reposicion: num
 
             /**
 * @see \App\Http\Controllers\ReposicionController::recibir
- * @see app/Http/Controllers/ReposicionController.php:357
+ * @see app/Http/Controllers/ReposicionController.php:367
  * @route '/inventario/reposiciones/{reposicion}/recibir'
  */
         recibirForm.post = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -741,7 +741,7 @@ recibir.post = (args: { reposicion: number | { id: number } } | [reposicion: num
     recibir.form = recibirForm
 /**
 * @see \App\Http\Controllers\ReposicionController::destroy
- * @see app/Http/Controllers/ReposicionController.php:329
+ * @see app/Http/Controllers/ReposicionController.php:339
  * @route '/inventario/reposiciones/{reposicion}'
  */
 export const destroy = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -756,7 +756,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\ReposicionController::destroy
- * @see app/Http/Controllers/ReposicionController.php:329
+ * @see app/Http/Controllers/ReposicionController.php:339
  * @route '/inventario/reposiciones/{reposicion}'
  */
 destroy.url = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -789,7 +789,7 @@ destroy.url = (args: { reposicion: number | { id: number } } | [reposicion: numb
 
 /**
 * @see \App\Http\Controllers\ReposicionController::destroy
- * @see app/Http/Controllers/ReposicionController.php:329
+ * @see app/Http/Controllers/ReposicionController.php:339
  * @route '/inventario/reposiciones/{reposicion}'
  */
 destroy.delete = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -799,7 +799,7 @@ destroy.delete = (args: { reposicion: number | { id: number } } | [reposicion: n
 
     /**
 * @see \App\Http\Controllers\ReposicionController::destroy
- * @see app/Http/Controllers/ReposicionController.php:329
+ * @see app/Http/Controllers/ReposicionController.php:339
  * @route '/inventario/reposiciones/{reposicion}'
  */
     const destroyForm = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -814,7 +814,7 @@ destroy.delete = (args: { reposicion: number | { id: number } } | [reposicion: n
 
             /**
 * @see \App\Http\Controllers\ReposicionController::destroy
- * @see app/Http/Controllers/ReposicionController.php:329
+ * @see app/Http/Controllers/ReposicionController.php:339
  * @route '/inventario/reposiciones/{reposicion}'
  */
         destroyForm.delete = (args: { reposicion: number | { id: number } } | [reposicion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

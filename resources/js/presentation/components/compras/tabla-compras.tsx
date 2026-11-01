@@ -3,7 +3,7 @@ import { ComprasService } from '@/infrastructure/services/compras.service';
 import { formatCurrency } from '@/lib/utils';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { Link } from '@inertiajs/react';
-import { AlertCircle, ChevronDown, ChevronUp, Copy, Edit, Eye, MoreVertical, Printer, Trash2 } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronsUpDown, ChevronUp, Copy, Edit, Eye, MoreVertical, Printer, Trash2 } from 'lucide-react';
 import { duplicarCompra } from './duplicar-compra';
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -242,8 +242,11 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
     // Valor por defecto para evitar errores de undefined
     const comprasSeguras = compras || [];
 
+    // El orden por defecto (fecha de registro) se muestra en la columna Fecha
+    const esOrdenActivo = (field: string) => sortBy === field || (field === 'fecha' && sortBy === 'created_at');
+
     const handleSort = (field: string) => {
-        const newSortDir = sortBy === field && sortDir === 'desc' ? 'asc' : 'desc';
+        const newSortDir = esOrdenActivo(field) && sortDir === 'desc' ? 'asc' : 'desc';
 
         const currentParams = new URLSearchParams(window.location.search);
         currentParams.set('sort_by', field);
@@ -294,15 +297,17 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
         }
     };
 
+    // Columna ordenable: ↕ tenue; la activa, flecha según la dirección
     const getSortIcon = (field: string) => {
-        if (sortBy !== field) return null;
-        return sortDir === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />;
+        if (!esOrdenActivo(field)) return <ChevronsUpDown className="ml-1 h-3.5 w-3.5 opacity-40" />;
+        return sortDir === 'asc' ? <ChevronUp className="ml-1 h-4 w-4 text-blue-600 dark:text-blue-400" /> : <ChevronDown className="ml-1 h-4 w-4 text-blue-600 dark:text-blue-400" />;
     };
 
     const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
         <th
             className="cursor-pointer px-2 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600"
             onClick={() => handleSort(field)}
+            title="Clic para ordenar (otro clic invierte el orden)"
         >
             <div className="flex items-center justify-center gap-1 text-center">
                 {children}
@@ -355,9 +360,9 @@ export default function TablaCompras({ compras, sortBy = 'created_at', sortDir =
                             <SortableHeader field="id">Folio</SortableHeader>
                             <SortableHeader field="estado">Estado</SortableHeader>
                             <SortableHeader field="proveedor">Proveedor</SortableHeader>
-                            <th className="px-2 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">Almacén</th>
-                            <th className="px-2 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">Productos</th>
-                            <th className="px-2 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">Pago</th>
+                            <SortableHeader field="almacen">Almacén</SortableHeader>
+                            <SortableHeader field="productos">Productos</SortableHeader>
+                            <SortableHeader field="pago">Pago</SortableHeader>
                             <SortableHeader field="total">Total</SortableHeader>
                             <SortableHeader field="fecha">Fecha</SortableHeader>
                             <SortableHeader field="usuario">Creador</SortableHeader>

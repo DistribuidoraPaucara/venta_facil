@@ -32,6 +32,8 @@ interface Producto {
   sector?: Sector;
   codigos_barra?: CodigoBarra[];
   proveedor_id?: number | null;
+  // Todos sus proveedores (el principal primero) con el último precio que cobraron
+  proveedores_producto?: Array<{ id: number; nombre: string; ultimo_precio: number | null; fecha_ultima_compra: string | null; es_principal: boolean }>;
 }
 
 interface Almacen {
@@ -99,6 +101,7 @@ function ComprasIndex({ productosParaComprar, almacenPrincipal, proveedores = []
   const [filtroEstado, setFiltroEstado] = useState<'todos' | Estado>('todos');
   const [filtroSector, setFiltroSector] = useState('');
   const [filtroMarca, setFiltroMarca] = useState('');
+  const [filtroProveedor, setFiltroProveedor] = useState(''); // '' = todos, 'sin' = sin proveedor, o id
   // Productos elegidos para la orden de compra: producto_id → cantidad a pedir
   const [seleccion, setSeleccion] = useState<Record<number, number>>({});
   // null = el usuario no eligió (se propone el proveedor común); '' = eligió "Sin proveedor"
@@ -111,7 +114,7 @@ function ComprasIndex({ productosParaComprar, almacenPrincipal, proveedores = []
   // Al cambiar filtros o el tamaño de página, volver a la primera página
   useEffect(() => {
     setPagina(1);
-  }, [busqueda, filtroEstado, filtroSector, filtroMarca, porPagina]);
+  }, [busqueda, filtroEstado, filtroSector, filtroMarca, filtroProveedor, porPagina]);
 
   const formatearNumero = (num: number | string | undefined): string => {
     if (num === undefined || num === null || num === '') return '0';
@@ -129,12 +132,23 @@ function ComprasIndex({ productosParaComprar, almacenPrincipal, proveedores = []
   // ===== Filtros =====
   const sectores = unicos(productosParaComprar.map((p) => p.sector?.nombre));
   const marcas = unicos(productosParaComprar.map((p) => p.marca?.nombre));
+  // Proveedores de los productos a comprar, con cuántos productos tiene cada uno
+  const opcionesProveedor = Array.from(
+    productosParaComprar
+      .flatMap((p) => p.proveedores_producto ?? [])
+      .reduce((m, pr) => m.set(pr.id, { id: pr.id, nombre: pr.nombre, cantidad: (m.get(pr.id)?.cantidad ?? 0) + 1 }), new Map<number, { id: number; nombre: string; cantidad: number }>())
+      .values(),
+  ).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const sinProveedor = productosParaComprar.filter((p) => !p.proveedores_producto?.length).length;
 
   // Búsqueda, sector y marca se aplican primero, para que los contadores de las pestañas los reflejen
   const termino = normalizar(busqueda.trim());
   const productosBuscados = productosParaComprar.filter((p) => {
     if (filtroSector && p.sector?.nombre !== filtroSector) return false;
     if (filtroMarca && p.marca?.nombre !== filtroMarca) return false;
+    // Proveedor: cualquiera de los suyos, no solo el principal
+    if (filtroProveedor === 'sin' && p.proveedores_producto?.length) return false;
+    if (filtroProveedor && filtroProveedor !== 'sin' && !p.proveedores_producto?.some((pr) => String(pr.id) === filtroProveedor)) return false;
     if (!termino) return true;
     const codigos = (p.codigos_barra ?? []).map((c) => c.codigo).join(' ');
     return normalizar(`${p.nombre} ${p.sku ?? ''} ${p.id} ${codigos}`).includes(termino);
@@ -155,11 +169,12 @@ function ComprasIndex({ productosParaComprar, almacenPrincipal, proveedores = []
   const desde = (paginaActual - 1) * porPagina;
   const productosPagina = productosFiltrados.slice(desde, desde + porPagina);
 
-  const hayFiltros = termino !== '' || filtroSector !== '' || filtroMarca !== '' || filtroEstado !== 'todos';
+  const hayFiltros = termino !== '' || filtroSector !== '' || filtroMarca !== '' || filtroProveedor !== '' || filtroEstado !== 'todos';
   const limpiarFiltros = () => {
     setBusqueda('');
     setFiltroSector('');
     setFiltroMarca('');
+    setFiltroProveedor('');
     setFiltroEstado('todos');
   };
 
@@ -180,10 +195,17 @@ function ComprasIndex({ productosParaComprar, almacenPrincipal, proveedores = []
   const todosVisiblesSeleccionados = productosPagina.length > 0 && productosPagina.every((p) => p.id in seleccion);
   const todosFiltradosSeleccionados = productosFiltrados.length > 0 && productosFiltrados.every((p) => p.id in seleccion);
 
-  // Si todos los elegidos tienen el mismo proveedor, se propone ese
+  // Proveedor que se propone para la orden: el filtrado si todos los elegidos se le compran; si no, el único
+  // proveedor que comparten todos; si no, el principal común (como antes)
   const proveedorComun = (() => {
-    const ids = Array.from(new Set(seleccionados.map((p) => p.proveedor_id ?? null)));
-    return ids.length === 1 && ids[0] !== null && proveedores.some((pr) => pr.id === ids[0]) ? String(ids[0]) : '';
+    if (seleccionados.length === 0) return '';
+    const activo = (id: number | null | undefined) => id != null && proveedores.some((pr) => pr.id === id);
+    const deCada = seleccionados.map((p) => new Set((p.proveedores_producto ?? []).map((pr) => pr.id)));
+    const compartidos = [...deCada[0]].filter((id) => deCada.every((ids) => ids.has(id)) && activo(id));
+    if (filtroProveedor && filtroProveedor !== 'sin' && compartidos.includes(Number(filtroProveedor))) return filtroProveedor;
+    if (compartidos.length === 1) return String(compartidos[0]);
+    const principales = Array.from(new Set(seleccionados.map((p) => p.proveedor_id ?? null)));
+    return principales.length === 1 && activo(principales[0]) ? String(principales[0]) : '';
   })();
   const proveedorElegido = proveedorId ?? proveedorComun;
 
@@ -296,6 +318,20 @@ function ComprasIndex({ productosParaComprar, almacenPrincipal, proveedores = []
                         {m}
                       </option>
                     ))}
+                  </select>
+                  <select
+                    value={filtroProveedor}
+                    onChange={(e) => setFiltroProveedor(e.target.value)}
+                    className={selectClass}
+                    title="Productos que se le compran a ese proveedor (no solo los que lo tienen como principal)"
+                  >
+                    <option value="">Todos los proveedores</option>
+                    {opcionesProveedor.map((pr) => (
+                      <option key={pr.id} value={String(pr.id)}>
+                        {pr.nombre} ({pr.cantidad})
+                      </option>
+                    ))}
+                    {sinProveedor > 0 && <option value="sin">Sin proveedor ({sinProveedor})</option>}
                   </select>
                 </div>
 
@@ -416,7 +452,24 @@ function ComprasIndex({ productosParaComprar, almacenPrincipal, proveedores = []
                               <ExternalLink size={12} />
                             </a>
                           </td>
-                          <td className="py-3 px-4 font-medium">{producto.nombre}</td>
+                          <td className="py-3 px-4 font-medium">
+                            {producto.nombre}
+                            {/* Proveedores con el último precio que cobraron (el principal primero) */}
+                            {!!producto.proveedores_producto?.length && (
+                              <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+                                {producto.proveedores_producto.map((pr) => (
+                                  <span
+                                    key={pr.id}
+                                    className={String(pr.id) === filtroProveedor ? 'font-semibold text-blue-600 dark:text-blue-400' : ''}
+                                    title={pr.fecha_ultima_compra ? `Última compra: ${pr.fecha_ultima_compra.split('-').reverse().join('/')}` : 'Sin compras aprobadas'}
+                                  >
+                                    🚚 {pr.nombre}
+                                    {pr.ultimo_precio != null && <span className="font-mono"> · Bs {formatearNumero(pr.ultimo_precio)}</span>}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
                           <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                             <div>{producto.sku}</div>
                             {principal ? (

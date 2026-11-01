@@ -79,6 +79,9 @@ class ReposicionController extends Controller
                             ->orderByDesc('es_principal')
                             ->select('id', 'producto_id', 'codigo', 'es_principal'),
                         'sector',
+                        // Proveedores del producto, para filtrar la lista
+                        'producto.productoProveedores:id,producto_id,proveedor_id,es_principal',
+                        'producto.productoProveedores.proveedor:id,nombre',
                     ])
                     ->get()
                     ->groupBy('producto_id');
@@ -117,6 +120,13 @@ class ReposicionController extends Controller
                         // Obtener sector desde stock_limites
                         $sector = $limitesProducto->first()->sector;
                         $producto->sector = $sector;
+
+                        // Todos sus proveedores, el principal primero
+                        $producto->proveedores_producto = $producto->productoProveedores
+                            ->sortByDesc('es_principal')
+                            ->map(fn ($pp) => ['id' => $pp->proveedor_id, 'nombre' => $pp->proveedor?->nombre ?? "Proveedor #{$pp->proveedor_id}"])
+                            ->values();
+                        $producto->unsetRelation('productoProveedores');
 
                         // Obtener stock máximo para calcular cantidad sugerida
                         $stockMaximoRequerido = $limitesProducto->max('stock_maximo');

@@ -130,34 +130,39 @@ class DetectarCambiosPrecioService
      */
     public function aplicarPreciosVentaCompra(Compra $compra): array
     {
-        $compra->loadMissing('detalles');
+        $compra->loadMissing('detalles.producto');
         $motivo = "Precio de venta por compra #{$compra->numero}";
 
-        // Una entrada por precio_id (la última línea de la compra)
-        $porPrecioId = [];
+        // Una entrada por precio (la última línea de la compra). Sin precio_id el producto no tenía ese tipo de precio
+        // en la unidad de la línea: se identifica por producto + tipo + unidad y se crea
+        $porPrecio = [];
         foreach ($compra->detalles as $detalle) {
             $costo = (float) $detalle->precio_unitario;
-            if ($costo <= 0 || empty($detalle->precios_venta)) {
+            if ($costo <= 0 || empty($detalle->precios_venta) || ! $detalle->producto) {
                 continue;
             }
+            $unidadId = $detalle->unidad_medida_id ?: $detalle->producto->unidad_medida_id;
             foreach ($detalle->precios_venta as $editado) {
-                if (empty($editado['precio_id'])) {
-                    continue;
+                $clave = ! empty($editado['precio_id'])
+                    ? 'id-' . (int) $editado['precio_id']
+                    : (empty($editado['tipo_precio_id']) ? null : "nuevo-{$detalle->producto_id}-{$editado['tipo_precio_id']}-{$unidadId}");
+                if ($clave) {
+                    $porPrecio[$clave] = [$detalle, $costo, $editado, $unidadId];
                 }
-                $porPrecioId[(int) $editado['precio_id']] = [$detalle, $costo, $editado];
             }
         }
 
         $cambios = [];
-        foreach ($porPrecioId as $precioId => [$detalle, $costo, $editado]) {
-            $precio = PrecioProducto::where('id', $precioId)
-                ->where('producto_id', $detalle->producto_id)
-                ->first();
+        foreach ($porPrecio as [$detalle, $costo, $editado, $unidadId]) {
+            $precio = ! empty($editado['precio_id'])
+                ? PrecioProducto::where('id', $editado['precio_id'])->where('producto_id', $detalle->producto_id)->first()
+                : $this->precioVentaNuevo($detalle->producto, (int) $editado['tipo_precio_id'], $unidadId, $motivo);
             if (! $precio) {
                 Log::warning('Precio de venta de la compra no encontrado para el producto: se omite', [
-                    'compra_numero' => $compra->numero,
-                    'precio_id'     => $precioId,
-                    'producto_id'   => $detalle->producto_id,
+                    'compra_numero'  => $compra->numero,
+                    'precio_id'      => $editado['precio_id'] ?? null,
+                    'tipo_precio_id' => $editado['tipo_precio_id'] ?? null,
+                    'producto_id'    => $detalle->producto_id,
                 ]);
                 continue;
             }
@@ -198,6 +203,39 @@ class DetectarCambiosPrecioService
         }
 
         return $cambios;
+    }
+
+    /**
+     * Precio de venta de ese tipo en esa unidad para un producto que no lo tenía al armar la compra.
+     * Si ya existe (se creó después) se usa ese; si no, se crea en 0 y el que llama le pone el precio (queda en el historial).
+     * Solo tipos de precio de la empresa del producto y que no sean COSTO.
+     */
+    private function precioVentaNuevo(\App\Models\Producto $producto, int $tipoPrecioId, ?int $unidadId, string $motivo): ?PrecioProducto
+    {
+        $tipo = TipoPrecio::where('id', $tipoPrecioId)
+            ->where('empresa_id', $producto->empresa_id)
+            ->where('codigo', '!=', 'COSTO')
+            ->first();
+        if (! $tipo) {
+            return null;
+        }
+
+        return PrecioProducto::where('producto_id', $producto->id)
+            ->where('tipo_precio_id', $tipo->id)
+            ->where('unidad_medida_id', $unidadId)
+            ->first()
+            ?? PrecioProducto::create([
+                'producto_id'                => $producto->id,
+                'tipo_precio_id'             => $tipo->id,
+                'nombre'                     => $tipo->nombre,
+                'precio'                     => 0,
+                'unidad_medida_id'           => $unidadId,
+                'activo'                     => true,
+                'es_precio_base'             => (bool) $tipo->es_precio_base,
+                'fecha_inicio'               => now(),
+                'motivo_cambio'              => $motivo,
+                'fecha_ultima_actualizacion' => now(),
+            ]);
     }
 
     /**

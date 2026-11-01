@@ -56,6 +56,16 @@ export interface Producto extends BaseEntity {
     stock?: number;
     peso?: number; // ✅ NUEVO: Peso del producto en kg
     codigos_barras?: string[]; // ✅ NUEVO: Array de códigos de barras
+    // Compras: proveedores del producto (producto_proveedor) con su código de catálogo y último precio
+    proveedores_producto?: Array<{
+        proveedor_id: number;
+        proveedor_nombre?: string | null;
+        codigo_proveedor: string | null;
+        ultimo_precio: number | null;
+        unidad_medida_id: number | null;
+        fecha_ultima_compra: string | null;
+        activo: boolean;
+    }>;
     // ✅ NUEVO: Campos para productos fraccionados
     es_fraccionado?: boolean;
     unidad_medida_id?: Id;

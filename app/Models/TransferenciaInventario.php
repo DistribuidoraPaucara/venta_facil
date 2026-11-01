@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Services\TransferenciaProductoService;
 use Illuminate\Support\Facades\DB;
 
 class TransferenciaInventario extends Model
@@ -114,27 +115,42 @@ class TransferenciaInventario extends Model
         DB::transaction(function () {
             // Crear movimientos de salida en el almacén origen
             foreach ($this->detalles as $detalle) {
-                // Buscar el stock del producto en el almacén origen
-                $stockProducto = StockProducto::where('producto_id', $detalle->producto_id)
-                    ->where('almacen_id', $this->almacen_origen_id)
-                    ->first();
+                // Registros del MISMO lote del detalle en el origen (sin lote = los sin número), los que vencen antes
+                // primero. Antes se tomaba el primer registro del producto: con el stock repartido en varios
+                // registros fallaba por "insuficiente", y con lote elegido podía descontar de otro lote.
+                $registros = $this->registrosDelLote($detalle, $this->almacen_origen_id)
+                    ->where('cantidad_disponible', '>', 0)
+                    ->orderByRaw('fecha_vencimiento IS NULL')
+                    ->orderBy('fecha_vencimiento')
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
 
-                if (! $stockProducto) {
-                    throw new \Exception("No se encontró stock para el producto {$detalle->producto->nombre} en el almacén origen");
+                $disponible = (float) $registros->sum('cantidad_disponible');
+                $lote       = $detalle->lote ? " (lote {$detalle->lote})" : '';
+                if ($registros->isEmpty()) {
+                    throw new \Exception("No se encontró stock para el producto {$detalle->producto->nombre}{$lote} en el almacén origen");
+                }
+                if ($disponible + 0.000001 < (float) $detalle->cantidad) {
+                    throw new \Exception("Stock insuficiente para el producto {$detalle->producto->nombre}{$lote}. Disponible: {$disponible}, Requerido: {$detalle->cantidad}");
                 }
 
-                if ($stockProducto->cantidad_disponible < $detalle->cantidad) {
-                    throw new \Exception("Stock insuficiente para el producto {$detalle->producto->nombre}. Disponible: {$stockProducto->cantidad_disponible}, Requerido: {$detalle->cantidad}");
+                $restante = (float) $detalle->cantidad;
+                foreach ($registros as $stockProducto) {
+                    if ($restante <= 0.000001) {
+                        break;
+                    }
+                    $sacar = min($restante, (float) $stockProducto->cantidad_disponible);
+                    MovimientoInventario::registrar(
+                        $stockProducto,
+                        -$sacar,
+                        'SALIDA_TRANSFERENCIA',
+                        "Transferencia {$this->numero} - Envío a {$this->almacenDestino->nombre}",
+                        $this->numero,
+                        $this->usuario_id
+                    );
+                    $restante -= $sacar;
                 }
-
-                MovimientoInventario::registrar(
-                    $stockProducto,
-                    -$detalle->cantidad,
-                    'SALIDA_TRANSFERENCIA',
-                    "Transferencia {$this->numero} - Envío a {$this->almacenDestino->nombre}",
-                    $this->numero,
-                    $this->usuario_id
-                );
             }
 
             $this->update([
@@ -156,22 +172,15 @@ class TransferenciaInventario extends Model
         DB::transaction(function () {
             // Crear movimientos de entrada en el almacén destino
             foreach ($this->detalles as $detalle) {
-                // Buscar o crear stock en el almacén destino
-                $stockOrigen = StockProducto::where('producto_id', $detalle->producto_id)
-                    ->where('almacen_id', $this->almacen_origen_id)
-                    ->first();
-
-                $stockDestino = StockProducto::firstOrCreate(
-                    [
-                        'producto_id' => $detalle->producto_id,
-                        'almacen_id'  => $this->almacen_destino_id,
-                    ],
-                    [
-                        'cantidad'          => 0,
-                        'precio_promedio'   => $stockOrigen ? $stockOrigen->precio_promedio : $detalle->producto->precio_compra,
-                        'stock_minimo'      => $stockOrigen ? $stockOrigen->stock_minimo : 0,
+                // En destino: el registro del mismo lote y vencimiento (o uno nuevo en el sector del producto).
+                // Antes se usaba cualquier registro del producto y el lote se perdía al transferir.
+                $stockDestino = app(TransferenciaProductoService::class)->obtenerOCrearStockDestino(
+                    new StockProducto([
+                        'producto_id'       => $detalle->producto_id,
+                        'lote'              => $detalle->lote,
                         'fecha_vencimiento' => $detalle->fecha_vencimiento,
-                    ]
+                    ]),
+                    $this->almacen_destino_id
                 );
 
                 MovimientoInventario::registrar(
@@ -197,6 +206,20 @@ class TransferenciaInventario extends Model
     }
 
     /**
+     * Registros de stock del producto del detalle en el almacén, del mismo lote (sin lote = sin número).
+     */
+    private function registrosDelLote(DetalleTransferenciaInventario $detalle, int $almacenId)
+    {
+        return StockProducto::where('producto_id', $detalle->producto_id)
+            ->where('almacen_id', $almacenId)
+            ->when(
+                filled($detalle->lote),
+                fn ($q) => $q->where('lote', $detalle->lote),
+                fn ($q) => $q->where(fn ($w) => $w->whereNull('lote')->orWhere('lote', ''))
+            );
+    }
+
+    /**
      * Cancelar transferencia
      */
     public function cancelar(string $motivo): void
@@ -209,9 +232,11 @@ class TransferenciaInventario extends Model
             // Si ya fue enviada, restaurar stock en el almacén origen
             if ($this->estado === self::ESTADO_ENVIADO) {
                 foreach ($this->detalles as $detalle) {
-                    $stockProducto = StockProducto::where('producto_id', $detalle->producto_id)
-                        ->where('almacen_id', $this->almacen_origen_id)
-                        ->first();
+                    // Al mismo lote del que salió (si ya no está, a cualquier registro del producto en el origen)
+                    $stockProducto = $this->registrosDelLote($detalle, $this->almacen_origen_id)->orderBy('id')->first()
+                        ?? StockProducto::where('producto_id', $detalle->producto_id)
+                            ->where('almacen_id', $this->almacen_origen_id)
+                            ->first();
 
                     if ($stockProducto) {
                         MovimientoInventario::registrar(

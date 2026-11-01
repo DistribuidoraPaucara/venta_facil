@@ -15,6 +15,7 @@ use App\Models\Marca;
 use App\Models\MovimientoInventario;
 use App\Models\PrecioProducto;
 use App\Models\Producto;
+use App\Models\ProductoProveedor;
 use App\Models\Proveedor;
 use App\Models\Receta;
 use App\Models\RecetaIngrediente;
@@ -24,6 +25,7 @@ use App\Models\StockProducto;
 use App\Models\TipoAjusteInventario;
 use App\Models\TipoPrecio;
 use App\Models\UnidadMedida;
+use App\Services\Compra\ProductoProveedorService;
 use App\Services\ComboStockService;
 use App\Services\ProductoStockService;
 use Illuminate\Http\JsonResponse;
@@ -579,6 +581,8 @@ class ProductoController extends Controller
                     'es_de_produccion'        => $data['es_de_produccion'] ?? false,   // 🏭 NUEVO - Indicador de producción
                 ]);
 
+                $this->sincronizarProveedores($producto, $data);
+
                 // Gestionar códigos de barra usando la nueva tabla
                 if (! empty($codigosValidos)) {
                     foreach ($codigosValidos as $index => $codigo) {
@@ -831,7 +835,7 @@ class ProductoController extends Controller
                             }
 
                             $almacenId = (int) $almacenData['almacen_id'];
-                            $sectorId  = ! empty($almacenData['sector_id']) ? (int) $almacenData['sector_id'] : null;
+                            $sectorId  = $this->sectorDelAlmacen($almacenData['sector_id'] ?? null, $almacenId);
 
                             // Convertir stock a números
                             $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
@@ -928,6 +932,10 @@ class ProductoController extends Controller
             'proveedor:id,nombre,razon_social',
             'marca:id,nombre',      // ✨ NUEVO: Cargar marca del producto
             'categoria:id,nombre',  // ✨ NUEVO: Cargar categoría del producto
+            'productoProveedores' => fn ($q) => $q->orderByDesc('es_principal')->orderBy('ultimo_precio')->orderBy('id'),
+            'productoProveedores.proveedor:id,nombre,razon_social,codigo_proveedor',
+            'productoProveedores.unidadMedida:id,codigo',
+            'productoProveedores.ultimaCompra:id,numero',
         ]);
 
         // Adapt payload for frontend form structure
@@ -1032,6 +1040,20 @@ class ProductoController extends Controller
                 'nombre'       => $producto->proveedor->nombre,
                 'razon_social' => $producto->proveedor->razon_social,
             ] : null,
+            'proveedores'       => $producto->productoProveedores->map(fn ($pp) => [
+                'proveedor_id'         => $pp->proveedor_id,
+                'nombre'               => $pp->proveedor?->nombre,
+                'razon_social'         => $pp->proveedor?->razon_social,
+                'codigo'               => $pp->proveedor?->codigo_proveedor, // código del proveedor en el sistema (PRV0001)
+                'codigo_proveedor'     => $pp->codigo_proveedor,             // código del producto en el catálogo del proveedor
+                'es_principal'         => $pp->es_principal,
+                'activo'               => $pp->activo,
+                'ultimo_precio'        => $pp->ultimo_precio,
+                'unidad'               => $pp->unidadMedida?->codigo,
+                'fecha_ultima_compra'  => $pp->fecha_ultima_compra?->format('Y-m-d'),
+                'ultima_compra_id'     => $pp->ultima_compra_id,
+                'ultima_compra_numero' => $pp->ultimaCompra?->numero,
+            ])->values(),
             'peso'              => $producto->peso ? (float) $producto->peso : null,
             'unidad_medida_id'  => $producto->unidad_medida_id ? (int) $producto->unidad_medida_id : null,
             'fecha_vencimiento' => null,
@@ -1289,6 +1311,8 @@ class ProductoController extends Controller
                     'es_de_produccion'        => $data['es_de_produccion'] ?? $producto->es_de_produccion,          // 🏭 NUEVO - Indicador de producción
                     'activo'                  => $data['activo'] ?? $producto->activo,
                 ]);
+
+                $this->sincronizarProveedores($producto, $data);
 
                 // 🔥 Gestión de códigos de barra - Permitir eliminación completa
                 // Detectar si el usuario intencionalmente quiere eliminar los códigos (array vacío)
@@ -1576,7 +1600,7 @@ class ProductoController extends Controller
                         }
 
                         $almacenId = (int) $almacenData['almacen_id'];
-                        $sectorId  = ! empty($almacenData['sector_id']) ? (int) $almacenData['sector_id'] : null;
+                        $sectorId  = $this->sectorDelAlmacen($almacenData['sector_id'] ?? null, $almacenId);
 
                         // Convertir stock a números
                         $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
@@ -1667,7 +1691,10 @@ class ProductoController extends Controller
                             $stockExistente->restore();
 
                             $updateData = [
-                                'sector_id'           => $sectorId,
+                                // Sin sector válido: el actual si es de este almacén, si no el genérico (repara filas con sector de otro almacén)
+                                'sector_id'           => $sectorId
+                                    ?? $this->sectorDelAlmacen($stockExistente->sector_id, $almacenId)
+                                    ?? \App\Models\Almacen::find($almacenId)?->sectorGenerico()?->id,
                                 'lote'                => $almacenData['lote'] ?? $stockExistente->lote,
                                 'fecha_vencimiento'   => ! empty($almacenData['fecha_vencimiento']) ? $almacenData['fecha_vencimiento'] : $stockExistente->fecha_vencimiento,
                                 'fecha_actualizacion' => now(),
@@ -3154,7 +3181,7 @@ class ProductoController extends Controller
                         }
 
                         $almacenId = (int) $almacenData['almacen_id'];
-                        $sectorId  = ! empty($almacenData['sector_id']) ? (int) $almacenData['sector_id'] : null;
+                        $sectorId  = $this->sectorDelAlmacen($almacenData['sector_id'] ?? null, $almacenId);
                         $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
                         $cantidadDisponible = (int) ($almacenData['cantidad_disponible'] ?? $cantidadTotal);
                         $cantidadReservada  = (int) ($almacenData['cantidad_reservada'] ?? 0);
@@ -3468,7 +3495,7 @@ class ProductoController extends Controller
                     }
 
                     $almacenId = (int) $almacenData['almacen_id'];
-                    $sectorId  = ! empty($almacenData['sector_id']) ? (int) $almacenData['sector_id'] : null;
+                    $sectorId  = $this->sectorDelAlmacen($almacenData['sector_id'] ?? null, $almacenId);
 
                     // Convertir stock a números
                     $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
@@ -3942,8 +3969,10 @@ class ProductoController extends Controller
 
         // ✅ PRIORIDAD 3 - Búsqueda normal (por nombre, código_barras, descripción, etc)
         // ✅ SIMPLIFICADO: Permite combos automáticamente en búsqueda normal
+        // Compras: también por el código del producto en el catálogo de sus proveedores (producto_proveedor)
+        $esCompra = (string) $tipo === 'compra';
         $productos = $construirQueryBase(Producto::query())
-            ->where(function ($query) use ($searchLower, $esExacta) {
+            ->where(function ($query) use ($searchLower, $esExacta, $esCompra) {
                 if ($esExacta) {
                     // ✅ BÚSQUEDA EXACTA: Para código de barras (escáner). Sin distinguir mayúsculas:
                     // $searchLower va en minúsculas y hay códigos/SKU con letras ("ORN-12-CM", "PRO0097")
@@ -3951,7 +3980,8 @@ class ProductoController extends Controller
                         ->orWhereRaw('LOWER(sku) = ?', [$searchLower])
                         ->orWhereHas('codigosBarra', function ($codigoQuery) use ($searchLower) {
                             $codigoQuery->where('activo', true)->whereRaw('LOWER(codigo) = ?', [$searchLower]);
-                        });
+                        })
+                        ->when($esCompra, fn ($q) => $q->orWhereHas('productoProveedores', fn ($pp) => $pp->whereRaw('LOWER(codigo_proveedor) = ?', [$searchLower])));
                 } else {
                     // ✅ BÚSQUEDA PARCIAL: Para texto (búsqueda manual)
                     $query->whereRaw('LOWER(nombre) like ?', ["%$searchLower%"])
@@ -3960,7 +3990,8 @@ class ProductoController extends Controller
                         ->orWhereRaw('LOWER(descripcion) like ?', ["%$searchLower%"])
                         ->orWhereHas('codigosBarra', function ($codigoQuery) use ($searchLower) {
                             $codigoQuery->whereRaw('LOWER(codigo) like ?', ["%$searchLower%"]);
-                        });
+                        })
+                        ->when($esCompra, fn ($q) => $q->orWhereHas('productoProveedores', fn ($pp) => $pp->whereRaw('LOWER(codigo_proveedor) like ?', ["%$searchLower%"])));
                 }
             })
             // Relevancia: nombre exacto > empieza con el texto > alguna palabra empieza con el texto > contiene
@@ -3996,6 +4027,82 @@ class ProductoController extends Controller
     }
 
     /**
+     * Guarda los proveedores del producto (producto_proveedor) y deja productos.proveedor_id = el principal.
+     * - Con proveedores_enviados (formulario de productos): la lista manda; se quitan los que no vienen.
+     *   Los datos de última compra no se tocan (vienen de las compras); al agregar uno se buscan en su historial.
+     * - Sin ella (formularios que solo mandan proveedor_id): ese proveedor queda asociado como principal.
+     */
+    private function sincronizarProveedores(Producto $producto, array $data): void
+    {
+        $servicio = app(ProductoProveedorService::class);
+
+        if (empty($data['proveedores_enviados'])) {
+            if ($producto->proveedor_id) {
+                $relacion = ProductoProveedor::firstOrCreate(
+                    ['producto_id' => $producto->id, 'proveedor_id' => $producto->proveedor_id],
+                    ['empresa_id' => $producto->empresa_id, 'activo' => true]
+                );
+                if ($relacion->wasRecentlyCreated) {
+                    $servicio->recalcular($relacion);
+                }
+                $servicio->marcarPrincipal($relacion);
+            }
+            return;
+        }
+
+        $lista = collect($data['proveedores'] ?? [])->keyBy(fn ($p) => (int) $p['proveedor_id']);
+
+        ProductoProveedor::where('producto_id', $producto->id)
+            ->whereNotIn('proveedor_id', $lista->keys())
+            ->delete();
+
+        $relaciones = collect();
+        $principal  = null;
+        foreach ($lista as $proveedorId => $p) {
+            $relacion = ProductoProveedor::firstOrNew(['producto_id' => $producto->id, 'proveedor_id' => $proveedorId]);
+            $nueva    = ! $relacion->exists;
+            $codigo   = trim((string) ($p['codigo_proveedor'] ?? ''));
+            $relacion->fill([
+                'empresa_id'       => $producto->empresa_id,
+                'codigo_proveedor' => $codigo !== '' ? $codigo : null,
+                'activo'           => (bool) ($p['activo'] ?? true),
+            ])->save();
+
+            if ($nueva) {
+                $servicio->recalcular($relacion);
+            }
+            if (! $principal && ! empty($p['es_principal'])) {
+                $principal = $relacion;
+            }
+            $relaciones->push($relacion);
+        }
+
+        $principal ??= $relaciones->firstWhere('activo', true) ?? $relaciones->first();
+
+        if ($principal) {
+            $servicio->marcarPrincipal($principal);
+        } else {
+            Producto::withoutGlobalScopes()->whereKey($producto->id)->update(['proveedor_id' => null]);
+        }
+    }
+
+    /**
+     * Sector válido para una fila de stock: solo si pertenece a ese almacén.
+     * Un sector de otro almacén (ej. "FRIO" de la SALA en el almacén FRIO) se descarta y
+     * StockProducto::creating asigna el genérico del almacén.
+     */
+    private function sectorDelAlmacen($sectorId, int $almacenId): ?int
+    {
+        if (empty($sectorId)) {
+            return null;
+        }
+
+        return \App\Models\Sector::where('id', (int) $sectorId)->where('almacen_id', $almacenId)->exists()
+            ? (int) $sectorId
+            : null;
+    }
+
+    /**
      * ✅ NUEVO: Método auxiliar para mapear productos con todas sus relaciones
      */
     private function mapearProductos($productos, $almacenId, $tipo, $clienteId = null): JsonResponse
@@ -4014,6 +4121,9 @@ class ProductoController extends Controller
                 'categoria:id,nombre',
                 'marca:id,nombre',
                 'proveedor:id,nombre,razon_social',
+                // Compras: código del producto en el catálogo de cada proveedor y su último precio
+                'productoProveedores' => fn ($q) => $q->select('id', 'producto_id', 'proveedor_id', 'codigo_proveedor', 'ultimo_precio', 'unidad_medida_id', 'fecha_ultima_compra', 'activo')
+                    ->with('proveedor:id,nombre'),
                 'unidad:id,nombre,codigo',
                 'conversiones' => function ($q) {
                     $q->where('activo', true)
@@ -4023,7 +4133,7 @@ class ProductoController extends Controller
                 'precios'      => function ($q) {
                     $q->where('activo', true)
                         ->select('id', 'producto_id', 'tipo_precio_id', 'nombre', 'precio', 'es_precio_base', 'unidad_medida_id')
-                        ->with('tipoPrecio:id,nombre,codigo');
+                        ->with('tipoPrecio:id,nombre,codigo,porcentaje_ganancia');
                 },
                 'stock'        => function ($q) {
                     // ✅ CRÍTICO: Filtrar solo registros NO eliminados (active records)
@@ -4321,9 +4431,20 @@ class ProductoController extends Controller
                                 'id'     => $p->tipoPrecio->id,
                                 'nombre' => $p->tipoPrecio->nombre,
                                 'codigo' => $p->tipoPrecio->codigo,
+                                'porcentaje_ganancia' => (float) $p->tipoPrecio->porcentaje_ganancia, // ganancia por defecto (compras)
                             ] : null,
                         ];
                     })->all(),
+                    // Compras: proveedores del producto con su código de catálogo y último precio (se elige el de la compra)
+                    'proveedores_producto'           => $producto->productoProveedores->map(fn ($pp) => [
+                        'proveedor_id'        => $pp->proveedor_id,
+                        'proveedor_nombre'    => $pp->proveedor?->nombre,
+                        'codigo_proveedor'    => $pp->codigo_proveedor,
+                        'ultimo_precio'       => $pp->ultimo_precio,
+                        'unidad_medida_id'    => $pp->unidad_medida_id,
+                        'fecha_ultima_compra' => $pp->fecha_ultima_compra?->format('Y-m-d'),
+                        'activo'              => $pp->activo,
+                    ])->values()->all(),
                     // ✅ NUEVO: Tipo de precio recomendado basado en código VENTA
                     'tipo_precio_id_recomendado'     => $tipoPrecioIdRecomendado,
                     'tipo_precio_nombre_recomendado' => $tipoPrecioNombreRecomendado,
@@ -4332,6 +4453,10 @@ class ProductoController extends Controller
                     'cantidad_disponible'            => (int) $cantidadDisponible, // Stock NO reservado
                     'cantidad_reservada'             => (int) $cantidadReservada,  // Stock reservado
                     'stock_disponible'               => (int) $cantidadDisponible, // Alias para compatibilidad
+                    // Disponible por almacén (ventas con almacén por línea, ej. REFRIGERADOR para precio FRIO)
+                    'stock_por_almacen'              => ($producto->stock ?? collect())
+                        ->groupBy('almacen_id')
+                        ->map(fn ($filas) => (float) $filas->sum('cantidad_disponible')),
                     'stock'                          => $stocksAlmacen->map(fn($s) => [
                         'id' => $s->id,
                         'producto_id' => $s->producto_id,
@@ -6047,11 +6172,19 @@ class ProductoController extends Controller
                             ->select('id', 'producto_id', 'codigo', 'es_principal');
                     },
                     'stockLimites.sector:id,nombre',
+                    // Proveedores del producto (todos, no solo el principal) para filtrar la tabla
+                    'productoProveedores:id,producto_id,proveedor_id,es_principal',
+                    'productoProveedores.proveedor:id,nombre',
                 ])
                 ->orderBy('nombre')
                 ->get()
                 ->flatMap(function ($producto) use ($almacenesEmpresa, $almacenDefecto) {
                     $codigoBarraPrincipal = $producto->codigosBarra?->first()?->codigo;
+                    $proveedores = $producto->productoProveedores
+                        ->sortByDesc('es_principal')
+                        ->map(fn ($pp) => ['id' => $pp->proveedor_id, 'nombre' => $pp->proveedor?->nombre ?? "Proveedor #{$pp->proveedor_id}"])
+                        ->values()
+                        ->toArray();
                     $conversiones = $producto->conversiones->map(function ($conv) {
                         return [
                             'id' => $conv->id,
@@ -6074,7 +6207,7 @@ class ProductoController extends Controller
                         $almacenIds = collect([$almacenDefecto]);
                     }
 
-                    return $almacenIds->map(function ($almacenId) use ($producto, $almacenesEmpresa, $codigoBarraPrincipal, $conversiones) {
+                    return $almacenIds->map(function ($almacenId) use ($producto, $almacenesEmpresa, $codigoBarraPrincipal, $conversiones, $proveedores) {
                         $stocks   = $producto->stock->where('almacen_id', $almacenId);
                         $sectores = $stocks->pluck('sector.nombre')
                             ->merge($producto->stockLimites->where('almacen_id', $almacenId)->pluck('sector.nombre'))
@@ -6095,6 +6228,7 @@ class ProductoController extends Controller
                             'unidad_medida_id' => $producto->unidad_medida_id,
                             'unidad_nombre' => $producto->unidad?->nombre ?? 'UN',
                             'conversiones' => $conversiones,
+                            'proveedores' => $proveedores, // el principal primero
                             // Registros de stock de este almacén (para transferir desde un lote/sector concreto)
                             'stocks' => $stocks->map(fn($s) => [
                                 'id' => $s->id,
@@ -6370,9 +6504,15 @@ class ProductoController extends Controller
                 ]);
             }
 
-            // Obtener stock total de cada producto (suma de todos los almacenes)
+            // Con almacen_id: DISPONIBLE en ese almacén (lo que se puede usar, p. ej. al fraccionar), solo productos
+            // de la empresa. Sin él, como siempre: stock total de todos los almacenes.
+            $almacenId = $request->integer('almacen_id');
+            if ($almacenId) {
+                $ids = Producto::whereIn('id', $ids)->pluck('id')->all(); // scope de empresa
+            }
             $stocks = StockProducto::whereIn('producto_id', $ids)
-                ->selectRaw('producto_id, SUM(cantidad) as stock_total')
+                ->when($almacenId, fn ($q) => $q->where('almacen_id', $almacenId))
+                ->selectRaw($almacenId ? 'producto_id, SUM(cantidad_disponible) as stock_total' : 'producto_id, SUM(cantidad) as stock_total')
                 ->groupBy('producto_id')
                 ->pluck('stock_total', 'producto_id')
                 ->toArray();

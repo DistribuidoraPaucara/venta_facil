@@ -8,6 +8,7 @@ import { Calculator, ChevronLeft, ChevronRight, Eye, MoreVertical } from 'lucide
 import React, { useState } from 'react';
 import MovimientoDetallesModal from './MovimientoDetallesModal';
 import StockRecorrectorModal from './StockRecorrectorModal';
+import { formatearUnidades, grupoDeTipo, nombreTipo } from './MovimientosStats';
 
 interface MovimientoInventario {
     id: number;
@@ -28,6 +29,12 @@ interface MovimientoInventario {
     stock_producto_id?: number; // ✅ NUEVO (2026-02-12): ID del stock
     lote?: string; // ✅ NUEVO (2026-02-12): Número de lote
     cantidad: number;
+    unidad?: string | null; // Unidad en que se guarda el stock del producto (ej. CJT)
+    cantidad_vendida?: number | null; // Si la venta fue en otra unidad: lo vendido en esa unidad (ej. 8)
+    unidad_vendida?: string | null; // ...y su unidad (ej. UN)
+    motivo_texto?: string | null; // Motivo legible (tipo de ajuste/merma + razón); null en ventas
+    stock_minimo?: number | null; // Mínimo del producto en este almacén
+    alerta_stock?: 'agotado' | 'bajo_minimo' | null; // Solo en salidas que dejaron el stock así
     cantidad_anterior: number; // ✅ NUEVO: Cantidad antes del movimiento
     cantidad_posterior: number; // ✅ NUEVO: Cantidad después del movimiento
     motivo: string;
@@ -91,6 +98,8 @@ interface MovimientosTableProps {
     onPerPageChange?: (perPage: number) => void; // ✅ NUEVO: Callback para cambiar items por página
     mostrarValoresPorLote?: boolean; // ✅ NUEVO (2026-06-28): Prop para mostrar/ocultar valores por lote
     mostrarDisponibleReservado?: boolean; // Mostrar los recuadros de disponible y reservado (oculto por defecto)
+    direccionId?: 'asc' | 'desc'; // Orden actual por Id (lo aplica el servidor: la tabla viene paginada)
+    onOrdenarId?: (direccion: 'asc' | 'desc') => void;
 }
 
 const MovimientosTable: React.FC<MovimientosTableProps> = ({
@@ -101,6 +110,8 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
     onPerPageChange, // ✅ NUEVO: Recibir callback para cambiar items por página
     mostrarValoresPorLote = true, // ✅ NUEVO (2026-06-28): Recibir prop del componente padre
     mostrarDisponibleReservado = false, // Oculto por defecto: se activa con el switch de la página
+    direccionId = 'desc',
+    onOrdenarId,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedMovimiento, setSelectedMovimiento] = useState<MovimientoInventario | null>(null);
@@ -110,31 +121,8 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
 
     // ✅ NUEVO: Verificar si hay movimientos con error
     const hayErrorStock = movimientos.some((m) => m.tiene_error_stock);
-    const getTipoColor = (tipo: string) => {
-        const colors: Record<string, string> = {
-            // ✅ Entradas
-            ENTRADA_COMPRA: 'bg-green-100 text-green-800',
-            ENTRADA_AJUSTE: 'bg-emerald-100 text-emerald-800',
-            ENTRADA_DEVOLUCION: 'bg-lime-100 text-lime-800',
-            // ✅ Salidas
-            SALIDA_VENTA: 'bg-red-100 text-red-800',
-            SALIDA_AJUSTE: 'bg-rose-100 text-rose-800',
-            SALIDA_MERMA: 'bg-red-200 text-red-900',
-            // ✅ Operaciones
-            AJUSTE: 'bg-purple-100 text-purple-800',
-            TRANSFERENCIA: 'bg-blue-100 text-blue-800',
-            // ✅ Reservas de Proforma
-            RESERVA_PROFORMA: 'bg-indigo-100 text-indigo-800',
-            LIBERACION_RESERVA: 'bg-amber-100 text-amber-800',
-            CONSUMO_RESERVA: 'bg-pink-100 text-pink-800',
-            // ✅ Anulaciones
-            ANULACION_VENTA: 'bg-red-300 text-red-950',
-            ANULACION_COMPRA: 'bg-red-300 text-red-950',
-            ANULACION_PROFORMA: 'bg-orange-300 text-orange-950',
-            ANULACION_CONSUMO_RESERVA: 'bg-pink-300 text-pink-950',
-        };
-        return colors[tipo] || 'bg-gray-100 text-gray-800';
-    };
+    // La mayoría de productos no maneja lotes: "Lote: -" solo ocupaba espacio
+    const tieneLote = (m: MovimientoInventario) => !!m.lote && m.lote !== '-';
 
     const handleOpenDetalles = (movimiento: MovimientoInventario) => {
         setSelectedMovimiento(movimiento);
@@ -157,7 +145,13 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                 <Table>
                     <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
                         <TableRow>
-                            <TableHead>Id</TableHead>
+                            <TableHead
+                                onClick={onOrdenarId ? () => onOrdenarId(direccionId === 'desc' ? 'asc' : 'desc') : undefined}
+                                className={onOrdenarId ? 'cursor-pointer select-none whitespace-nowrap hover:text-foreground' : undefined}
+                                title={direccionId === 'desc' ? 'Más recientes primero (clic: más antiguos primero)' : 'Más antiguos primero (clic: más recientes primero)'}
+                            >
+                                Id <span className="ml-0.5">{direccionId === 'desc' ? '▼' : '▲'}</span>
+                            </TableHead>
                             <TableHead>Fecha</TableHead>
                             <TableHead>Tipo Movimiento</TableHead>
                             <TableHead>Producto</TableHead>
@@ -169,12 +163,7 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                     <span className="text-xs font-normal">(Este lote)</span>
                                 </TableHead>
                             )}
-                            <TableHead className="text-center">
-                                📦 Stock Total Anterior
-                                <br />
-                                <span className="text-xs font-normal">(Todos lotes)</span>
-                            </TableHead>
-                            <TableHead className="text-center">📊 Movimiento</TableHead>
+                            <TableHead className="text-center">Movimiento</TableHead>
                             {/* ✅ NUEVO (2026-06-28): Columna condicional - Valores por lote posterior */}
                             {mostrarValoresPorLote && (
                                 <TableHead className="text-center">
@@ -184,9 +173,9 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                 </TableHead>
                             )}
                             <TableHead className="text-center">
-                                📦 Stock Total Posterior
+                                Stock antes → después
                                 <br />
-                                <span className="text-xs font-normal">(Todos lotes)</span>
+                                <span className="text-xs font-normal">(todos los lotes del almacén)</span>
                             </TableHead>
                             {/* ✅ NUEVO (2026-06-02): Columna de stock esperado (solo si hay error) */}
                             {hayErrorStock && mostrarStockEsperado && (
@@ -230,7 +219,9 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                     </TableCell>
                                     {/* ✅ Tipo de Movimiento */}
                                     <TableCell>
-                                        <Badge className={getTipoColor(movimiento.tipo)}>{movimiento.tipo}</Badge>
+                                        <Badge className={grupoDeTipo(movimiento.tipo).clase} title={movimiento.tipo}>
+                                            {grupoDeTipo(movimiento.tipo).icono} {nombreTipo(movimiento.tipo)}
+                                        </Badge>
                                         {movimiento.documento_url ? (
                                             <a
                                                 href={movimiento.documento_url}
@@ -243,6 +234,11 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                             </a>
                                         ) : (
                                             <p className="text-md text-muted-foreground mt-1">{movimiento.referencia}</p>
+                                        )}
+                                        {movimiento.motivo_texto && (
+                                            <p className="mt-1 max-w-[220px] text-xs text-muted-foreground italic line-clamp-2" title={movimiento.motivo_texto}>
+                                                {movimiento.motivo_texto}
+                                            </p>
                                         )}
                                     </TableCell>
                                     {/* ✅ Producto */}
@@ -266,7 +262,7 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                                 | {movimiento.producto.sku}
                                             </div>
                                             <div className="text-xs">{movimiento.almacen.nombre}</div>
-                                            <div className="text-xs text-muted-foreground">Lote: {movimiento.lote || '-'}</div>
+                                            {tieneLote(movimiento) && <div className="text-xs text-muted-foreground">Lote: {movimiento.lote}</div>}
                                         </div>
                                     </TableCell>
                                     {/* ✅ Lote Específico: Anterior (3 cajas: Cantidad, Disponible, Reservada) - CONDICIONAL */}
@@ -278,7 +274,7 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                                     <p className="font-bold text-blue-700 dark:text-blue-400">
                                                         {movimiento.cantidad_anterior ?? 0}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Lote: {movimiento.lote || '-'}</p>
+                                                    {tieneLote(movimiento) && <p className="text-xs text-gray-500 dark:text-gray-400">Lote: {movimiento.lote}</p>}
                                                 </div>
                                                 {mostrarDisponibleReservado && (
                                                     <>
@@ -300,56 +296,19 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                         </TableCell>
                                     )}
 
-                                    {/* ✅ NUEVO: Cantidad Anterior - Stock Total (suma de todos lotes) */}
-                                    <TableCell className="text-center text-xs font-medium">
-                                        <div className="space-y-1">
-                                            <div className="rounded bg-blue-50 dark:bg-blue-900/20">
-                                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">📦 Total (todos lotes)</p>
-                                                <p className="font-bold text-blue-700 dark:text-blue-400">
-                                                    {movimiento.cantidad_total_anterior !== undefined &&
-                                                        movimiento.cantidad_total_anterior !== null
-                                                        ? movimiento.cantidad_total_anterior
-                                                        : 0}
-                                                </p>
+                                    {/* Cantidad que movió el stock, con su unidad. Si se vendió en otra unidad (ej. 8 UN de un
+                                        producto que se guarda en CJT), se explica de dónde salen los decimales */}
+                                    <TableCell className="text-center">
+                                        <div className={`text-lg font-bold ${movimiento.cantidad > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                            {movimiento.cantidad > 0 ? '+' : ''}
+                                            {formatearUnidades(movimiento.cantidad)}
+                                            {movimiento.unidad && <span className="ml-1 text-xs font-medium">{movimiento.unidad}</span>}
+                                        </div>
+                                        {movimiento.cantidad_vendida != null && (
+                                            <div className="text-xs text-muted-foreground" title="Cantidad vendida en la unidad de la venta">
+                                                vendió {formatearUnidades(movimiento.cantidad_vendida)} {movimiento.unidad_vendida}
                                             </div>
-                                            {mostrarDisponibleReservado && (
-                                                <>
-                                                    <div className="rounded bg-green-50 dark:bg-green-900/20">
-                                                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">✅ Disponible Total</p>
-                                                        <p className="font-bold text-green-700 dark:text-green-400">
-                                                            {movimiento.cantidad_disponible_anterior !== undefined &&
-                                                                movimiento.cantidad_disponible_anterior !== null
-                                                                ? Math.floor(movimiento.cantidad_disponible_anterior)
-                                                                : 0}
-                                                        </p>
-                                                    </div>
-                                                    <div className="rounded bg-orange-50 dark:bg-orange-900/20">
-                                                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">🔒 Reservada Total</p>
-                                                        <p className="font-bold text-orange-700 dark:text-orange-400">
-                                                            {movimiento.reservada_total_anterior !== undefined &&
-                                                                movimiento.reservada_total_anterior !== null
-                                                                ? Math.floor(movimiento.reservada_total_anterior)
-                                                                : 0}
-                                                        </p>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    {/* ✅ NUEVO: Cambio (Cantidad) */}
-                                    <TableCell className="text-center text-lg font-bold">
-                                        <div className="p-2">
-                                            <span
-                                                className={
-                                                    movimiento.cantidad > 0
-                                                        ? 'text-green-600 dark:text-green-400'
-                                                        : 'text-red-600 dark:text-red-400'
-                                                }
-                                            >
-                                                {movimiento.cantidad > 0 ? '+' : ''}
-                                                {movimiento.cantidad}
-                                            </span>
-                                        </div>
+                                        )}
                                     </TableCell>
 
                                     {/* ✅ Lote Específico: Posterior (3 cajas: Cantidad, Disponible, Reservada) - CONDICIONAL */}
@@ -361,7 +320,7 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                                     <p className="font-bold text-blue-700 dark:text-blue-400">
                                                         {movimiento.cantidad_posterior ?? 0}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Lote: {movimiento.lote || '-'}</p>
+                                                    {tieneLote(movimiento) && <p className="text-xs text-gray-500 dark:text-gray-400">Lote: {movimiento.lote}</p>}
                                                 </div>
                                                 {mostrarDisponibleReservado && (
                                                     <>
@@ -383,41 +342,37 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                         </TableCell>
                                     )}
 
-                                    {/* ✅ NUEVO: Cantidad Posterior - Stock Total (suma de todos lotes) */}
-                                    <TableCell className="text-center text-xs font-medium">
-                                        <div className="space-y-1">
-                                            <div className="rounded bg-blue-50 px-2 py-1 dark:bg-blue-900/20">
-                                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">📦 Total (todos lotes)</p>
-                                                <p className="font-bold text-blue-700 dark:text-blue-400">
-                                                    {movimiento.cantidad_total_posterior !== undefined &&
-                                                        movimiento.cantidad_total_posterior !== null
-                                                        ? movimiento.cantidad_total_posterior
-                                                        : 0}
-                                                </p>
-                                            </div>
-                                            {mostrarDisponibleReservado && (
-                                                <>
-                                                    <div className="rounded bg-green-50 px-2 py-1 dark:bg-green-900/20">
-                                                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">✅ Disponible Total</p>
-                                                        <p className="font-bold text-green-700 dark:text-green-400">
-                                                            {movimiento.cantidad_disponible_posterior !== undefined &&
-                                                                movimiento.cantidad_disponible_posterior !== null
-                                                                ? Math.floor(movimiento.cantidad_disponible_posterior)
-                                                                : 0}
-                                                        </p>
-                                                    </div>
-                                                    <div className="rounded bg-orange-50 px-2 py-1 dark:bg-orange-900/20">
-                                                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">🔒 Reservada Total</p>
-                                                        <p className="font-bold text-orange-700 dark:text-orange-400">
-                                                            {movimiento.reservada_total_posterior !== undefined &&
-                                                                movimiento.reservada_total_posterior !== null
-                                                                ? Math.floor(movimiento.reservada_total_posterior)
-                                                                : 0}
-                                                        </p>
-                                                    </div>
-                                                </>
-                                            )}
+                                    {/* Stock total del almacén (todos los lotes) antes → después, en una sola celda */}
+                                    <TableCell className="text-center text-sm whitespace-nowrap">
+                                        <div className="font-semibold">
+                                            <span className="text-gray-500 dark:text-gray-400">{formatearUnidades(movimiento.cantidad_total_anterior ?? 0)}</span>
+                                            <span className="mx-1.5 text-gray-400">→</span>
+                                            <span className="text-blue-700 dark:text-blue-400">{formatearUnidades(movimiento.cantidad_total_posterior ?? 0)}</span>
+                                            {movimiento.unidad && <span className="ml-1 text-xs font-normal text-muted-foreground">{movimiento.unidad}</span>}
                                         </div>
+                                        {movimiento.alerta_stock === 'agotado' && (
+                                            <span className="mt-1 inline-block rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-200">
+                                                ⛔ Agotado
+                                            </span>
+                                        )}
+                                        {movimiento.alerta_stock === 'bajo_minimo' && (
+                                            <span
+                                                className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                                                title="Quedó por debajo del stock mínimo de este almacén"
+                                            >
+                                                ⚠ Bajo mínimo ({formatearUnidades(movimiento.stock_minimo ?? 0)})
+                                            </span>
+                                        )}
+                                        {mostrarDisponibleReservado && (
+                                            <div className="mt-1 space-y-0.5 text-xs">
+                                                <div className="text-green-700 dark:text-green-400">
+                                                    Disp: {formatearUnidades(movimiento.disponible_total_anterior ?? 0)} → {formatearUnidades(movimiento.disponible_total_posterior ?? 0)}
+                                                </div>
+                                                <div className="text-orange-700 dark:text-orange-400">
+                                                    Res: {formatearUnidades(movimiento.reservada_total_anterior ?? 0)} → {formatearUnidades(movimiento.reservada_total_posterior ?? 0)}
+                                                </div>
+                                            </div>
+                                        )}
                                     </TableCell>
                                     {/* ✅ NUEVO (2026-06-02): Columna de Stock Esperado (solo si hay error y está habilitada) */}
                                     {hayErrorStock && mostrarStockEsperado && (
@@ -516,7 +471,8 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                 </label>
                                 <select
                                     id="per_page"
-                                    value={pagination.per_page === 999999 ? 'todos' : pagination.per_page}
+                                    // El servidor limita "todos" a 1000 por página (InventarioController::MAX_MOVIMIENTOS_PAGINA)
+                                    value={pagination.per_page >= 1000 ? 'todos' : pagination.per_page}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         onPerPageChange?.(val === 'todos' ? 999999 : parseInt(val));
@@ -529,7 +485,7 @@ const MovimientosTable: React.FC<MovimientosTableProps> = ({
                                     <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="100">100</option>
-                                    <option value="todos">Mostrar todos</option>
+                                    <option value="todos">Todos (máx. 1000)</option>
                                 </select>
                             </div>
                         </div>

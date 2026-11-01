@@ -2,8 +2,8 @@ import { obtenerNombreConUnidad } from '@/infrastructure/helpers/nombre-dinamico
 import { validarStockDisponible } from '@/infrastructure/helpers/validar-stock-conversion.helper';
 import { formatCurrency, formatCurrencyMinimalDecimals } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
-import { Fragment, useState } from 'react';
-import type { DetalleProducto } from '../types';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { codigosDeProveedores, type DetalleProducto } from '../types';
 import ComboExpandedRows from './ComboExpandedRows';
 
 interface ProductoTableRowProps {
@@ -14,8 +14,8 @@ interface ProductoTableRowProps {
     editingField: { index: number; field: string; value: string } | null;
     setEditingField: (value: { index: number; field: string; value: string } | null) => void;
     manuallySelectedTipoPrecio?: Record<number, boolean>;
-    selectedTipoPrecio: Record<number, string | number>;
-    setSelectedTipoPrecio: (value: Record<number, string | number>) => void;
+    selectedTipoPrecio: Record<string, string | number>;
+    setSelectedTipoPrecio: (value: Record<string, string | number> | ((prev: Record<string, string | number>) => Record<string, string | number>)) => void;
     expandedCombos: Record<number, boolean>;
     setExpandedCombos: (value: Record<number, boolean>) => void;
     tieneDiferencia: boolean;
@@ -37,8 +37,12 @@ interface ProductoTableRowProps {
     onUpdateDetailUnidadConPrecio?: (index: number, unidadId: number, precio: number) => void;
     proformaConvertida?: boolean;
     // Compras: columnas de precios de venta (una por tipo) y los precios registrados de esta línea por tipo
-    tiposPrecioVenta?: Array<{ tipo_precio_id: number; nombre: string }>;
+    tiposPrecioVenta?: Array<{ tipo_precio_id: number; nombre: string; porcentaje_ganancia?: number }>; // porcentaje_ganancia: por defecto del tipo
     preciosVentaPorTipo?: Record<number, { id: number; precio: number; tipo_precio_id: number; nombre: string }>;
+    // Ventas: almacenes elegibles por línea (selector solo si hay más de uno) y duplicar línea (ej. para venderlo frío)
+    almacenesVenta?: Array<{ id: number; nombre: string }>;
+    proveedorId?: number | null; // Compras: proveedor de la compra (su código de catálogo del producto)
+    onDuplicarLinea?: (index: number) => void;
 }
 
 export default function ProductoTableRow({
@@ -73,6 +77,9 @@ export default function ProductoTableRow({
     proformaConvertida = false,
     tiposPrecioVenta = [],
     preciosVentaPorTipo = {},
+    almacenesVenta = [],
+    proveedorId = null,
+    onDuplicarLinea,
 }: ProductoTableRowProps) {
     const productoInfo = detalle.producto as any;
     const [validacionError, setValidacionError] = useState<string | null>(null);
@@ -84,13 +91,40 @@ export default function ProductoTableRow({
         unidad_venta_id: detalle.unidad_venta_id,
     });
     console.log(
-        `🔍 [ProductoTableRow] selectedTipoPrecio para producto ${detalle.producto_id}: ${selectedTipoPrecio[detalle.producto_id]} (completo: ${JSON.stringify(selectedTipoPrecio)})`,
+        `🔍 [ProductoTableRow] selectedTipoPrecio para producto ${detalle.producto_id}: ${selectedTipoPrecio[detalle.linea_id ?? detalle.producto_id]} (completo: ${JSON.stringify(selectedTipoPrecio)})`,
     );
     const esCombo = productoInfo && productoInfo.es_combo;
     const precioCosto = detalle.precio_costo || productoInfo?.precio_costo || 0;
+
+    // Compras: un precio de venta que el producto no tiene (o en 0) arranca con el % por defecto del tipo de precio y
+    // queda editado (se crea al aprobar). Una sola vez por tipo: si el usuario lo borra, no se vuelve a poner
+    const defectosAplicados = useRef(new Set<string>());
+    useEffect(() => {
+        if (tipo !== 'compra' || readOnly) return;
+        const nuevos = { ...(detalle.precios_nuevos || {}) };
+        let cambio = false;
+        for (const tp of tiposPrecioVenta) {
+            const clave = String(tp.tipo_precio_id);
+            const precioReg = preciosVentaPorTipo[tp.tipo_precio_id];
+            const sinPrecio = !precioReg || precioReg.precio <= 0;
+            if (!sinPrecio || !tp.porcentaje_ganancia || nuevos[clave] || defectosAplicados.current.has(clave)) continue;
+            defectosAplicados.current.add(clave);
+            nuevos[clave] = { precio_id: precioReg?.id ?? null, porcentaje: Number(tp.porcentaje_ganancia) };
+            cambio = true;
+        }
+        if (cambio) onUpdateDetail(index, 'precios_nuevos', nuevos);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tipo, readOnly, tiposPrecioVenta, preciosVentaPorTipo]);
+
     // Stock disponible expresado en la unidad de venta (para fraccionados se convierte desde la unidad base)
     let stockDisponible =
         (productoInfo as any)?.stock_disponible_calc ?? (productoInfo as any)?.stock_disponible ?? (productoInfo as any)?.stock ?? 0;
+    // Ventas con varios almacenes (ej. SALA y REFRIGERADOR): el disponible es el del almacén elegido en la línea
+    const eligeAlmacen = tipo === 'venta' && almacenesVenta.length > 1;
+    const almacenLinea = almacenesVenta.find((a) => Number(a.id) === Number(detalle.almacen_id));
+    if (eligeAlmacen && detalle.almacen_id && productoInfo?.stock_por_almacen) {
+        stockDisponible = Number(productoInfo.stock_por_almacen[detalle.almacen_id] ?? 0);
+    }
     let unidadDisplay = productoInfo?.unidad?.codigo || 'UN';
     if (detalle.es_fraccionado && detalle.conversiones && detalle.conversiones.length > 0) {
         const unidadVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
@@ -227,6 +261,18 @@ export default function ProductoTableRow({
                 {/* Compras: código de barras / SKU debajo del nombre */}
                 {tipo === 'compra' && codigoProducto && <div className="mt-1">{codigoProducto}</div>}
 
+                {/* Compras: códigos del producto en el catálogo de sus proveedores (el de la compra primero, resaltado) */}
+                {tipo === 'compra' &&
+                    codigosDeProveedores(productoInfo, proveedorId).map((cod) => (
+                        <div
+                            key={`${cod.proveedor}-${cod.codigo}`}
+                            className={`mt-0.5 text-xs ${cod.esDelProveedor ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400'}`}
+                            title={cod.esDelProveedor ? 'Código en el catálogo del proveedor de la compra' : 'Código en el catálogo de otro proveedor'}
+                        >
+                            🏷️ <span className="font-mono font-semibold">{cod.codigo}</span> <span className="opacity-80">· {cod.proveedor}</span>
+                        </div>
+                    ))}
+
                 <div className="text-left text-xs text-gray-500 dark:text-gray-400">
                     {(() => {
                         const tieneDataMedicamentos = (productoInfo as any)?.principio_activo || (productoInfo as any)?.uso_de_medicacion;
@@ -327,8 +373,10 @@ export default function ProductoTableRow({
                                 }`}
                         >
                             {stockDisponible <= 0
-                                ? 'Sin stock'
-                                : `Quedan ${formatearCantidad(Math.max(0, stockRestante))} de ${formatearCantidad(stockDisponible)} ${unidadDisplay}`}
+                                ? `Sin stock${eligeAlmacen && almacenLinea ? ` en ${almacenLinea.nombre}` : ''}`
+                                : `Quedan ${formatearCantidad(Math.max(0, stockRestante))} de ${formatearCantidad(stockDisponible)} ${unidadDisplay}${
+                                      eligeAlmacen && almacenLinea ? ` en ${almacenLinea.nombre}` : ''
+                                  }`}
                         </div>
                     )}
                     {/* Compras: stock resultante (la compra suma al disponible actual) */}
@@ -485,7 +533,8 @@ export default function ProductoTableRow({
                         }
 
                         // ✅ Si hay múltiples precios, mostrar selector
-                        const productoId = detalle.producto_id;
+                        // Clave de la línea: linea_id (ventas, permite el mismo producto en dos líneas) o producto_id
+                        const productoId = detalle.linea_id ?? detalle.producto_id;
                         const unidadActualDeVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
 
                         let valorInicial = '';
@@ -510,7 +559,15 @@ export default function ProductoTableRow({
                         } else if (detalle.tipo_precio_id === null) {
                             valorInicial = 'otros';
                         } else if (detalle.tipo_precio_id) {
-                            const debeMostrarUnidad = unidadActualDeVenta && unidadActualDeVenta !== detalle.unidad_medida_id;
+                            // Mismo formato que el value de las opciones: "tipo_unidad" si ese precio tiene unidad (también la base,
+                            // ej. paquete "10_9"), si no "tipo". Antes la unidad base daba "10" y no coincidía con ninguna opción.
+                            const precioDeLinea = preciosVenta.find(
+                                (p: any) =>
+                                    String(p.tipo_precio_id) === String(detalle.tipo_precio_id) &&
+                                    Number(p.unidad_medida_id) === Number(unidadActualDeVenta),
+                            );
+                            const debeMostrarUnidad =
+                                !!precioDeLinea?.unidad_medida_id || (unidadActualDeVenta && unidadActualDeVenta !== detalle.unidad_medida_id);
                             valorInicial = debeMostrarUnidad ? `${detalle.tipo_precio_id}_${unidadActualDeVenta}` : String(detalle.tipo_precio_id);
                         } else if (detalle.tipo_precio_id_recomendado) {
                             valorInicial = String(detalle.tipo_precio_id_recomendado);
@@ -659,6 +716,7 @@ export default function ProductoTableRow({
                             </select>
                         );
                     })()}
+                    {/* El almacén de la línea lo decide el tipo de precio (ej. FRIO → almacén FRIO); se ve en "Quedan X en ..." */}
                 </td>
             )}
             {/* Descuento de la línea, en monto (Bs). El costo del producto se sigue tomando del precio sin descuento */}
@@ -776,29 +834,21 @@ export default function ProductoTableRow({
                 La ganancia se aplica sobre el nuevo costo (precio unitario) */}
             {tipo === 'compra' &&
                 tiposPrecioVenta.map((tp) => {
+                    // Sin precio registrado en esta unidad (o en 0): se puede cargar y se crea/actualiza al aprobar la compra
                     const precioReg = preciosVentaPorTipo[tp.tipo_precio_id];
-                    if (!precioReg) {
-                        return (
-                            <Fragment key={tp.tipo_precio_id}>
-                                {[0, 1, 2].map((i) => (
-                                    <td key={i} className="px-2 py-2">
-                                        <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
-                                    </td>
-                                ))}
-                            </Fragment>
-                        );
-                    }
+                    const sinPrecio = !precioReg || precioReg.precio <= 0;
 
                     const clave = String(tp.tipo_precio_id);
                     const costoNuevo = Number(detalle.precio_unitario) || 0;
-                    const porcentajeReg = precioCosto > 0 ? ((precioReg.precio - precioCosto) / precioCosto) * 100 : null;
-                    const montoReg = precioCosto > 0 ? precioReg.precio - precioCosto : null;
+                    const porcentajeReg = !sinPrecio && precioCosto > 0 ? ((precioReg.precio - precioCosto) / precioCosto) * 100 : null;
+                    const montoReg = !sinPrecio && precioCosto > 0 ? precioReg.precio - precioCosto : null;
                     const editado = detalle.precios_nuevos?.[clave];
 
                     // Lo editado manda: precio directo, ganancia en Bs (precio = costo + monto) o % (precio = costo × (1 + %)).
-                    // Sin editar, se sugiere con el % registrado
-                    let porcentaje: number | null = porcentajeReg;
-                    let monto: number | null = porcentajeReg != null ? (costoNuevo * porcentajeReg) / 100 : null;
+                    // Sin editar, se sugiere con el % registrado (o el % por defecto del tipo si no tiene precio)
+                    const porcentajeSugerido = porcentajeReg ?? (sinPrecio && tp.porcentaje_ganancia ? Number(tp.porcentaje_ganancia) : null);
+                    let porcentaje: number | null = porcentajeSugerido;
+                    let monto: number | null = porcentajeSugerido != null ? (costoNuevo * porcentajeSugerido) / 100 : null;
                     if (editado?.precio != null) {
                         monto = editado.precio - costoNuevo;
                         porcentaje = costoNuevo > 0 ? (monto / costoNuevo) * 100 : null;
@@ -821,7 +871,7 @@ export default function ProductoTableRow({
                         if (valor === '' || valor === '-') {
                             delete nuevos[clave];
                         } else {
-                            nuevos[clave] = { precio_id: precioReg.id, [tipoGanancia]: parseFloat(valor) || 0 };
+                            nuevos[clave] = { precio_id: precioReg?.id ?? null, [tipoGanancia]: parseFloat(valor) || 0 };
                         }
                         onUpdateDetail(index, 'precios_nuevos', Object.keys(nuevos).length > 0 ? nuevos : undefined);
                     };
@@ -867,11 +917,22 @@ export default function ProductoTableRow({
                                     'Bs',
                                     editado
                                         ? 'Nuevo precio de venta: se aplicará al aprobar la compra'
-                                        : 'Sugerido con la ganancia registrada. No se guarda si no lo edita (ni la ganancia)',
+                                        : sinPrecio
+                                          ? `Sin ${tp.nombre} en esta unidad: escriba el precio, % o ganancia y se registrará al aprobar la compra`
+                                          : 'Sugerido con la ganancia registrada. No se guarda si no lo edita (ni la ganancia)',
                                 )}
-                                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400" title="Precio registrado actualmente">
-                                    Reg. <span className="font-mono font-semibold">{formatCurrencyMinimalDecimals(precioReg.precio)}</span>
-                                </div>
+                                {sinPrecio ? (
+                                    <div
+                                        className="mt-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400"
+                                        title="El producto no tiene este precio en la unidad de la compra (o está en 0). Se registrará al aprobar"
+                                    >
+                                        Sin precio
+                                    </div>
+                                ) : (
+                                    <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400" title="Precio registrado actualmente">
+                                        Reg. <span className="font-mono font-semibold">{formatCurrencyMinimalDecimals(precioReg.precio)}</span>
+                                    </div>
+                                )}
                             </td>
                             {/* % de ganancia (al editarlo se recalcula la ganancia en Bs) */}
                             <td className="px-2 py-2 whitespace-nowrap">
@@ -953,6 +1014,19 @@ export default function ProductoTableRow({
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                 />
                             </svg>
+                        </button>
+                    )}
+
+                    {/* Otra línea del mismo producto (ej. 2 fríos y 1 natural: cada línea con su precio y almacén) */}
+                    {tipo === 'venta' && onDuplicarLinea && !esCombo && (
+                        <button
+                            type="button"
+                            disabled={readOnly}
+                            onClick={() => onDuplicarLinea(index)}
+                            className="rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                            title="Agregar otra línea de este producto (ej. para venderlo frío)"
+                        >
+                            ➕
                         </button>
                     )}
 

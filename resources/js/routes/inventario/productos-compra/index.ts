@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\ComprasController::orden
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
 export const orden = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ orden.definition = {
 
 /**
 * @see \App\Http\Controllers\ComprasController::orden
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
 orden.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ orden.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ComprasController::orden
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
 orden.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ orden.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\ComprasController::orden
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
     const ordenForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ orden.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\ComprasController::orden
- * @see app/Http/Controllers/ComprasController.php:109
+ * @see app/Http/Controllers/ComprasController.php:125
  * @route '/inventario/productos-compra/orden'
  */
         ordenForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

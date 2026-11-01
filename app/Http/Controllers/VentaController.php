@@ -579,12 +579,15 @@ class VentaController extends Controller
         ]);
 
         // ✅ NUEVO: Obtener tipos de precio para asignar por defecto
-        $tiposPrecio = TipoPrecio::activos()->select('id', 'codigo', 'nombre')->get();
+        // De la empresa del usuario (antes se listaban los de todas); almacen_id: de dónde descuenta el precio (ej. FRIO)
+        $tiposPrecio = TipoPrecio::porEmpresa()->activos()->select('id', 'codigo', 'nombre', 'almacen_id')->get();
 
         return Inertia::render('ventas/create', [
             'clientes'             => Cliente::activos()->select('id', 'nombre', 'nit', 'codigo_cliente', 'email', 'telefono')->get(), // ✅ AGREGADO: codigo_cliente para búsqueda automática de GENERAL
             'productos'            => $productos,                                                                                      // ✅ MODIFICADO: Solo productos con stock en almacén
-            'almacenes'            => Almacen::activos()->select('id', 'nombre')->get(),
+            'almacenes'            => Almacen::porEmpresa()->activos()->select('id', 'nombre')->get(),
+            // Almacenes desde los que se puede vender (selector por línea, ej. SALA y REFRIGERADOR)
+            'almacenes_venta'      => Almacen::porEmpresa()->activos()->where('permite_venta', true)->orderBy('nombre')->get(['id', 'nombre']),
             'monedas'              => Moneda::activos()->select('id', 'codigo', 'nombre', 'simbolo')->get(),
             'tipos_documento'      => TipoDocumento::activos()->select('id', 'codigo', 'nombre')->get(),
             'tipos_pago'           => $tiposPago,
@@ -930,6 +933,7 @@ class VentaController extends Controller
                 'moneda',
                 'estadoDocumento',
                 'estadoLogistica',                                // ✅ Estado logístico de la VENTA (via estado_logistico_id)
+                'detalles.almacen:id,nombre',                     // Almacén de la línea (ej. REFRIGERADOR para fríos)
                 'detalles.producto.imagenes',                     // ✅ NUEVO: Cargar imágenes del producto (relación correcta: imagenes, no imagenesProducto)
                 'detalles.producto.marca',                        // ✅ NUEVO: Cargar marca del producto
                 'detalles.producto.unidad',                       // ✅ NUEVO: Cargar unidad del producto

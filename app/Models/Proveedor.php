@@ -92,6 +92,12 @@ class Proveedor extends Model
         return $this->hasMany(Producto::class, 'proveedor_id');
     }
 
+    /** Productos que se le compran a este proveedor (no solo los que lo tienen como principal) */
+    public function productoProveedores()
+    {
+        return $this->hasMany(ProductoProveedor::class, 'proveedor_id');
+    }
+
     /**
      * ✨ NUEVO: Scope para filtrar por empresa del usuario
      */

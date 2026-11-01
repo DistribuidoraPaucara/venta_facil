@@ -20,6 +20,7 @@ class Almacen extends Model
         'responsable',
         'telefono',
         'activo',
+        'permite_venta', // Aparece en la pantalla de ventas para elegir de dónde descontar
         'empresa_id',
     ];
 
@@ -27,6 +28,7 @@ class Almacen extends Model
     {
         return [
             'activo'                      => 'boolean',
+            'permite_venta'               => 'boolean',
             'requiere_transporte_externo' => 'boolean',
         ];
     }

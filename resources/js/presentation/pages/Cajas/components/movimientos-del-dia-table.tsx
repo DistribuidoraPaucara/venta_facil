@@ -13,7 +13,7 @@ import type { AperturaCaja, MovimientoCaja } from '@/domain/entities/cajas';
 import { formatCurrency, formatDateTime, getMovimientoColor, getMovimientoIcon, toNumber } from '@/lib/cajas.utils';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import { Printer } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
     AlertDialog,
@@ -37,17 +37,6 @@ import { Eye, Loader2, MoreVertical, Trash2 } from 'lucide-react';
 interface Props {
     cajaAbiertaHoy: AperturaCaja | null;
     movimientosHoy: MovimientoCaja[];
-    efectivoEsperado?: {
-        apertura: number;
-        ventas_efectivo: number;
-        pagos_credito: number;
-        gastos: number;
-        pagos_sueldo?: number; // ✅ NUEVO
-        anticipos?: number; // ✅ NUEVO
-        anulaciones?: number; // ✅ NUEVO
-        total_egresos?: number; // ✅ NUEVO: Total de todos los egresos
-        total: number;
-    };
     ventasPorTipoPago?: Array<{ tipo: string; total: number; count: number }>; // ✅ Viene del backend
     ventasPorEstado?: Array<{ estado: string; total: number; count: number }>; // ✅ Viene del backend
     pagosPorTipoPago?: Array<{ tipo: string; total: number; count: number }>; // ✅ Viene del backend
@@ -117,7 +106,6 @@ const getTipoOperacionColor = (codigo: string): string => {
 export function MovimientosDelDiaTable({
     cajaAbiertaHoy,
     movimientosHoy,
-    efectivoEsperado,
     ventasPorTipoPago = [],
     ventasPorEstado = [],
     pagosPorTipoPago = [],
@@ -132,32 +120,37 @@ export function MovimientosDelDiaTable({
     totalDetallesPago = 0,
     cargandoDatos = false,
 }: Props) {
-    console.log('MovimientosDelDiaTable - Props recibidos:', {
-        cajaAbiertaHoy,
-        movimientosHoy,
-        efectivoEsperado,
-        ventasPorTipoPago,
-        ventasPorEstado,
-        pagosPorTipoPago,
-        gastosPorTipoPago,
-        ventasTotales,
-        ventasAnuladas,
-        ventasCredito,
-        cargandoDatos,
+    const [pagina, setPagina] = useState(1);
+    const [exportando, setExportando] = useState(false); // Generando el Excel
+    const [porPagina, setPorPagina] = useState<number>(() => {
+        try {
+            return Number(localStorage.getItem('cajas.movimientos.porPagina')) || 25;
+        } catch {
+            return 25;
+        }
     });
+    const cambiarPorPagina = (n: number) => {
+        setPorPagina(n);
+        setPagina(1);
+        try {
+            localStorage.setItem('cajas.movimientos.porPagina', String(n));
+        } catch {
+            // Sin almacenamiento: no se recuerda
+        }
+    };
     const [filtroTipo, setFiltroTipo] = useState<string | null>(null);
-    const [filtroFechaDesde, setFiltroFechaDesde] = useState<string>('');
-    const [filtroFechaHasta, setFiltroFechaHasta] = useState<string>('');
+    // Hora (HH:MM) en lugar de fecha: la caja es de un día y sirve para revisar un cambio de turno
+    const [horaDesde, setHoraDesde] = useState<string>('');
+    const [horaHasta, setHoraHasta] = useState<string>('');
     const [filtroSigno, setFiltroSigno] = useState<'todos' | 'ingresos' | 'egresos'>('todos');
-    const [busquedaDescripcion, setBusquedaDescripcion] = useState<string>('');
+    const [filtroPago, setFiltroPago] = useState<string>(''); // Medio de pago (Efectivo, QR...): para cuadrar el efectivo
+    const [busqueda, setBusqueda] = useState<string>(''); // Folio, descripción, cliente, monto o N° de venta
     const [montoMin, setMontoMin] = useState<string>('');
     const [montoMax, setMontoMax] = useState<string>('');
     const [filtroUsuario, setFiltroUsuario] = useState<string>('');
-    const [filtroDocumento, setFiltroDocumento] = useState<string>('');
     const [filtroEstadoVenta, setFiltroEstadoVenta] = useState<'todos' | 'APROBADO' | 'ANULADO'>('todos'); // ✅ NUEVO: Filtro estado venta
     const [ordenarPor, setOrdenarPor] = useState<'fecha' | 'monto' | 'tipo'>('fecha');
     const [filtrosVisibles, setFiltrosVisibles] = useState(false);
-    const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false);
     const [mostrarModalMovimientoIndividual, setMostrarModalMovimientoIndividual] = useState(false);
     const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<MovimientoCaja | null>(null);
     const [mostrarDialogoEliminacion, setMostrarDialogoEliminacion] = useState(false);
@@ -174,6 +167,11 @@ export function MovimientosDelDiaTable({
         });
         return expandidos;
     });
+
+    // Al cambiar un filtro o el orden, volver a la primera página
+    useEffect(() => {
+        setPagina(1);
+    }, [filtroTipo, horaDesde, horaHasta, filtroSigno, filtroPago, busqueda, montoMin, montoMax, filtroUsuario, filtroEstadoVenta, ordenarPor]);
 
     if (!cajaAbiertaHoy || movimientosHoy.length === 0) {
         return (
@@ -220,8 +218,7 @@ export function MovimientosDelDiaTable({
         return acc;
     }, {});
 
-    // ✅ NUEVO: Obtener tipos únicos y calcular totales
-    const tipos = Object.keys(movimientosAgrupados);
+    // ✅ NUEVO: Calcular totales por tipo de operación
     const totalesPorTipo = Object.entries(movimientosAgrupados)
         .filter(([tipo]) => tipo !== 'Venta Anulada' && tipo !== 'ANULADO-VENTA') // ✅ NUEVO: Excluir ANULADO-VENTA
         .map(([tipo, movs]) => {
@@ -262,10 +259,6 @@ export function MovimientosDelDiaTable({
             count: detallesPagoDesglosado.length,
         });
 
-        console.log('💡 [MovimientosDelDiaTable] Agregando card de VENTA manual porque totalDetallesPago > 0', {
-            totalDetallesPago,
-            detallesCount: detallesPagoDesglosado.length,
-        });
     }
 
     // ✅ CORREGIDO (2026-04-30): Si hay ventasAnuladas pero el card de ANULACION tiene total=0,
@@ -288,9 +281,6 @@ export function MovimientosDelDiaTable({
             });
         }
 
-        console.log('💡 [MovimientosDelDiaTable] Agregando/Actualizando card de ANULACION desde props', {
-            ventasAnuladas,
-        });
     }
 
     // ✅ NUEVO: Agrupar movimientos por tipo de pago y calcular totales
@@ -323,87 +313,70 @@ export function MovimientosDelDiaTable({
 
         const minId = Math.min(...ventaIds);
         const maxId = Math.max(...ventaIds);
-        const totalVentas = ventaIds.length;
+        // Ventas distintas: una venta puede tener hasta 3 movimientos (pago mixto efectivo + QR y/o vuelto),
+        // así que contar movimientos daba de más (ej. 590 en lugar de 474)
+        const totalVentas = new Set(ventaIds).size;
 
         return { minId, maxId, totalVentas };
     };
 
     const rangoVentas = calcularRangoVentas();
 
-    // ✅ Obtener usuarios únicos
-    const usuariosUnicos = Array.from(new Set(movimientosHoy.map((mov) => mov.usuario?.name || 'Sin Usuario')))
-        .filter((u) => u !== 'Sin Usuario')
-        .sort();
+    // Opciones de los filtros, a partir de los movimientos del día
+    const usuariosUnicos = Array.from(new Set(movimientosHoy.map((mov) => mov.usuario?.name).filter((u): u is string => !!u))).sort();
+    const nombrePago = (mov: MovimientoCaja): string => mov.tipo_pago?.nombre || 'Sin medio de pago';
+    const mediosPago = Array.from(new Set(movimientosHoy.map(nombrePago))).sort();
+    // Hora local HH:MM del movimiento (para el filtro por turno)
+    const horaDe = (mov: MovimientoCaja) => {
+        const d = new Date(mov.fecha);
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
 
-    // ✅ NUEVO: Filtrar movimientos por múltiples criterios
+    // Filtrar movimientos por todos los criterios
     let movimientosAMostrar = movimientosHoy.filter((mov) => {
-        // 1️⃣ Filtro por tipo
-        if (filtroTipo && mov.tipo_operacion.nombre !== filtroTipo) {
-            return false;
-        }
+        if (filtroTipo && mov.tipo_operacion.nombre !== filtroTipo) return false;
+        if (filtroPago && nombrePago(mov) !== filtroPago) return false;
 
-        // 2️⃣ Filtro por rango de fechas
-        if (filtroFechaDesde || filtroFechaHasta) {
-            const fechaMov = new Date(mov.fecha).toISOString().split('T')[0];
-            const desde = filtroFechaDesde ? filtroFechaDesde : '1900-01-01';
-            const hasta = filtroFechaHasta ? filtroFechaHasta : '2100-12-31';
-            if (!(fechaMov >= desde && fechaMov <= hasta)) {
-                return false;
-            }
-        }
-
-        // 3️⃣ Filtro por signo (ingreso/egreso)
         const monto = toNumber(mov.monto);
-        if (filtroSigno === 'ingresos' && monto < 0) {
-            return false;
-        }
-        if (filtroSigno === 'egresos' && monto > 0) {
-            return false;
+        if (filtroSigno === 'ingresos' && monto < 0) return false;
+        if (filtroSigno === 'egresos' && monto > 0) return false;
+
+        // Turno: horaHasta < horaDesde cruza la medianoche (ej. 22:00 a 02:00)
+        if (horaDesde || horaHasta) {
+            const hora = horaDe(mov);
+            const desde = horaDesde || '00:00';
+            const hasta = horaHasta || '23:59';
+            const dentro = desde <= hasta ? hora >= desde && hora <= hasta : hora >= desde || hora <= hasta;
+            if (!dentro) return false;
         }
 
-        // 4️⃣ Filtro por descripción (búsqueda)
-        if (busquedaDescripcion) {
-            const busqueda = busquedaDescripcion.toLowerCase();
-            const coincide =
-                mov.observaciones?.toLowerCase().includes(busqueda) ||
-                mov.numero_documento?.toLowerCase().includes(busqueda) ||
-                mov.tipo_operacion.nombre.toLowerCase().includes(busqueda);
-            if (!coincide) {
-                return false;
-            }
+        // Buscador único: folio, descripción, tipo, cliente, N° de venta o monto
+        if (busqueda.trim()) {
+            const texto = busqueda.trim().toLowerCase();
+            const campos = [
+                mov.numero_documento,
+                mov.observaciones,
+                mov.tipo_operacion.nombre,
+                mov.venta?.cliente?.nombre,
+                mov.venta?.numero_documento,
+                mov.venta_id ? String(mov.venta_id) : '',
+                Math.abs(monto).toFixed(2),
+            ];
+            if (!campos.some((c) => c && c.toLowerCase().includes(texto))) return false;
         }
 
-        // 5️⃣ Filtro por rango de monto
         if (montoMin || montoMax) {
             const montoAbsoluto = Math.abs(monto);
             const min = montoMin ? parseFloat(montoMin) : 0;
             const max = montoMax ? parseFloat(montoMax) : Infinity;
-            if (!(montoAbsoluto >= min && montoAbsoluto <= max)) {
-                return false;
-            }
+            if (!(montoAbsoluto >= min && montoAbsoluto <= max)) return false;
         }
 
-        // 6️⃣ Filtro por usuario
-        if (filtroUsuario) {
-            const nombreUsuario = mov.usuario?.name || 'Sin Usuario';
-            if (nombreUsuario !== filtroUsuario) {
-                return false;
-            }
-        }
+        if (filtroUsuario && (mov.usuario?.name || '') !== filtroUsuario) return false;
 
-        // 7️⃣ Filtro por documento
-        if (filtroDocumento) {
-            const busqueda = filtroDocumento.toLowerCase();
-            if (!mov.numero_documento?.toLowerCase().includes(busqueda)) {
-                return false;
-            }
-        }
-
-        // 8️⃣ Filtro por estado de venta (APROBADO/ANULADO) - ✅ NUEVO
-        if (filtroEstadoVenta !== 'todos' && mov.venta?.estado_documento) {
-            if (mov.venta.estado_documento.codigo !== filtroEstadoVenta) {
-                return false;
-            }
+        // Estado de venta: solo aplica a movimientos de venta (los demás no se ocultan)
+        if (filtroEstadoVenta !== 'todos' && mov.venta?.estado_documento && mov.venta.estado_documento.codigo !== filtroEstadoVenta) {
+            return false;
         }
 
         return true;
@@ -424,26 +397,100 @@ export function MovimientosDelDiaTable({
         }
     });
 
+    // Totales de lo filtrado (ej. "¿cuánto entró por QR?")
+    const totalesFiltrados = movimientosAMostrar.reduce(
+        (t, mov) => {
+            const m = toNumber(mov.monto);
+            return m >= 0 ? { ...t, entradas: t.entradas + m } : { ...t, salidas: t.salidas + Math.abs(m) };
+        },
+        { entradas: 0, salidas: 0 },
+    );
+
+    // Neto de todos los movimientos de la caja (tarjeta "Todos")
+    const netoDia = movimientosHoy.reduce((suma, mov) => suma + toNumber(mov.monto), 0);
+
+    // Filtros activos como chips (cada uno con su forma de quitarlo)
+    const filtrosActivos: { etiqueta: string; quitar: () => void }[] = [
+        ...(filtroTipo ? [{ etiqueta: `Tipo: ${filtroTipo}`, quitar: () => setFiltroTipo(null) }] : []),
+        ...(filtroPago ? [{ etiqueta: `Pago: ${filtroPago}`, quitar: () => setFiltroPago('') }] : []),
+        ...(filtroSigno !== 'todos' ? [{ etiqueta: filtroSigno === 'ingresos' ? 'Solo ingresos' : 'Solo egresos', quitar: () => setFiltroSigno('todos') }] : []),
+        ...(busqueda.trim() ? [{ etiqueta: `Busca: "${busqueda.trim()}"`, quitar: () => setBusqueda('') }] : []),
+        ...(horaDesde || horaHasta ? [{ etiqueta: `Hora: ${horaDesde || '00:00'} – ${horaHasta || '23:59'}`, quitar: () => { setHoraDesde(''); setHoraHasta(''); } }] : []),
+        ...(montoMin || montoMax ? [{ etiqueta: `Monto: ${montoMin || '0'} – ${montoMax || '∞'}`, quitar: () => { setMontoMin(''); setMontoMax(''); } }] : []),
+        ...(filtroUsuario ? [{ etiqueta: `Usuario: ${filtroUsuario}`, quitar: () => setFiltroUsuario('') }] : []),
+        ...(filtroEstadoVenta !== 'todos' ? [{ etiqueta: filtroEstadoVenta === 'APROBADO' ? 'Ventas aprobadas' : 'Ventas anuladas', quitar: () => setFiltroEstadoVenta('todos') }] : []),
+    ];
+    const limpiarFiltros = () => filtrosActivos.forEach((f) => f.quitar());
+
+    // Paginación en pantalla: filtros, totales, CSV e impresión siguen usando todos los movimientos filtrados
+    const totalPaginas = Math.max(1, Math.ceil(movimientosAMostrar.length / porPagina));
+    const paginaActual = Math.min(pagina, totalPaginas); // Si un filtro achica la lista, no quedar en una página vacía
+    const movimientosPagina = movimientosAMostrar.slice((paginaActual - 1) * porPagina, paginaActual * porPagina);
+
     // ✅ Función para exportar movimientos a CSV
-    const exportarACSV = () => {
-        const headers = ['Fecha/Hora', 'Tipo', 'Descripción', 'Documento', 'Monto', 'Usuario'];
-        const rows = movimientosAMostrar.map((mov) => [
-            new Date(mov.fecha).toLocaleString('es-BO'),
-            mov.tipo_operacion.nombre,
-            mov.observaciones || '',
-            mov.numero_documento || '',
-            mov.monto,
-            mov.usuario?.name || 'Sin Usuario',
-        ]);
+    // Excel (.xlsx) de los movimientos filtrados: con filtros aplicados, totales, autofiltro y montos como número.
+    // ExcelJS se carga solo al exportar para no pesar en la pantalla de caja.
+    const exportarExcel = async () => {
+        if (exportando || movimientosAMostrar.length === 0) return;
+        setExportando(true);
+        try {
+            const { default: ExcelJS } = await import('exceljs');
+            const libro = new ExcelJS.Workbook();
+            const hoja = libro.addWorksheet('Movimientos');
 
-        const csv = [headers.join(','), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(','))].join('\n');
+            hoja.addRow([`Movimientos de caja ${cajaAbiertaHoy?.caja?.nombre ?? ''} ${etiquetaPeriodo}`.trim()]).font = { bold: true, size: 13 };
+            hoja.addRow([filtrosActivos.length ? `Filtros: ${filtrosActivos.map((f) => f.etiqueta).join(' · ')}` : 'Sin filtros']);
+            hoja.addRow([]);
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `movimientos-caja-${new Date().toISOString().split('T')[0]}.csv`);
-        link.click();
+            const encabezados = hoja.addRow(['ID', 'Fecha', 'Hora', 'Tipo', 'Medio de pago', 'Documento', 'Cliente', 'Descripción', 'Usuario', 'Monto (Bs)']);
+            encabezados.font = { bold: true };
+            const filaEncabezados = encabezados.number;
+
+            movimientosAMostrar.forEach((mov) => {
+                const fecha = new Date(mov.fecha);
+                hoja.addRow([
+                    mov.id,
+                    fecha.toLocaleDateString('es-BO'),
+                    fecha.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' }),
+                    mov.tipo_operacion.nombre,
+                    nombrePago(mov),
+                    mov.numero_documento || '',
+                    mov.venta?.cliente?.nombre || '',
+                    mov.observaciones || '',
+                    mov.usuario?.name || 'Sin usuario',
+                    toNumber(mov.monto),
+                ]);
+            });
+            const ultimaFila = hoja.rowCount;
+
+            hoja.addRow([]);
+            [
+                ['Entradas', totalesFiltrados.entradas],
+                ['Salidas', -totalesFiltrados.salidas],
+                ['Neto', totalesFiltrados.entradas - totalesFiltrados.salidas],
+            ].forEach(([etiqueta, monto]) => {
+                const fila = hoja.addRow(['', '', '', '', '', '', '', '', etiqueta, monto]);
+                fila.font = { bold: true };
+            });
+
+            hoja.getColumn(10).numFmt = '#,##0.00;[Red]-#,##0.00';
+            [8, 12, 8, 22, 18, 22, 24, 40, 18, 14].forEach((ancho, i) => (hoja.getColumn(i + 1).width = ancho));
+            hoja.views = [{ state: 'frozen', ySplit: filaEncabezados }];
+            hoja.autoFilter = { from: { row: filaEncabezados, column: 1 }, to: { row: ultimaFila, column: 10 } };
+
+            const buffer = await libro.xlsx.writeBuffer();
+            const url = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `movimientos-caja-${new Date().toLocaleDateString('en-CA')}.xlsx`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('❌ Error al exportar a Excel:', error);
+            alert('No se pudo generar el Excel');
+        } finally {
+            setExportando(false);
+        }
     };
 
     // ✅ NUEVO: Función para toggle expandir/contraer movimiento
@@ -479,7 +526,6 @@ export function MovimientosDelDiaTable({
             }
 
             const data = await response.json();
-            console.log('✅ Movimiento eliminado:', data);
 
             // Mostrar notificación de éxito
             alert('✅ Movimiento eliminado exitosamente');
@@ -502,10 +548,6 @@ export function MovimientosDelDiaTable({
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Movimientos {etiquetaPeriodo}</h3>
-                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            📋 Mostrando <strong className="text-gray-900 dark:text-white">{movimientosAMostrar.length}</strong> de{' '}
-                            <strong className="text-gray-900 dark:text-white">{movimientosHoy.length}</strong> movimientos
-                        </p>
                     </div>
                     <br />
                     {/* ✅ NUEVO: Rango de IDs de Venta */}
@@ -529,340 +571,242 @@ export function MovimientosDelDiaTable({
                     </div>
                 </div>
 
-                {/* ✅ NUEVO: Filtros por tipo */}
-                <div className="flex flex-wrap gap-2">
-                    <button
-                        onClick={() => setFiltroTipo(null)}
-                        className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                            !filtroTipo
-                                ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                        }`}
-                    >
-                        Todos ({movimientosHoy.length})
-                    </button>
-                    {tipos
-                        .filter((tipo) => tipo !== 'Venta Anulada' && tipo !== 'ANULADO-VENTA') // ✅ NUEVO: Excluir ANULADO-VENTA
-                        .map((tipo) => {
-                            // const total = totalesPorTipo.find(t => t.tipo === tipo)?.total || 0;
-                            return (
+                {/* Filtros principales: buscador, tipo de operación, medio de pago y signo (siempre visibles) */}
+                <div className="mt-2 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative min-w-[220px] flex-1">
+                            <input
+                                type="search"
+                                value={busqueda}
+                                onChange={(e) => setBusqueda(e.target.value)}
+                                placeholder="🔍 Buscar folio, descripción, cliente, N° de venta o monto…"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                            />
+                        </div>
+                        <div className="flex overflow-hidden rounded-lg border border-gray-300 text-sm dark:border-gray-600">
+                            {(['todos', 'ingresos', 'egresos'] as const).map((signo) => (
                                 <button
-                                    key={tipo}
-                                    onClick={() => {
-                                        setFiltroTipo(tipo);
-                                        // ✅ DEBUG: Mostrar en consola qué datos llegaron para este tipo
-                                        console.log(`\n📋 [MovimientosDelDiaTable] Datos del tipo: ${tipo}`, {
-                                            tipo,
-                                            cantidad: movimientosAgrupados[tipo].length,
-                                            movimientos: movimientosAgrupados[tipo],
-                                            detalles: movimientosAgrupados[tipo].map((m) => ({
-                                                id: m.id,
-                                                numero_documento: m.numero_documento,
-                                                monto: m.monto,
-                                                venta_id: m.venta_id,
-                                                venta_numero: m.venta?.numero,
-                                                venta_estado: m.venta?.estado_documento?.codigo,
-                                                fecha: m.fecha,
-                                            })),
-                                        });
-                                    }}
-                                    className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                                        filtroTipo === tipo
-                                            ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                                    key={signo}
+                                    onClick={() => setFiltroSigno(signo)}
+                                    className={`px-3 py-1.5 font-medium transition ${
+                                        filtroSigno === signo
+                                            ? signo === 'egresos' ? 'bg-red-600 text-white' : signo === 'ingresos' ? 'bg-green-600 text-white' : 'bg-indigo-600 text-white'
+                                            : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                                     }`}
                                 >
-                                    {tipo} ({movimientosAgrupados[tipo].length})
+                                    {signo === 'todos' ? 'Todos' : signo === 'ingresos' ? '📈 Ingresos' : '📉 Egresos'}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            onClick={() => setFiltrosVisibles(!filtrosVisibles)}
+                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                        >
+                            {filtrosVisibles ? '🔼 Menos filtros' : '🔽 Más filtros'}
+                        </button>
+                        <button
+                            onClick={exportarExcel}
+                            disabled={movimientosAMostrar.length === 0 || exportando}
+                            className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
+                            title="Descarga en Excel los movimientos que se ven (con los filtros aplicados)"
+                        >
+                            {exportando ? '⏳ Generando…' : '📥 Excel'}
+                        </button>
+                    </div>
+
+                    {/* Tipo de operación: cada tarjeta muestra el resumen y filtra al hacer clic (antes eran chips + tarjetas) */}
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                        <button
+                            type="button"
+                            onClick={() => setFiltroTipo(null)}
+                            aria-pressed={!filtroTipo}
+                            className={`rounded-lg border-l-4 border-indigo-400 bg-indigo-50 p-2 text-left transition hover:shadow-md dark:bg-indigo-900/20 ${
+                                !filtroTipo ? 'ring-2 ring-indigo-500' : 'opacity-80 hover:opacity-100'
+                            }`}
+                        >
+                            <p className="flex items-center justify-between gap-1 text-xs font-medium tracking-wide text-gray-600 uppercase dark:text-gray-400">
+                                <span>Todos · neto</span>
+                                <span className="normal-case">{movimientosHoy.length} mov.</span>
+                            </p>
+                            <p className={`mt-1 text-lg font-bold ${getMovimientoColor(netoDia)}`}>
+                                {netoDia < 0 ? '-' : ''}
+                                {formatCurrency(Math.abs(netoDia))}
+                            </p>
+                        </button>
+                        {totalesPorTipo.map(({ tipo, total }) => {
+                            // Color según el código del tipo de operación
+                            const codigo = movimientosHoy.find((m) => m.tipo_operacion.nombre === tipo)?.tipo_operacion.codigo || tipo.toUpperCase();
+                            const color = getTipoOperacionColor(codigo);
+                            const estilo = color.includes('bg-green')
+                                ? 'border-green-400 bg-green-50 dark:bg-green-900/20'
+                                : color.includes('bg-red')
+                                  ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
+                                  : color.includes('bg-blue')
+                                    ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                    : color.includes('bg-yellow')
+                                      ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
+                                      : color.includes('bg-orange')
+                                        ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20'
+                                        : color.includes('bg-purple')
+                                          ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20'
+                                          : color.includes('bg-indigo')
+                                            ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                                            : 'border-gray-400 bg-gray-50 dark:bg-gray-900/20';
+                            const seleccionado = filtroTipo === tipo;
+                            // ✅ ACTUALIZADO (2026-04-30): Para VENTA, mostrar desglose de tipos de pago
+                            const esVenta = tipo === 'Venta' || tipo === 'VENTA';
+                            const mostrarDesglose = esVenta && detallesPagoDesglosado && detallesPagoDesglosado.length > 0;
+
+                            return (
+                                <button
+                                    type="button"
+                                    key={tipo}
+                                    onClick={() => setFiltroTipo(seleccionado ? null : tipo)}
+                                    aria-pressed={seleccionado}
+                                    title={seleccionado ? 'Quitar filtro' : `Ver solo: ${tipo}`}
+                                    className={`rounded-lg border-l-4 p-2 text-left transition hover:shadow-md ${estilo} ${
+                                        seleccionado ? 'ring-2 ring-indigo-500' : filtroTipo ? 'opacity-60 hover:opacity-100' : ''
+                                    }`}
+                                >
+                                    <p className="flex items-center justify-between gap-1 text-xs font-medium tracking-wide text-gray-600 uppercase dark:text-gray-400">
+                                        <span className="truncate">{tipo}</span>
+                                        <span className="shrink-0 normal-case">{movimientosAgrupados[tipo]?.length ?? 0} mov.</span>
+                                    </p>
+                                    <p className={`mt-1 text-lg font-bold ${getMovimientoColor(total)}`}>{formatCurrency(Math.abs(total))}</p>
+
+                                    {/* ✅ ACTUALIZADO (2026-05-03): SOLO EFECTIVO + TRANSFERENCIA (CRÉDITO tiene su propio card) */}
+                                    {mostrarDesglose && (
+                                        <div className="mt-1 space-y-0.5 border-t border-gray-300 pt-1 dark:border-gray-600">
+                                            {detallesPagoDesglosado
+                                                .filter((detalle) => {
+                                                    const c = String((detalle as { codigo?: string }).codigo ?? detalle.tipo).toUpperCase();
+                                                    return c === 'EFECTIVO' || c === 'TRANSFERENCIA/QR';
+                                                })
+                                                .map((detalle) => (
+                                                    <div key={detalle.tipo_pago_id} className="flex items-center justify-between text-xs">
+                                                        <span className="text-gray-600 dark:text-gray-400">{detalle.tipo}</span>
+                                                        <span className="font-semibold text-gray-700 dark:text-gray-300">{formatCurrency(detalle.total)}</span>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
                                 </button>
                             );
                         })}
-                    <button
-                        onClick={() => setFiltrosVisibles(!filtrosVisibles)}
-                        className="ml-auto rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                    >
-                        {filtrosVisibles ? '🔼 Ocultar Filtros' : '🔽 Mostrar Filtros'}
-                    </button>
+                    </div>
+
+                    {/* Medio de pago: clave para cuadrar el efectivo al cerrar */}
+                    {mediosPago.length > 1 && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Pago:</span>
+                            {mediosPago.map((medio) => (
+                                <button
+                                    key={medio}
+                                    onClick={() => setFiltroPago(filtroPago === medio ? '' : medio)}
+                                    className={`rounded-full px-3 py-1 text-sm font-medium transition ${filtroPago === medio ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}`}
+                                >
+                                    {medio} ({movimientosHoy.filter((m) => nombrePago(m) === medio).length})
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                {/* ✅ NUEVO: Filtros Avanzados */}
+                {/* Filtros avanzados */}
                 {filtrosVisibles && (
-                    <div className="mb-6 space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
-                        {/* Filtro por Rango de Fechas */}
+                    <div className="mt-3 grid grid-cols-1 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-2 xl:grid-cols-5 dark:bg-gray-700">
                         <div>
-                            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Rango de Fechas</p>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-600 dark:text-gray-400">Desde:</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={filtroFechaDesde}
-                                        onChange={(e) => setFiltroFechaDesde(e.target.value ? e.target.value.split('T')[0] : '')}
-                                        className="rounded border border-gray-300 px-3 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-600 dark:text-gray-400">Hasta:</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={filtroFechaHasta}
-                                        onChange={(e) => setFiltroFechaHasta(e.target.value ? e.target.value.split('T')[0] : '')}
-                                        className="rounded border border-gray-300 px-3 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                    />
-                                </div>
-                                {(filtroFechaDesde || filtroFechaHasta) && (
-                                    <button
-                                        onClick={() => {
-                                            setFiltroFechaDesde('');
-                                            setFiltroFechaHasta('');
-                                        }}
-                                        className="rounded bg-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300"
-                                    >
-                                        Limpiar
-                                    </button>
-                                )}
+                            <p className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-300">Hora (turno)</p>
+                            <div className="flex items-center gap-1">
+                                <input type="time" value={horaDesde} onChange={(e) => setHoraDesde(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white" aria-label="Desde la hora" />
+                                <span className="text-gray-500">–</span>
+                                <input type="time" value={horaHasta} onChange={(e) => setHoraHasta(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white" aria-label="Hasta la hora" />
                             </div>
                         </div>
-
-                        {/* Filtro por Rango de Monto */}
                         <div>
-                            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Rango de Monto</p>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-600 dark:text-gray-400">Min:</label>
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        value={montoMin}
-                                        onChange={(e) => setMontoMin(e.target.value)}
-                                        className="w-24 rounded border border-gray-300 px-3 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-600 dark:text-gray-400">Max:</label>
-                                    <input
-                                        type="number"
-                                        placeholder="∞"
-                                        value={montoMax}
-                                        onChange={(e) => setMontoMax(e.target.value)}
-                                        className="w-24 rounded border border-gray-300 px-3 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                    />
-                                </div>
-                                {(montoMin || montoMax) && (
-                                    <button
-                                        onClick={() => {
-                                            setMontoMin('');
-                                            setMontoMax('');
-                                        }}
-                                        className="rounded bg-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300"
-                                    >
-                                        Limpiar
-                                    </button>
-                                )}
+                            <p className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-300">Monto (Bs.)</p>
+                            <div className="flex items-center gap-1">
+                                <input type="number" min={0} placeholder="Mín." value={montoMin} onChange={(e) => setMontoMin(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white w-24" />
+                                <span className="text-gray-500">–</span>
+                                <input type="number" min={0} placeholder="Máx." value={montoMax} onChange={(e) => setMontoMax(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white w-24" />
                             </div>
                         </div>
-
-                        {/* Filtro por Documento */}
                         <div>
-                            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Buscar por Folio</p>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Número de folio..."
-                                    value={filtroDocumento}
-                                    onChange={(e) => setFiltroDocumento(e.target.value)}
-                                    className="flex-1 rounded border border-gray-300 px-3 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                />
-                                {filtroDocumento && (
-                                    <button
-                                        onClick={() => setFiltroDocumento('')}
-                                        className="rounded bg-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300"
-                                    >
-                                        Limpiar
-                                    </button>
-                                )}
-                            </div>
+                            <p className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-300">Usuario</p>
+                            <select value={filtroUsuario} onChange={(e) => setFiltroUsuario(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white w-full">
+                                <option value="">Todos</option>
+                                {usuariosUnicos.map((u) => (
+                                    <option key={u} value={u}>
+                                        {u}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-
-                        {/* Filtro por Estado de Venta (APROBADO/ANULADO) - ✅ NUEVO */}
                         <div>
-                            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Estado de Venta</p>
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => setFiltroEstadoVenta('todos')}
-                                    className={`rounded px-3 py-1 text-sm font-medium transition ${
-                                        filtroEstadoVenta === 'todos'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                                    }`}
-                                >
-                                    Todos
-                                </button>
-                                <button
-                                    onClick={() => setFiltroEstadoVenta('APROBADO')}
-                                    className={`rounded px-3 py-1 text-sm font-medium transition ${
-                                        filtroEstadoVenta === 'APROBADO'
-                                            ? 'bg-green-600 text-white'
-                                            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                                    }`}
-                                >
-                                    ✅ Aprobadas
-                                </button>
-                                <button
-                                    onClick={() => setFiltroEstadoVenta('ANULADO')}
-                                    className={`rounded px-3 py-1 text-sm font-medium transition ${
-                                        filtroEstadoVenta === 'ANULADO'
-                                            ? 'bg-red-600 text-white'
-                                            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                                    }`}
-                                >
-                                    ❌ Anuladas
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Ordenamiento */}
-                        <div>
-                            <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Ordenar por</p>
-                            <div className="flex gap-2">
-                                <select
-                                    value={ordenarPor}
-                                    onChange={(e) => setOrdenarPor(e.target.value as 'fecha' | 'monto' | 'tipo')}
-                                    className="flex-1 rounded border border-gray-300 px-3 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                >
-                                    <option value="fecha">📅 Por Fecha (más reciente)</option>
-                                    <option value="monto">💰 Por Monto (mayor primero)</option>
-                                    <option value="tipo">📋 Por Tipo de Operación</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Botones Exportar e Imprimir */}
-                        <div className="space-y-2">
-                            <button
-                                onClick={exportarACSV}
-                                className="w-full rounded bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700"
+                            <p className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-300">Estado de venta</p>
+                            <select
+                                value={filtroEstadoVenta}
+                                onChange={(e) => setFiltroEstadoVenta(e.target.value as 'todos' | 'APROBADO' | 'ANULADO')}
+                                className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white w-full"
                             >
-                                📥 Exportar a CSV
+                                <option value="todos">Todas</option>
+                                <option value="APROBADO">✅ Aprobadas</option>
+                                <option value="ANULADO">❌ Anuladas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <p className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-300">Ordenar por</p>
+                            <select
+                                value={ordenarPor}
+                                onChange={(e) => setOrdenarPor(e.target.value as 'fecha' | 'monto' | 'tipo')}
+                                className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white w-full"
+                            >
+                                <option value="fecha">📅 Más reciente</option>
+                                <option value="monto">💰 Mayor monto</option>
+                                <option value="tipo">📋 Tipo de operación</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
+
+                {/* Resultado: solo con filtros activos (sin filtros repetía lo de las tarjetas): chips con ✕ y totales de lo filtrado */}
+                {filtrosActivos.length > 0 && (
+                <div className="mt-2 mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900/40">
+                    {filtrosActivos.map((f) => (
+                        <span key={f.etiqueta} className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200">
+                            {f.etiqueta}
+                            <button onClick={f.quitar} className="ml-0.5 hover:text-indigo-950 dark:hover:text-white" aria-label={`Quitar filtro ${f.etiqueta}`}>
+                                ✕
                             </button>
-                            {cajaAbiertaHoy && (
-                                <button
-                                    onClick={() => setMostrarModalImpresion(true)}
-                                    className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
-                                >
-                                    🖨️ Imprimir Movimientos
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Resumen de Filtros Activos */}
-                        {(filtroFechaDesde ||
-                            filtroFechaHasta ||
-                            filtroSigno !== 'todos' ||
-                            busquedaDescripcion ||
-                            montoMin ||
-                            montoMax ||
-                            filtroUsuario ||
-                            filtroDocumento ||
-                            filtroEstadoVenta !== 'todos') && (
-                            <div className="mt-4 border-t border-gray-300 pt-4 dark:border-gray-600">
-                                <div className="flex items-center justify-between">
-                                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                                        ✅ <strong className="text-gray-900 dark:text-white">{movimientosAMostrar.length}</strong> resultado
-                                        {movimientosAMostrar.length !== 1 ? 's' : ''} de{' '}
-                                        <strong className="text-gray-900 dark:text-white">{movimientosHoy.length}</strong> movimientos
-                                    </div>
-                                    {movimientosAMostrar.length === 0 && (
-                                        <div className="text-sm text-red-600 dark:text-red-400">⚠️ Sin resultados</div>
-                                    )}
-                                </div>
-                                {movimientosAMostrar.length > 0 && (
-                                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                        {movimientosAMostrar.length === movimientosHoy.length
-                                            ? 'Mostrando todos los movimientos'
-                                            : `Filtrado: ${((movimientosAMostrar.length / movimientosHoy.length) * 100).toFixed(0)}% de los movimientos`}
-                                    </div>
-                                )}
-                            </div>
+                        </span>
+                    ))}
+                    {filtrosActivos.length > 1 && (
+                        <button onClick={limpiarFiltros} className="text-xs font-medium text-red-600 hover:underline dark:text-red-400">
+                            Limpiar todo
+                        </button>
+                    )}
+                    <span className="text-gray-600 dark:text-gray-300">
+                        <strong>{movimientosAMostrar.length}</strong> de {movimientosHoy.length} movimientos
+                        {movimientosAMostrar.length > 0 && (
+                            <>
+                                {' · '}
+                                <span className="text-green-700 dark:text-green-400">Entradas {formatCurrency(totalesFiltrados.entradas)}</span>
+                                {' · '}
+                                <span className="text-red-700 dark:text-red-400">Salidas {formatCurrency(totalesFiltrados.salidas)}</span>
+                                {' · '}
+                                <strong>Neto {formatCurrency(totalesFiltrados.entradas - totalesFiltrados.salidas)}</strong>
+                            </>
                         )}
-                    </div>
+                    </span>
+                </div>
+                )}
+                {movimientosAMostrar.length === 0 && (
+                    <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Ningún movimiento coincide con los filtros.</p>
                 )}
 
-                {/* ✅ NUEVO: Resumen por tipo de operación */}
-                {totalesPorTipo.length >= 1 && (
-                    <div className="mb-2 mt-2">
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {totalesPorTipo.map(({ tipo, total, count }) => {
-                                // Obtener el código del tipo operación para usar los colores
-                                const tipoOperacionMatch = movimientosHoy.find((m) => m.tipo_operacion.nombre === tipo);
-                                const codigo = tipoOperacionMatch?.tipo_operacion.codigo || tipo.toUpperCase();
-                                const esIngreso = total > 0;
-
-                                console.log('Movimientos del día - Resumen por tipo:', { tipo, total, count, codigo, esIngreso });
-
-                                // ✅ ACTUALIZADO (2026-04-30): Para VENTA, mostrar desglose de tipos de pago
-                                const esVenta = tipo === 'Venta' || tipo === 'VENTA';
-                                const mostrarDesglose = esVenta && detallesPagoDesglosado && detallesPagoDesglosado.length > 0;
-
-                                return (
-                                    <div
-                                        key={tipo}
-                                        className={`cursor-pointer rounded-lg border-l-4 p-2 transition hover:shadow-md ${
-                                            getTipoOperacionColor(codigo).includes('bg-green')
-                                                ? 'border-green-400 bg-green-50 dark:bg-green-900/20'
-                                                : getTipoOperacionColor(codigo).includes('bg-red')
-                                                  ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
-                                                  : getTipoOperacionColor(codigo).includes('bg-blue')
-                                                    ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                                                    : getTipoOperacionColor(codigo).includes('bg-yellow')
-                                                      ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
-                                                      : getTipoOperacionColor(codigo).includes('bg-orange')
-                                                        ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20'
-                                                        : getTipoOperacionColor(codigo).includes('bg-purple')
-                                                          ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20'
-                                                          : getTipoOperacionColor(codigo).includes('bg-indigo')
-                                                            ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
-                                                            : 'border-gray-400 bg-gray-50 dark:bg-gray-900/20'
-                                        }`}
-                                        onClick={() => setFiltroTipo(filtroTipo === tipo ? null : tipo)}
-                                    >
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <p className="text-xs font-medium tracking-wide text-gray-600 uppercase dark:text-gray-400">{tipo}</p>
-                                                <p className={`mt-1 text-lg font-bold ${getMovimientoColor(total)}`}>
-                                                    {formatCurrency(Math.abs(total))}
-                                                </p>
-
-                                                {/* ✅ NUEVO (2026-04-30): Mostrar desglose de tipos de pago para VENTA */}
-                                                {mostrarDesglose && (
-                                                    <div className="mt-1 space-y-1 border-t border-gray-300 pt-2 dark:border-gray-600">
-                                                        {/* ✅ ACTUALIZADO (2026-05-03): SOLO mostrar EFECTIVO + TRANSFERENCIA (CRÉDITO tiene su propio card) */}
-                                                        {detallesPagoDesglosado
-                                                            .filter(
-                                                                (detalle) => detalle.codigo.toUpperCase() === 'EFECTIVO' || detalle.codigo.toUpperCase() === 'TRANSFERENCIA/QR',
-                                                            )
-                                                            .map((detalle, idx) => (
-                                                                <div key={idx} className="flex items-center justify-between text-xs">
-                                                                    <span className="text-gray-600 dark:text-gray-400">{detalle.tipo}</span>
-                                                                    <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                                                        {formatCurrency(detalle.total)}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className={`text-2xl ${esIngreso ? '📈' : '📉'}`}></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
+                <div className="overflow-x-auto mt-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
                             <tr>
                                 <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-400">Id</th>
                                 <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-400">Tipo Operación</th>
@@ -875,8 +819,8 @@ export function MovimientosDelDiaTable({
                                 <th className="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase dark:text-gray-400">-</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                            {movimientosAMostrar.map((movimiento) => (
+                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800 rounded-lg">
+                            {movimientosPagina.map((movimiento) => (
                                 <React.Fragment key={movimiento.id}>
                                     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                         <td className="px-1 py-2 text-sm text-gray-900 dark:text-gray-100">
@@ -892,9 +836,17 @@ export function MovimientosDelDiaTable({
                                                         {movimiento.venta_id && (
                                                             <span className="mr-2 inline-block">
                                                                 {' '}
-                                                                <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                                                    Vta #{movimiento.venta_id}
-                                                                </span>
+                                                                {/* Abre la venta (ventas.show) en otra pestaña */}
+                                                                <a
+                                                                    href={`/ventas/${movimiento.venta_id}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="font-semibold text-blue-700 hover:underline dark:text-blue-300"
+                                                                    title="Ver la venta en otra pestaña"
+                                                                >
+                                                                    Vta #{movimiento.venta_id} ↗
+                                                                </a>
                                                             </span>
                                                         )}
                                                         {movimiento.pago_id && (
@@ -1088,21 +1040,70 @@ export function MovimientosDelDiaTable({
                     </table>
                 </div>
 
-                {/* ✅ NUEVO: Modal de Impresión (Todos los movimientos) */}
-                {cajaAbiertaHoy && (
-                    <OutputSelectionModal
-                        isOpen={mostrarModalImpresion}
-                        onClose={() => setMostrarModalImpresion(false)}
-                        documentoId={cajaAbiertaHoy.id}
-                        tipoDocumento="caja"
-                        printType="movimientos"
-                        documentoInfo={{
-                            numero: `Apertura #${cajaAbiertaHoy.id}`,
-                            fecha: new Date(cajaAbiertaHoy.fecha).toLocaleDateString('es-ES'),
-                            monto: cajaAbiertaHoy.monto_apertura,
-                        }}
-                    />
+                {/* Paginación */}
+                {movimientosAMostrar.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="flex items-center gap-2">
+                            <span>
+                                {(paginaActual - 1) * porPagina + 1}–{Math.min(paginaActual * porPagina, movimientosAMostrar.length)} de{' '}
+                                <strong>{movimientosAMostrar.length}</strong>
+                            </span>
+                            <select
+                                value={porPagina}
+                                onChange={(e) => cambiarPorPagina(Number(e.target.value))}
+                                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                aria-label="Movimientos por página"
+                            >
+                                {[10, 25, 50, 100].map((n) => (
+                                    <option key={n} value={n}>
+                                        {n} por página
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        {totalPaginas > 1 && (
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => setPagina(1)}
+                                    disabled={paginaActual === 1}
+                                    className="rounded-md px-2 py-1 hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-gray-700"
+                                    aria-label="Primera página"
+                                >
+                                    «
+                                </button>
+                                <button
+                                    onClick={() => setPagina(paginaActual - 1)}
+                                    disabled={paginaActual === 1}
+                                    className="rounded-md px-2 py-1 hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-gray-700"
+                                    aria-label="Página anterior"
+                                >
+                                    ‹ Anterior
+                                </button>
+                                <span className="px-2">
+                                    Página <strong>{paginaActual}</strong> de {totalPaginas}
+                                </span>
+                                <button
+                                    onClick={() => setPagina(paginaActual + 1)}
+                                    disabled={paginaActual === totalPaginas}
+                                    className="rounded-md px-2 py-1 hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-gray-700"
+                                    aria-label="Página siguiente"
+                                >
+                                    Siguiente ›
+                                </button>
+                                <button
+                                    onClick={() => setPagina(totalPaginas)}
+                                    disabled={paginaActual === totalPaginas}
+                                    className="rounded-md px-2 py-1 hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-gray-700"
+                                    aria-label="Última página"
+                                >
+                                    »
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 )}
+
+                {/* La impresión de todos los movimientos está en el botón "📊 Movimientos" de la página */}
 
                 {/* ✅ NUEVO: Modal de Impresión (Movimiento Individual) */}
                 {movimientoSeleccionado && (

@@ -9,6 +9,7 @@ use App\Services\FraccionamientoMasivoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class FraccionamientoMasivoApiController extends Controller
 {
@@ -23,15 +24,17 @@ class FraccionamientoMasivoApiController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            // Almacén y productos solo de la empresa del usuario (antes se aceptaba el ID de cualquier empresa)
+            $empresaId = auth()->user()?->empresa_id;
             $validated = $request->validate([
-                'almacen_id' => 'required|integer|exists:almacenes,id',
+                'almacen_id' => ['required', 'integer', Rule::exists('almacenes', 'id')->where('empresa_id', $empresaId)],
                 'sector_id' => 'nullable|integer',  // Ya no se valida contra base de datos (se obtiene del servicio)
                 'razon' => 'required|in:fraccionamiento_manual,fraccionamiento_compra,reagrupamiento,ajuste_inventario',
                 'notas' => 'nullable|string|max:1000',
                 'detalles' => 'required|array|min:1',
-                'detalles.*.producto_padre_id' => 'required|integer|exists:productos,id',
+                'detalles.*.producto_padre_id' => ['required', 'integer', Rule::exists('productos', 'id')->where('empresa_id', $empresaId)],
                 'detalles.*.cantidad_padre' => 'required|numeric|min:0.01',
-                'detalles.*.producto_hijo_id' => 'required|integer|exists:productos,id',
+                'detalles.*.producto_hijo_id' => ['required', 'integer', Rule::exists('productos', 'id')->where('empresa_id', $empresaId)],
                 'detalles.*.cantidad_hijo' => 'required|numeric|min:0.01',
                 'detalles.*.factor_conversion' => 'nullable|numeric|min:0.01',
             ]);

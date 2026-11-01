@@ -311,18 +311,25 @@ class ReporteInventarioApiController extends Controller
                 $data['solo_con_stock'] = filter_var($data['solo_con_stock'], FILTER_VALIDATE_BOOLEAN);
             }
 
-            // Validar parámetros
+            // Validar parámetros: almacén, categoría y producto deben ser de la empresa del usuario
+            $empresaId = auth()->user()?->empresa_id;
             $validated = \Illuminate\Support\Facades\Validator::make($data, [
                 'tipo_reporte' => 'required|in:stock_actual,movimientos,stock_valorizado,productos_bajo_minimo,productos_sin_movimiento,vencimientos,kardex,rotacion_inventario',
-                'formato' => 'required|in:excel,csv,80mm,58mm',
-                'almacen_id' => 'nullable|integer|exists:almacenes,id',
-                'categoria_id' => 'nullable|integer|exists:categorias,id',
+                'formato' => 'required|in:excel,csv,80mm,58mm,a4',
+                'almacen_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('almacenes', 'id')->where('empresa_id', $empresaId)],
+                'categoria_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('categorias', 'id')->where('empresa_id', $empresaId)],
                 'fecha_desde' => 'nullable|date',
                 'fecha_hasta' => 'nullable|date',
                 'incluir_sin_movimientos' => 'nullable|boolean',
                 'solo_con_stock' => 'nullable|boolean',
-                'producto_id' => 'nullable|integer|exists:productos,id',
+                'producto_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('productos', 'id')->where('empresa_id', $empresaId)],
+            ], [
+                'producto_id.exists' => 'El producto no existe en tu empresa.',
             ])->validate();
+
+            if ($validated['tipo_reporte'] === 'kardex' && empty($validated['producto_id'])) {
+                return response()->json(['success' => false, 'message' => 'Indica el producto para el kardex.'], 422);
+            }
 
             // Inyectar servicio
             $servicio = new ReporteInventarioService();
@@ -341,10 +348,11 @@ class ReporteInventarioApiController extends Controller
 
             // Generar archivo según formato
             return match ($validated['formato']) {
-                'excel' => $this->generarExcel($validated['tipo_reporte'], $datos),
+                'excel' => $this->generarExcel($validated['tipo_reporte'], $datos, $validated),
                 'csv' => $this->generarCsv($validated['tipo_reporte'], $datos),
                 '80mm' => $this->generarImpresion($validated['tipo_reporte'], $datos, '80'),
                 '58mm' => $this->generarImpresion($validated['tipo_reporte'], $datos, '58'),
+                'a4' => $this->generarA4($validated['tipo_reporte'], $datos, $validated),
             };
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -368,52 +376,172 @@ class ReporteInventarioApiController extends Controller
         }
     }
 
-    /**
-     * Generar Excel - Actualmente se genera en formato CSV
-     * por compatibilidad con la versión instalada de Laravel Excel
-     */
-    private function generarExcel(string $tipoReporte, $datos)
+    // Columnas numéricas (alineadas a la derecha y con formato numérico en Excel/A4)
+    private const COLUMNAS_NUMERICAS = [
+        'cantidad', 'cantidad_disponible', 'cantidad_reservada', 'precio_compra', 'precio_venta', 'valor_compra', 'valor_venta',
+        'stock_minimo', 'total_productos', 'productos_sin_costo', 'cantidad_total', 'valor_compra_total', 'valor_venta_total', 'margen_bruto',
+        'margen_porcentaje', 'stock_actual', 'falta', 'cantidad_stock', 'valor_inmobilizado', 'dias_sin_movimiento',
+        'dias_para_vencer', 'valor_total', 'saldo_lote', 'total_movimientos', 'cantidad_vendida', 'cantidad_total_movida',
+        'promedio_por_movimiento',
+    ];
+
+    // Conteos: sin decimales en el Excel
+    private const COLUMNAS_ENTERAS = ['total_productos', 'productos_sin_costo', 'dias_sin_movimiento', 'dias_para_vencer', 'total_movimientos'];
+
+    // Columnas que se suman en la fila TOTAL del Excel y el A4
+    private const COLUMNAS_TOTAL = [
+        'valor_compra', 'valor_venta', 'total_productos', 'productos_sin_costo', 'cantidad_total', 'valor_compra_total', 'valor_venta_total',
+        'margen_bruto', 'falta', 'valor_inmobilizado', 'valor_total', 'cantidad_vendida',
+    ];
+
+    /** Filas listas para exportar: solo las columnas del reporte, en su orden */
+    private function filasExportables(string $tipoReporte, $datos): array
     {
-        // Generar como CSV en lugar de Excel por problemas de compatibilidad
-        // El navegador puede abrir CSV y el usuario puede guardarlo como Excel
-        \Log::info('Excel requested, generating as CSV for compatibility');
-        return $this->generarCsv($tipoReporte, $datos);
+        $columnas = ReporteInventarioService::COLUMNAS[$tipoReporte];
+
+        return collect($datos)->map(fn ($fila) => array_map(fn ($clave) => $fila[$clave] ?? '', array_keys($columnas)))->all();
+    }
+
+    private function totales(string $tipoReporte, $datos): array
+    {
+        $totales = [];
+        foreach (array_keys(ReporteInventarioService::COLUMNAS[$tipoReporte]) as $clave) {
+            if (in_array($clave, self::COLUMNAS_TOTAL, true)) {
+                $totales[$clave] = collect($datos)->sum($clave);
+            }
+        }
+
+        return $totales;
+    }
+
+    /** Texto de los filtros aplicados (encabezado del Excel y el A4) */
+    private function filtrosTexto(array $filtros): array
+    {
+        $texto = [];
+        $texto[] = ! empty($filtros['almacen_id']) ? 'Almacén: ' . (\App\Models\Almacen::porEmpresa()->find($filtros['almacen_id'])?->nombre ?? $filtros['almacen_id']) : 'Todos los almacenes';
+        if (! empty($filtros['categoria_id'])) {
+            $texto[] = 'Categoría: ' . (\App\Models\Categoria::porEmpresa()->find($filtros['categoria_id'])?->nombre ?? $filtros['categoria_id']);
+        }
+        if (! empty($filtros['producto_id'])) {
+            $texto[] = 'Producto: #' . $filtros['producto_id'] . ' ' . (\App\Models\Producto::find($filtros['producto_id'])?->nombre ?? '');
+        }
+        if (! empty($filtros['fecha_desde']) || ! empty($filtros['fecha_hasta'])) {
+            $texto[] = 'Período: ' . (! empty($filtros['fecha_desde']) ? \Carbon\Carbon::parse($filtros['fecha_desde'])->format('d/m/Y') : '…')
+                . ' al ' . (! empty($filtros['fecha_hasta']) ? \Carbon\Carbon::parse($filtros['fecha_hasta'])->format('d/m/Y') : 'hoy');
+        }
+
+        return $texto;
     }
 
     /**
-     * Generar CSV
+     * Excel (.xlsx) con encabezado, filtros, autofiltro y fila de totales
+     */
+    private function generarExcel(string $tipoReporte, $datos, array $filtros)
+    {
+        $columnas = ReporteInventarioService::COLUMNAS[$tipoReporte];
+        $ultima   = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($columnas));
+
+        $libro = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $hoja  = $libro->getActiveSheet();
+        $hoja->setTitle(mb_substr(ReporteInventarioService::TITULOS[$tipoReporte], 0, 31));
+        $hoja->setCellValue('A1', ReporteInventarioService::TITULOS[$tipoReporte]);
+        $hoja->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $hoja->setCellValue('A2', implode(' · ', $this->filtrosTexto($filtros)));
+        $hoja->fromArray(array_values($columnas), null, 'A4');
+        $hoja->getStyle("A4:{$ultima}4")->getFont()->setBold(true);
+
+        $filas = $this->filasExportables($tipoReporte, $datos);
+        if ($filas) {
+            $hoja->fromArray($filas, null, 'A5', true);
+        }
+        $fin = 4 + count($filas);
+
+        if ($filas && ($totales = $this->totales($tipoReporte, $datos))) {
+            $fin++;
+            $hoja->setCellValue("A{$fin}", 'TOTAL');
+            foreach (array_keys($columnas) as $i => $clave) {
+                if (array_key_exists($clave, $totales)) {
+                    $hoja->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $fin, $totales[$clave]);
+                }
+            }
+            $hoja->getStyle("A{$fin}:{$ultima}{$fin}")->getFont()->setBold(true);
+        }
+
+        foreach (array_keys($columnas) as $i => $clave) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1);
+            if (in_array($clave, self::COLUMNAS_NUMERICAS, true)) {
+                $hoja->getStyle("{$col}5:{$col}" . max(5, $fin))->getNumberFormat()->setFormatCode(in_array($clave, self::COLUMNAS_ENTERAS, true) ? '#,##0' : '#,##0.00');
+            }
+            $hoja->getColumnDimension($col)->setAutoSize(count($filas) <= 2000); // Con muchas filas el autoajuste es muy lento
+        }
+        $hoja->freezePane('A5');
+        $hoja->setAutoFilter("A4:{$ultima}" . max(4, 4 + count($filas)));
+
+        $nombre = 'reporte_' . $tipoReporte . '_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($libro) {
+            (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($libro))->save('php://output');
+        }, $nombre, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
+    /**
+     * CSV con BOM UTF-8 (para que Excel muestre bien tildes y ñ)
      */
     private function generarCsv(string $tipoReporte, $datos)
     {
-        $csv = '';
-
-        // Encabezados basados en tipo de reporte
-        $encabezados = match ($tipoReporte) {
-            'stock_actual' => ['Almacén', 'Código', 'Nombre Producto', 'Cantidad', 'Disponible', 'Reservado', 'Precio Compra', 'Precio Venta', 'Valor Compra', 'Valor Venta', 'Stock Mínimo', 'Fecha Actualización'],
-            'movimientos' => ['Fecha', 'Almacén', 'Código', 'Nombre Producto', 'Tipo Movimiento', 'Cantidad', 'Motivo', 'Usuario', 'Referencia'],
-            'stock_valorizado' => ['Almacén', 'Código', 'Nombre Producto', 'Cantidad', 'Valor Compra', 'Valor Venta', 'Margen Bruto', 'Margen %'],
-            'productos_bajo_minimo' => ['Código', 'Nombre Producto', 'Almacén', 'Stock Actual', 'Stock Mínimo', 'Falta', 'Precio Compra', 'Precio Venta', 'Categoría'],
-            'productos_sin_movimiento' => ['Código', 'Nombre Producto', 'Almacén', 'Categoría', 'Cantidad Stock', 'Precio Compra', 'Precio Venta', 'Valor Inmobilizado', 'Días Sin Movimiento', 'Última Actualización'],
-            'vencimientos' => ['Código', 'Nombre Producto', 'Almacén', 'Categoría', 'Cantidad', 'Fecha Vencimiento', 'Días para Vencer', 'Estado', 'Precio Compra', 'Valor Total'],
-            'kardex' => ['Fecha', 'Almacén', 'Tipo Movimiento', 'Cantidad', 'Motivo', 'Usuario', 'Referencia', 'Observaciones'],
-            'rotacion_inventario' => ['Código', 'Nombre Producto', 'Categoría', 'Total Movimientos', 'Cantidad Total Movida', 'Promedio por Movimiento', 'Última Fecha Movimiento', 'Clasificación Rotación'],
-        };
-
-        // Agregar encabezados
-        $csv .= implode(',', $encabezados) . "\n";
-
-        // Agregar datos
-        foreach ($datos as $fila) {
-            $valores = array_values((array) $fila);
-            $csv .= implode(',', array_map(function ($val) {
-                $val = str_replace('"', '""', $val);
-                return '"' . $val . '"';
-            }, $valores)) . "\n";
-        }
+        $lineas = [array_values(ReporteInventarioService::COLUMNAS[$tipoReporte]), ...$this->filasExportables($tipoReporte, $datos)];
+        $csv = "\xEF\xBB\xBF" . implode("\n", array_map(
+            fn ($fila) => implode(',', array_map(fn ($v) => '"' . str_replace('"', '""', (string) $v) . '"', $fila)),
+            $lineas
+        )) . "\n";
 
         return response($csv)
             ->header('Content-Type', 'text/csv; charset=utf-8')
             ->header('Content-Disposition', 'attachment; filename=reporte_' . $tipoReporte . '_' . now()->format('Y-m-d_H-i-s') . '.csv');
+    }
+
+    /**
+     * PDF A4 con la tabla del reporte (horizontal si tiene muchas columnas)
+     */
+    private function generarA4(string $tipoReporte, $datos, array $filtros)
+    {
+        $limite  = 1000; // DomPDF tarda ~20 ms por fila: más que esto conviene el Excel
+        $datos   = collect($datos);
+        $empresa = \App\Models\Empresa::find(auth()->user()?->empresa_id) ?? new \App\Models\Empresa();
+        $columnas = ReporteInventarioService::COLUMNAS[$tipoReporte];
+
+        $pdf = Pdf::loadView('impresion.reportes.inventario-a4', [
+            'empresa'               => $empresa,
+            'logo_principal_base64' => $this->logoBase64($empresa->logo_principal ?? null),
+            'titulo'                => ReporteInventarioService::TITULOS[$tipoReporte],
+            'columnas'              => $columnas,
+            'numericas'             => self::COLUMNAS_NUMERICAS,
+            'filas'                 => $datos->take($limite)->all(),
+            'totales'               => $this->totales($tipoReporte, $datos),
+            'filtros_texto'         => $this->filtrosTexto($filtros),
+            'truncado'              => $datos->count() > $limite,
+            'total_filas'           => $datos->count(),
+            'usuario'               => auth()->user()?->name ?? 'Sistema',
+            'fecha_impresion'       => now(),
+        ])->setPaper('a4', count($columnas) > 8 ? 'landscape' : 'portrait');
+
+        return $pdf->download('reporte_' . $tipoReporte . '_A4_' . now()->format('Y-m-d_His') . '.pdf');
+    }
+
+    private function logoBase64(?string $logoUrl): ?string
+    {
+        if (! $logoUrl) {
+            return null;
+        }
+        if (str_starts_with($logoUrl, 'data:')) {
+            return $logoUrl;
+        }
+        $ruta = public_path($logoUrl);
+        if (! is_file($ruta)) {
+            return null;
+        }
+
+        return 'data:' . (mime_content_type($ruta) ?: 'image/png') . ';base64,' . base64_encode(file_get_contents($ruta));
     }
 
     /**
@@ -422,7 +550,7 @@ class ReporteInventarioApiController extends Controller
     private function generarImpresion(string $tipoReporte, $datos, string $formato)
     {
         $sufijo = $formato === '80' ? '80' : '58';
-        $tipoReporteFormato = str_replace('_', '-', $tipoReporte);
+        $tipoReporteFormato = $tipoReporte === 'rotacion_inventario' ? 'rotacion' : str_replace('_', '-', $tipoReporte); // Las vistas de rotación se llaman rotacion-80/58
         $vista = "impresion.reportes.{$tipoReporteFormato}-{$sufijo}";
 
         try {
@@ -437,8 +565,8 @@ class ReporteInventarioApiController extends Controller
                 throw new \Exception("La vista '{$vista}' no existe. Reportes disponibles: stock_actual, movimientos, stock_valorizado, productos_bajo_minimo, productos_sin_movimiento, vencimientos, kardex, rotacion");
             }
 
-            // Obtener configuración de empresa
-            $empresa = \App\Models\Empresa::first() ?? new \App\Models\Empresa();
+            // Empresa del usuario (antes Empresa::first(): el ticket podía salir con el nombre de otra empresa)
+            $empresa = \App\Models\Empresa::find(auth()->user()?->empresa_id) ?? new \App\Models\Empresa();
             $usuario = auth()->user();
 
             $pdf = Pdf::loadView($vista, [

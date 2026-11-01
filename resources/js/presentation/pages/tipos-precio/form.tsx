@@ -43,11 +43,12 @@ interface PageProps {
     tipo_precio?: TipoPrecio;
     colores_disponibles: ColorOption[];
     puede_eliminar?: boolean;
+    almacenes_venta?: Array<{ id: number; nombre: string }>; // Para enlazar el precio con su almacén (ej. FRIO → REFRIGERADOR)
 }
 
 const iconosDisponibles = ['📦', '💰', '🏢', '🎉', '🧾', '⭐', '🔥', '💎', '🎯', '📈', '💵', '🏷️', '🛍️', '🎁', '⚡', '🌟', '🔖', '💳', '🎊', '🏆'];
 
-export default function TipoPrecioForm({ tipo_precio, colores_disponibles, puede_eliminar }: PageProps) {
+export default function TipoPrecioForm({ tipo_precio, colores_disponibles, puede_eliminar, almacenes_venta = [] }: PageProps) {
     const isEditing = !!tipo_precio?.id;
 
     const { data, setData, post, put, processing, errors, recentlySuccessful } = useForm<TipoPrecioFormData>({
@@ -62,6 +63,7 @@ export default function TipoPrecioForm({ tipo_precio, colores_disponibles, puede
         es_precio_base: tipo_precio?.es_precio_base ?? false,
         orden: tipo_precio?.orden || 0,
         activo: tipo_precio?.activo ?? true,
+        almacen_id: tipo_precio?.almacen_id ?? null,
         porcentaje_ganancia: tipo_precio?.porcentaje_ganancia ? parseFloat(String(tipo_precio.porcentaje_ganancia)) : 0,
         configuracion: {
             icono: tipo_precio?.configuracion?.icono || '💰',
@@ -334,6 +336,33 @@ export default function TipoPrecioForm({ tipo_precio, colores_disponibles, puede
                                                 </p>
                                             </div>
                                         </div>
+
+                                        {/* Almacén del que descuenta este precio en ventas (solo si hay más de un almacén de venta) */}
+                                        {almacenes_venta.length > 1 && (
+                                            <div className="space-y-1">
+                                                <Label htmlFor="almacen_id" className="font-medium">
+                                                    Descuenta del almacén
+                                                </Label>
+                                                <select
+                                                    id="almacen_id"
+                                                    value={data.almacen_id ? String(data.almacen_id) : ''}
+                                                    onChange={(e) => setData('almacen_id', e.target.value ? Number(e.target.value) : null)}
+                                                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                                                >
+                                                    <option value="">Almacén de la empresa (por defecto)</option>
+                                                    {almacenes_venta.map((a) => (
+                                                        <option key={a.id} value={a.id}>
+                                                            {a.nombre}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                    Al vender con este precio, la línea descuenta de este almacén (ej. FRIO → REFRIGERADOR). Si no
+                                                    alcanza, completa con el almacén de la empresa.
+                                                </p>
+                                                {errors.almacen_id && <p className="text-xs text-red-600">{errors.almacen_id}</p>}
+                                            </div>
+                                        )}
 
                                         <div className="flex items-center space-x-2">
                                             <Checkbox id="activo" checked={data.activo} onCheckedChange={(checked) => setData('activo', !!checked)} />

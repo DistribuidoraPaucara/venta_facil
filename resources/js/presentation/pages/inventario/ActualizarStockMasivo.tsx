@@ -52,6 +52,7 @@ interface Producto {
   unidad_nombre: string;              // ✅ NUEVO
   conversiones: any[];                // ✅ NUEVO
   stocks?: StockRegistro[];           // Registros de stock (sector/lote) de este almacén
+  proveedores?: Array<{ id: number; nombre: string }>; // Proveedores del producto (el principal primero)
 }
 
 interface CambioTabla {
@@ -80,6 +81,7 @@ export default function ActualizarStockMasivo() {
   const [sectorFiltro, setSectorFiltro] = useState('');
   const [almacenFiltro, setAlmacenFiltro] = useState('');
   const [fraccionadoFiltro, setFraccionadoFiltro] = useState<'' | 'si' | 'no'>('');
+  const [proveedorFiltro, setProveedorFiltro] = useState(''); // '' = todos, 'sin' = sin proveedor, o id del proveedor
   const [productoAFraccionar, setProductoAFraccionar] = useState<Producto | null>(null);
   const [productoATransferir, setProductoATransferir] = useState<Producto | null>(null);
   const [almacenesEmpresa, setAlmacenesEmpresa] = useState<{ id: number; nombre: string }[]>([]);
@@ -142,6 +144,13 @@ export default function ActualizarStockMasivo() {
       resultado = resultado.filter(p => p.almacen === almacenFiltro);
     }
 
+    // Filtrar por proveedor (cualquiera de sus proveedores, no solo el principal)
+    if (proveedorFiltro === 'sin') {
+      resultado = resultado.filter(p => !p.proveedores?.length);
+    } else if (proveedorFiltro) {
+      resultado = resultado.filter(p => p.proveedores?.some(pr => String(pr.id) === proveedorFiltro));
+    }
+
     // Filtrar por fraccionado
     if (fraccionadoFiltro) {
       resultado = resultado.filter(p => !!p.es_fraccionado === (fraccionadoFiltro === 'si'));
@@ -160,7 +169,24 @@ export default function ActualizarStockMasivo() {
     }
 
     return resultado;
-  }, [productos, busqueda, sectorFiltro, almacenFiltro, fraccionadoFiltro]);
+  }, [productos, busqueda, sectorFiltro, almacenFiltro, fraccionadoFiltro, proveedorFiltro]);
+
+  // Opciones del filtro de proveedor: los de los productos cargados, con cuántos productos tiene cada uno
+  const opcionesProveedor = useMemo(() => {
+    const porId = new Map<number, { id: number; nombre: string; productos: Set<number> }>();
+    const sinProveedor = new Set<number>();
+    for (const p of productos) {
+      if (!p.proveedores?.length) sinProveedor.add(p.id);
+      for (const pr of p.proveedores ?? []) {
+        if (!porId.has(pr.id)) porId.set(pr.id, { id: pr.id, nombre: pr.nombre, productos: new Set() });
+        porId.get(pr.id)!.productos.add(p.id);
+      }
+    }
+    return {
+      proveedores: [...porId.values()].sort((a, b) => a.nombre.localeCompare(b.nombre)),
+      sinProveedor: sinProveedor.size,
+    };
+  }, [productos]);
 
   // Índice para mostrar el stock de los productos hijos de un fraccionado
   const filasPorKey = useMemo(() => new Map(productos.map(p => [filaKey(p), p])), [productos]);
@@ -174,7 +200,7 @@ export default function ActualizarStockMasivo() {
   // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [busqueda, sectorFiltro, almacenFiltro, fraccionadoFiltro]);
+  }, [busqueda, sectorFiltro, almacenFiltro, fraccionadoFiltro, proveedorFiltro]);
 
   // Cargar todos los productos
   const cargarProductos = async () => {
@@ -460,9 +486,9 @@ export default function ActualizarStockMasivo() {
               </div>
             ) : (
               <div>
-                {/* Buscador y Filtros de Sector y Almacén */}
-                <div className="mb-4 flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1 min-w-0">
+                {/* Buscador (ancho completo) y debajo los filtros de sector, almacén, proveedor y fraccionados */}
+                <div className="mb-4 space-y-2">
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 md:w-5 h-4 md:h-5 text-gray-400 flex-shrink-0" />
                     <input
                       type="text"
@@ -480,6 +506,7 @@ export default function ActualizarStockMasivo() {
                       </button>
                     )}
                   </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   <select
                     value={sectorFiltro}
                     onChange={(e) => setSectorFiltro(e.target.value)}
@@ -505,6 +532,20 @@ export default function ActualizarStockMasivo() {
                     ))}
                   </select>
                   <select
+                    value={proveedorFiltro}
+                    onChange={(e) => setProveedorFiltro(e.target.value)}
+                    title="Productos que se le compran a ese proveedor (no solo los que lo tienen como principal)"
+                    className="px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Todos los proveedores</option>
+                    {opcionesProveedor.proveedores.map((pr) => (
+                      <option key={pr.id} value={String(pr.id)}>
+                        {pr.nombre} ({pr.productos.size})
+                      </option>
+                    ))}
+                    {opcionesProveedor.sinProveedor > 0 && <option value="sin">Sin proveedor ({opcionesProveedor.sinProveedor})</option>}
+                  </select>
+                  <select
                     value={fraccionadoFiltro}
                     onChange={(e) => setFraccionadoFiltro(e.target.value as '' | 'si' | 'no')}
                     className="px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -513,15 +554,22 @@ export default function ActualizarStockMasivo() {
                     <option value="si">✂️ Solo fraccionados</option>
                     <option value="no">No fraccionados</option>
                   </select>
+                  </div>
                 </div>
 
                 {/* Contador de resultados y paginación info */}
-                {(busqueda || sectorFiltro || almacenFiltro || fraccionadoFiltro || productosFiltrados.length > 0) && (
+                {(busqueda || sectorFiltro || almacenFiltro || fraccionadoFiltro || proveedorFiltro || productosFiltrados.length > 0) && (
                   <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs md:text-sm">
                     <div className="text-gray-600 dark:text-gray-400">
                       Mostrando {indiceInicio + 1}-{Math.min(indiceFin, productosFiltrados.length)} de {productosFiltrados.length} productos
                       {sectorFiltro && <span> • Sector: {sectorFiltro}</span>}
                       {almacenFiltro && <span> • Almacén: {almacenFiltro}</span>}
+                      {proveedorFiltro && (
+                        <span>
+                          {' '}• Proveedor:{' '}
+                          {proveedorFiltro === 'sin' ? 'Sin proveedor' : opcionesProveedor.proveedores.find((pr) => String(pr.id) === proveedorFiltro)?.nombre}
+                        </span>
+                      )}
                       {fraccionadoFiltro && <span> • {fraccionadoFiltro === 'si' ? 'Solo fraccionados' : 'No fraccionados'}</span>}
                     </div>
                     {totalPaginas > 1 && (
@@ -619,6 +667,12 @@ export default function ActualizarStockMasivo() {
                                   </Button>
                                 )}
                               </div>
+                              {/* Proveedores (el principal primero) */}
+                              {!!producto.proveedores?.length && (
+                                <div className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400" title="Proveedores del producto">
+                                  🚚 {producto.proveedores.map((pr) => pr.nombre).join(', ')}
+                                </div>
+                              )}
                               {/* Productos hijos: conversiones que apuntan a otro producto */}
                               {producto.es_fraccionado && producto.conversiones?.some((c: any) => c.producto_hijo_id) && (
                                 <ul className="mt-1 space-y-0.5 text-[11px] text-gray-500 dark:text-gray-400">

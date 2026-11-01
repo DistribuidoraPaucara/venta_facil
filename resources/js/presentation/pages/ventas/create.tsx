@@ -35,6 +35,7 @@ interface TipoPrecio {
     id: number;
     codigo: string;
     nombre: string;
+    almacen_id?: number | null; // Almacén del que descuenta este precio (ej. FRIO → REFRIGERADOR)
 }
 
 interface PageProps extends InertiaPageProps {
@@ -47,6 +48,7 @@ interface PageProps extends InertiaPageProps {
     tipos_documento: TipoDocumento[];
     tipos_precio: TipoPrecio[]; // ✅ NUEVO: Tipos de precio para asignar por defecto
     almacen_id_empresa: number; // ✅ NUEVO: Almacén de la empresa principal
+    almacenes_venta?: Array<{ id: number; nombre: string }>; // Almacenes elegibles por línea (ej. SALA y REFRIGERADOR)
     es_farmacia: boolean; // ✅ NUEVO: Indicador para mostrar/ocultar campos de medicamentos
     auth: {
         user: {
@@ -67,6 +69,7 @@ export default function VentaForm() {
         tipos_documento,
         tipos_precio,
         almacen_id_empresa,
+        almacenes_venta = [],
         es_farmacia,
         logistica_envios,
         auth,
@@ -721,14 +724,64 @@ export default function VentaForm() {
         setClienteSearchQuery('');
     };
 
+    // Almacén del que descuenta un tipo de precio (ej. FRIO → REFRIGERADOR); si no tiene o no es de venta, el de la empresa
+    const almacenDeTipoPrecio = (tipoPrecioId: number | string | null | undefined): number => {
+        const almacenTipo = tipos_precio?.find((tp) => Number(tp.id) === Number(tipoPrecioId))?.almacen_id;
+        return almacenTipo && almacenes_venta.some((a) => Number(a.id) === Number(almacenTipo)) ? Number(almacenTipo) : almacen_id_empresa;
+    };
+
+    const nuevaLineaId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    // Otra línea del mismo producto (ej. 2 fríos y 1 natural). Si el producto tiene un precio que descuenta de otro
+    // almacén (FRIO → REFRIGERADOR), la nueva línea queda con ese precio; si no, copia la línea con cantidad 1.
+    const duplicarLinea = (index: number) => {
+        const original = detallesWithProducts[index];
+        if (!original) return;
+
+        const almacenOriginal = original.almacen_id ?? almacen_id_empresa;
+        const unidadLinea = Number(original.unidad_venta_id ?? original.unidad_medida_id);
+        const precioOtroAlmacen = ((original.producto as any)?.precios || []).find(
+            (p: any) =>
+                p.tipo_precio_id &&
+                !/cost/i.test(p.nombre || '') &&
+                almacenDeTipoPrecio(p.tipo_precio_id) !== almacenOriginal &&
+                (p.unidad_medida_id == null || Number(p.unidad_medida_id) === unidadLinea),
+        );
+
+        const precio = precioOtroAlmacen ? Number(precioOtroAlmacen.precio) || 0 : Number(original.precio_unitario) || 0;
+        const nueva: DetalleProducto = {
+            ...original,
+            linea_id: nuevaLineaId(),
+            cantidad: 1,
+            descuento: 0,
+            precio_unitario: precio,
+            subtotal: precio,
+            ...(precioOtroAlmacen
+                ? {
+                      tipo_precio_id: precioOtroAlmacen.tipo_precio_id,
+                      tipo_precio_nombre: precioOtroAlmacen.nombre || '',
+                      almacen_id: almacenDeTipoPrecio(precioOtroAlmacen.tipo_precio_id),
+                  }
+                : { almacen_id: almacenOriginal }),
+        };
+
+        const newDetalles = [...detallesWithProducts.slice(0, index + 1), nueva, ...detallesWithProducts.slice(index + 1)];
+        setDetallesWithProducts(newDetalles);
+        calculateTotals(newDetalles);
+        calculatePeso(newDetalles);
+    };
+
     const addProductToDetail = (producto: Producto) => {
-        // Verificar si el producto ya está en los detalles
-        const existingDetail = detallesWithProducts.find((d) => d.producto_id === producto.id);
+        // Verificar si el producto ya está en los detalles. Con varias líneas del mismo producto (ej. una fría),
+        // volver a escanearlo suma a la línea del almacén de la empresa (la natural)
+        const existingDetail =
+            detallesWithProducts.find((d) => d.producto_id === producto.id && (d.almacen_id ?? almacen_id_empresa) === almacen_id_empresa) ??
+            detallesWithProducts.find((d) => d.producto_id === producto.id);
 
         if (existingDetail) {
             // ✅ NUEVO: En lugar de rechazar, incrementar la cantidad
             const updatedDetalles = detallesWithProducts.map((d) => {
-                if (d.producto_id === producto.id) {
+                if (d === existingDetail) {
                     const newCantidad = d.cantidad + 1;
                     const newSubtotal = newCantidad * d.precio_unitario - d.descuento;
                     return {
@@ -823,6 +876,8 @@ export default function VentaForm() {
 
         const newDetail: DetalleProducto = {
             producto_id: producto.id,
+            linea_id: nuevaLineaId(),
+            almacen_id: almacenDeTipoPrecio(tipoPrecioIdRecomendado),
             cantidad: cantidadInicial, // ✅ CORREGIDO: Usar cantidad convertida según unidad inicial
             precio_unitario: precioUnitarioInicial,
             descuento: 0,
@@ -916,6 +971,11 @@ export default function VentaForm() {
                 (updatedDetalles[index] as any)[field] = value;
             }
         });
+
+        // El precio manda: al elegir un tipo de precio la línea pasa a su almacén (FRIO → REFRIGERADOR, natural → sala)
+        if (updates.tipo_precio_id !== undefined && updates.tipo_precio_id !== null && updates.almacen_id === undefined) {
+            updatedDetalles[index].almacen_id = almacenDeTipoPrecio(updates.tipo_precio_id);
+        }
 
         // Recalcular subtotal si cambió alguno de sus componentes (incluido un valor 0, que antes no recalculaba)
         if (updates.cantidad !== undefined || updates.precio_unitario !== undefined || updates.descuento !== undefined) {
@@ -1288,6 +1348,8 @@ export default function VentaForm() {
                     // ✅ NUEVO: Enviar tipo de precio seleccionado para guardar en BD
                     tipo_precio_id: d.tipo_precio_id || undefined,
                     tipo_precio_nombre: d.tipo_precio_nombre || undefined,
+                    // Almacén del que descuenta la línea (ej. REFRIGERADOR para fríos); sin él, el de la empresa
+                    almacen_id: d.almacen_id || undefined,
                 };
 
                 // ✅ NUEVO: Si es combo, agregar items seleccionados
@@ -2001,6 +2063,8 @@ export default function VentaForm() {
                         errors={errors}
                         showLoteFields={false}
                         almacen_id={almacen_id_empresa} // ✅ MODIFICADO: Pasar almacén de la empresa
+                        almacenesVenta={almacenes_venta}
+                        onDuplicarLinea={duplicarLinea}
                         cliente_id={clienteSeleccionado?.id || null} // ✅ NUEVO: Pasar cliente para filtrar tipos_precio
                         isClienteGeneral={clienteSeleccionado?.codigo_cliente === 'GENERAL'} // ✅ NUEVO: Indicar si es cliente GENERAL para seleccionar tipo de precio
                         manuallySelectedTipoPrecio={manuallySelectedTipoPrecio} // ✅ NUEVO: Pasar estado de selecciones manuales
@@ -2052,7 +2116,6 @@ export default function VentaForm() {
                                             const valor = e.target.value;
                                             setMontoEfectivo(valor === '' ? '' : parseFloat(valor) || 0);
                                         }}
-                                        onWheel={(e) => e.preventDefault()}
                                         disabled={isSubmitting}
                                         className="flex-1 [appearance:textfield] rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [&::-webkit-inner-spin-button]:[appearance:none] [&::-webkit-outer-spin-button]:[appearance:none]"
                                         placeholder="0.00"
@@ -2074,7 +2137,6 @@ export default function VentaForm() {
                                             const valor = e.target.value;
                                             setMontoTransferencia(valor === '' ? '' : parseFloat(valor) || 0);
                                         }}
-                                        onWheel={(e) => e.preventDefault()}
                                         disabled={isSubmitting}
                                         className="flex-1 [appearance:textfield] rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [&::-webkit-inner-spin-button]:[appearance:none] [&::-webkit-outer-spin-button]:[appearance:none]"
                                         placeholder="0.00"

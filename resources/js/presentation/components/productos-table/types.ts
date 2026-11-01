@@ -5,6 +5,10 @@ export interface DetalleProducto {
     id?: number | string;
     numero?: number | string; // ✅ NUEVO: Número de línea o identificador
     producto_id: number | string;
+    // Identificador de la línea (ventas): permite dos líneas del mismo producto, ej. 2 fríos y 1 natural.
+    // Sin él (compras, proformas) la tabla usa producto_id como siempre.
+    linea_id?: string;
+    almacen_id?: number | null; // Ventas: almacén del que descuenta la línea (ej. REFRIGERADOR para precio FRIO)
     cantidad: number;
     precio_unitario: number;
     descuento: number;
@@ -14,7 +18,7 @@ export interface DetalleProducto {
     precio_costo?: number; // ✅ NUEVO: Precio de costo registrado
     // Compras: precio de venta editado por tipo de precio (clave: tipo_precio_id): precio directo, % o ganancia en Bs;
     // se guarda con la línea (detalle_compras.precios_venta) y se aplica al aprobar la compra
-    precios_nuevos?: Record<string, { precio_id: number; precio?: number; porcentaje?: number; monto?: number }>;
+    precios_nuevos?: Record<string, { precio_id: number | null; precio?: number; porcentaje?: number; monto?: number }>; // precio_id null = precio nuevo
     unidad_venta_id?: number | string; // ✅ NUEVO: Unidad de venta para productos fraccionados
     conversiones?: Array<{
         unidad_destino_id: number | string;
@@ -68,6 +72,9 @@ export interface ProductosTableProps {
     errors?: Record<string, string>;
     showLoteFields?: boolean; // Para mostrar campos de lote y fecha de vencimiento en compras
     almacen_id?: number; // ✅ NUEVO: Almacén para búsqueda API
+    proveedor_id?: number | null; // Compras: proveedor de la compra (para mostrar su código de catálogo de cada producto)
+    almacenesVenta?: Array<{ id: number; nombre: string }>; // Ventas: almacenes elegibles por línea (selector solo si hay más de uno)
+    onDuplicarLinea?: (index: number) => void; // Ventas: otra línea del mismo producto (ej. para venderlo frío)
     cliente_id?: number | null; // ✅ NUEVO: Cliente para filtrar tipos_precio (LICORERIA vs VENTA)
     isClienteGeneral?: boolean; // ✅ NUEVO: Indicar si es cliente GENERAL para seleccionar tipo de precio LICORERIA
     manuallySelectedTipoPrecio?: Record<number, boolean>; // ✅ NUEVO: Track cuáles fueron selecciones manuales del usuario (clave: producto_id)
@@ -81,4 +88,22 @@ export interface ProductosTableProps {
     onDetallesActualizados?: (detalles: DetalleProducto[]) => void; // ✅ NUEVO (2026-02-17): Callback cuando se actualizan detalles por cambios de rangos
     es_farmacia?: boolean; // ✅ NUEVO: Indicador para mostrar/ocultar campos de medicamentos en sugerencias
     permitirProductosSinStock?: boolean; // ✅ NUEVO (2026-05-26): Permitir productos sin stock en proformas
+}
+
+/**
+ * Compras: códigos del producto en el catálogo de sus proveedores, con el nombre del proveedor.
+ * Primero el del proveedor de la compra (esDelProveedor); después los demás.
+ */
+export function codigosDeProveedores(
+    producto: { proveedores_producto?: Array<{ proveedor_id: number; proveedor_nombre?: string | null; codigo_proveedor: string | null }> } | null | undefined,
+    proveedorId?: number | null,
+): Array<{ codigo: string; proveedor: string; esDelProveedor: boolean }> {
+    return (producto?.proveedores_producto ?? [])
+        .filter((p) => p.codigo_proveedor)
+        .map((p) => ({
+            codigo: p.codigo_proveedor!,
+            proveedor: p.proveedor_nombre ?? `Proveedor #${p.proveedor_id}`,
+            esDelProveedor: !!proveedorId && Number(p.proveedor_id) === Number(proveedorId),
+        }))
+        .sort((a, b) => Number(b.esDelProveedor) - Number(a.esDelProveedor));
 }

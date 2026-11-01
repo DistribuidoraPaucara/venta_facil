@@ -513,7 +513,7 @@ class StockService
                         if (isset($cantidadesSeleccionadas[$id])) {
                             // Usar cantidad del combo_items_seleccionados (cantidad modificada por el usuario)
                             $cantidadItem = $cantidadesSeleccionadas[$id];
-                            $expandido[$id] = ($expandido[$id] ?? 0) + ($cantidadItem * $cantidad);
+                            $expandido[$id . '|'] = ($expandido[$id . '|'] ?? 0) + ($cantidadItem * $cantidad);
 
                             // ✅ NUEVO (2026-07-24): Registrar combo_padre_id para este componente
                             if (!isset($comboPadreProductos[$id])) {
@@ -534,7 +534,7 @@ class StockService
                     // (compatibilidad con combos que no tengan items seleccionados explícitamente)
                     foreach ($combos[$productoId]->comboItems as $comboItem) {
                         $id = $comboItem->producto_id;
-                        $expandido[$id] = ($expandido[$id] ?? 0) + ((float) $comboItem->cantidad * $cantidad);
+                        $expandido[$id . '|'] = ($expandido[$id . '|'] ?? 0) + ((float) $comboItem->cantidad * $cantidad);
 
                         // ✅ NUEVO (2026-07-24): Registrar combo_padre_id para este componente
                         if (!isset($comboPadreProductos[$id])) {
@@ -544,25 +544,29 @@ class StockService
                 }
             } else {
                 // ✅ NUEVO (2026-02-18): Si NO es combo, guardar TODA la metadata del item
-                $expandido[$productoId] = ($expandido[$productoId] ?? 0) + $cantidad;
+                // Clave producto|almacén: dos líneas del mismo producto en almacenes distintos (ej. 2 fríos y 1 natural)
+                // no se fusionan; sin almacén de línea la clave es "id|" como siempre
+                $clave = $productoId . '|' . ($item['almacen_id'] ?? '');
+                $expandido[$clave] = ($expandido[$clave] ?? 0) + $cantidad;
 
                 // Guardar campos adicionales (unidad_venta_id, tipo_precio_id, etc) para productos no combos
-                if (!isset($metadataProductos[$productoId])) {
-                    $metadataProductos[$productoId] = $item;
+                if (!isset($metadataProductos[$clave])) {
+                    $metadataProductos[$clave] = $item;
                 }
             }
         }
 
         // ✅ NUEVO (2026-02-18): Retornar preservando metadata de productos no combos
         return array_map(
-            function($prodId, $cant) use ($metadataProductos, $comboPadreProductos, $item) {
+            function($claveExpandido, $cant) use ($metadataProductos, $comboPadreProductos) {
+                $prodId    = (int) explode('|', (string) $claveExpandido)[0];
                 $resultado = ['producto_id' => $prodId, 'cantidad' => $cant];
 
                 // Si tenemos metadata guardada para este producto (significa que NO era combo),
                 // preservar todos los campos adicionales
-                if (isset($metadataProductos[$prodId])) {
+                if (isset($metadataProductos[$claveExpandido])) {
                     // Copiar todos los campos del item original EXCEPTO cantidad (que actualizamos)
-                    foreach ($metadataProductos[$prodId] as $clave => $valor) {
+                    foreach ($metadataProductos[$claveExpandido] as $clave => $valor) {
                         if ($clave !== 'cantidad' && $clave !== 'producto_id') {
                             $resultado[$clave] = $valor;
                         }

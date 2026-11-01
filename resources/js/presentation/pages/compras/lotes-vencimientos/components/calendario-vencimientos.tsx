@@ -224,12 +224,12 @@ export default function CalendarioVencimientos({ lotes, cuentas, mes, filtros = 
                                     <div
                                         key={l.id}
                                         className={`flex items-center gap-1 rounded border-l-4 bg-gray-50 dark:bg-gray-800 p-0.5 ${colorEstado[l.estado_vencimiento]}`}
-                                        title={`${l.producto_nombre ?? ''} · Lote ${l.lote}`}
+                                        title={`#${l.producto_id} · ${l.producto_nombre ?? ''} · Lote ${l.lote}`}
                                     >
                                         <ImagenProducto url={l.imagen_url} alt={l.producto_nombre ?? ''} className="h-7 w-7 shrink-0 rounded" />
                                         <div className="min-w-0 text-[10px] leading-tight">
-                                            <div className="truncate font-medium">#{l.producto_id} · {l.sku ?? '-'}</div>
-                                            <div className="truncate font-mono text-gray-500">{l.lote}</div>
+                                            <div className="truncate font-medium">{l.producto_nombre ?? l.sku ?? '-'}</div>
+                                            <div className="truncate text-gray-500">#{l.producto_id} · <span className="font-mono">{l.lote}</span></div>
                                         </div>
                                     </div>
                                 ))}
@@ -260,7 +260,7 @@ export default function CalendarioVencimientos({ lotes, cuentas, mes, filtros = 
             </div>
 
             <Dialog open={diaSeleccionado !== null} onOpenChange={(open) => !open && setDiaSeleccionado(null)}>
-                <DialogContent className="max-w-2xl" onInteractOutside={ignorarClicEnToast}>
+                <DialogContent className="w-[95vw] sm:max-w-5xl" onInteractOutside={ignorarClicEnToast}>
                     <DialogHeader>
                         <DialogTitle className="capitalize">
                             {diaSeleccionado && format(parse(diaSeleccionado, 'yyyy-MM-dd', new Date()), "EEEE d 'de' MMMM yyyy", { locale: es })}
@@ -272,7 +272,7 @@ export default function CalendarioVencimientos({ lotes, cuentas, mes, filtros = 
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+                    <div className="max-h-[75vh] space-y-2 overflow-y-auto">
                         {cuentasDelDia.length > 0 && (
                             <h4 className="flex items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 <Wallet className="h-4 w-4" />
@@ -316,9 +316,9 @@ export default function CalendarioVencimientos({ lotes, cuentas, mes, filtros = 
                             <div key={l.id} className={`flex items-center gap-3 rounded-lg border border-l-4 p-2 ${colorEstado[l.estado_vencimiento]}`}>
                                 <ImagenProducto url={l.imagen_url} alt={l.producto_nombre ?? ''} className="h-16 w-16 shrink-0 rounded-md" />
                                 <div className="min-w-0 flex-1">
-                                    <div className="truncate font-medium">{l.producto_nombre ?? 'Producto no encontrado'}</div>
-                                    <div className="mt-1 grid grid-cols-2 gap-x-4 text-sm text-gray-600 dark:text-gray-400 sm:grid-cols-4">
-                                        <span>
+                                    <div className="font-medium">{l.producto_nombre ?? 'Producto no encontrado'}</div>
+                                    <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
+                                        <span className="whitespace-nowrap">
                                             ID:{' '}
                                             <a
                                                 href={`/productos/${l.producto_id}/edit`}
@@ -331,9 +331,11 @@ export default function CalendarioVencimientos({ lotes, cuentas, mes, filtros = 
                                                 <ExternalLink className="h-3 w-3" />
                                             </a>
                                         </span>
-                                        <span>SKU: <b className="text-gray-900 dark:text-white">{l.sku ?? '-'}</b></span>
-                                        <span>Lote: <b className="font-mono text-gray-900 dark:text-white">{l.lote}</b></span>
-                                        <span>Cant.: <b className="text-gray-900 dark:text-white">{l.cantidad}</b></span>
+                                        <span className="whitespace-nowrap">SKU: <b className="text-gray-900 dark:text-white">{l.sku ?? '-'}</b></span>
+                                        <span className="break-all">Lote: <b className="font-mono text-gray-900 dark:text-white">{l.lote}</b></span>
+                                        <span className="whitespace-nowrap">
+                                            Cant.: <b className="text-gray-900 dark:text-white">{Number(l.cantidad).toLocaleString('es-BO', { maximumFractionDigits: 2 })}</b>
+                                        </span>
                                     </div>
                                     {l.almacen && <div className="text-xs text-gray-500">{l.almacen}</div>}
                                 </div>

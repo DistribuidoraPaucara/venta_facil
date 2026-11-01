@@ -21,6 +21,7 @@ export const almacenesConfig: ModuleConfig<Almacen, AlmacenFormData> = {
     { key: 'ubicacion_fisica', label: 'Ubicación', type: 'text' },
     { key: 'sectores_count', label: 'Sectores', type: 'number' },
     { key: 'requiere_transporte_externo', label: 'Transporte Ext.', type: 'boolean' },
+    { key: 'permite_venta', label: 'Venta', type: 'boolean' },
     { key: 'activo', label: 'Estado', type: 'boolean' },
   ],
 
@@ -82,6 +83,11 @@ export const almacenesConfig: ModuleConfig<Almacen, AlmacenFormData> = {
       type: 'text',
       placeholder: 'Teléfono de contacto',
       validation: { maxLength: 20 }
+    },
+    {
+      key: 'permite_venta',
+      label: 'Se puede vender desde este almacén (aparece en la pantalla de ventas, ej. REFRIGERADOR)',
+      type: 'boolean'
     },
     {
       key: 'activo',

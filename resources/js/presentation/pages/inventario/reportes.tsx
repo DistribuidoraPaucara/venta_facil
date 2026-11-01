@@ -35,6 +35,7 @@ interface FiltrosReporte {
     fecha_hasta: string;
     incluir_sin_movimientos: boolean;
     solo_con_stock: boolean;
+    producto_id: string; // Solo para el kardex
 }
 
 const breadcrumbs = [
@@ -94,7 +95,7 @@ const tiposReporte = [
     {
         id: 'rotacion_inventario',
         nombre: 'Rotación de Inventario',
-        descripción: 'Análisis de la rotación de productos por período',
+        descripcion: 'Productos con más movimientos y ventas en el período',
         icon: '🔄'
     }
 ];
@@ -114,7 +115,8 @@ export default function Reportes() {
         fecha_desde: '',
         fecha_hasta: '',
         incluir_sin_movimientos: false,
-        solo_con_stock: true
+        solo_con_stock: true,
+        producto_id: ''
     });
 
     const [generandoReporte, setGenerandoReporte] = useState(false);
@@ -136,10 +138,10 @@ export default function Reportes() {
         tendencia_semanal: []
     });
 
-    // Cargar estadísticas cuando se monta el componente
+    // Cargar estadísticas al entrar y cada vez que cambian almacén, categoría o fechas
     useEffect(() => {
         cargarEstadisticas();
-    }, []);
+    }, [filtros.almacen_id, filtros.categoria_id, filtros.fecha_desde, filtros.fecha_hasta]);
 
     const cargarEstadisticas = async () => {
         setCargandoEstadisticas(true);
@@ -214,36 +216,16 @@ export default function Reportes() {
             return;
         }
 
+        if (filtros.tipo_reporte === 'kardex' && !filtros.producto_id) {
+            alert('Indica el ID del producto para el kardex');
+            return;
+        }
+
         setGenerandoReporte(true);
         try {
-            // ✅ NUEVO: Manejo especial para formato A4
-            if (formato === 'a4') {
-                // Usar la nueva ruta de reportes de inventario
-                const params = new URLSearchParams();
-                params.append('tipo', filtros.tipo_reporte.replace(/_/g, '-'));
-                if (filtros.almacen_id) params.append('almacen_id', filtros.almacen_id);
-                if (filtros.categoria_id) params.append('categoria_id', filtros.categoria_id);
-
-                const response = await fetch(`/reportes/inventario/export-pdf?${params}`);
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `reporte_inventario_${filtros.tipo_reporte}_A4_${new Date().toISOString().split('T')[0]}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                } else {
-                    alert('Error al descargar el reporte A4');
-                }
-                return;
-            }
-
-            // Preparar parámetros para otros formatos
+            // Todos los formatos (A4 incluido) salen del mismo generador, con los datos de la empresa del usuario
             const params = new URLSearchParams();
+            if (filtros.producto_id) params.append('producto_id', filtros.producto_id);
             params.append('tipo_reporte', filtros.tipo_reporte);
             params.append('formato', formato);
 
@@ -265,7 +247,7 @@ export default function Reportes() {
 
                 // Determinar extensión según formato
                 const extension = formato === 'excel' ? 'xlsx' : formato === 'csv' ? 'csv' : 'pdf';
-                a.download = `reporte_inventario_${filtros.tipo_reporte}_${new Date().toISOString().split('T')[0]}.${extension}`;
+                a.download = `reporte_inventario_${filtros.tipo_reporte}${formato === 'a4' ? '_A4' : ''}_${new Date().toISOString().split('T')[0]}.${extension}`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -273,7 +255,9 @@ export default function Reportes() {
                 try {
                     const errorData = await response.json();
                     console.error('Error response:', errorData);
-                    alert(`Error ${response.status}: ${errorData.message || JSON.stringify(errorData.errors || 'Error desconocido')}`);
+                    // Validación: mostrar el primer mensaje concreto (ej. "El producto no existe en tu empresa.")
+                    const primerError = errorData.errors ? (Object.values(errorData.errors).flat()[0] as string) : null;
+                    alert(primerError || errorData.message || `Error ${response.status}`);
                 } catch (e) {
                     console.log('No se pudo parsear la respuesta de error como JSON:', e);
                     const errorText = await response.text();
@@ -483,6 +467,30 @@ export default function Reportes() {
                                                 />
                                             </div>
                                         </div>
+
+                                        {/* Producto: solo para el kardex */}
+                                        {filtros.tipo_reporte === 'kardex' && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                    ID del producto
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    value={filtros.producto_id}
+                                                    onChange={(e) => handleFiltroChange('producto_id', e.target.value)}
+                                                    placeholder="Ej: 209"
+                                                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-gray-100 text-sm"
+                                                />
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    Para el kardex con saldo acumulado y cambios sin registrar, usa{' '}
+                                                    <a href="/inventario/movimientos" className="text-blue-600 hover:underline dark:text-blue-400">
+                                                        Movimientos → Kardex
+                                                    </a>
+                                                    .
+                                                </p>
+                                            </div>
+                                        )}
 
                                         {/* Opciones adicionales */}
                                         <div className="space-y-3">

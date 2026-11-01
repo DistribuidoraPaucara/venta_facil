@@ -114,9 +114,16 @@ class Producto extends Model
         return $this->belongsTo(Marca::class, 'marca_id');
     }
 
+    /** Proveedor principal (copia de producto_proveedor.es_principal) */
     public function proveedor()
     {
         return $this->belongsTo(Proveedor::class, 'proveedor_id');
+    }
+
+    /** Todos los proveedores del producto, con su último precio de compra */
+    public function productoProveedores()
+    {
+        return $this->hasMany(ProductoProveedor::class, 'producto_id');
     }
 
     public function imagenes()

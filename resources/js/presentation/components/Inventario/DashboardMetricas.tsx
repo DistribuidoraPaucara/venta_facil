@@ -105,30 +105,31 @@ export const DashboardMetricas: React.FC<DashboardMetricasProps> = ({
             icon: Activity,
             color: 'text-blue-600'
         },
+        // valor_total_* son UNIDADES (el servidor no valoriza movimientos: casi no hay costos cargados)
         {
-            titulo: 'Valor Total Entradas',
+            titulo: 'Unidades que entraron',
             valor: estadisticas.valor_total_entradas || 0,
-            formato: 'moneda',
+            formato: 'numero',
             ...calcularTendencia(estadisticas.valor_total_entradas || 0, comparacion?.valor_total_entradas),
-            descripcion: 'Valor monetario de las entradas',
+            descripcion: 'Compras, ajustes y fraccionamientos (sin transferencias)',
             icon: TrendingUp,
             color: 'text-green-600'
         },
         {
-            titulo: 'Valor Total Salidas',
+            titulo: 'Unidades que salieron',
             valor: estadisticas.valor_total_salidas || 0,
-            formato: 'moneda',
+            formato: 'numero',
             ...calcularTendencia(estadisticas.valor_total_salidas || 0, comparacion?.valor_total_salidas),
-            descripcion: 'Valor monetario de las salidas',
+            descripcion: 'Ventas, ajustes y mermas (sin transferencias)',
             icon: TrendingDown,
             color: 'text-red-600'
         },
         {
-            titulo: 'Movimientos Pendientes',
+            titulo: 'Movimientos anulados',
             valor: estadisticas.movimientos_pendientes || 0,
             formato: 'numero',
             ...calcularTendencia(estadisticas.movimientos_pendientes || 0, comparacion?.movimientos_pendientes),
-            descripcion: 'Requieren atención inmediata',
+            descripcion: 'No se cuentan en las unidades',
             icon: AlertTriangle,
             color: 'text-orange-600'
         }
@@ -273,10 +274,10 @@ export const DashboardMetricas: React.FC<DashboardMetricasProps> = ({
                             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                                 <div className="flex items-center gap-2">
                                     <DollarSign className="h-4 w-4 text-green-600" />
-                                    <span className="text-sm font-medium">Valor Total Mermas</span>
+                                    <span className="text-sm font-medium">Unidades en mermas</span>
                                 </div>
                                 <span className="text-lg font-bold text-orange-600">
-                                    Bs. {estadisticas.valor_total_mermas.toFixed(2)}
+                                    {Number(estadisticas.valor_total_mermas || 0).toLocaleString('es-ES')}
                                 </span>
                             </div>
                         </div>
@@ -350,13 +351,13 @@ export const DashboardMetricas: React.FC<DashboardMetricasProps> = ({
                                     <div className="text-lg font-bold text-orange-600">
                                         {estadisticas.movimientos_pendientes}
                                     </div>
-                                    <div className="text-sm text-muted-foreground">Pendientes</div>
+                                    <div className="text-sm text-muted-foreground">Anulados</div>
                                 </>
                             ) : (
                                 <>
                                     <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
                                     <div className="text-lg font-bold text-green-600">Al día</div>
-                                    <div className="text-sm text-muted-foreground">Sin pendientes</div>
+                                    <div className="text-sm text-muted-foreground">Sin anulados</div>
                                 </>
                             )}
                         </div>

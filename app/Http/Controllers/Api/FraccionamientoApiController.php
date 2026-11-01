@@ -339,7 +339,13 @@ class FraccionamientoApiController extends Controller
 
             $query = \App\Models\Producto::where('activo', true)
                 ->where('empresa_id', $empresaId)
-                ->select('id', 'nombre', 'sku', 'unidad_medida_id');
+                ->select('id', 'nombre', 'sku', 'unidad_medida_id')
+                // Productos hijo configurados (conversiones hacia otro producto): sin ellos no se puede fraccionar
+                ->withCount(['conversiones as hijos_count' => fn ($q) => $q->where('activo', true)->whereNotNull('producto_destino_id')])
+                ->when($request->boolean('solo_fraccionables'), fn ($q) => $q->whereHas(
+                    'conversiones',
+                    fn ($c) => $c->where('activo', true)->whereNotNull('producto_destino_id')
+                ));
 
             // ✨ NUEVO: Filtrar por búsqueda si se proporciona
             // ILIKE: en PostgreSQL LIKE distingue mayúsculas. Un término numérico también busca por ID exacto.
@@ -356,10 +362,16 @@ class FraccionamientoApiController extends Controller
                           $codigoQuery->where('codigo', 'ILIKE', "%{$search}%");
                       });
                 });
-                // Coincidencia exacta de ID primero
+                // Coincidencias exactas primero (ID, SKU o código de barras): Enter / escáner agrega esa
                 if ($esNumerico) {
                     $query->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [(int) (string) $search]);
                 }
+                $query->orderByRaw(
+                    'CASE WHEN LOWER(sku) = LOWER(?) OR EXISTS (
+                        SELECT 1 FROM codigos_barra cb WHERE cb.producto_id = productos.id AND LOWER(cb.codigo) = LOWER(?)
+                    ) THEN 0 ELSE 1 END',
+                    [(string) $search, (string) $search]
+                );
             }
 
             $productos = $query->with([
@@ -417,6 +429,7 @@ class FraccionamientoApiController extends Controller
                         'stocks' => $stocksPorUbicacion,
                         'limites' => $limitesPorUbicacion,
                         'stock_total' => collect($stocksPorUbicacion)->sum('cantidad'),
+                        'fraccionable' => $producto->hijos_count > 0,
                     ];
                 });
 

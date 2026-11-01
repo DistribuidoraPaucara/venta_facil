@@ -344,6 +344,7 @@ class VentaService
                     'tipo_precio_id'     => $detalle['tipo_precio_id'] ?? null,    // ✅ NUEVO: Tipo de precio seleccionado
                     'tipo_precio_nombre' => $detalle['tipo_precio_nombre'] ?? null, // ✅ NUEVO: Nombre del tipo de precio
                     'unidad_medida_id'   => $detalle['unidad_venta_id'] ?? null,   // ✅ CORREGIDO (2026-09-07): Guardar unidad de venta en detalles
+                    'almacen_id'         => $detalle['almacen_id'] ?? null,        // Almacén de la línea (ej. REFRIGERADOR para FRIO)
                     'combo_items_seleccionados' => $comboItemsSeleccionados ? array_map(function($item) {
                         return [
                             'combo_item_id' => $item['combo_item_id'] ?? null,
@@ -357,7 +358,8 @@ class VentaService
                 ]);
 
                 // ✅ NUEVO (2026-07-24): Guardar detalle con su ID para pasar a consumirStock
-                $detallesCreados[$detalle['producto_id']] = $detalleVenta->id;
+                // Clave producto|almacén: un mismo producto puede ir en dos líneas (ej. 2 fríos y 1 natural)
+                $detallesCreados[$detalle['producto_id'] . '|' . ($detalle['almacen_id'] ?? '')] = $detalleVenta->id;
             }
             Log::info('✅ [VentaService::crear] Detalles de venta creados', [
                 'venta_id'          => $venta->id,
@@ -368,9 +370,9 @@ class VentaService
             // Si el DTO no vino con peso o vino con 0, calcular desde detalles
             if (($dto->peso_total_estimado ?? 0) <= 0) {
                 $pesoTotalCalculado = 0;
-                $detallesCreados = $venta->detalles()->get();
+                $detallesGuardados = $venta->detalles()->get();
 
-                foreach ($detallesCreados as $detalle) {
+                foreach ($detallesGuardados as $detalle) {
                     // Si el detalle tiene combo_items_seleccionados, calcular peso desde los items del combo
                     if (!empty($detalle->combo_items_seleccionados) && is_array($detalle->combo_items_seleccionados)) {
                         $pesoCombo = 0;
@@ -394,7 +396,7 @@ class VentaService
                     'venta_id' => $venta->id,
                     'peso_anterior' => $dto->peso_total_estimado ?? 0,
                     'peso_calculado' => $pesoTotalCalculado,
-                    'tiene_combos' => count(array_filter($detallesCreados->all(), fn($d) => !empty($d->combo_items_seleccionados))) > 0,
+                    'tiene_combos' => count(array_filter($detallesGuardados->all(), fn($d) => !empty($d->combo_items_seleccionados))) > 0,
                 ]);
 
                 // Actualizar peso en la venta
@@ -415,7 +417,7 @@ class VentaService
                 $productoId = $item['producto_id'] ?? $item['id'];
 
                 // Buscar el detalle_venta_id del producto original (antes de expandir combo)
-                $detalleVentaId = $detallesCreados[$productoId] ?? null;
+                $detalleVentaId = $detallesCreados[$productoId . '|' . ($item['almacen_id'] ?? '')] ?? null;
 
                 // Si es componente de un combo, buscar el combo padre en detalles originales
                 $comboPadreId = null;

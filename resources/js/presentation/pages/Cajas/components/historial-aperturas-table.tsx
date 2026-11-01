@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { router } from '@inertiajs/react';
 import { formatCurrency, toNumber, formatDateTime } from '@/lib/cajas.utils';
 import { Calendar, ChevronDown, ChevronRight, Loader, Printer } from 'lucide-react';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
@@ -18,7 +19,22 @@ import type { AperturaHistorico, MovimientoCaja } from '@/domain/entities/cajas'
 
 interface Props {
     historicoAperturas: AperturaHistorico[];
+    // Rango que filtró el servidor (sin rango llegan solo las últimas 50 aperturas)
+    historialFiltro?: { desde: string | null; hasta: string | null };
 }
+
+// Día local (YYYY-MM-DD) de una fecha ISO: cortar el ISO en UTC pasaba al día siguiente lo abierto después de las 20:00
+const diaLocal = (iso: string) => new Date(iso).toLocaleDateString('en-CA');
+
+// Diferencia de un cierre: sobrante (+), faltante (-) o cuadra
+const describirDiferencia = (diferencia: number | string | null) => {
+    if (diferencia === null || diferencia === undefined) return null;
+    const d = toNumber(diferencia);
+    if (Math.abs(d) < 0.005) return { texto: 'Cuadra', clase: 'text-green-600 dark:text-green-400' };
+    return d > 0
+        ? { texto: `Sobrante +${formatCurrency(d)}`, clase: 'text-amber-600 dark:text-amber-400 font-semibold' }
+        : { texto: `Faltante -${formatCurrency(Math.abs(d))}`, clase: 'text-red-600 dark:text-red-400 font-semibold' };
+};
 
 interface MovimientosData {
     movimientos: MovimientoCaja[];
@@ -26,11 +42,22 @@ interface MovimientosData {
     count: number;
 }
 
-export function HistorialAperturasTable({ historicoAperturas }: Props) {
+export function HistorialAperturasTable({ historicoAperturas, historialFiltro }: Props) {
+    const [filtroFechaInicio, setFiltroFechaInicio] = useState<string>(historialFiltro?.desde ?? '');
+    const [filtroFechaFin, setFiltroFechaFin] = useState<string>(historialFiltro?.hasta ?? '');
+    const [cargandoRango, setCargandoRango] = useState(false);
 
-    console.log('Historico Aperturas:', historicoAperturas);
-    const [filtroFechaInicio, setFiltroFechaInicio] = useState<string>('');
-    const [filtroFechaFin, setFiltroFechaFin] = useState<string>('');
+    // Las fechas se piden al servidor: así se puede consultar cualquier período, no solo las últimas 50 aperturas
+    const cambiarRango = (desde: string, hasta: string) => {
+        setFiltroFechaInicio(desde);
+        setFiltroFechaFin(hasta);
+        setCargandoRango(true);
+        router.reload({
+            only: ['historicoAperturas', 'historialFiltro'],
+            data: { historial_desde: desde || undefined, historial_hasta: hasta || undefined },
+            onFinish: () => setCargandoRango(false),
+        });
+    };
     const [filtroCaja, setFiltroCaja] = useState<string>('');
     const [filtroVentas, setFiltroVentas] = useState<string>(''); // ✅ NUEVO: Filtro por estado de ventas
     const [filtroMovimientosVentas, setFiltroMovimientosVentas] = useState<Record<number, string>>({}); // ✅ NUEVO: Filtro de ventas en movimientos por apertura
@@ -69,17 +96,9 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
     // Filtrar aperturas
     const aperturasFiltradas = useMemo(() => {
         return historicoAperturas.filter(apertura => {
-            // Filtro por fecha inicio
-            if (filtroFechaInicio) {
-                const fechaApertura = new Date(apertura.fecha_apertura).toISOString().split('T')[0];
-                if (fechaApertura < filtroFechaInicio) return false;
-            }
-
-            // Filtro por fecha fin
-            if (filtroFechaFin) {
-                const fechaApertura = new Date(apertura.fecha_apertura).toISOString().split('T')[0];
-                if (fechaApertura > filtroFechaFin) return false;
-            }
+            // Fechas (el servidor ya filtró; esto cubre el instante mientras llega la respuesta)
+            if (filtroFechaInicio && diaLocal(apertura.fecha_apertura) < filtroFechaInicio) return false;
+            if (filtroFechaFin && diaLocal(apertura.fecha_apertura) > filtroFechaFin) return false;
 
             // Filtro por caja
             if (filtroCaja && apertura.caja_nombre !== filtroCaja) return false;
@@ -94,14 +113,17 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
 
     // Calcular estadísticas del filtro
     const stats = useMemo(() => {
+        const cerradas = aperturasFiltradas.filter(a => a.estado === 'Cerrada');
+        const diferencias = cerradas.map(a => toNumber(a.diferencia));
         return {
             total: aperturasFiltradas.length,
-            abiertas: aperturasFiltradas.filter(a => a.estado === 'Abierta').length,
-            cerradas: aperturasFiltradas.filter(a => a.estado === 'Cerrada').length,
-            conDiscrepancia: aperturasFiltradas.filter(a => {
-                const diff = toNumber(a.diferencia);
-                return diff !== 0 && a.estado === 'Cerrada';
-            }).length,
+            abiertas: aperturasFiltradas.length - cerradas.length,
+            cerradas: cerradas.length,
+            conDiscrepancia: diferencias.filter(d => Math.abs(d) >= 0.005).length,
+            // Acumulado del período: lo que sobró y lo que faltó en los cierres, y el neto
+            sobrante: diferencias.filter(d => d > 0).reduce((s, d) => s + d, 0),
+            faltante: diferencias.filter(d => d < 0).reduce((s, d) => s + Math.abs(d), 0),
+            neto: diferencias.reduce((s, d) => s + d, 0),
         };
     }, [aperturasFiltradas]);
 
@@ -114,13 +136,6 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
             🔒 Cerrada
         </span>;
-    };
-
-    const getDiferenciaColor = (diferencia: number | string | null) => {
-        if (diferencia === null) return 'text-gray-500 dark:text-gray-400';
-        const diff = toNumber(diferencia);
-        if (diff === 0) return 'text-green-600 dark:text-green-400 font-bold';
-        return 'text-red-600 dark:text-red-400 font-bold';
     };
 
     // ✅ NUEVO: Badge para estado de venta en movimientos
@@ -252,7 +267,7 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
                         <input
                             type="date"
                             value={filtroFechaInicio}
-                            onChange={(e) => setFiltroFechaInicio(e.target.value)}
+                            onChange={(e) => cambiarRango(e.target.value, filtroFechaFin)}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         />
                     </div>
@@ -265,7 +280,7 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
                         <input
                             type="date"
                             value={filtroFechaFin}
-                            onChange={(e) => setFiltroFechaFin(e.target.value)}
+                            onChange={(e) => cambiarRango(filtroFechaInicio, e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         />
                     </div>
@@ -307,8 +322,7 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
                         </label>
                         <button
                             onClick={() => {
-                                setFiltroFechaInicio('');
-                                setFiltroFechaFin('');
+                                if (filtroFechaInicio || filtroFechaFin) cambiarRango('', '');
                                 setFiltroCaja('');
                                 setFiltroVentas('');
                             }}
@@ -342,6 +356,31 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
                         </p>
                     </div>
                 </div>
+
+                {/* Sobrantes y faltantes acumulados en los cierres del período */}
+                {stats.cerradas > 0 && (
+                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
+                            <p className="mb-1 text-xs text-amber-700 dark:text-amber-400">Sobrantes</p>
+                            <p className="text-lg font-bold text-amber-800 dark:text-amber-200">+{formatCurrency(stats.sobrante)}</p>
+                        </div>
+                        <div className="rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
+                            <p className="mb-1 text-xs text-red-600 dark:text-red-400">Faltantes</p>
+                            <p className="text-lg font-bold text-red-800 dark:text-red-200">-{formatCurrency(stats.faltante)}</p>
+                        </div>
+                        <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/30">
+                            <p className="mb-1 text-xs text-slate-600 dark:text-slate-400">Neto del período</p>
+                            <p className={`text-lg font-bold ${stats.neto < 0 ? 'text-red-700 dark:text-red-300' : stats.neto > 0 ? 'text-amber-700 dark:text-amber-300' : 'text-green-700 dark:text-green-300'}`}>
+                                {stats.neto > 0 ? '+' : stats.neto < 0 ? '-' : ''}{formatCurrency(Math.abs(stats.neto))}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {cargandoRango && <p className="mb-4 text-sm text-muted-foreground">Cargando el período…</p>}
+                {!filtroFechaInicio && !filtroFechaFin && historicoAperturas.length >= 50 && (
+                    <p className="mb-4 text-xs text-muted-foreground">Se muestran las últimas 50 aperturas. Elige un rango de fechas para ver períodos anteriores.</p>
+                )}
 
                 {/* Tabla */}
                 <div className="overflow-x-auto">
@@ -400,7 +439,11 @@ export function HistorialAperturasTable({ historicoAperturas }: Props) {
                                             <br />
                                             <strong>Esperado:</strong> {apertura.monto_esperado != null ? formatCurrency(toNumber(apertura.monto_esperado)) : '-'}
                                             <br />
-                                            <strong>Diferencia:</strong> {apertura.diferencia !== null ? formatCurrency(Math.abs(toNumber(apertura.diferencia))) : '-'}
+                                            <strong>Diferencia:</strong>{' '}
+                                            {(() => {
+                                                const d = describirDiferencia(apertura.diferencia);
+                                                return d ? <span className={d.clase}>{d.texto}</span> : '-';
+                                            })()}
                                             <br />
                                             <strong>Monto Real:</strong> {apertura.monto_real != null ? formatCurrency(toNumber(apertura.monto_real)) : '-'}
                                         </td>

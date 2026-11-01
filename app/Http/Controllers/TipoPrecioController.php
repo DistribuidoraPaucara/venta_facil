@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Almacen;
 use App\Models\TipoPrecio;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,6 +48,7 @@ class TipoPrecioController extends Controller
         return Inertia::render('tipos-precio/form', [
             'tipo_precio'         => null,
             'colores_disponibles' => $this->getColoresDisponibles(),
+            'almacenes_venta'     => $this->almacenesVenta(),
             'proximo_orden'       => $proximoOrden, // Para mostrar al usuario (informativo)
         ]);
     }
@@ -71,6 +73,7 @@ class TipoPrecioController extends Controller
             'orden'          => ['nullable', 'integer', 'min:0'],
             'activo'         => ['nullable', 'boolean'],
             'configuracion'  => ['nullable', 'array'],
+            'almacen_id'     => $this->reglaAlmacenVenta(),
         ]);
 
         // ✨ NUEVO: Solo puede haber un precio base activo POR EMPRESA
@@ -106,6 +109,7 @@ class TipoPrecioController extends Controller
             'es_sistema'          => false,
             'configuracion'       => $configuracion,
             'empresa_id'          => auth()->user()?->empresa_id,
+            'almacen_id'          => $data['almacen_id'] ?? null,
         ]);
 
         return redirect()->route('tipos-precio.index')
@@ -143,6 +147,7 @@ class TipoPrecioController extends Controller
         return Inertia::render('tipos-precio/form', [
             'tipo_precio'         => $tipoPrecio,
             'colores_disponibles' => $this->getColoresDisponibles(),
+            'almacenes_venta'     => $this->almacenesVenta(),
             'puede_eliminar'      => $tipoPrecio->puedeEliminarse(),
         ]);
     }
@@ -169,6 +174,7 @@ class TipoPrecioController extends Controller
             'porcentaje_ganancia' => ['nullable', 'numeric', 'min:0'],
             'activo'              => ['nullable', 'boolean'],
             'configuracion'       => ['nullable', 'array'],
+            'almacen_id'          => $this->reglaAlmacenVenta(),
         ]);
 
         // No permitir editar ciertos campos en tipos de sistema
@@ -197,6 +203,7 @@ class TipoPrecioController extends Controller
             'porcentaje_ganancia' => isset($configuracionNueva['porcentaje_ganancia']) ? (float) $configuracionNueva['porcentaje_ganancia'] : $tipoPrecio->porcentaje_ganancia,
             'activo'              => $data['activo'] ?? $tipoPrecio->activo,
             'configuracion'       => $configuracionNueva,
+            'almacen_id'          => array_key_exists('almacen_id', $data) ? $data['almacen_id'] : $tipoPrecio->almacen_id,
         ]);
 
         return redirect()->route('tipos-precio.index')
@@ -251,5 +258,20 @@ class TipoPrecioController extends Controller
             ['value' => 'gray', 'label' => 'Gris', 'class' => 'bg-gray-500'],
             ['value' => 'teal', 'label' => 'Verde azulado', 'class' => 'bg-teal-500'],
         ];
+    }
+
+    /**
+     * Almacenes de venta de la empresa (para enlazar un precio con su almacén, ej. FRIO → REFRIGERADOR)
+     */
+    private function almacenesVenta()
+    {
+        return Almacen::porEmpresa()->where('activo', true)->where('permite_venta', true)->orderBy('nombre')->get(['id', 'nombre']);
+    }
+
+    private function reglaAlmacenVenta(): array
+    {
+        return ['nullable', 'integer', \Illuminate\Validation\Rule::exists('almacenes', 'id')
+            ->where('empresa_id', auth()->user()?->empresa_id)
+            ->where('permite_venta', true)];
     }
 }
