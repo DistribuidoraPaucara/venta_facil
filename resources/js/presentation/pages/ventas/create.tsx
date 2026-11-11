@@ -732,6 +732,9 @@ export default function VentaForm() {
 
     const nuevaLineaId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+    // Montos a centavos: con cantidades decimales (0.090909 × 110 = 9.99999) la línea se ve 10.00 pero el total sumaba 54.99999
+    const aCentavos = (monto: number) => Math.round((Number(monto) || 0) * 100) / 100;
+
     // Otra línea del mismo producto (ej. 2 fríos y 1 natural). Si el producto tiene un precio que descuenta de otro
     // almacén (FRIO → REFRIGERADOR), la nueva línea queda con ese precio; si no, copia la línea con cantidad 1.
     const duplicarLinea = (index: number) => {
@@ -783,7 +786,7 @@ export default function VentaForm() {
             const updatedDetalles = detallesWithProducts.map((d) => {
                 if (d === existingDetail) {
                     const newCantidad = d.cantidad + 1;
-                    const newSubtotal = newCantidad * d.precio_unitario - d.descuento;
+                    const newSubtotal = aCentavos(newCantidad * d.precio_unitario - d.descuento);
                     return {
                         ...d,
                         cantidad: newCantidad,
@@ -956,7 +959,7 @@ export default function VentaForm() {
             unidad_venta_id: unidadDestinoId,
             precio_unitario: nuevoPrecio,
             // Recalcular subtotal con el nuevo precio
-            subtotal: updatedDetalles[index].cantidad * nuevoPrecio - (updatedDetalles[index].descuento || 0),
+            subtotal: aCentavos(updatedDetalles[index].cantidad * nuevoPrecio - (updatedDetalles[index].descuento || 0)),
         };
 
         console.log(`🔄 [updateDetailUnidadConPrecio] Detalle #${index}:`, {
@@ -1016,7 +1019,7 @@ export default function VentaForm() {
                         : updates.descuento
                     : updatedDetalles[index].descuento;
 
-            updatedDetalles[index].subtotal = Number(cantidad) * Number(precio) - Number(descuento);
+            updatedDetalles[index].subtotal = aCentavos(Number(cantidad) * Number(precio) - Number(descuento));
         }
 
         /* console.log(`💰 [updateDetailMultiple] Actualizando detalle #${index} con:`, {
@@ -1069,7 +1072,7 @@ export default function VentaForm() {
             const precio = field === 'precio_unitario' ? numericValue : updatedDetalles[index].precio_unitario;
             const descuento = field === 'descuento' ? numericValue : updatedDetalles[index].descuento;
 
-            updatedDetalles[index].subtotal = Number(cantidad) * Number(precio) - Number(descuento);
+            updatedDetalles[index].subtotal = aCentavos(Number(cantidad) * Number(precio) - Number(descuento));
         }
 
         // ✅ DEBUG: Loguear cambios en detalles
@@ -1211,11 +1214,11 @@ export default function VentaForm() {
 
         const descuentoGeneral = data.descuento || 0;
         // Por ahora no se suma impuesto al total
-        const total = subtotal - descuentoGeneral;
+        const total = aCentavos(subtotal - descuentoGeneral);
 
         setData((prev) => ({
             ...prev,
-            subtotal: subtotal,
+            subtotal: aCentavos(subtotal),
             total: total,
         }));
     };
@@ -1351,7 +1354,7 @@ export default function VentaForm() {
                 // ✅ MODIFICADO: Usar siempre d.precio_unitario (ya contiene valor editado manualmente o del tipo de precio)
                 // NO usar precioRango para no sobrescribir ediciones manuales
                 const precioFinal = d.precio_unitario;
-                const subtotalFinal = Number(d.cantidad) * Number(precioFinal) - Number(d.descuento);
+                const subtotalFinal = aCentavos(Number(d.cantidad) * Number(precioFinal) - Number(d.descuento));
 
                 const detalle: any = {
                     id: d.id,
