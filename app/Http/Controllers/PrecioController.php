@@ -260,7 +260,7 @@ class PrecioController extends Controller
                 return $detalle->compra !== null;
             })
             ->some(function ($detalle) use ($costroActual) {
-                $precioCompra = (float) $detalle->precio_unitario;
+                $precioCompra = $detalle->costoNeto();
                 // Retorna true si hay diferencia (mayor a 0.01 para evitar redondeos)
                 return abs($costroActual - $precioCompra) > 0.01;
             });

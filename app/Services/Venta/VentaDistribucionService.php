@@ -62,7 +62,7 @@ class VentaDistribucionService
         ?int $unidadVentaId = null
     ): array {
         // 🔷 PASO 1: Validar que decimales sean permitidos si aplican
-        if (!$producto->es_fraccionado && !$this->esCantidadEntero($cantidadSolicitada)) {
+        if (!$producto->admiteCantidadDecimal() && !$this->esCantidadEntero($cantidadSolicitada)) {
             throw new Exception(
                 "El producto '{$producto->nombre}' no permite cantidades fraccionadas. " .
                 "Solicitado: {$cantidadSolicitada}"
@@ -558,7 +558,7 @@ class VentaDistribucionService
                             // ✅ Registrar entrada (devolución) exactamente a este lote
                             $movimientoStockService->registrarMovimientoYActualizar(
                                 stockProductoId: $stock->id,
-                                cantidad: (int)$cantidadTotalLote,
+                                cantidad: (float)$cantidadTotalLote, // decimales: una venta de 0.09 devolvía 0
                                 tipo: MovimientoInventario::TIPO_ENTRADA_AJUSTE,
                                 referencia_tipo: 'venta_devolucion',
                                 referencia_id: $ventaId,
@@ -612,7 +612,7 @@ class VentaDistribucionService
                             try {
                                 $movimientoStockService->registrarMovimientoYActualizar(
                                     stockProductoId: $stock->id,
-                                    cantidad: (int)$cantidadADevolver,
+                                    cantidad: (float)$cantidadADevolver,
                                     tipo: MovimientoInventario::TIPO_ENTRADA_AJUSTE,
                                     referencia_tipo: 'venta_devolucion',
                                     referencia_id: $ventaId,

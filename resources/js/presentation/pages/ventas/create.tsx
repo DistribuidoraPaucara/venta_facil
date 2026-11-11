@@ -827,8 +827,26 @@ export default function VentaForm() {
 
         // ✅ MODIFICADO (2026-02-17): Usar tipo_precio_id que viene del backend PRIMERO
         // El backend devuelve tipo_precio_id_recomendado basado en el código VENTA
-        const tipoPrecioIdRecomendado = (producto as any).tipo_precio_id_recomendado || tipoPrecioLicoreriId;
-        const tipoPrecioNombreRecomendado = (producto as any).tipo_precio_nombre_recomendado || 'LICORERIA';
+        const tipoPrecioBaseId = (producto as any).tipo_precio_id_recomendado || tipoPrecioLicoreriId;
+
+        // Sin stock en el almacén de ese precio pero sí en otro de venta (ej. sala en 0 y FRIO con stock):
+        // la línea entra con el precio que descuenta del almacén que tiene stock
+        const stockPorAlmacen = (producto as any).stock_por_almacen || {};
+        const almacenBase = almacenDeTipoPrecio(tipoPrecioBaseId);
+        const precioConStock =
+            !(producto as any).es_combo && !(Number(stockPorAlmacen[almacenBase]) > 0)
+                ? ((producto as any).precios || []).find(
+                      (p: any) =>
+                          p.tipo_precio_id &&
+                          Number(p.precio) > 0 &&
+                          !/cost/i.test(p.nombre || '') &&
+                          almacenDeTipoPrecio(p.tipo_precio_id) !== almacenBase &&
+                          Number(stockPorAlmacen[almacenDeTipoPrecio(p.tipo_precio_id)]) > 0,
+                  )
+                : undefined;
+
+        const tipoPrecioIdRecomendado = precioConStock?.tipo_precio_id ?? tipoPrecioBaseId;
+        const tipoPrecioNombreRecomendado = precioConStock?.nombre ?? ((producto as any).tipo_precio_nombre_recomendado || 'LICORERIA');
 
         // ✅ CORREGIDO (2026-09-06): Buscar precio recomendado PRIORIZANDO:
         // - Para productos fraccionados: la unidad DESTINO (la fraccionada)
@@ -2064,6 +2082,7 @@ export default function VentaForm() {
                         showLoteFields={false}
                         almacen_id={almacen_id_empresa} // ✅ MODIFICADO: Pasar almacén de la empresa
                         almacenesVenta={almacenes_venta}
+                        subtotalEditable
                         onDuplicarLinea={duplicarLinea}
                         cliente_id={clienteSeleccionado?.id || null} // ✅ NUEVO: Pasar cliente para filtrar tipos_precio
                         isClienteGeneral={clienteSeleccionado?.codigo_cliente === 'GENERAL'} // ✅ NUEVO: Indicar si es cliente GENERAL para seleccionar tipo de precio

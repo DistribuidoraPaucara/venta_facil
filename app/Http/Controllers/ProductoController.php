@@ -568,6 +568,7 @@ class ProductoController extends Controller
                     'es_alquilable'           => false,
                     'es_producto_comida'      => $data['es_producto_comida'] ?? false,      // 🍦 NUEVO - Producto de comida/helado sin stock
                     'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? false, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables
+                    'permite_cantidad_decimal' => $data['permite_cantidad_decimal'] ?? false,
                     'es_producto_adicional'   => $data['es_producto_adicional'] ?? false,     // ✨ NUEVO - Indica si es un adicional
                     'puede_tener_producto_adicional' => $data['puede_tener_producto_adicional'] ?? false, // ✨ NUEVO - Indica si puede tener adicionales
                     'categoria_id'            => $sanitize($data['categoria_id'] ?? null),  // 🔥 FIX: Permitir null
@@ -1060,6 +1061,7 @@ class ProductoController extends Controller
             'activo'                    => (bool) $producto->activo,
             'es_producto_comida'        => (bool) $producto->es_producto_comida,
             'permite_venta_sin_stock'   => (bool) $producto->permite_venta_sin_stock,
+            'permite_cantidad_decimal'  => (bool) $producto->permite_cantidad_decimal,
             'es_producto_adicional'     => (bool) $producto->es_producto_adicional,           // ✨ NUEVO
             'puede_tener_producto_adicional' => (bool) $producto->puede_tener_producto_adicional, // ✨ NUEVO
             'stock_minimo'              => $producto->stock_minimo ? (int) $producto->stock_minimo : null,
@@ -1301,6 +1303,7 @@ class ProductoController extends Controller
                     'limite_venta'            => array_key_exists('limite_venta', $data) ? $sanitize($data['limite_venta']) : $producto->limite_venta,
                     'es_producto_comida'      => array_key_exists('es_producto_comida', $data) ? $data['es_producto_comida'] : $producto->es_producto_comida,
                     'permite_venta_sin_stock' => array_key_exists('permite_venta_sin_stock', $data) ? $data['permite_venta_sin_stock'] : $producto->permite_venta_sin_stock,
+                    'permite_cantidad_decimal' => array_key_exists('permite_cantidad_decimal', $data) ? $data['permite_cantidad_decimal'] : $producto->permite_cantidad_decimal,
                     'es_producto_adicional'   => array_key_exists('es_producto_adicional', $data) ? $data['es_producto_adicional'] : $producto->es_producto_adicional,
                     'puede_tener_producto_adicional' => array_key_exists('puede_tener_producto_adicional', $data) ? $data['puede_tener_producto_adicional'] : $producto->puede_tener_producto_adicional,
                     'es_alquilable'           => array_key_exists('es_alquilable', $data) ? $data['es_alquilable'] : $producto->es_alquilable, // ✨ NUEVO
@@ -1603,9 +1606,10 @@ class ProductoController extends Controller
                         $sectorId  = $this->sectorDelAlmacen($almacenData['sector_id'] ?? null, $almacenId);
 
                         // Convertir stock a números
-                        $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
-                        $cantidadDisponible = (int) ($almacenData['cantidad_disponible'] ?? $cantidadTotal);
-                        $cantidadReservada  = (int) ($almacenData['cantidad_reservada'] ?? 0);
+                        // Con decimales: guardar el producto no debe truncar un stock como 8.9091
+                        $cantidadTotal      = (float) ($almacenData['stock'] ?? 0);
+                        $cantidadDisponible = (float) ($almacenData['cantidad_disponible'] ?? $cantidadTotal);
+                        $cantidadReservada  = (float) ($almacenData['cantidad_reservada'] ?? 0);
 
                         // Validar que cantidad_total >= (disponible + reservada)
                         $suma = $cantidadDisponible + $cantidadReservada;
@@ -3182,9 +3186,10 @@ class ProductoController extends Controller
 
                         $almacenId = (int) $almacenData['almacen_id'];
                         $sectorId  = $this->sectorDelAlmacen($almacenData['sector_id'] ?? null, $almacenId);
-                        $cantidadTotal      = (int) ($almacenData['stock'] ?? 0);
-                        $cantidadDisponible = (int) ($almacenData['cantidad_disponible'] ?? $cantidadTotal);
-                        $cantidadReservada  = (int) ($almacenData['cantidad_reservada'] ?? 0);
+                        // Con decimales: guardar el producto no debe truncar un stock como 8.9091
+                        $cantidadTotal      = (float) ($almacenData['stock'] ?? 0);
+                        $cantidadDisponible = (float) ($almacenData['cantidad_disponible'] ?? $cantidadTotal);
+                        $cantidadReservada  = (float) ($almacenData['cantidad_reservada'] ?? 0);
 
                         StockProducto::create([
                             'producto_id'         => $producto->id,
@@ -3830,6 +3835,20 @@ class ProductoController extends Controller
             return ApiResponse::success([]);
         }
 
+        // Almacenes cuyo stock habilita el producto. Pantalla de ventas con venta por almacén (ej. SALA y FRIO):
+        // basta con que tenga stock en cualquiera de los almacenes de venta de la empresa
+        $almacenesConStock = [$almacenId];
+        if ($empresa && $request->boolean('incluir_almacenes_venta')) {
+            $almacenesConStock = Almacen::where('empresa_id', $empresa->id)
+                ->where('activo', true)
+                ->where('permite_venta', true)
+                ->pluck('id')
+                ->push($almacenId)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
         // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
         $searchLower   = strtolower($q);
         // ✅ CRÍTICO: Usar empresa_id de la empresa validada (ya se validó arriba)
@@ -3858,13 +3877,14 @@ class ProductoController extends Controller
 
         // ✅ Función auxiliar para construir la query base
         // Incluye es_combo para permitir búsqueda automática sin parámetro adicional
-        $construirQueryBase = function ($query) use ($userEmpresaId, $almacenId, $tipo, $clienteId, $permitirProductosSinStock) {
+        $construirQueryBase = function ($query) use ($userEmpresaId, $almacenesConStock, $tipo, $clienteId, $permitirProductosSinStock) {
             $q = $query
                 ->select([
                     'id', 'nombre', 'codigo_barras', 'sku', 'categoria_id', 'marca_id',
                     'descripcion', 'peso', 'unidad_medida_id', 'proveedor_id',
                     'stock_minimo', 'stock_maximo', 'limite_venta', 'activo', 'es_fraccionado', 'empresa_id', 'es_combo',
                     'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', // ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
+                    'permite_cantidad_decimal',
                 ])
                 ->where('activo', true);
 
@@ -3874,14 +3894,14 @@ class ProductoController extends Controller
             }
 
             return $q
-                ->when($tipo === 'venta' && ! $permitirProductosSinStock, function ($q) use ($almacenId) {
+                ->when($tipo === 'venta' && ! $permitirProductosSinStock, function ($q) use ($almacenesConStock) {
                     // ✅ MODIFICADO (2026-05-26): Si permitirProductosSinStock es false, filtrar por stock
                     // Si permitirProductosSinStock es true, NO filtrar por stock (permitir todos)
-                    return $q->where(function ($subQ) use ($almacenId) {
+                    return $q->where(function ($subQ) use ($almacenesConStock) {
                         // Productos con stock disponible
-                        $subQ->whereHas('stock', function ($sq) use ($almacenId) {
+                        $subQ->whereHas('stock', function ($sq) use ($almacenesConStock) {
                             // ✅ CRÍTICO: Filtrar solo stock NO eliminado (soft delete)
-                            $sq->where('almacen_id', $almacenId)
+                            $sq->whereIn('almacen_id', $almacenesConStock)
                                ->where('cantidad_disponible', '>', 0)
                                ->whereNull('deleted_at');
                         })
@@ -3925,6 +3945,7 @@ class ProductoController extends Controller
                 'descripcion', 'peso', 'unidad_medida_id', 'proveedor_id',
                 'stock_minimo', 'stock_maximo', 'limite_venta', 'activo', 'es_fraccionado', 'empresa_id', 'es_combo',
                 'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', // ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
+                'permite_cantidad_decimal',
             ])
             ->where('activo', true)
             ->whereRaw('LOWER(sku) = ?', [$searchLower]);
@@ -3939,10 +3960,10 @@ class ProductoController extends Controller
         // No se requiere parámetro adicional del frontend
         // ✅ MODIFICADO (2026-05-26): Si permitirProductosSinStock es true, NO filtrar por stock
         if ($tipo === 'venta' && ! $permitirProductosSinStock) {
-            $queryProductoPorSku->where(function ($query) use ($almacenId) {
+            $queryProductoPorSku->where(function ($query) use ($almacenesConStock) {
                 // Productos con stock disponible
-                $query->whereHas('stock', function ($sq) use ($almacenId) {
-                    $sq->where('almacen_id', $almacenId)->where('cantidad_disponible', '>', 0);
+                $query->whereHas('stock', function ($sq) use ($almacenesConStock) {
+                    $sq->whereIn('almacen_id', $almacenesConStock)->where('cantidad_disponible', '>', 0);
                 })
                 // O productos con permiso de venta sin stock
                     ->orWhere('permite_venta_sin_stock', true);
@@ -4497,6 +4518,7 @@ class ProductoController extends Controller
                     'principio_activo'               => $producto->principio_activo,               // ✅ NUEVO: Campo para medicamentos (farmacia)
                     'uso_de_medicacion'              => $producto->uso_de_medicacion,              // ✅ NUEVO: Campo para medicamentos (farmacia)
                     'permite_venta_sin_stock'        => (bool) $producto->permite_venta_sin_stock, // ✅ NUEVO (2026-05-08): Para productos de farmacia sin stock
+                    'permite_cantidad_decimal'       => (bool) $producto->permite_cantidad_decimal,
                     'conversiones'                   => $producto->conversiones
                         ->where('activo', true)
                         ->map(fn($c) => [

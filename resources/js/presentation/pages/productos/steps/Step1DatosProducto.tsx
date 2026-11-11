@@ -34,6 +34,7 @@ export interface Step1Props {
         es_fraccionado?: boolean; // ✨ NUEVO
         es_producto_comida?: boolean; // ✨ NUEVO - Producto de comida/helado sin stock
         permite_venta_sin_stock?: boolean; // ✅ NUEVO (2026-05-08) - Para servicios/inyectables en farmacias
+        permite_cantidad_decimal?: boolean;
         es_producto_adicional?: boolean; // ✨ NUEVO - Indica si es un adicional
         puede_tener_producto_adicional?: boolean; // ✨ NUEVO - Indica si puede tener adicionales
         es_alquilable?: boolean; // ✨ NUEVO - Indica si el producto es alquilable
@@ -877,6 +878,19 @@ function Step1DatosProducto({
                         icon="⚡"
                         title="Fraccionar Producto"
                         description="Permite fraccionamiento de este producto en diferentes unidades de medida."
+                        colorScheme="blue"
+                    />
+                )}
+
+                {/* Venta en cantidades decimales sin conversión de unidad (los fraccionados ya las admiten) */}
+                {!data.es_fraccionado && (
+                    <FeatureToggle
+                        id="permite_cantidad_decimal"
+                        checked={!!data.permite_cantidad_decimal}
+                        onCheckedChange={(v) => setData('permite_cantidad_decimal', !!v)}
+                        icon="🔢"
+                        title="Permite cantidad decimal"
+                        description="Permite vender cantidades con decimales, por ejemplo Bs 10 de un producto que cuesta Bs 110 la libra."
                         colorScheme="blue"
                     />
                 )}

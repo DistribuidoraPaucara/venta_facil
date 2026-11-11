@@ -50,6 +50,20 @@ class DetalleCompra extends Model
     }
 
     /**
+     * Costo real por unidad: lo que se paga después del descuento de la línea (precio − descuento ÷ cantidad).
+     * Lee los valores crudos porque los accessors de abajo recortan ceros y, con un número sin decimales
+     * aún en memoria, también dígitos (20 → "2").
+     */
+    public function costoNeto(): float
+    {
+        $precio    = (float) ($this->attributes['precio_unitario'] ?? 0);
+        $cantidad  = (float) ($this->attributes['cantidad'] ?? 0);
+        $descuento = (float) ($this->attributes['descuento'] ?? 0);
+
+        return $cantidad > 0 ? $precio - $descuento / $cantidad : $precio;
+    }
+
+    /**
      * ✅ NUEVO 2026-03-19: Accessores para remover ceros innecesarios
      * Guarda: 14.10 → Devuelve: "14.1"
      * Guarda: 15.202 → Devuelve: "15.202"

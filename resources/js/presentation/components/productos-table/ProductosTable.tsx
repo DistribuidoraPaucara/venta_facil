@@ -5,7 +5,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import FarmaciaMedicamentoModal from './components/FarmaciaMedicamentoModal';
 import ProductSearchBar from './components/ProductSearchBar';
 import ProductoTableRow from './components/ProductoTableRow';
-import { DetalleProducto, ProductosTableProps } from './types';
+import { costoNetoLinea, DetalleProducto, ProductosTableProps } from './types';
 
 export interface PrecioVentaRegistrado {
     id: number;
@@ -113,6 +113,7 @@ export default function ProductosTable({
     permitirProductosSinStock = false, // ✅ NUEVO (2026-05-26): Permitir productos sin stock
     proformaConvertida = false, // ✅ NUEVO (2026-05-29): Ocultar disponibilidad si está convertida
     almacenesVenta = [],
+    subtotalEditable = false,
     onDuplicarLinea,
 }: ProductosTableProps) {
     // ✅ DEBUG (2026-05-26): Verificar que permitirProductosSinStock llegue correctamente
@@ -207,11 +208,8 @@ export default function ProductosTable({
                         String(p.tipo_precio_id) === String(ultimoDetalle.tipo_precio_id) &&
                         Number(p.unidad_medida_id) === Number(ultimoDetalle.unidad_venta_id),
                 );
-                if (
-                    (ultimoDetalle as any).es_fraccionado &&
-                    ultimoDetalle.unidad_venta_id &&
-                    (ultimoDetalle.unidad_venta_id !== ultimoDetalle.unidad_medida_id || tienePrecioConUnidad)
-                ) {
+                // También en productos no fraccionados: sin coincidencia el select mostraba su primera opción, no el precio de la línea
+                if (ultimoDetalle.unidad_venta_id && (ultimoDetalle.unidad_venta_id !== ultimoDetalle.unidad_medida_id || tienePrecioConUnidad)) {
                     valorTipoPrecio = `${ultimoDetalle.tipo_precio_id}_${ultimoDetalle.unidad_venta_id}`;
                 }
                 console.log(`✅ [ProductosTable] Inicializando selectedTipoPrecio con backend: ${valorTipoPrecio}`);
@@ -406,9 +404,9 @@ export default function ProductosTable({
         setModalCascadaState({
             isOpen: true,
             productoId: typeof detalle.producto_id === 'string' ? parseInt(detalle.producto_id) : detalle.producto_id,
-            // Costo actual = el registrado en precios_producto; nuevo = el precio unitario ingresado en la compra
+            // Costo actual = el registrado en precios_producto; nuevo = el costo neto de la línea en la compra
             precioActual: detalle.precio_costo || (detalle.producto as any)?.precio_costo || null,
-            precioCostoNuevo: detalle.precio_unitario || null,
+            precioCostoNuevo: costoNetoLinea(detalle) || null,
             detalleIndex: index,
             productoData: detalle.producto || { id: detalle.producto_id, nombre: 'Producto' },
         });
@@ -569,6 +567,7 @@ export default function ProductosTable({
                 readOnly={readOnly}
                 es_farmacia={es_farmacia}
                 permitirProductosSinStock={permitirProductosSinStock}
+                almacenesVenta={almacenesVenta}
                 onProductSelected={onAddProduct}
                 onMedicamentoInfo={setFarmaciaProdutoSeleccionado}
             />
@@ -597,7 +596,10 @@ export default function ProductosTable({
                     >
                         <thead className="border-b-2 border-gray-300 bg-gradient-to-b from-gray-100 to-gray-50 dark:border-zinc-600 dark:from-zinc-700 dark:to-zinc-800">
                             <tr>
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">ID</th>
+                                {/* En compras, el ID va encima del nombre del producto */}
+                                {tipo !== 'compra' && (
+                                    <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">ID</th>
+                                )}
                                 {/* En compras, el código / SKU se muestra debajo del nombre del producto */}
                                 {tipo !== 'compra' && (
                                     <th
@@ -620,17 +622,15 @@ export default function ProductosTable({
                                     <>
                                         <th
                                             className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
-                                            title="Precio unitario de compra (nuevo costo al aprobar). Debajo, el costo registrado actualmente"
+                                            title="Precio unitario de compra, antes del descuento. Debajo, el costo registrado actualmente"
                                         >
                                             Precio U.
                                         </th>
-                                        
-                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
                                         <th
                                             className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
-                                            title="Fecha de vencimiento"
+                                            title="Total de la línea antes del descuento (cantidad × precio). Al escribirlo se calcula el precio unitario"
                                         >
-                                            Venc.
+                                            Total Bs.
                                         </th>
                                         <th
                                             className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
@@ -645,11 +645,19 @@ export default function ProductosTable({
                                         Precio
                                     </th>
                                 )}
-                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Subtotal</th>
+                                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">
+                                    {tipo === 'compra' ? 'Total a cobrar' : 'Subtotal'}
+                                </th>
                                 {/* Compras: costo registrado y una columna por tipo de precio de venta (% editable sobre el nuevo costo) */}
                                 {tipo === 'compra' && (
                                     <>
-                                        
+                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
+                                        <th
+                                            className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                            title="Fecha de vencimiento"
+                                        >
+                                            Venc.
+                                        </th>
                                         {/* Por cada tipo de precio: precio (nuevo y debajo el registrado), % ganancia y ganancia Bs */}
                                         {tiposPrecioVenta.map((tp) => (
                                             <Fragment key={tp.tipo_precio_id}>
@@ -688,9 +696,9 @@ export default function ProductosTable({
                             {detalles.map((detalle, index) => {
                                 const productoInfo = detalle.producto || productos.find((p) => p.id === detalle.producto_id);
                                 const precioCosto = detalle.precio_costo || productoInfo?.precio_costo || 0;
-                                const tieneDiferencia =
-                                    tipo === 'compra' && precioCosto > 0 && Math.abs(detalle.precio_unitario - precioCosto) > 0.01;
-                                const esAumento = precioCosto > 0 && detalle.precio_unitario > precioCosto;
+                                const costoNeto = costoNetoLinea(detalle);
+                                const tieneDiferencia = tipo === 'compra' && precioCosto > 0 && Math.abs(costoNeto - precioCosto) > 0.01;
+                                const esAumento = precioCosto > 0 && costoNeto > precioCosto;
 
                                 return (
                                     <ProductoTableRow
@@ -705,6 +713,7 @@ export default function ProductosTable({
                                         selectedTipoPrecio={selectedTipoPrecio}
                                         setSelectedTipoPrecio={setSelectedTipoPrecio}
                                         almacenesVenta={almacenesVenta}
+                                        subtotalEditable={subtotalEditable}
                                         proveedorId={proveedor_id}
                                         onDuplicarLinea={onDuplicarLinea}
                                         expandedCombos={expandedCombos}

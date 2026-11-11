@@ -151,6 +151,7 @@ class StoreProductoRequest extends FormRequest
             'es_fraccionado'           => ['nullable', 'boolean'],
             'es_producto_comida'       => ['nullable', 'boolean'], // 🍦 NUEVO - Producto de comida/helado sin stock
             'permite_venta_sin_stock'  => ['nullable', 'boolean'], // ✅ NUEVO (2026-05-08) - Para servicios/inyectables
+            'permite_cantidad_decimal' => ['nullable', 'boolean'],
             'es_producto_adicional'    => ['nullable', 'boolean'], // ✨ NUEVO - Indica si es un adicional
             'puede_tener_producto_adicional' => ['nullable', 'boolean'], // ✨ NUEVO - Indica si puede tener adicionales
             'es_alquilable'            => ['nullable', 'boolean'], // ✨ NUEVO - Indica si el producto es alquilable

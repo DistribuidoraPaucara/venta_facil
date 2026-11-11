@@ -50,6 +50,6 @@ class LoteVencimiento extends Model
             return 0;
         }
 
-        return $this->cantidad_actual * $this->detalleCompra->precio_unitario;
+        return $this->cantidad_actual * $this->detalleCompra->costoNeto();
     }
 }

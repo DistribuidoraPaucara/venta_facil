@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Log;
 class DetectarCambiosPrecioService
 {
     /**
-     * Al aprobar una compra, el costo de cada producto pasa a ser el de esta compra (último costo).
+     * Al aprobar una compra, el costo de cada producto pasa a ser el de esta compra (último costo),
+     * ya con el descuento de la línea (DetalleCompra::costoNeto).
      *
      * - Precio COSTO (precios_producto) en la unidad del detalle: si existe y cambió se actualiza con
      *   historial (actualizarPrecio); si no existe se crea. Antes se salteaban los productos sin COSTO,
@@ -33,7 +34,7 @@ class DetectarCambiosPrecioService
         // Una entrada por producto + unidad (la última línea de la compra)
         $porProductoUnidad = [];
         foreach ($compra->detalles as $detalle) {
-            if (! $detalle->producto || (float) $detalle->precio_unitario <= 0) {
+            if (! $detalle->producto || $detalle->costoNeto() <= 0) {
                 continue;
             }
             $unidadId = $detalle->unidad_medida_id ?: $detalle->producto->unidad_medida_id;
@@ -45,7 +46,7 @@ class DetectarCambiosPrecioService
 
         foreach ($porProductoUnidad as [$detalle, $unidadId]) {
             $producto     = $detalle->producto;
-            $precioCompra = round((float) $detalle->precio_unitario, 6);
+            $precioCompra = round($detalle->costoNeto(), 6);
 
             $tipoCosto = $tiposCosto[$producto->empresa_id] ??= TipoPrecio::where('empresa_id', $producto->empresa_id)
                 ->where('codigo', 'COSTO')
@@ -119,7 +120,7 @@ class DetectarCambiosPrecioService
      * Al aprobar una compra, aplica los precios de venta editados en su tabla (detalle_compras.precios_venta).
      *
      * - Cada entrada trae el precio_id y UNO de: precio (directo), monto (ganancia en Bs) o porcentaje.
-     *   El precio final se calcula sobre el precio unitario de la línea (el nuevo costo).
+     *   El precio final se calcula sobre el costo neto de la línea (el nuevo costo).
      * - Solo se tocan precios del mismo producto de la línea, y solo si cambian.
      * - Si el mismo precio aparece en varias líneas, manda la última (igual que el costo en procesarCompraAprobada).
      * - update() directo: PrecioProductoObserver deja el registro de historial con el motivo.
@@ -137,7 +138,7 @@ class DetectarCambiosPrecioService
         // en la unidad de la línea: se identifica por producto + tipo + unidad y se crea
         $porPrecio = [];
         foreach ($compra->detalles as $detalle) {
-            $costo = (float) $detalle->precio_unitario;
+            $costo = $detalle->costoNeto();
             if ($costo <= 0 || empty($detalle->precios_venta) || ! $detalle->producto) {
                 continue;
             }

@@ -3,7 +3,7 @@ import { validarStockDisponible } from '@/infrastructure/helpers/validar-stock-c
 import { formatCurrency, formatCurrencyMinimalDecimals } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/components/ui/tooltip';
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { codigosDeProveedores, type DetalleProducto } from '../types';
+import { codigosDeProveedores, costoNetoLinea, type DetalleProducto } from '../types';
 import ComboExpandedRows from './ComboExpandedRows';
 
 interface ProductoTableRowProps {
@@ -20,6 +20,7 @@ interface ProductoTableRowProps {
     setExpandedCombos: (value: Record<number, boolean>) => void;
     tieneDiferencia: boolean;
     esAumento: boolean;
+    subtotalEditable?: boolean; // Ventas: escribir el subtotal calcula la cantidad
     es_farmacia?: boolean;
     default_tipo_precio_id?: number | string;
     comboItemsMap: Record<number, any[]>;
@@ -59,6 +60,7 @@ export default function ProductoTableRow({
     setExpandedCombos,
     tieneDiferencia,
     esAumento,
+    subtotalEditable = false,
     es_farmacia = false,
     default_tipo_precio_id,
     comboItemsMap,
@@ -162,6 +164,99 @@ export default function ProductoTableRow({
     // Mostrar en inputs solo los decimales necesarios (máx. 4): 3.333333 → "3.3333", 14.1000 → "14.1"
     const mostrarDecimales = (valor: number | string | null | undefined) => String(Number(Number(valor || 0).toFixed(4)));
 
+    // Compras: montos a 2 decimales como en la nota del proveedor. Solo es visual: el cálculo usa el valor exacto,
+    // que se ve al entrar al campo
+    const mostrarDosDecimales = (valor: number | string | null | undefined) => Number(valor || 0).toFixed(2);
+
+    // Al entrar al campo: el valor exacto (máx. 4 decimales) sin bajar de 2: 405.6 → "405.60", 20.278 → "20.278"
+    const mostrarAlEditar = (valor: number | string | null | undefined) => {
+        const exacto = mostrarDecimales(valor);
+        return (exacto.split('.')[1]?.length ?? 0) >= 2 ? exacto : mostrarDosDecimales(valor);
+    };
+
+    // Compras: el costo que queda al aprobar, ya con el descuento de la línea
+    const costoNeto = costoNetoLinea(detalle);
+
+    // Aplica una cantidad a la línea. En ventas valida el stock: si no alcanza, muestra el error y no cambia la línea
+    const aplicarCantidad = (num: number) => {
+        // ✅ FIJO (2026-09-09): Validar stock solo en modo VENTA, no en COMPRA
+        // En COMPRA, no validamos stock porque la compra AUMENTA el stock
+        if (tipo === 'venta' && detalle.es_fraccionado && (detalle.conversiones?.length || 0) > 0) {
+            const stockBase =
+                (productoInfo as any)?.stock_disponible_calc ??
+                (productoInfo as any)?.stock_disponible ??
+                (productoInfo as any)?.stock ??
+                0;
+
+            const validacion = validarStockDisponible(
+                num,
+                stockBase,
+                detalle.unidad_venta_id || detalle.unidad_medida_id,
+                detalle.unidad_medida_id,
+                detalle.conversiones,
+                productoInfo?.nombre,
+            );
+
+            if (!validacion.esValido) {
+                setValidacionError(validacion.mensaje);
+                console.warn(`⚠️ [STOCK VALIDATION] ${validacion.mensaje}`);
+                // NO actualizar si excede el stock
+                return;
+            } else {
+                setValidacionError(null);
+            }
+        } else if (validarStockVenta) {
+            // Productos no fraccionados: no permitir vender más que el disponible
+            if (num > stockDisponible + 0.000001) {
+                setValidacionError(`Solo hay ${formatearCantidad(stockDisponible)} ${unidadDisplay} disponibles`);
+                return;
+            }
+            setValidacionError(null);
+        }
+
+        onUpdateDetail(index, 'cantidad', num);
+    };
+
+    // Ventas: escribir el subtotal calcula la cantidad = (subtotal + descuento) ÷ precio.
+    // Sin "fraccionado" ni "permite cantidad decimal" solo se vende por unidades completas (el backend rechaza decimales)
+    const aplicarSubtotalVenta = (subtotal: number) => {
+        const precio = Number(detalle.precio_unitario) || 0;
+        if (subtotal <= 0 || precio <= 0) {
+            setValidacionError(null);
+            return;
+        }
+
+        const cantidad = (subtotal + (Number(detalle.descuento) || 0)) / precio;
+        if (detalle.es_fraccionado || (productoInfo as any)?.permite_cantidad_decimal) {
+            aplicarCantidad(Number(cantidad.toFixed(6)));
+            return;
+        }
+
+        const unidades = Math.round(cantidad);
+        if (unidades < 1 || Math.abs(cantidad - unidades) > 0.0001) {
+            setValidacionError(`Este producto no permite cantidad decimal: el subtotal debe ser múltiplo de Bs ${mostrarDosDecimales(precio)}`);
+            return;
+        }
+        aplicarCantidad(unidades);
+    };
+
+    // ID del producto: abre su edición en otra pestaña (no se pierde la venta en curso)
+    const enlaceProducto = (
+        <a
+            href={`/productos/${detalle.producto_id}/edit`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Editar producto en otra pestaña"
+            tabIndex={-1} // El Tab de la fila solo recorre los campos
+            className="inline-flex items-center gap-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-bold text-white hover:bg-blue-700 hover:underline"
+        >
+            #{detalle.producto_id}
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 3h7v7m0-7L10 14M5 5h4M5 5v14h14v-4" />
+            </svg>
+        </a>
+    );
+
     const content = (
         <tr
             key={detalle.producto_id}
@@ -172,27 +267,16 @@ export default function ProductoTableRow({
                     : ''
                 }`}
         >
-            {/* ID del producto: abre su edición en otra pestaña (no se pierde la venta en curso) */}
-            <td className="items-start px-2 py-2 whitespace-nowrap">
-                <a
-                    href={`/productos/${detalle.producto_id}/edit`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Editar producto en otra pestaña"
-                    className="inline-flex items-center gap-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-bold text-white hover:bg-blue-700 hover:underline"
-                >
-                    #{detalle.producto_id}
-                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 3h7v7m0-7L10 14M5 5h4M5 5v14h14v-4" />
-                    </svg>
-                </a>
-            </td>
+            {/* ID (en compras va encima del nombre, en la columna Producto) */}
+            {tipo !== 'compra' && <td className="items-start px-2 py-2 whitespace-nowrap">{enlaceProducto}</td>}
 
             {/* Código / SKU (en compras va debajo del nombre, en la columna Producto) */}
             {tipo !== 'compra' && <td className="items-left px-2 py-2 whitespace-nowrap">{codigoProducto ?? <span className="text-xs text-gray-400 dark:text-gray-600">-</span>}</td>}
 
             {/* Producto Nombre */}
             <td className="items-start px-2 py-2">
+                {tipo === 'compra' && <div className="mb-1">{enlaceProducto}</div>}
+
                 {/* ✨ MEJORADO (2026-09-07): Nombre dinámico según unidad de venta con nombre personalizado */}
                 {(() => {
                     const unidadActualVenta = detalle.unidad_venta_id || detalle.unidad_medida_id;
@@ -311,42 +395,7 @@ export default function ProductoTableRow({
                             if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
                                 const num = valor === '' ? 0 : parseFloat(valor);
                                 if (num >= 0) {
-                                    // ✅ FIJO (2026-09-09): Validar stock solo en modo VENTA, no en COMPRA
-                                    // En COMPRA, no validamos stock porque la compra AUMENTA el stock
-                                    if (tipo === 'venta' && detalle.es_fraccionado && (detalle.conversiones?.length || 0) > 0) {
-                                        const stockBase =
-                                            (productoInfo as any)?.stock_disponible_calc ??
-                                            (productoInfo as any)?.stock_disponible ??
-                                            (productoInfo as any)?.stock ??
-                                            0;
-
-                                        const validacion = validarStockDisponible(
-                                            num,
-                                            stockBase,
-                                            detalle.unidad_venta_id || detalle.unidad_medida_id,
-                                            detalle.unidad_medida_id,
-                                            detalle.conversiones,
-                                            productoInfo?.nombre,
-                                        );
-
-                                        if (!validacion.esValido) {
-                                            setValidacionError(validacion.mensaje);
-                                            console.warn(`⚠️ [STOCK VALIDATION] ${validacion.mensaje}`);
-                                            // NO actualizar si excede el stock
-                                            return;
-                                        } else {
-                                            setValidacionError(null);
-                                        }
-                                    } else if (validarStockVenta) {
-                                        // Productos no fraccionados: no permitir vender más que el disponible
-                                        if (num > stockDisponible + 0.000001) {
-                                            setValidacionError(`Solo hay ${formatearCantidad(stockDisponible)} ${unidadDisplay} disponibles`);
-                                            return;
-                                        }
-                                        setValidacionError(null);
-                                    }
-
-                                    onUpdateDetail(index, 'cantidad', num);
+                                    aplicarCantidad(num);
                                 }
                             }
                         }}
@@ -418,18 +467,18 @@ export default function ProductoTableRow({
                                         value={
                                             editingField?.index === index && editingField?.field === 'precio_unitario'
                                                 ? editingField.value
-                                                : mostrarDecimales(detalle.precio_unitario)
+                                                : mostrarDosDecimales(detalle.precio_unitario)
                                         }
                                         placeholder="0.0000"
                                         onFocus={() => {
                                             setEditingField({
                                                 index,
                                                 field: 'precio_unitario',
-                                                value: mostrarDecimales(detalle.precio_unitario),
+                                                value: mostrarAlEditar(detalle.precio_unitario),
                                             });
                                         }}
                                         onChange={(e) => {
-                                            const valor = e.target.value;
+                                            const valor = e.target.value.replace(',', '.');
                                             setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
                                             if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
                                                 const num = valor === '' ? 0 : parseFloat(valor);
@@ -454,17 +503,17 @@ export default function ProductoTableRow({
                                 <div className="space-y-0.5">
                                     <div className="font-semibold">
                                         {esAumento ? '↑ Aumento' : '↓ Disminución'}:{' '}
-                                        {formatCurrencyMinimalDecimals(Math.abs(detalle.precio_unitario - precioCosto))}
+                                        {formatCurrencyMinimalDecimals(Math.abs(costoNeto - precioCosto))}
                                     </div>
                                     <div className="opacity-75">Costo registrado: {formatCurrencyMinimalDecimals(precioCosto)}</div>
                                 </div>
                             </TooltipContent>
                         </Tooltip>
-                        {/* Costo registrado. Al aprobar la compra, el costo pasa a ser este precio de compra
+                        {/* Costo registrado. Al aprobar la compra, el costo pasa a ser el neto de esta línea
                             (backend: procesarCompraAprobada) */}
                         <div
                             className="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
-                            title="Costo registrado actualmente. Al aprobar la compra se actualiza con el precio de compra"
+                            title="Costo registrado actualmente. Al aprobar la compra se actualiza con el costo neto (precio menos el descuento de la línea)"
                         >
                             Reg.{' '}
                             <span className="font-mono font-semibold">{precioCosto > 0 ? formatCurrencyMinimalDecimals(precioCosto) : '-'}</span>
@@ -473,30 +522,37 @@ export default function ProductoTableRow({
 
 
 
-                    {/* Lote */}
-                    <td className="px-2 py-4">
+                    {/* Total Bs. (cantidad × precio, antes del descuento). Al escribirlo se despeja el precio unitario:
+                        así se copia el importe de la nota aunque su precio impreso esté redondeado */}
+                    <td className="px-2 py-2">
                         <input
                             type="text"
+                            inputMode="decimal"
                             disabled={readOnly}
-                            value={detalle.lote || ''}
-                            placeholder="LOT-001"
-                            onChange={(e) => {
-                                onUpdateDetail(index, 'lote', e.target.value);
+                            value={
+                                editingField?.index === index && editingField?.field === 'importe'
+                                    ? editingField.value
+                                    : mostrarDosDecimales(Number(detalle.cantidad || 0) * Number(detalle.precio_unitario || 0))
+                            }
+                            placeholder="0.00"
+                            title="Total de la línea antes del descuento. Al escribirlo se calcula el precio unitario"
+                            onFocus={() => {
+                                setEditingField({
+                                    index,
+                                    field: 'importe',
+                                    value: mostrarAlEditar(Number(detalle.cantidad || 0) * Number(detalle.precio_unitario || 0)),
+                                });
                             }}
-                            className="w-28 rounded-lg border border-gray-300 px-2 py-2 text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                        />
-                    </td>
-
-                    {/* Fecha Vencimiento */}
-                    <td className="px-2 py-4">
-                        <input
-                            type="date"
-                            disabled={readOnly}
-                            value={normalizeDateForInput(detalle.fecha_vencimiento)}
                             onChange={(e) => {
-                                onUpdateDetail(index, 'fecha_vencimiento', e.target.value);
+                                const valor = e.target.value.replace(',', '.');
+                                setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                                const cantidad = Number(detalle.cantidad || 0);
+                                if (cantidad > 0 && (valor === '' || /^\d*\.?\d*$/.test(valor))) {
+                                    onUpdateDetail(index, 'precio_unitario', (parseFloat(valor) || 0) / cantidad);
+                                }
                             }}
-                            className="w-32 rounded-lg border border-gray-300 px-2 py-2 text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                            onBlur={() => setEditingField(null)}
+                            className="w-28 rounded-lg border border-gray-300 px-2 py-2 font-mono text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
                         />
                     </td>
                 </>
@@ -719,7 +775,7 @@ export default function ProductoTableRow({
                     {/* El almacén de la línea lo decide el tipo de precio (ej. FRIO → almacén FRIO); se ve en "Quedan X en ..." */}
                 </td>
             )}
-            {/* Descuento de la línea, en monto (Bs). El costo del producto se sigue tomando del precio sin descuento */}
+            {/* Descuento de la línea, en monto (Bs). El costo del producto se calcula ya con este descuento */}
             {tipo === 'compra' && (
                 <td className="px-2 py-2 text-center">
                     {(() => {
@@ -737,12 +793,12 @@ export default function ProductoTableRow({
                                             ? editingField.value
                                             : descuento === 0
                                                 ? ''
-                                                : String(descuento)
+                                                : mostrarDosDecimales(descuento)
                                     }
                                     placeholder="0"
                                     title="Descuento de toda la línea, en monto"
                                     onFocus={() => {
-                                        setEditingField({ index, field: 'descuento', value: descuento === 0 ? '' : String(descuento) });
+                                        setEditingField({ index, field: 'descuento', value: descuento === 0 ? '' : mostrarAlEditar(descuento) });
                                     }}
                                     onChange={(e) => {
                                         const valor = e.target.value.replace(',', '.');
@@ -770,7 +826,7 @@ export default function ProductoTableRow({
                 </td>
 
             )}
-            {/* Subtotal: en compras es editable y completa el precio unitario */}
+            {/* Subtotal ("Total a cobrar" en compras, ya con descuento): en compras es editable y completa el precio unitario */}
             <td className="items-left px-2 py-2">
                 {tipo === 'compra' ? (
                     <Tooltip>
@@ -784,11 +840,11 @@ export default function ProductoTableRow({
                                     value={
                                         editingField?.index === index && editingField?.field === 'subtotal'
                                             ? editingField.value
-                                            : mostrarDecimales(detalle.subtotal)
+                                            : mostrarDosDecimales(detalle.subtotal)
                                     }
                                     placeholder="0.00"
                                     onFocus={() => {
-                                        setEditingField({ index, field: 'subtotal', value: mostrarDecimales(detalle.subtotal) });
+                                        setEditingField({ index, field: 'subtotal', value: mostrarAlEditar(detalle.subtotal) });
                                     }}
                                     onChange={(e) => {
                                         const valor = e.target.value.replace(',', '.');
@@ -813,25 +869,83 @@ export default function ProductoTableRow({
                                             <> · {formatCurrencyMinimalDecimals(precioCosto * Number(detalle.cantidad))} total</>
                                         )}
                                     </div>
-                                    <div className="opacity-75">Ingrese el subtotal para calcular el precio unitario</div>
+                                    <div className="opacity-75">Ingrese el total a cobrar para calcular el precio unitario</div>
                                 </div>
                             ) : (
                                 <div className="space-y-0.5">
                                     <div className="font-semibold">Sin precio registrado</div>
-                                    <div className="opacity-75">Ingrese el subtotal para calcular el precio unitario</div>
+                                    <div className="opacity-75">Ingrese el total a cobrar para calcular el precio unitario</div>
                                 </div>
                             )}
                         </TooltipContent>
                     </Tooltip>
+                ) : subtotalEditable && tipo === 'venta' ? (
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        disabled={readOnly}
+                        value={
+                            editingField?.index === index && editingField?.field === 'subtotal'
+                                ? editingField.value
+                                : mostrarDosDecimales(detalle.subtotal)
+                        }
+                        placeholder="0.00"
+                        title="Escriba el monto y la cantidad se calcula sola"
+                        onFocus={() => {
+                            setValidacionError(null);
+                            setEditingField({ index, field: 'subtotal', value: mostrarAlEditar(detalle.subtotal) });
+                        }}
+                        onChange={(e) => {
+                            const valor = e.target.value.replace(',', '.');
+                            setEditingField((prev) => (prev && prev.index === index ? { ...prev, value: valor } : prev));
+                            if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                aplicarSubtotalVenta(parseFloat(valor) || 0);
+                            }
+                        }}
+                        // El aviso se mantiene al salir: explica por qué el campo volvió al valor anterior
+                        onBlur={() => setEditingField(null)}
+                        className="w-28 rounded-lg border border-gray-300 px-2 py-2 font-mono text-sm font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                    />
                 ) : (
                     <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrencyMinimalDecimals(detalle.subtotal)}</span>
                 )}
             </td>
 
+            {tipo === 'compra' && (
+                <>
+                    {/* Lote */}
+                    <td className="px-2 py-4">
+                        <input
+                            type="text"
+                            disabled={readOnly}
+                            value={detalle.lote || ''}
+                            placeholder="LOT-001"
+                            onChange={(e) => {
+                                onUpdateDetail(index, 'lote', e.target.value);
+                            }}
+                            className="w-28 rounded-lg border border-gray-300 px-2 py-2 text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                        />
+                    </td>
+
+                    {/* Fecha Vencimiento */}
+                    <td className="px-2 py-4">
+                        <input
+                            type="date"
+                            disabled={readOnly}
+                            value={normalizeDateForInput(detalle.fecha_vencimiento)}
+                            onChange={(e) => {
+                                onUpdateDetail(index, 'fecha_vencimiento', e.target.value);
+                            }}
+                            className="w-32 rounded-lg border border-gray-300 px-2 py-2 text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                        />
+                    </td>
+                </>
+            )}
+
 
 
             {/* Compras: por cada tipo de precio de venta, 3 columnas: precio (nuevo y debajo el registrado), % ganancia y ganancia Bs.
-                La ganancia se aplica sobre el nuevo costo (precio unitario) */}
+                La ganancia se aplica sobre el nuevo costo (neto del descuento de la línea) */}
             {tipo === 'compra' &&
                 tiposPrecioVenta.map((tp) => {
                     // Sin precio registrado en esta unidad (o en 0): se puede cargar y se crea/actualiza al aprobar la compra
@@ -839,7 +953,7 @@ export default function ProductoTableRow({
                     const sinPrecio = !precioReg || precioReg.precio <= 0;
 
                     const clave = String(tp.tipo_precio_id);
-                    const costoNuevo = Number(detalle.precio_unitario) || 0;
+                    const costoNuevo = costoNeto;
                     const porcentajeReg = !sinPrecio && precioCosto > 0 ? ((precioReg.precio - precioCosto) / precioCosto) * 100 : null;
                     const montoReg = !sinPrecio && precioCosto > 0 ? precioReg.precio - precioCosto : null;
                     const editado = detalle.precios_nuevos?.[clave];
@@ -977,6 +1091,7 @@ export default function ProductoTableRow({
                     {detalle.producto && (detalle.producto as any).es_combo && (
                         <button
                             type="button"
+                            tabIndex={-1}
                             onClick={() =>
                                 setExpandedCombos((prev) => ({
                                     ...prev,
@@ -1002,6 +1117,7 @@ export default function ProductoTableRow({
                         <button
                             type="button"
                             disabled={readOnly}
+                            tabIndex={-1}
                             onClick={() => onAbrirModalCascada(index, detalle)}
                             className="rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
                             title="Editar cascada de precios"
@@ -1022,6 +1138,7 @@ export default function ProductoTableRow({
                         <button
                             type="button"
                             disabled={readOnly}
+                            tabIndex={-1}
                             onClick={() => onDuplicarLinea(index)}
                             className="rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
                             title="Agregar otra línea de este producto (ej. para venderlo frío)"
@@ -1034,6 +1151,7 @@ export default function ProductoTableRow({
                     <button
                         type="button"
                         disabled={readOnly}
+                        tabIndex={-1}
                         onClick={() => onRemoveDetail(index)}
                         className="rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/30"
                         title="Eliminar producto"

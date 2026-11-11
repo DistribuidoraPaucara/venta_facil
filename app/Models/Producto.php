@@ -34,6 +34,7 @@ class Producto extends Model
         'es_combo',
         'es_producto_comida', // ✨ NUEVO - Producto de comida/helado sin stock
         'permite_venta_sin_stock', // ✨ NUEVO - Permite vender sin stock (servicios, inyectables)
+        'permite_cantidad_decimal', // Venta en cantidades decimales sin conversión de unidad
         'es_producto_adicional', // ✨ NUEVO - Indica si el producto es un adicional
         'puede_tener_producto_adicional', // ✨ NUEVO - Indica si el producto puede tener adicionales
         'categoria_id',
@@ -59,6 +60,7 @@ class Producto extends Model
             'es_combo' => 'boolean',
             'es_producto_comida' => 'boolean', // ✨ NUEVO
             'permite_venta_sin_stock' => 'boolean', // ✨ NUEVO
+            'permite_cantidad_decimal' => 'boolean',
             'es_producto_adicional' => 'boolean', // ✨ NUEVO - Indica si es un adicional
             'puede_tener_producto_adicional' => 'boolean', // ✨ NUEVO - Indica si puede tener adicionales
             'visible_app' => 'boolean',
@@ -1106,6 +1108,14 @@ class Producto extends Model
     public function scopePermiteSinStock($query)
     {
         return $query->where('permite_venta_sin_stock', true);
+    }
+
+    /**
+     * ¿Se puede vender en cantidades decimales? Los fraccionados siempre; el resto, si tiene la opción activada.
+     */
+    public function admiteCantidadDecimal(): bool
+    {
+        return (bool) $this->es_fraccionado || (bool) $this->permite_cantidad_decimal;
     }
 
     /**

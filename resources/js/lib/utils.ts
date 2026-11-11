@@ -34,7 +34,8 @@ export function formatCurrencyMinimalDecimals(amount: number, currency = 'BOB'):
     if (decimalPart !== 0) {
         // Para productos fraccionados, verificar si necesita más de 2 decimales
         const decimalStr = Math.abs(decimalPart).toFixed(6).replace(/0+$/, ''); // Remover ceros al final
-        minDecimals = Math.max(2, Math.min(decimalStr.length, 6));
+        // Solo los dígitos tras el punto: contar el "0." del string daba 2 decimales de más (405.6 → "405,600")
+        minDecimals = Math.max(2, Math.min(decimalStr.split('.')[1]?.length ?? 0, 6));
         maxDecimals = 6; // Permitir hasta 6 decimales para fractionales
     }
 

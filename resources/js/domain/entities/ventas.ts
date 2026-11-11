@@ -68,6 +68,7 @@ export interface Producto extends BaseEntity {
     }>;
     // ✅ NUEVO: Campos para productos fraccionados
     es_fraccionado?: boolean;
+    permite_cantidad_decimal?: boolean; // Venta en cantidades decimales sin conversión de unidad
     unidad_medida_id?: Id;
     unidad_medida_nombre?: string;
     conversiones?: ConversionVenta[];

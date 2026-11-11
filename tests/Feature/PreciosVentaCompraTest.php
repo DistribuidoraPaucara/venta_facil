@@ -22,7 +22,7 @@ beforeEach(function () {
 });
 
 // Compra en memoria con una línea (el servicio solo lee los detalles)
-function compraConLinea(int $productoId, float $precioUnitario, ?array $preciosVenta): Compra
+function compraConLinea(int $productoId, float $precioUnitario, ?array $preciosVenta, float $descuento = 0): Compra
 {
     $compra = new Compra(['numero' => 'COMP-TEST-1']);
     $compra->setRelation('detalles', collect([
@@ -30,7 +30,8 @@ function compraConLinea(int $productoId, float $precioUnitario, ?array $preciosV
             'producto_id'     => $productoId,
             'cantidad'        => 10,
             'precio_unitario' => $precioUnitario,
-            'subtotal'        => $precioUnitario * 10,
+            'descuento'       => $descuento,
+            'subtotal'        => $precioUnitario * 10 - $descuento,
             'precios_venta'   => $preciosVenta,
         ]),
     ]));
@@ -49,6 +50,17 @@ test('aplica el precio editado por porcentaje sobre el precio de compra', functi
         ->and((float) $this->precioVenta->fresh()->precio)->toBe(22.0)
         ->and((float) $this->precioVenta->fresh()->porcentaje_ganancia)->toBe(10.0)
         ->and(HistorialPrecio::where('precio_producto_id', $this->precioVenta->id)->count())->toBe(1);
+});
+
+test('el precio de venta se calcula sobre el costo neto de la línea', function () {
+    // 10 × 20 − 20 de descuento = costo neto 18; +10 % = 19.80
+    $compra = compraConLinea($this->producto->id, 20, [
+        ['tipo_precio_id' => $this->precioVenta->tipo_precio_id, 'precio_id' => $this->precioVenta->id, 'porcentaje' => 10],
+    ], 20);
+
+    (new DetectarCambiosPrecioService())->aplicarPreciosVentaCompra($compra);
+
+    expect((float) $this->precioVenta->fresh()->precio)->toBe(19.8);
 });
 
 test('aplica el precio editado por ganancia en Bs y por precio directo', function () {

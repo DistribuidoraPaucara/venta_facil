@@ -17,6 +17,7 @@ interface UseProductSearchProps {
     isClienteGeneral?: boolean; // ✅ NUEVO: Indicar si es cliente GENERAL para seleccionar tipo de precio
     es_farmacia?: boolean; // ✅ NUEVO (2026-05-08): Indicar si es farmacia para permitir productos sin stock
     permitirProductosSinStock?: boolean; // ✅ NUEVO (2026-05-26): Permitir productos sin stock en proformas
+    almacenesVentaIds?: number[]; // Ventas: almacenes elegibles por línea; con stock en cualquiera, el producto se lista
 }
 
 export function useProductSearch({
@@ -28,8 +29,16 @@ export function useProductSearch({
     useFuseSearch = false, // ✅ DESACTIVADO (2026-05-08): Usar búsqueda por API en lugar de cargar todos los productos al inicio
     isClienteGeneral = false, // ✅ NUEVO: Por defecto NO es cliente general
     es_farmacia = false, // ✅ NUEVO (2026-05-08): Por defecto NO es farmacia
-    permitirProductosSinStock = false // ✅ NUEVO (2026-05-26): Por defecto NO permitir sin stock
+    permitirProductosSinStock = false, // ✅ NUEVO (2026-05-26): Por defecto NO permitir sin stock
+    almacenesVentaIds = [],
 }: UseProductSearchProps) {
+    const incluirAlmacenesVenta = tipo === 'venta' && almacenesVentaIds.length > 1;
+
+    // Con stock en el almacén de la empresa o, en ventas por almacén, en cualquiera de los de venta (ej. FRIO)
+    const tieneStockVendible = (p: Producto): boolean =>
+        p.stock > 0 ||
+        (incluirAlmacenesVenta && almacenesVentaIds.some((id) => Number((p as any).stock_por_almacen?.[id] ?? 0) > 0));
+
     const [productSearch, setProductSearch] = useState('');
     const [productosDisponibles, setProductosDisponibles] = useState<Producto[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -220,6 +229,7 @@ export function useProductSearch({
             peso: p.peso,
             codigos_barras: codigosBarrasExtraidos,
             es_fraccionado: p.es_fraccionado || false,
+            permite_cantidad_decimal: p.permite_cantidad_decimal || false,
             unidad_medida_id: p.unidad_medida_id,
             unidad_medida_nombre: p.unidad_medida_nombre,
             conversiones: p.conversiones || [],
@@ -278,7 +288,7 @@ export function useProductSearch({
                 }
 
                 // Si NO permitir sin stock, aplicar filtro de stock normal
-                const tieneStockSuficiente = p.stock > 0;
+                const tieneStockSuficiente = tieneStockVendible(p);
                 // ✨ NUEVO: Permitir productos fraccionados aunque tengan precio_venta = 0
                 return (tieneStockSuficiente || (es_farmacia && permiteSinStock)) && (p.precio_venta > 0 || esFraccionado);
             }
@@ -403,11 +413,12 @@ export function useProductSearch({
             if (almacen_id) params.append('almacen_id', almacen_id.toString());
             if (cliente_id) params.append('cliente_id', cliente_id.toString());
             if (permitirProductosSinStock) params.append('permitir_sin_stock', 'true'); // ✅ NUEVO (2026-05-26)
+            if (incluirAlmacenesVenta) params.append('incluir_almacenes_venta', '1');
             if (empresaId) params.append('empresa_id', empresaId.toString());
             else console.warn('⚠️ [useProductSearch] No se encontró empresa_id del usuario autenticado');
             return params;
         },
-        [tipo, almacen_id, cliente_id, permitirProductosSinStock, empresaId],
+        [tipo, almacen_id, cliente_id, permitirProductosSinStock, incluirAlmacenesVenta, empresaId],
     );
 
     // Búsqueda por texto en la API (nombre, código, SKU…; si son dígitos, el producto con ese ID va primero)
@@ -462,7 +473,7 @@ export function useProductSearch({
         const tieneComponentes = ((producto as any).combo_items?.length || 0) > 0;
 
         if (esCombo) return tieneComponentes ? null : 'Combo sin productos componentes configurados';
-        if (producto.stock === 0) return 'Producto sin stock disponible';
+        if (producto.stock === 0 && !tieneStockVendible(producto)) return 'Producto sin stock disponible';
         if (producto.precio_venta === 0) return 'Producto sin precio de venta configurado';
         return null;
     };

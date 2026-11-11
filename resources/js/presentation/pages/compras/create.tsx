@@ -39,7 +39,7 @@ interface DetalleForm {
   conversiones?: any[]; // ✅ NUEVO: Conversiones del producto
   // Precio de venta editado por tipo de precio (clave: tipo_precio_id): precio directo, o la ganancia en
   // % (precio = costo × (1 + %)) o en Bs (precio = costo + monto). Se guarda con la línea y el backend lo
-  // aplica a precios_producto al APROBAR la compra, sobre el precio unitario (nuevo costo)
+  // aplica a precios_producto al APROBAR la compra, sobre el costo neto de la línea (nuevo costo)
   precios_nuevos?: Record<string, { precio_id: number | null; precio?: number; porcentaje?: number; monto?: number }>; // precio_id null = precio nuevo
   producto?: { // ✅ NUEVO: Información completa del producto
     id: number | string;

@@ -324,8 +324,8 @@ class StoreVentaRequest extends FormRequest
                     $cantidad = $detalle['cantidad'] ?? 0;
 
                     if ($producto) {
-                        // 🔷 VALIDACIÓN 1: Rechazar decimales si NO es fraccionado
-                        if (!$producto->es_fraccionado) {
+                        // 🔷 VALIDACIÓN 1: Rechazar decimales si el producto no los admite
+                        if (!$producto->admiteCantidadDecimal()) {
                             // Verificar si cantidad tiene decimales
                             if ((float) $cantidad != floor((float) $cantidad)) {
                                 $validator->errors()->add(

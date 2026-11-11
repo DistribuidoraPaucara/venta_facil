@@ -74,6 +74,7 @@ export interface ProductosTableProps {
     almacen_id?: number; // ✅ NUEVO: Almacén para búsqueda API
     proveedor_id?: number | null; // Compras: proveedor de la compra (para mostrar su código de catálogo de cada producto)
     almacenesVenta?: Array<{ id: number; nombre: string }>; // Ventas: almacenes elegibles por línea (selector solo si hay más de uno)
+    subtotalEditable?: boolean; // Ventas: escribir el subtotal calcula la cantidad
     onDuplicarLinea?: (index: number) => void; // Ventas: otra línea del mismo producto (ej. para venderlo frío)
     cliente_id?: number | null; // ✅ NUEVO: Cliente para filtrar tipos_precio (LICORERIA vs VENTA)
     isClienteGeneral?: boolean; // ✅ NUEVO: Indicar si es cliente GENERAL para seleccionar tipo de precio LICORERIA
@@ -88,6 +89,16 @@ export interface ProductosTableProps {
     onDetallesActualizados?: (detalles: DetalleProducto[]) => void; // ✅ NUEVO (2026-02-17): Callback cuando se actualizan detalles por cambios de rangos
     es_farmacia?: boolean; // ✅ NUEVO: Indicador para mostrar/ocultar campos de medicamentos en sugerencias
     permitirProductosSinStock?: boolean; // ✅ NUEVO (2026-05-26): Permitir productos sin stock en proformas
+}
+
+/**
+ * Compras: costo real por unidad, después del descuento de la línea (igual que DetalleCompra::costoNeto).
+ */
+export function costoNetoLinea(detalle: Pick<DetalleProducto, 'cantidad' | 'precio_unitario' | 'descuento'>): number {
+    const precio = Number(detalle.precio_unitario) || 0;
+    const cantidad = Number(detalle.cantidad) || 0;
+    const descuento = Number(detalle.descuento) || 0;
+    return cantidad > 0 ? precio - descuento / cantidad : precio;
 }
 
 /**

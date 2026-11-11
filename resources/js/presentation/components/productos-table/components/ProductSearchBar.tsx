@@ -14,6 +14,7 @@ interface ProductSearchBarProps {
     readOnly?: boolean;
     es_farmacia?: boolean;
     permitirProductosSinStock?: boolean; // ✅ NUEVO (2026-05-26): Permitir productos sin stock
+    almacenesVenta?: Array<{ id: number; nombre: string }>; // Ventas: almacenes elegibles por línea (ej. SALA y FRIO)
     onProductSelected: (producto: Producto) => void;
     onMedicamentoInfo: (producto: Producto) => void;
 }
@@ -33,6 +34,7 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
     readOnly = false,
     es_farmacia = false,
     permitirProductosSinStock = false,
+    almacenesVenta = [],
     onProductSelected,
     onMedicamentoInfo
 }: ProductSearchBarProps,
@@ -65,8 +67,17 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
         readOnly,
         es_farmacia, // ✅ NUEVO (2026-05-08): Pasar es_farmacia para permitir productos sin stock
         permitirProductosSinStock, // ✅ NUEVO (2026-05-26): Pasar permitirProductosSinStock
+        almacenesVentaIds: almacenesVenta.map((a) => Number(a.id)),
         onAddProduct: onProductSelected
     });
+
+    // Sugerencias en ventas por almacén: suma de los almacenes de venta (el detalle, en el tooltip)
+    const venderPorAlmacen = tipo === 'venta' && almacenesVenta.length > 1;
+    const stockEnAlmacen = (producto: Producto, almacenId: number) => Number((producto as any).stock_por_almacen?.[almacenId] ?? 0);
+    const stockSugerencia = (producto: Producto): number =>
+        venderPorAlmacen && !(producto as any).es_combo
+            ? almacenesVenta.reduce((total, a) => total + stockEnAlmacen(producto, Number(a.id)), 0)
+            : ((producto as any).stock ?? (producto as any).stock_disponible ?? 0);
 
     // ✅ NUEVO (2026-09-10): Exponer método focus via forwardRef
     useImperativeHandle(ref, () => ({
@@ -425,8 +436,15 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                                                     })()}
                                                 </td>
                                                 <td className="px-3 py-3 text-sm text-center font-medium">
-                                                    <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                                                        {(producto as any).stock ?? (producto as any).stock_disponible ?? 0}
+                                                    <span
+                                                        className="text-blue-600 dark:text-blue-400 font-semibold"
+                                                        title={
+                                                            venderPorAlmacen && !(producto as any).es_combo
+                                                                ? almacenesVenta.map((a) => `${a.nombre}: ${stockEnAlmacen(producto, Number(a.id))}`).join(' · ')
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {stockSugerencia(producto)}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 py-3 text-xs">
