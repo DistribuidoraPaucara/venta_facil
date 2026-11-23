@@ -156,6 +156,84 @@ reporte.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     reporte.form = reporteForm
 /**
+* @see \App\Http\Controllers\CuentaPorCobrarController::exportarExcel
+ * @see app/Http/Controllers/CuentaPorCobrarController.php:130
+ * @route '/ventas/cuentas-por-cobrar/exportar-excel'
+ */
+export const exportarExcel = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: exportarExcel.url(options),
+    method: 'get',
+})
+
+exportarExcel.definition = {
+    methods: ["get","head"],
+    url: '/ventas/cuentas-por-cobrar/exportar-excel',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\CuentaPorCobrarController::exportarExcel
+ * @see app/Http/Controllers/CuentaPorCobrarController.php:130
+ * @route '/ventas/cuentas-por-cobrar/exportar-excel'
+ */
+exportarExcel.url = (options?: RouteQueryOptions) => {
+    return exportarExcel.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\CuentaPorCobrarController::exportarExcel
+ * @see app/Http/Controllers/CuentaPorCobrarController.php:130
+ * @route '/ventas/cuentas-por-cobrar/exportar-excel'
+ */
+exportarExcel.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: exportarExcel.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\CuentaPorCobrarController::exportarExcel
+ * @see app/Http/Controllers/CuentaPorCobrarController.php:130
+ * @route '/ventas/cuentas-por-cobrar/exportar-excel'
+ */
+exportarExcel.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: exportarExcel.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\CuentaPorCobrarController::exportarExcel
+ * @see app/Http/Controllers/CuentaPorCobrarController.php:130
+ * @route '/ventas/cuentas-por-cobrar/exportar-excel'
+ */
+    const exportarExcelForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: exportarExcel.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\CuentaPorCobrarController::exportarExcel
+ * @see app/Http/Controllers/CuentaPorCobrarController.php:130
+ * @route '/ventas/cuentas-por-cobrar/exportar-excel'
+ */
+        exportarExcelForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: exportarExcel.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\CuentaPorCobrarController::exportarExcel
+ * @see app/Http/Controllers/CuentaPorCobrarController.php:130
+ * @route '/ventas/cuentas-por-cobrar/exportar-excel'
+ */
+        exportarExcelForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: exportarExcel.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    exportarExcel.form = exportarExcelForm
+/**
 * @see \App\Http\Controllers\CuentaPorCobrarController::show
  * @see app/Http/Controllers/CuentaPorCobrarController.php:290
  * @route '/ventas/cuentas-por-cobrar/{cuentaPorCobrar}/show'
@@ -632,6 +710,7 @@ anular.post = (args: { cuentaPorCobrar: number | { id: number } } | [cuentaPorCo
 const cuentasPorCobrar = {
     index,
 reporte,
+exportarExcel,
 show,
 imprimir,
 imprimirTicket80,
