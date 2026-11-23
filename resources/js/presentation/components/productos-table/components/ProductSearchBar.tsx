@@ -45,6 +45,8 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
     const [showSuggestions, setShowSuggestions] = useState(true);
     const [loadingInyectables, setLoadingInyectables] = useState(false); // ✅ NUEVO (2026-05-08)
     const inputSearchRef = useRef<HTMLInputElement>(null); // ✅ NUEVO: Ref para el input de búsqueda
+    // Fila resaltada con las flechas ↑/↓ de la lista de sugerencias (-1 = ninguna)
+    const [indiceActivo, setIndiceActivo] = useState(-1);
 
     const {
         productSearch,
@@ -97,6 +99,18 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
     useEffect(() => {
         if (productSearch.trim().length >= 2) setShowSuggestions(true);
     }, [productSearch]);
+
+    // Nueva búsqueda o nuevos resultados: ninguna fila resaltada
+    useEffect(() => {
+        setIndiceActivo(-1);
+    }, [productSearch, productosDisponibles.length]);
+
+    // Mantener visible la fila resaltada al navegar con las flechas
+    useEffect(() => {
+        if (indiceActivo >= 0) {
+            document.getElementById(`sugerencia-${indiceActivo}`)?.scrollIntoView({ block: 'nearest' });
+        }
+    }, [indiceActivo]);
 
     // ✅ Logging cuando los productos disponibles cambian
     useEffect(() => {
@@ -200,9 +214,22 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                             value={productSearch}
                             onChange={(e) => setProductSearch(e.target.value)}
                             onKeyDown={(e) => {
+                                const hayLista = showSuggestions && productosDisponibles.length > 0;
+                                if (hayLista && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                                    e.preventDefault();
+                                    const total = productosDisponibles.length;
+                                    setIndiceActivo((prev) =>
+                                        e.key === 'ArrowDown' ? (prev + 1) % total : prev <= 0 ? total - 1 : prev - 1
+                                    );
+                                    return;
+                                }
                                 if (e.key === 'Enter') {
                                     e.preventDefault();
-                                    // Código exacto (o ID) → se agrega; si no, lista de resultados
+                                    // Fila elegida con las flechas → se agrega esa; si no, código exacto (o ID) o lista de resultados
+                                    if (hayLista && indiceActivo >= 0 && indiceActivo < productosDisponibles.length) {
+                                        handleSelectProducto(productosDisponibles[indiceActivo]);
+                                        return;
+                                    }
                                     confirmarBusqueda();
                                 }
                             }}
@@ -342,11 +369,18 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {productosDisponibles.map((producto) => (
+                                        {productosDisponibles.map((producto, index) => (
                                             <tr
                                                 key={producto.id}
+                                                id={`sugerencia-${index}`}
+                                                aria-selected={index === indiceActivo}
                                                 onClick={() => handleSelectProducto(producto)}
-                                                className={`border-b border-gray-100 dark:border-zinc-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${tipo === 'compra'
+                                                className={`border-b border-gray-100 dark:border-zinc-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${index === indiceActivo
+                                                    ? (tipo === 'compra'
+                                                        ? 'bg-red-100 dark:bg-red-900/40'
+                                                        : 'bg-green-100 dark:bg-green-900/40')
+                                                    : ''
+                                                } ${tipo === 'compra'
                                                     ? 'hover:bg-red-50 dark:hover:bg-red-900/20'
                                                     : 'hover:bg-green-50 dark:hover:bg-green-900/20'
                                                 }`}

@@ -1733,7 +1733,7 @@ export default function VentaForm() {
         >
             <Head title={isEditing ? 'Editar venta' : 'Nueva venta'} />
 
-            <form onSubmit={handleSubmit} className="space-y-6 px-4 py-2">
+            <form onSubmit={handleSubmit} className="space-y-2 px-2 py-2">
                 {/* Indicador de verificación de caja */}
                 {cargandoCaja && (
                     <div className="rounded-lg border border-blue-300 bg-blue-50 p-4 dark:bg-blue-900/20">
