@@ -40,6 +40,10 @@ interface ProductoTableRowProps {
     // Compras: columnas de precios de venta (una por tipo) y los precios registrados de esta línea por tipo
     tiposPrecioVenta?: Array<{ tipo_precio_id: number; nombre: string; porcentaje_ganancia?: number }>; // porcentaje_ganancia: por defecto del tipo
     preciosVentaPorTipo?: Record<number, { id: number; precio: number; tipo_precio_id: number; nombre: string }>;
+    // Ventas: transferencia de caja, editada en la fila del servicio (es_servicio)
+    transferencia?: { monto: number | null; tipo: 'ENTRADA' | 'SALIDA' | null };
+    onTransferenciaChange?: (cambios: { monto?: number | null; tipo?: 'ENTRADA' | 'SALIDA' | null }) => void;
+    transferenciaError?: string;
     // Ventas: almacenes elegibles por línea (selector solo si hay más de uno) y duplicar línea (ej. para venderlo frío)
     almacenesVenta?: Array<{ id: number; nombre: string }>;
     proveedorId?: number | null; // Compras: proveedor de la compra (su código de catálogo del producto)
@@ -79,11 +83,16 @@ export default function ProductoTableRow({
     proformaConvertida = false,
     tiposPrecioVenta = [],
     preciosVentaPorTipo = {},
+    transferencia,
+    onTransferenciaChange,
+    transferenciaError,
     almacenesVenta = [],
     proveedorId = null,
     onDuplicarLinea,
 }: ProductoTableRowProps) {
     const productoInfo = detalle.producto as any;
+    // Servicio (es_servicio, ej. comisión de transferencias): cantidad fija en 1 y precio escrito a mano en la venta
+    const esServicio = Boolean(productoInfo?.es_servicio);
     const [validacionError, setValidacionError] = useState<string | null>(null);
 
     console.log('ProductoTableRow - productoInfo:', productoInfo);
@@ -140,7 +149,8 @@ export default function ProductoTableRow({
     }
     // En ventas el disponible se descuenta en vivo con la cantidad ingresada (no aplica a proformas ya convertidas: su stock está reservado)
     // Misma regla que el backend (VentaController::verificarStock): sin stock solo para farmacias con el producto marcado
-    const permiteVentaSinStock = Boolean(es_farmacia && productoInfo?.permite_venta_sin_stock);
+    // Servicios (es_servicio) no manejan stock, en cualquier empresa
+    const permiteVentaSinStock = Boolean((es_farmacia && productoInfo?.permite_venta_sin_stock) || (productoInfo as any)?.es_servicio);
     const validarStockVenta = tipo === 'venta' && !proformaConvertida && !permiteVentaSinStock;
     const stockRestante = stockDisponible - Number(detalle.cantidad || 0);
     // Código del producto: código de barras si tiene; si no, el SKU (o el código interno); null si no hay ninguno
@@ -373,6 +383,36 @@ export default function ProductoTableRow({
                         );
                     })()}
                 </div>
+
+                {/* Transferencia de caja: vive en la misma fila del servicio (la comisión va en PRECIO) */}
+                {esServicio && tipo === 'venta' && onTransferenciaChange && (
+                    <div className="mt-2 rounded-md border border-dashed border-blue-300 bg-blue-50/60 p-2 dark:border-blue-800 dark:bg-blue-900/20">
+                        <div className="mb-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300">Transferencia (efectivo por caja, no suma al total)</div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <select
+                                disabled={readOnly}
+                                value={transferencia?.tipo ?? ''}
+                                onChange={(e) => onTransferenciaChange({ tipo: (e.target.value || null) as 'ENTRADA' | 'SALIDA' | null })}
+                                className="rounded-md border border-gray-300 px-1.5 py-1 text-xs dark:border-zinc-600 dark:bg-zinc-800 dark:text-white disabled:opacity-50"
+                            >
+                                <option value="">Sin transferencia</option>
+                                <option value="SALIDA">Cliente transfirió → sale de caja</option>
+                                <option value="ENTRADA">Cliente pagó efectivo → entra a caja</option>
+                            </select>
+                            <input
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                disabled={readOnly}
+                                value={transferencia?.monto ?? ''}
+                                placeholder="Monto Bs"
+                                onChange={(e) => onTransferenciaChange({ monto: e.target.value === '' ? null : Number(e.target.value) })}
+                                className="w-24 rounded-md border border-gray-300 px-1.5 py-1 font-mono text-xs dark:border-zinc-600 dark:bg-zinc-800 dark:text-white disabled:opacity-50"
+                            />
+                        </div>
+                        {transferenciaError && <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">{transferenciaError}</p>}
+                    </div>
+                )}
             </td>
 
             {/* Cantidad (el stock disponible se muestra debajo, recalculado en vivo: en ventas resta, en compras suma) */}
@@ -381,7 +421,7 @@ export default function ProductoTableRow({
                     <input
                         type="text"
                         inputMode="decimal"
-                        disabled={readOnly}
+                        disabled={readOnly || (tipo === 'venta' && esServicio)}
                         value={editingField?.index === index && editingField?.field === 'cantidad' ? editingField.value : detalle.cantidad.toString()}
                         placeholder="0.00"
                         onFocus={() => {
@@ -580,6 +620,37 @@ export default function ProductoTableRow({
                                 !(p.unidad_medida_id && unidadesConProductoPropio.has(Number(p.unidad_medida_id)))
                             );
                         });
+
+                        // Servicio: la comisión se escribe directo en el precio (no depende de tipos de precio ni de stock)
+                        if (esServicio) {
+                            // Mismo patrón que el subtotal: mientras se escribe se muestra el texto tal cual (permite borrar y escribir de nuevo)
+                            return (
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    disabled={readOnly}
+                                    value={
+                                        editingField?.index === index && editingField?.field === 'precio_servicio'
+                                            ? editingField.value
+                                            : (detalle.precio_unitario ?? '').toString()
+                                    }
+                                    placeholder="0.00"
+                                    title="Monto de la comisión del servicio"
+                                    onFocus={() =>
+                                        setEditingField({ index, field: 'precio_servicio', value: String(detalle.precio_unitario ?? '') })
+                                    }
+                                    onChange={(e) => {
+                                        const valor = e.target.value.replace(',', '.');
+                                        setEditingField({ index, field: 'precio_servicio', value: valor });
+                                        if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
+                                            onUpdateDetail(index, 'precio_unitario', valor === '' ? 0 : parseFloat(valor) || 0);
+                                        }
+                                    }}
+                                    onBlur={() => setEditingField(null)}
+                                    className="w-28 rounded-lg border border-gray-300 px-2 py-2 font-mono text-sm font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                                />
+                            );
+                        }
 
                         // ✅ Si solo hay un tipo de precio, mostrar solo lectura
                         if (preciosVenta.length <= 1) {
@@ -881,7 +952,7 @@ export default function ProductoTableRow({
                             )}
                         </TooltipContent>
                     </Tooltip>
-                ) : subtotalEditable && tipo === 'venta' ? (
+                ) : subtotalEditable && tipo === 'venta' && !esServicio ? (
                     <input
                         type="text"
                         inputMode="decimal"

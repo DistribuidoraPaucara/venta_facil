@@ -937,6 +937,18 @@ function Step1DatosProducto({
                     />
                 )}
 
+                {/* Servicio sin stock (ej. comisión de transferencias): no descuenta inventario y su precio se escribe al vender */}
+                <FeatureToggle
+                    id="es_servicio"
+                    checked={!!(data as any).es_servicio}
+                    onCheckedChange={(v) => setData('es_servicio' as any, !!v)}
+                    icon="🧾"
+                    title="Servicio (sin stock)"
+                    description="Marca este producto si es un servicio: no maneja stock y el precio se escribe en cada venta."
+                    hint="Ejemplo: Comisión por transferencia bancaria"
+                    colorScheme="blue"
+                />
+
                 {/* ✅ NUEVA SECCIÓN: Venta sin Stock (controlado por empresa) */}
                 {permite_vender_sin_stock && (
                     <FeatureToggle

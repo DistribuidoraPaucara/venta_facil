@@ -32,6 +32,7 @@ class Producto extends Model
         'es_alquilable',
         'es_fraccionado',
         'es_combo',
+        'es_servicio', // Servicio sin stock (ej. comisión de transferencias): no descuenta inventario
         'es_producto_comida', // ✨ NUEVO - Producto de comida/helado sin stock
         'permite_venta_sin_stock', // ✨ NUEVO - Permite vender sin stock (servicios, inyectables)
         'permite_cantidad_decimal', // Venta en cantidades decimales sin conversión de unidad
@@ -58,6 +59,7 @@ class Producto extends Model
             'es_alquilable' => 'boolean',
             'es_fraccionado' => 'boolean',
             'es_combo' => 'boolean',
+            'es_servicio' => 'boolean',
             'es_producto_comida' => 'boolean', // ✨ NUEVO
             'permite_venta_sin_stock' => 'boolean', // ✨ NUEVO
             'permite_cantidad_decimal' => 'boolean',

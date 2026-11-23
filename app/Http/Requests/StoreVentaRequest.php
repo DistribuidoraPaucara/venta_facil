@@ -97,6 +97,10 @@ class StoreVentaRequest extends FormRequest
             // ✅ NUEVO (2026-03-02): Validación para monto_pagado_inicial
             'monto_pagado_inicial' => 'nullable|numeric|min:0',
 
+            // Servicio de transferencias: monto que pasa por caja en efectivo (no suma al total). Solo una por venta.
+            'transferencia_monto' => 'nullable|numeric|min:0.01',
+            'transferencia_tipo'  => 'nullable|required_with:transferencia_monto|in:ENTRADA,SALIDA',
+
             // ✅ NUEVO (2026-03-09): Validación para pagos parciales
             'pagos' => 'nullable|array|min:0',
             'pagos.*.tipo_pago_id' => 'required_if:pagos,present|exists:tipos_pago,id',

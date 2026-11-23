@@ -25,6 +25,8 @@ class Venta extends Model
         'descuento',
         'impuesto',
         'total',
+        'transferencia_monto', // Servicio de transferencias: monto que pasa por caja en efectivo (fuera del total)
+        'transferencia_tipo',  // ENTRADA | SALIDA
         'peso_total_estimado',  // ✅ NUEVO: Peso total en kg (cantidad * peso_producto)
         'observaciones',
         'observaciones_logistica',  // ✅ NUEVO: Observaciones sobre entrega (completa, incidentes, etc.)
@@ -74,6 +76,7 @@ class Venta extends Model
             'descuento'      => 'decimal:2',
             'impuesto'       => 'decimal:2',
             'total'          => 'decimal:2',
+            'transferencia_monto' => 'decimal:2',
             'peso_total_estimado' => 'decimal:2',  // ✅ NUEVO: Peso en kg con 2 decimales
             'requiere_envio' => 'boolean',
             'monto_pagado'   => 'decimal:2',
@@ -878,7 +881,7 @@ class Venta extends Model
             // ✅ CORREGIDO (2026-07-24): Obtener TODOS los movimientos VENTA de esta venta
             // (no solo uno como antes) para manejar pagos desglosados (transferencia + efectivo)
             $movimientosVenta = MovimientoCaja::where('venta_id', $this->id)
-                ->whereHas('tipoOperacion', fn($q) => $q->whereIn('codigo', ['VENTA', 'ANULADO-VENTA']))
+                ->whereHas('tipoOperacion', fn($q) => $q->whereIn('codigo', ['VENTA', 'ANULADO-VENTA', 'TRANSFERENCIA_ENTRADA', 'TRANSFERENCIA_SALIDA']))
                 ->get();
 
             if ($movimientosVenta->isEmpty()) {
@@ -903,14 +906,20 @@ class Venta extends Model
                     $observacionesMovimiento .= " | Anulado por: {$usuarioNombre}";
                 }
 
+                // Transferencias: el movimiento original puede ser salida (negativo); la reversa invierte su signo
+                $codigoOriginal = $movimientoOriginal->tipoOperacion?->codigo;
+                $esTransferencia = in_array($codigoOriginal, ['TRANSFERENCIA_ENTRADA', 'TRANSFERENCIA_SALIDA'], true);
+
                 MovimientoCaja::create([
                     'apertura_caja_id'    => $movimientoOriginal->apertura_caja_id,
                     'caja_id'             => $movimientoOriginal->caja_id,
                     'user_id'             => Auth::id(),
                     'fecha'               => now(),
-                    'monto'               => -abs($movimientoOriginal->monto), // Negativo para restar
+                    'monto'               => $esTransferencia
+                        ? -(float) $movimientoOriginal->monto
+                        : -abs($movimientoOriginal->monto), // Negativo para restar
                     'observaciones'       => $observacionesMovimiento,
-                    'numero_documento'    => $this->numero . '-ANU-' . $movimientoOriginal->tipo_pago_id,
+                    'numero_documento'    => $this->numero . ($esTransferencia ? '-ANU-TRF' : '-ANU-' . $movimientoOriginal->tipo_pago_id),
                     'tipo_operacion_id'   => $tipoOperacionAnulacion->id,
                     'tipo_pago_id'        => $movimientoOriginal->tipo_pago_id,
                     'venta_id'            => $this->id,

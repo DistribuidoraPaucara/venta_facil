@@ -83,6 +83,21 @@ class VentaService
         // $dto->detalles se preserva sin cambios para DetalleVenta.
         $detallesParaStock = $this->stockService->expandirCombos($dto->detalles);
 
+        // Servicios (es_servicio, ej. comisión de transferencias) no manejan stock: se quitan de la validación y del consumo
+        $idsServicio = collect($detallesParaStock)
+            ->map(fn ($d) => (int) ($d['producto_id'] ?? $d['id'] ?? 0))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $idsServicio = \App\Models\Producto::whereIn('id', $idsServicio)->where('es_servicio', true)->pluck('id')->all();
+        if (! empty($idsServicio)) {
+            $detallesParaStock = array_values(array_filter(
+                $detallesParaStock,
+                fn ($d) => ! in_array((int) ($d['producto_id'] ?? $d['id'] ?? 0), $idsServicio, true)
+            ));
+        }
+
         Log::info('🔄 [VentaService::crear] Validando stock disponible con VentaDistribucionService', [
             'detalles_count' => count($dto->detalles),
             'politica_pago'  => $dto->politica_pago,
@@ -211,6 +226,8 @@ class VentaService
                 'descuento'                  => $dto->descuento,  // ✅ NUEVO: Registrar descuento del frontend
                 'impuesto'                   => $dto->impuesto,
                 'total'                      => $dto->total,
+                'transferencia_monto'        => $dto->transferencia_monto > 0 ? $dto->transferencia_monto : null,
+                'transferencia_tipo'         => $dto->transferencia_monto > 0 ? $dto->transferencia_tipo : null,
                 'peso_total_estimado'        => $dto->peso_total_estimado ?? 0, // ✅ NUEVO: Peso total calculado
                 'estado_documento_id'        => $estadoDocumentoId,
                 'moneda_id'                  => $monedaDefecto?->id ?? 1,
@@ -240,6 +257,11 @@ class VentaService
             // ✅ NUEVO: Asignar número de venta con formato VEN + FECHA + ID
             $numeroVenta = 'VEN' . now()->format('Ymd') . '-' . str_pad($venta->id, 4, '0', STR_PAD_LEFT);
             $venta->update(['numero' => $numeroVenta]);
+
+            // Servicio de transferencias: efectivo que entra o sale de caja (dentro de la misma transacción)
+            if ($dto->transferencia_monto > 0) {
+                $this->registrarMovimientoTransferencia($venta, $cajaId, (float) $dto->transferencia_monto, (string) $dto->transferencia_tipo);
+            }
             Log::info('✅ [VentaService::crear] Número de venta asignado con ID', [
                 'venta_id'     => $venta->id,
                 'venta_numero' => $numeroVenta,
@@ -533,6 +555,43 @@ class VentaService
      *
      * @throws EstadoInvalidoException
      */
+    /**
+     * Servicio de transferencias: registra en caja el efectivo que entra (ENTRADA, +) o sale (SALIDA, -).
+     * Se ejecuta dentro de la transacción de crear(): si no se puede registrar, la venta no se crea.
+     */
+    private function registrarMovimientoTransferencia(Venta $venta, ?int $cajaId, float $monto, string $tipo): void
+    {
+        if (! $cajaId) {
+            throw new \RuntimeException('Para registrar una transferencia debe haber una caja abierta.');
+        }
+
+        $codigo = $tipo === 'SALIDA' ? 'TRANSFERENCIA_SALIDA' : 'TRANSFERENCIA_ENTRADA';
+        $tipoOperacion = \App\Models\TipoOperacionCaja::where('codigo', $codigo)->first();
+        $tipoPagoEfectivo = \App\Models\TipoPago::where('codigo', 'EFECTIVO')->first();
+
+        if (! $tipoOperacion || ! $tipoPagoEfectivo) {
+            throw new \RuntimeException("Falta configurar el tipo de operación {$codigo} o el tipo de pago EFECTIVO.");
+        }
+
+        $apertura = \App\Models\AperturaCaja::where('user_id', Auth::id())
+            ->whereDoesntHave('cierre')
+            ->latest('fecha')
+            ->first();
+
+        \App\Models\MovimientoCaja::create([
+            'apertura_caja_id'  => $apertura?->id,
+            'caja_id'           => $cajaId,
+            'user_id'           => Auth::id(),
+            'fecha'             => now(),
+            'monto'             => $tipo === 'SALIDA' ? -abs($monto) : abs($monto),
+            'tipo_operacion_id' => $tipoOperacion->id,
+            'tipo_pago_id'      => $tipoPagoEfectivo->id,
+            'venta_id'          => $venta->id,
+            'numero_documento'  => $venta->numero,
+            'observaciones'     => ($tipo === 'SALIDA' ? 'Transferencia entregada en efectivo' : 'Transferencia recibida en efectivo') . " - venta {$venta->numero}",
+        ]);
+    }
+
     public function aprobar(int $ventaId): VentaResponseDTO
     {
         $venta = $this->transaction(function () use ($ventaId) {

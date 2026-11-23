@@ -644,6 +644,19 @@ export default function VentaShow() {
                                     </div>
                                 )}
 
+                                {/* Transferencia (efectivo que pasa por caja, no suma al total) */}
+                                {Number((venta as any).transferencia_monto) > 0 && (
+                                    <div className="flex justify-between rounded bg-blue-50 p-2 dark:bg-blue-900/20">
+                                        <span className="font-medium text-blue-700 dark:text-blue-300">
+                                            {(venta as any).transferencia_tipo === 'SALIDA' ? 'Transferencia: sale de caja' : 'Transferencia: entra a caja'}
+                                        </span>
+                                        <span className="font-semibold text-blue-700 dark:text-blue-300">
+                                            {(venta as any).transferencia_tipo === 'SALIDA' ? '-' : '+'}
+                                            {formatCurrencyWith2Decimals(Number((venta as any).transferencia_monto), venta.moneda.codigo)}
+                                        </span>
+                                    </div>
+                                )}
+
                                 {/* Monto Pagado */}
                                 {venta.monto_pagado !== null && venta.monto_pagado > 0 && (
                                     <div className="flex justify-between rounded bg-green-50 p-2 dark:bg-green-900/20">

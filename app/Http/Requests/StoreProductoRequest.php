@@ -156,6 +156,7 @@ class StoreProductoRequest extends FormRequest
             'puede_tener_producto_adicional' => ['nullable', 'boolean'], // ✨ NUEVO - Indica si puede tener adicionales
             'es_alquilable'            => ['nullable', 'boolean'], // ✨ NUEVO - Indica si el producto es alquilable
             'es_combo'                 => ['nullable', 'boolean'], // ✨ NUEVO - Indica si el producto es un combo
+            'es_servicio'              => ['nullable', 'boolean'], // Servicio sin stock (comisión de transferencias)
             'conversiones'             => ['nullable', 'array'],
             'conversiones.*.unidad_base_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id'],
             'conversiones.*.unidad_destino_id' => ['required_with:conversiones', 'integer', 'exists:unidades_medida,id', 'different:conversiones.*.unidad_base_id'],

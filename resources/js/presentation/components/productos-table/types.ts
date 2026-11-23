@@ -76,6 +76,10 @@ export interface ProductosTableProps {
     almacenesVenta?: Array<{ id: number; nombre: string }>; // Ventas: almacenes elegibles por línea (selector solo si hay más de uno)
     subtotalEditable?: boolean; // Ventas: escribir el subtotal calcula la cantidad
     onDuplicarLinea?: (index: number) => void; // Ventas: otra línea del mismo producto (ej. para venderlo frío)
+    // Ventas: transferencia de caja. Se edita en la fila del servicio (es_servicio) y el estado vive en la venta
+    transferencia?: { monto: number | null; tipo: 'ENTRADA' | 'SALIDA' | null };
+    onTransferenciaChange?: (cambios: { monto?: number | null; tipo?: 'ENTRADA' | 'SALIDA' | null }) => void;
+    transferenciaError?: string;
     cliente_id?: number | null; // ✅ NUEVO: Cliente para filtrar tipos_precio (LICORERIA vs VENTA)
     isClienteGeneral?: boolean; // ✅ NUEVO: Indicar si es cliente GENERAL para seleccionar tipo de precio LICORERIA
     manuallySelectedTipoPrecio?: Record<number, boolean>; // ✅ NUEVO: Track cuáles fueron selecciones manuales del usuario (clave: producto_id)

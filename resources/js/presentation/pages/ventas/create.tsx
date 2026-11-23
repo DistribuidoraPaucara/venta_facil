@@ -295,6 +295,9 @@ export default function VentaForm() {
         preventista_id: (venta?.preventista_id ? Number(venta.preventista_id) : null) as number | null,
         // ✅ NUEVO: Entrega (para asignar venta a una entrega existente)
         entrega_id: (venta?.entrega_id ? Number(venta.entrega_id) : null) as number | null,
+        // Servicio de transferencias: efectivo que pasa por caja (no suma al total). Solo al crear una venta.
+        transferencia_monto: null as number | null,
+        transferencia_tipo: null as 'ENTRADA' | 'SALIDA' | null,
     });
 
     // ✅ NUEVO: Filtrar tipos de pago disponibles basados en capacidad de crédito del cliente
@@ -2080,6 +2083,12 @@ export default function VentaForm() {
                         productos={productosSeguro}
                         detalles={detallesWithProducts}
                         onAddProduct={addProductToDetail}
+                        transferencia={{ monto: data.transferencia_monto, tipo: data.transferencia_tipo }}
+                        onTransferenciaChange={(cambios) => {
+                            if (cambios.monto !== undefined) setData('transferencia_monto', cambios.monto);
+                            if (cambios.tipo !== undefined) setData('transferencia_tipo', cambios.tipo);
+                        }}
+                        transferenciaError={(errors.transferencia_monto || errors.transferencia_tipo) as string | undefined}
                         onUpdateDetail={updateDetail}
                         onUpdateDetailMultiple={updateDetailMultiple} // ✅ NUEVO (2026-07-03): Actualizar múltiples campos de una sola vez
                         onRemoveDetail={removeDetail}
@@ -2207,6 +2216,83 @@ export default function VentaForm() {
                                     {formatCurrencyMinimalDecimals(data.total)}
                                 </span>
                             </div>
+
+                            {/* Servicio de transferencias: efectivo que pasa por caja (no suma al total) */}
+                            {/* Sin servicio en la venta, la transferencia se registra aquí; con servicio, en su fila */}
+                            {!isEditing && !detallesWithProducts.some((d) => Boolean((d.producto as any)?.es_servicio) || Boolean((productosSeguro.find((p) => p.id === d.producto_id) as any)?.es_servicio)) && (
+                                <div className="rounded-md border border-dashed border-blue-300 p-2 dark:border-blue-800">
+                                    <div className="mb-2 flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                                            Transferencia (efectivo por caja)
+                                        </span>
+                                        {(data.transferencia_monto || data.transferencia_tipo) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setData('transferencia_monto', null);
+                                                    setData('transferencia_tipo', null);
+                                                }}
+                                                className="text-xs text-red-600 hover:underline dark:text-red-400"
+                                            >
+                                                Quitar
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setData('transferencia_tipo', 'SALIDA')}
+                                            className={`rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
+                                                data.transferencia_tipo === 'SALIDA'
+                                                    ? 'border-blue-600 bg-blue-600 text-white'
+                                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-gray-300'
+                                            }`}
+                                        >
+                                            <span className="block font-semibold">Cliente transfirió</span>
+                                            <span className="block opacity-80">Caja entrega efectivo (sale)</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setData('transferencia_tipo', 'ENTRADA')}
+                                            className={`rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
+                                                data.transferencia_tipo === 'ENTRADA'
+                                                    ? 'border-blue-600 bg-blue-600 text-white'
+                                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-gray-300'
+                                            }`}
+                                        >
+                                            <span className="block font-semibold">Cliente pagó efectivo</span>
+                                            <span className="block opacity-80">Caja transfiere (entra)</span>
+                                        </button>
+                                    </div>
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">Monto Bs</span>
+                                        <input
+                                            type="number"
+                                            min="0.01"
+                                            step="0.01"
+                                            inputMode="decimal"
+                                            value={data.transferencia_monto ?? ''}
+                                            onChange={(e) =>
+                                                setData('transferencia_monto', e.target.value === '' ? null : Number(e.target.value))
+                                            }
+                                            placeholder="0.00"
+                                            className="w-full rounded-md border border-gray-300 px-2 py-1 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                                        />
+                                    </div>
+                                    {data.transferencia_monto && data.transferencia_tipo && (
+                                        <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                                            {data.transferencia_tipo === 'SALIDA'
+                                                ? `Sale de caja ${formatCurrencyMinimalDecimals(data.transferencia_monto)} (no suma al total)`
+                                                : `Entra a caja ${formatCurrencyMinimalDecimals(data.transferencia_monto)} (no suma al total)`}
+                                        </p>
+                                    )}
+                                    {(errors.transferencia_monto || errors.transferencia_tipo) && (
+                                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                            {errors.transferencia_monto || errors.transferencia_tipo}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Monto Pagado y Cambio */}
                             {(() => {

@@ -51,6 +51,9 @@ class CrearVentaDTO extends BaseDTO
         public ?int $entrega_id = null,
         // ✅ NUEVO (2026-03-09): Pagos parciales - Array de { tipo_pago_id, monto }
         public array $pagos = [],
+        // Servicio de transferencias: monto que pasa por caja en efectivo (no suma al total). Máximo una por venta.
+        public ?float $transferencia_monto = null,
+        public ?string $transferencia_tipo = null, // ENTRADA | SALIDA
     ) {}
 
     /**
@@ -114,6 +117,8 @@ class CrearVentaDTO extends BaseDTO
             entrega_id: $request->has('entrega_id') && $request->input('entrega_id') ? (int) $request->input('entrega_id') : null,
             // ✅ NUEVO (2026-03-09): Mapear pagos parciales del frontend
             pagos: self::mapearPagos($request->input('pagos', [])),
+            transferencia_monto: $request->filled('transferencia_monto') ? (float) $request->input('transferencia_monto') : null,
+            transferencia_tipo: $request->filled('transferencia_monto') ? $request->input('transferencia_tipo') : null,
         );
     }
 

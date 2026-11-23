@@ -568,6 +568,7 @@ class ProductoController extends Controller
                     'es_alquilable'           => false,
                     'es_producto_comida'      => $data['es_producto_comida'] ?? false,      // 🍦 NUEVO - Producto de comida/helado sin stock
                     'permite_venta_sin_stock' => $data['permite_venta_sin_stock'] ?? false, // ✅ NUEVO (2026-05-08) - Para servicios/inyectables
+                    'es_servicio'             => $data['es_servicio'] ?? false,             // Servicio sin stock (comisión de transferencias)
                     'permite_cantidad_decimal' => $data['permite_cantidad_decimal'] ?? false,
                     'es_producto_adicional'   => $data['es_producto_adicional'] ?? false,     // ✨ NUEVO - Indica si es un adicional
                     'puede_tener_producto_adicional' => $data['puede_tener_producto_adicional'] ?? false, // ✨ NUEVO - Indica si puede tener adicionales
@@ -1061,6 +1062,7 @@ class ProductoController extends Controller
             'activo'                    => (bool) $producto->activo,
             'es_producto_comida'        => (bool) $producto->es_producto_comida,
             'permite_venta_sin_stock'   => (bool) $producto->permite_venta_sin_stock,
+            'es_servicio'               => (bool) $producto->es_servicio,
             'permite_cantidad_decimal'  => (bool) $producto->permite_cantidad_decimal,
             'es_producto_adicional'     => (bool) $producto->es_producto_adicional,           // ✨ NUEVO
             'puede_tener_producto_adicional' => (bool) $producto->puede_tener_producto_adicional, // ✨ NUEVO
@@ -1308,6 +1310,7 @@ class ProductoController extends Controller
                     'puede_tener_producto_adicional' => array_key_exists('puede_tener_producto_adicional', $data) ? $data['puede_tener_producto_adicional'] : $producto->puede_tener_producto_adicional,
                     'es_alquilable'           => array_key_exists('es_alquilable', $data) ? $data['es_alquilable'] : $producto->es_alquilable, // ✨ NUEVO
                     'es_combo'                => array_key_exists('es_combo', $data) ? $data['es_combo'] : $producto->es_combo, // ✨ NUEVO
+                    'es_servicio'             => array_key_exists('es_servicio', $data) ? (bool) $data['es_servicio'] : $producto->es_servicio,
                     'principio_activo'        => array_key_exists('principio_activo', $data) ? $sanitize($data['principio_activo']) : $producto->principio_activo,
                     'uso_de_medicacion'       => array_key_exists('uso_de_medicacion', $data) ? $sanitize($data['uso_de_medicacion']) : $producto->uso_de_medicacion,
                     'visible_app'             => $data['visible_app'] ?? $producto->visible_app,                  // ✨ NUEVO - Visible en app
@@ -3883,7 +3886,7 @@ class ProductoController extends Controller
                     'id', 'nombre', 'codigo_barras', 'sku', 'categoria_id', 'marca_id',
                     'descripcion', 'peso', 'unidad_medida_id', 'proveedor_id',
                     'stock_minimo', 'stock_maximo', 'limite_venta', 'activo', 'es_fraccionado', 'empresa_id', 'es_combo',
-                    'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', // ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
+                    'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', 'es_servicio',// ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
                     'permite_cantidad_decimal',
                 ])
                 ->where('activo', true);
@@ -3944,7 +3947,7 @@ class ProductoController extends Controller
                 'id', 'nombre', 'codigo_barras', 'sku', 'categoria_id', 'marca_id',
                 'descripcion', 'peso', 'unidad_medida_id', 'proveedor_id',
                 'stock_minimo', 'stock_maximo', 'limite_venta', 'activo', 'es_fraccionado', 'empresa_id', 'es_combo',
-                'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', // ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
+                'principio_activo', 'uso_de_medicacion', 'permite_venta_sin_stock', 'es_servicio',// ✅ NUEVO (2026-05-08): Agregar permite_venta_sin_stock
                 'permite_cantidad_decimal',
             ])
             ->where('activo', true)
@@ -4518,6 +4521,7 @@ class ProductoController extends Controller
                     'principio_activo'               => $producto->principio_activo,               // ✅ NUEVO: Campo para medicamentos (farmacia)
                     'uso_de_medicacion'              => $producto->uso_de_medicacion,              // ✅ NUEVO: Campo para medicamentos (farmacia)
                     'permite_venta_sin_stock'        => (bool) $producto->permite_venta_sin_stock, // ✅ NUEVO (2026-05-08): Para productos de farmacia sin stock
+                    'es_servicio'                    => (bool) $producto->es_servicio,             // Servicio sin stock (comisión de transferencias)
                     'permite_cantidad_decimal'       => (bool) $producto->permite_cantidad_decimal,
                     'conversiones'                   => $producto->conversiones
                         ->where('activo', true)

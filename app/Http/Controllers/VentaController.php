@@ -1871,6 +1871,11 @@ class VentaController extends Controller
                     'puedeVenderseSinStock_result' => $productoData->puedeVenderseSinStock($esFarmacia),
                 ]);
 
+                // Servicios (es_servicio, ej. comisión de transferencias): no manejan stock
+                if ($productoData->es_servicio) {
+                    continue;
+                }
+
                 // ✅ NUEVO (2026-05-08): Permitir venta sin stock para farmacias si producto lo permite
                 if ($esFarmacia && $productoData->puedeVenderseSinStock($esFarmacia)) {
                     Log::info('✅ [VentaController::verificarStock] Venta sin stock permitida', [

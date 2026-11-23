@@ -35,7 +35,9 @@ export function useProductSearch({
     const incluirAlmacenesVenta = tipo === 'venta' && almacenesVentaIds.length > 1;
 
     // Con stock en el almacén de la empresa o, en ventas por almacén, en cualquiera de los de venta (ej. FRIO)
+    // Servicios (es_servicio, ej. comisión de transferencias) no manejan stock: siempre vendibles
     const tieneStockVendible = (p: Producto): boolean =>
+        Boolean((p as any).es_servicio) ||
         p.stock > 0 ||
         (incluirAlmacenesVenta && almacenesVentaIds.some((id) => Number((p as any).stock_por_almacen?.[id] ?? 0) > 0));
 
@@ -245,6 +247,7 @@ export function useProductSearch({
             tipo_precio_id_recomendado: tipoPrecioSeleccionado || p.tipo_precio_id_recomendado,
             tipo_precio_nombre_recomendado: tipoPrecioUsado || p.tipo_precio_nombre_recomendado,
             es_combo: p.es_combo || false,
+            es_servicio: p.es_servicio || false, // Servicio sin stock (comisión de transferencias)
             combo_items: p.combo_items || [],
             limite_productos: p.limite_productos || null,
             limite_venta: p.limite_venta || null,
@@ -474,7 +477,7 @@ export function useProductSearch({
 
         if (esCombo) return tieneComponentes ? null : 'Combo sin productos componentes configurados';
         if (producto.stock === 0 && !tieneStockVendible(producto)) return 'Producto sin stock disponible';
-        if (producto.precio_venta === 0) return 'Producto sin precio de venta configurado';
+        if (producto.precio_venta === 0 && !(producto as any).es_servicio) return 'Producto sin precio de venta configurado';
         return null;
     };
 

@@ -115,6 +115,9 @@ export default function ProductosTable({
     almacenesVenta = [],
     subtotalEditable = false,
     onDuplicarLinea,
+    transferencia,
+    onTransferenciaChange,
+    transferenciaError,
 }: ProductosTableProps) {
     // ✅ DEBUG (2026-05-26): Verificar que permitirProductosSinStock llegue correctamente
     // console.log('📦 [ProductosTable] permitirProductosSinStock recibido:', permitirProductosSinStock);
@@ -719,6 +722,9 @@ export default function ProductosTable({
                                         subtotalEditable={subtotalEditable}
                                         proveedorId={proveedor_id}
                                         onDuplicarLinea={onDuplicarLinea}
+                                        transferencia={transferencia}
+                                        onTransferenciaChange={onTransferenciaChange}
+                                        transferenciaError={transferenciaError}
                                         expandedCombos={expandedCombos}
                                         setExpandedCombos={setExpandedCombos}
                                         tieneDiferencia={tieneDiferencia}
