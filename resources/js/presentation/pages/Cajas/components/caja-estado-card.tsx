@@ -326,13 +326,6 @@ export function CajaEstadoCard({
                                                 </div>
                                             )}
 
-                                            {cierreDatos.estado === 'PENDIENTE' && (
-                                                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
-                                                    <p className="text-sm text-yellow-700 dark:text-yellow-200">
-                                                        ⏳ Tu cierre está pendiente de verificación por el administrador
-                                                    </p>
-                                                </div>
-                                            )}
                                         </div>
                                     )}
                                 </div>

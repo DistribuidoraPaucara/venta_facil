@@ -439,7 +439,11 @@ export default function VentaForm() {
                 const parsed = JSON.parse(datosGuardados);
                 // Restaurar datos del formulario
                 if (parsed.data) {
+                    // usuario_id y almacen_id no se restauran: deben venir de la sesión actual y de la empresa
+                    // (un borrador antiguo puede traer un usuario o almacén que ya no existe)
+                    const camposNoRestaurables = ['usuario_id', 'almacen_id'];
                     Object.keys(parsed.data).forEach((key: string) => {
+                        if (camposNoRestaurables.includes(key)) return;
                         setData(key as any, parsed.data[key]);
                     });
                 }

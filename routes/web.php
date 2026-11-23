@@ -560,6 +560,7 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
         Route::get('cuentas-por-cobrar', [\App\Http\Controllers\CuentaPorCobrarController::class, 'index'])->name('cuentas-por-cobrar.index');
         // Reporte PDF según los filtros del listado (antes de {cuentaPorCobrar} para no chocar)
         Route::get('cuentas-por-cobrar/reporte', [\App\Http\Controllers\CuentaPorCobrarController::class, 'reporte'])->name('cuentas-por-cobrar.reporte');
+        Route::get('cuentas-por-cobrar/exportar-excel', [\App\Http\Controllers\CuentaPorCobrarController::class, 'exportarExcel'])->name('cuentas-por-cobrar.exportar-excel');
         Route::get('cuentas-por-cobrar/{cuentaPorCobrar}/show', [\App\Http\Controllers\CuentaPorCobrarController::class, 'show'])->name('cuentas-por-cobrar.show');
         Route::get('cuentas-por-cobrar/{cuentaPorCobrar}/imprimir', [\App\Http\Controllers\CuentaPorCobrarController::class, 'imprimir'])->name('cuentas-por-cobrar.imprimir');
         Route::get('cuentas-por-cobrar/{cuentaPorCobrar}/imprimir-ticket-80', [\App\Http\Controllers\CuentaPorCobrarController::class, 'imprimirTicket80'])->name('cuentas-por-cobrar.imprimir-ticket-80');

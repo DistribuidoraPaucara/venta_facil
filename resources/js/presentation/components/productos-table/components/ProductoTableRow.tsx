@@ -139,7 +139,9 @@ export default function ProductoTableRow({
         }
     }
     // En ventas el disponible se descuenta en vivo con la cantidad ingresada (no aplica a proformas ya convertidas: su stock está reservado)
-    const validarStockVenta = tipo === 'venta' && !proformaConvertida;
+    // Misma regla que el backend (VentaController::verificarStock): sin stock solo para farmacias con el producto marcado
+    const permiteVentaSinStock = Boolean(es_farmacia && productoInfo?.permite_venta_sin_stock);
+    const validarStockVenta = tipo === 'venta' && !proformaConvertida && !permiteVentaSinStock;
     const stockRestante = stockDisponible - Number(detalle.cantidad || 0);
     // Código del producto: código de barras si tiene; si no, el SKU (o el código interno); null si no hay ninguno
     const codigoBarrasProducto =

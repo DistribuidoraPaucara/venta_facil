@@ -681,10 +681,9 @@ class CajaController extends Controller
                 $observaciones = trim(($observaciones ?? '') . "\n[Conteo] " . $detalleConteo);
             }
 
-            // Obtener estado PENDIENTE
-            $estadoPendiente = \App\Models\EstadoCierre::obtenerIdPendiente();
+            // El cierre queda CONSOLIDADO directamente: no hay un segundo paso de verificación
+            $estadoConsolidada = \App\Models\EstadoCierre::obtenerIdConsolidada();
 
-            // Crear cierre de caja en estado PENDIENTE
             $cierre = CierreCaja::create([
                 'caja_id'          => $apertura->caja_id,
                 'user_id'          => $usuarioDestino->id,
@@ -694,7 +693,7 @@ class CajaController extends Controller
                 'monto_real'       => $request->monto_real,
                 'diferencia'       => $diferencia,
                 'observaciones'    => $observaciones,
-                'estado_cierre_id' => $estadoPendiente,
+                'estado_cierre_id' => $estadoConsolidada,
             ]);
 
             // Si hay diferencia, crear movimiento de ajuste
@@ -717,14 +716,6 @@ class CajaController extends Controller
             }
 
             DB::commit();
-
-            // Notificar a admins de nuevo cierre pendiente
-            try {
-                app(\App\Services\WebSocket\CajaWebSocketService::class)
-                    ->notifyCierrePendiente($cierre->fresh(['usuario', 'caja']));
-            } catch (\Exception $e) {
-                Log::warning('Error notificando cierre pendiente', ['cierre_id' => $cierre->id]);
-            }
 
             Log::info('Caja cerrada exitosamente', [
                 'user_id'        => $usuarioDestino->id,
@@ -1077,6 +1068,11 @@ class CajaController extends Controller
                 $query->where('empresa_id', $empresaId);
             })
             ->whereDate('fecha', today())  // Cerrada HOY
+            // ✅ Las cajas CONSOLIDADAS no se listan: solo quedan visibles las abiertas
+            ->when(\App\Models\EstadoCierre::obtenerIdConsolidada(), fn($q, $idConsolidada) => $q->whereHas(
+                'cierre',
+                fn($c) => $c->where('estado_cierre_id', '!=', $idConsolidada)
+            ))
             ->orderBy('fecha', 'desc')
             ->get();
 
@@ -1094,6 +1090,12 @@ class CajaController extends Controller
 
         // ✅ Fusionar aperturas (mantener compatibilidad)
         $aperturasColleccion = $aperturasColleccion->union($aperturasDiarias)->unique('id');
+
+        // ✅ OPTIMIZACIÓN: calcular cada apertura una sola vez (antes se recalculaba en 3 bucles)
+        $datosCache = [];
+        $calcularDatosCache = function ($apertura) use (&$datosCache) {
+            return $datosCache[$apertura->id] ??= $this->cierreCajaService->calcularDatos($apertura);
+        };
 
         // ✅ NUEVO (2026-07-22): Métricas solo de cajas abiertas
         $cajas_abiertas = $cajas->count(); // Ya solo tiene cajas abiertas
@@ -1122,9 +1124,9 @@ class CajaController extends Controller
         });
 
         // ✅ NUEVO (2026-08-07): Transformar aperturas para tabla (cajas abiertas antiguos + cerradas hoy)
-        $aperturas_hoy = $aperturasParaTabla->map(function ($apertura) {
+        $aperturas_hoy = $aperturasParaTabla->map(function ($apertura) use ($calcularDatosCache) {
             // Usar el mismo servicio para calcular ingresos/egresos
-            $datosCalculados = $this->cierreCajaService->calcularDatos($apertura);
+            $datosCalculados = $calcularDatosCache($apertura);
 
             $ingresosApertura = (float) ($datosCalculados['totalIngresos'] ?? 0);
             $egresosApertura = (float) ($datosCalculados['totalEgresos'] ?? 0);
@@ -1166,7 +1168,7 @@ class CajaController extends Controller
 
         foreach ($aperturasAbiertas as $apertura) {
             // Usar el mismo servicio que en index() para consistencia
-            $datosCalculados = $this->cierreCajaService->calcularDatos($apertura);
+            $datosCalculados = $calcularDatosCache($apertura);
 
             $ingresosApertura = (float) ($datosCalculados['totalIngresos'] ?? 0);
             $egresosApertura = (float) ($datosCalculados['totalEgresos'] ?? 0);
@@ -1207,7 +1209,7 @@ class CajaController extends Controller
         $primerMontoDia = $primeraAperturaDelDia ? (float) $primeraAperturaDelDia->monto_apertura : 0;
 
         foreach ($aperturasParaTabla as $apertura) {
-            $datosCalculados = $this->cierreCajaService->calcularDatos($apertura);
+            $datosCalculados = $calcularDatosCache($apertura);
             $ingresosApertura = (float) ($datosCalculados['totalIngresos'] ?? 0);
             $egresosApertura = (float) ($datosCalculados['totalEgresos'] ?? 0);
 

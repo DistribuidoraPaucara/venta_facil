@@ -22,15 +22,57 @@ class CuentaPorCobrarController extends Controller
         private ImpresionService $impresionService,
     ) {}
 
+    /** Columnas por las que se puede ordenar el listado y el Excel (lista blanca) */
+    private const CAMPOS_ORDENABLES = ['id', 'fecha_vencimiento', 'created_at', 'monto_original', 'saldo_pendiente', 'estado'];
+
+    /** Orden compartido por el listado y el Excel. Por defecto: ID descendente. */
+    private function aplicarOrden($query, Request $request)
+    {
+        $campo     = in_array($request->get('sort'), self::CAMPOS_ORDENABLES, true) ? $request->get('sort') : 'id';
+        $direccion = strtolower((string) $request->get('order')) === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderBy($campo, $direccion);
+    }
+
     public function index(Request $request)
     {
-        // ✅ CORREGIDO: Cargar cliente directamente + cliente de venta + usuario creador para mostrar ambos tipos
-        $query = $this->consultaFiltrada($request)->with(['cliente', 'venta.cliente', 'pagos.tipoPago', 'usuario']);
+        $base = $this->consultaFiltrada($request);
 
-        // Sorting - ✅ ACTUALIZADO: Ordenar por ID descendente por defecto
-        $sortField = $request->get('sort', 'id');
-        $sortOrder = $request->get('order', 'desc');
-        $query->orderBy($sortField, $sortOrder);
+        // ✅ CORREGIDO: Cargar cliente directamente + cliente de venta + usuario creador para mostrar ambos tipos
+        $query = $this->aplicarOrden(clone $base, $request)->with(['cliente', 'venta.cliente', 'pagos.tipoPago', 'usuario']);
+
+        // Resumen de lo filtrado (no global): se muestra arriba de la tabla
+        $pendientesFiltro = fn () => (clone $base)->where('estado', '!=', 'PAGADO')->where('saldo_pendiente', '>', 0);
+
+        // Antigüedad del saldo pendiente por tramos de días vencido (sobre lo filtrado)
+        // PostgreSQL: date - date devuelve días enteros
+        $tramoSql = "CASE
+            WHEN fecha_vencimiento >= CURRENT_DATE THEN 'vigente'
+            WHEN (CURRENT_DATE - fecha_vencimiento) <= 30 THEN 'd1_30'
+            WHEN (CURRENT_DATE - fecha_vencimiento) <= 60 THEN 'd31_60'
+            WHEN (CURRENT_DATE - fecha_vencimiento) <= 90 THEN 'd61_90'
+            ELSE 'd90_mas' END";
+        $antiguedad = $pendientesFiltro()->toBase()
+            ->selectRaw("{$tramoSql} as tramo, SUM(saldo_pendiente) as monto")
+            ->groupBy('tramo')
+            ->pluck('monto', 'tramo')
+            ->map(fn ($monto) => (float) $monto)
+            ->all();
+
+        $resumenFiltrado = [
+            'cuentas'          => (clone $base)->count(),
+            'monto_original'   => (float) (clone $base)->sum('monto_original'),
+            'saldo_pendiente'  => (float) $pendientesFiltro()->sum('saldo_pendiente'),
+            'vencido'          => (float) $pendientesFiltro()->whereDate('fecha_vencimiento', '<', today())->sum('saldo_pendiente'),
+            'cuentas_vencidas' => $pendientesFiltro()->whereDate('fecha_vencimiento', '<', today())->count(),
+            'antiguedad'       => [
+                'vigente' => $antiguedad['vigente'] ?? 0,
+                'd1_30'   => $antiguedad['d1_30'] ?? 0,
+                'd31_60'  => $antiguedad['d31_60'] ?? 0,
+                'd61_90'  => $antiguedad['d61_90'] ?? 0,
+                'd90_mas' => $antiguedad['d90_mas'] ?? 0,
+            ],
+        ];
 
         // ✅ ACTUALIZADO: Permitir cambiar per_page vía parámetro (50 por defecto)
         $perPage = min((int)$request->get('per_page', 25), 500); // Máximo 500 para evitar sobrecarga
@@ -68,8 +110,9 @@ class CuentaPorCobrarController extends Controller
                     'total'        => $cuentas->total(),
                     'links'        => $cuentas->linkCollection()->toArray(),
                 ],
-                'filtros'            => $request->only(['estado', 'cliente_id', 'q', 'fecha_vencimiento_desde', 'fecha_vencimiento_hasta', 'solo_vencidas']),
+                'filtros'            => $request->only(['estado', 'cliente_id', 'q', 'fecha_vencimiento_desde', 'fecha_vencimiento_hasta', 'solo_vencidas', 'sort', 'order']),
                 'estadisticas'       => $estadisticas,
+                'resumen_filtrado'   => $resumenFiltrado,
                 'datosParaFiltros'   => [
                     'clientes' => Cliente::select('id', 'nombre', 'codigo_cliente')
                         ->where('empresa_id', Auth::user()->empresa_id)
@@ -78,6 +121,52 @@ class CuentaPorCobrarController extends Controller
                 ],
                 'tipos_pago'         => TipoPago::select('id', 'nombre', 'codigo')->where('codigo', '!=', 'CREDITO')->get(),
             ],
+        ]);
+    }
+
+    /**
+     * Exporta a Excel (.xlsx) las cuentas con los mismos filtros y orden del listado (sin paginar)
+     */
+    public function exportarExcel(Request $request)
+    {
+        $cuentas = $this->aplicarOrden($this->consultaFiltrada($request)
+            ->with(['cliente:id,nombre,codigo_cliente', 'venta:id,numero,cliente_id', 'venta.cliente:id,nombre,codigo_cliente']), $request)
+            ->get();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $hoja        = $spreadsheet->getActiveSheet();
+        $hoja->setTitle('Cuentas por cobrar');
+
+        $encabezados = ['Folio', 'Venta', 'Cliente', 'Monto original', 'Saldo pendiente', 'Estado', 'Creación', 'Vencimiento', 'Días vencido'];
+        $hoja->fromArray($encabezados, null, 'A1');
+        $hoja->getStyle('A1:I1')->getFont()->setBold(true);
+
+        $fila = 2;
+        foreach ($cuentas as $cuenta) {
+            $hoja->setCellValue("A{$fila}", $cuenta->id);
+            $hoja->setCellValue("B{$fila}", $cuenta->venta?->numero ?? '');
+            $hoja->setCellValue("C{$fila}", $cuenta->cliente?->nombre ?? $cuenta->venta?->cliente?->nombre ?? '');
+            $hoja->setCellValue("D{$fila}", (float) $cuenta->monto_original);
+            $hoja->setCellValue("E{$fila}", (float) $cuenta->saldo_pendiente);
+            $hoja->setCellValue("F{$fila}", $cuenta->estado);
+            $hoja->setCellValue("G{$fila}", $cuenta->created_at ? \Carbon\Carbon::parse($cuenta->created_at)->format('d/m/Y') : '');
+            $hoja->setCellValue("H{$fila}", $cuenta->fecha_vencimiento ? \Carbon\Carbon::parse($cuenta->fecha_vencimiento)->format('d/m/Y') : '');
+            $hoja->setCellValue("I{$fila}", $cuenta->calcularDiasVencido());
+            $fila++;
+        }
+
+        $hoja->getStyle("D2:E{$fila}")->getNumberFormat()->setFormatCode('#,##0.00');
+        foreach (range('A', 'I') as $columna) {
+            $hoja->getColumnDimension($columna)->setAutoSize(true);
+        }
+
+        $nombreArchivo = 'cuentas-por-cobrar-' . now()->format('Ymd-His') . '.xlsx';
+        $escritor      = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($escritor) {
+            $escritor->save('php://output');
+        }, $nombreArchivo, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 
@@ -200,13 +289,14 @@ class CuentaPorCobrarController extends Controller
 
     public function show(CuentaPorCobrar $cuentaPorCobrar)
     {
-        $cuentaPorCobrar->load(['venta.cliente', 'venta.detalles.producto', 'pagos.tipoPago', 'pagos.usuario']);
+        $cuentaPorCobrar->load(['cliente', 'venta.cliente', 'venta.detalles.producto', 'pagos.tipoPago', 'pagos.usuario']);
 
         // ✅ NUEVO: Recalcular dias_vencido dinámicamente
         $cuentaPorCobrar->dias_vencido = $cuentaPorCobrar->calcularDiasVencido();
 
         return Inertia::render('ventas/cuentas-por-cobrar/show', [
-            'cuenta' => $cuentaPorCobrar,
+            'cuenta'     => $cuentaPorCobrar,
+            'tipos_pago' => TipoPago::select('id', 'nombre', 'codigo')->where('codigo', '!=', 'CREDITO')->get(),
         ]);
     }
 

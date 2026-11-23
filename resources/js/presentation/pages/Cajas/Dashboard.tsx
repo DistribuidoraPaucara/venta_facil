@@ -742,9 +742,9 @@ export default function Dashboard({
                         <TableCell className="text-center">
                           {esCerrada ? (
                             <Badge className={`
-                              ${apertura.cierre?.estado === 'CONSOLIDADA'
+                              ${(apertura.cierre?.estado ?? '').toUpperCase() === 'CONSOLIDADA'
                                 ? 'bg-green-600 dark:bg-green-700'
-                                : apertura.cierre?.estado === 'RECHAZADA'
+                                : (apertura.cierre?.estado ?? '').toUpperCase() === 'RECHAZADA'
                                 ? 'bg-red-600 dark:bg-red-700'
                                 : 'bg-yellow-600 dark:bg-yellow-700'}
                             `}>

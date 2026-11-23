@@ -166,8 +166,8 @@ class ClienteController extends Controller
     public function index(Request $request)
     {
         try {
-            // ✅ Verificar permiso: clientes.index
-            if (!auth()->user()->can('clientes.index')) {
+            // ✅ Verificar permiso: clientes.view o clientes.manage (clientes.index no existe)
+            if (!auth()->user()->can('clientes.view') && !auth()->user()->can('clientes.manage')) {
                 return $this->errorResponse('No tienes permiso para listar clientes', null, null, [], 403);
             }
 
@@ -1037,8 +1037,8 @@ class ClienteController extends Controller
      */
     public function buscarApi(Request $request): JsonResponse
     {
-        // ✅ Verificar permiso: clientes.index
-        if (!auth()->user()->can('clientes.index')) {
+        // ✅ Verificar permiso: clientes.view o clientes.manage (clientes.index no existe)
+        if (!auth()->user()->can('clientes.view') && !auth()->user()->can('clientes.manage')) {
             return ApiResponse::error('No tienes permiso para buscar clientes', 403);
         }
 

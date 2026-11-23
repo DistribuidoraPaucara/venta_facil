@@ -431,8 +431,11 @@ export default function ProductosTable({
         if (parteDecimal === 0) {
             return Math.floor(precio).toString();
         }
-        // ✅ Usar 6 decimales para productos fraccionados (0.008 en lugar de 0.01)
-        return precio.toFixed(6);
+        // ✅ Hasta 6 decimales para productos fraccionados (0.008 en lugar de 0.01), sin ceros sobrantes
+        // pero con mínimo 2 decimales como los montos: 1.5 → "1.50", 1.25 → "1.25", 0.008 → "0.008"
+        const [entero, decimales = ''] = precio.toFixed(6).split('.');
+        const sinCerosFinales = decimales.replace(/0+$/, '').padEnd(2, '0');
+        return `${entero}.${sinCerosFinales}`;
     };
 
     // ✅ Handler para actualizar detalle (con lógica de combos)
