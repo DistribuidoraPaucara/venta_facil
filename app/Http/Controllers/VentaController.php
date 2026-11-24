@@ -22,6 +22,7 @@ use App\Models\Venta;
 use App\Services\ComboStockService;
 use App\Services\PagoVentaService;
 use App\Services\Venta\VentaService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -724,10 +725,37 @@ class VentaController extends Controller
         );
     }
 
+    /**
+     * Respuesta para una venta que ya fue creada con la misma idempotency_key.
+     * No vuelve a registrar pagos, movimientos ni impresión.
+     */
+    private function respuestaVentaExistente(Venta $venta): JsonResponse
+    {
+        Log::info('♻️ [VentaController::store] Venta ya registrada con esta idempotency_key', [
+            'venta_id'     => $venta->id,
+            'venta_numero' => $venta->numero,
+        ]);
+
+        return $this->respondSuccess(
+            data: \App\DTOs\Venta\VentaResponseDTO::fromModel($venta),
+            message: 'Venta ya registrada',
+            statusCode: 200,
+        );
+    }
+
     public function store(StoreVentaRequest $request): JsonResponse | RedirectResponse
     {
         try {
             // 1. Validación hecha por Form Request
+
+            // 2. Idempotencia: si ya se creó una venta con esta clave, devolverla sin volver a crearla
+            $idempotencyKey = $request->input('idempotency_key');
+            if ($idempotencyKey) {
+                $ventaExistente = Venta::where('idempotency_key', $idempotencyKey)->first();
+                if ($ventaExistente) {
+                    return $this->respuestaVentaExistente($ventaExistente);
+                }
+            }
 
             // 2. Crear DTO desde Request
             $dto = CrearVentaDTO::fromRequest($request);
@@ -737,7 +765,18 @@ class VentaController extends Controller
 
             // 3. Delegar al Service (ÚNICA lógica de negocio)
             // ✅ NOTA: El servicio ya usa DB::transaction() internamente
-            $ventaDTO = $this->ventaService->crear($dto, $cajaId);
+            try {
+                $ventaDTO = $this->ventaService->crear($dto, $cajaId);
+            } catch (QueryException $e) {
+                // Dos peticiones simultáneas con la misma clave: la segunda choca con el índice único
+                $ventaExistente = $idempotencyKey
+                    ? Venta::where('idempotency_key', $idempotencyKey)->first()
+                    : null;
+                if ($ventaExistente) {
+                    return $this->respuestaVentaExistente($ventaExistente);
+                }
+                throw $e;
+            }
 
             // Obtener la venta creada
             $ventaCreada = Venta::findOrFail($ventaDTO->id);

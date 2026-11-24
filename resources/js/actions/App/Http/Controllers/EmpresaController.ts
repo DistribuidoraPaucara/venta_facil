@@ -597,4 +597,7 @@ destroy.delete = (args: { empresa: string | number } | [empresa: string | number
     destroy.form = destroyForm
 const EmpresaController = { index, create, store, show, edit, update, destroy }
 
+export default EmpresaController    destroy.form = destroyForm
+const EmpresaController = { index, create, store, show, edit, update, destroy }
+
 export default EmpresaController

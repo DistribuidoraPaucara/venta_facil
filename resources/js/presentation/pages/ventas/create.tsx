@@ -11,6 +11,7 @@ import EntregaSearchSelector from '@/presentation/components/entregas/EntregaSea
 import QrCobroModal from '@/presentation/components/ventas/QrCobroModal';
 import InputSearch from '@/presentation/components/ui/input-search';
 import ModalCrearCliente from '@/presentation/components/ui/modal-crear-cliente';
+import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 import SearchSelect, { SelectOption } from '@/presentation/components/ui/search-select';
 
 // Importar servicios adicionales
@@ -57,6 +58,14 @@ interface PageProps extends InertiaPageProps {
         };
     };
     venta?: Venta;
+}
+
+// Clave única por intento de venta: si la petición se repite (doble clic, reintento de red),
+// el backend devuelve la venta ya creada en vez de crear otra.
+function generarIdempotencyKey(): string {
+    const cripto = globalThis.crypto as Crypto | undefined;
+    if (cripto?.randomUUID) return cripto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 }
 
 export default function VentaForm() {
@@ -256,10 +265,20 @@ export default function VentaForm() {
     const [showCreateClienteModal, setShowCreateClienteModal] = useState(false);
     const [clienteSearchQuery, setClienteSearchQuery] = useState('');
 
-    // Estado para el modal de selección de salida (imprimir, Excel, PDF)
+    // Estado para el modal de selección de salida (imprimir, Excel, PDF).
+    // Se abre tras crear una venta cuando la empresa es farmacia.
+    const [outputModal, setOutputModal] = useState<{
+        open: boolean;
+        ventaId: number | null;
+        info: { numero?: string; fecha?: string; monto?: number };
+    }>({ open: false, ventaId: null, info: {} });
 
     // ✅ NUEVO: Estado para manejar el cargando al guardar venta
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // Bloqueo síncrono: evita que dos clics/Enter pasen antes de que isSubmitting cambie
+    const submitLockRef = useRef(false);
+    // Misma clave para todos los reintentos de un mismo intento; se renueva tras guardar con éxito
+    const idempotencyKeyRef = useRef<string>(generarIdempotencyKey());
 
     const { data, setData, processing, errors, reset } = useForm({
         numero: venta?.numero || '', // Solo para edición, se genera automáticamente para nuevas ventas
@@ -395,6 +414,20 @@ export default function VentaForm() {
             console.log('💰 [VentaForm] Monto pagado reseteado (inputs vacíos)');
         }
     }, [isFarmacia, montoEfectivo, montoTransferencia, data.monto_pagado_inicial]);
+
+    // La transferencia de caja solo aplica con un producto de servicio en el carrito: si se quita, limpiarla
+    useEffect(() => {
+        if (isEditing) return;
+        const hayServicio = detallesWithProducts.some(
+            (d) =>
+                Boolean((d.producto as any)?.es_servicio) ||
+                Boolean((productosSeguro.find((p) => p.id === d.producto_id) as any)?.es_servicio),
+        );
+        if (!hayServicio && (data.transferencia_monto || data.transferencia_tipo)) {
+            setData('transferencia_monto', null);
+            setData('transferencia_tipo', null);
+        }
+    }, [detallesWithProducts, productosSeguro]);
 
     useEffect(() => {}, [data.requiere_envio, data.direccion_cliente_id]);
 
@@ -1299,6 +1332,17 @@ export default function VentaForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Si ya hay un envío en curso (validación o guardado), ignorar el nuevo intento
+        if (submitLockRef.current) return;
+        submitLockRef.current = true;
+        try {
+            await procesarEnvioVenta();
+        } finally {
+            submitLockRef.current = false;
+        }
+    };
+
+    const procesarEnvioVenta = async () => {
         // ✅ NUEVO: Permitir stock insuficiente para créditos O farmacias con productos sin stock
         const tipoPagoSeleccionado = tipos_pago?.find((t: any) => t.id === data.tipo_pago_id);
         const isCreditoPayment = tipoPagoSeleccionado?.codigo === 'CREDITO';
@@ -1357,6 +1401,7 @@ export default function VentaForm() {
             politica_pago: politicaPagoFinal, // ✅ MODIFICADO: Usar politica_pago calculada
             estado_pago: data.estado_pago ?? 'PAGADO',
             preventista_id: data.preventista_id ?? null, // ✅ ASEGURAR: Null si no está seleccionado
+            idempotency_key: idempotencyKeyRef.current, // Evita duplicar la venta si la petición se repite
             detalles: detallesWithProducts.map((d, detailIndex) => {
                 // ✅ MODIFICADO: Usar siempre d.precio_unitario (ya contiene valor editado manualmente o del tipo de precio)
                 // NO usar precioRango para no sobrescribir ediciones manuales
@@ -1549,6 +1594,9 @@ export default function VentaForm() {
                 localStorage.removeItem('venta-create-draft');
                 console.log('✅ Borrador de venta eliminado del localStorage');
 
+                // La venta ya existe: el próximo formulario necesita una clave nueva
+                idempotencyKeyRef.current = generarIdempotencyKey();
+
                 // ✅ Limpiar todo el formulario y estados
                 reset(); // Limpiar datos del formulario
                 setDetallesWithProducts([]); // Limpiar detalles de productos
@@ -1559,6 +1607,19 @@ export default function VentaForm() {
                 setMontoEfectivo(''); // Limpiar monto efectivo
                 setMontoTransferencia(''); // Limpiar monto transferencia
                 setPagos([]);
+
+                // ✅ Farmacia: mostrar modal para elegir impresión (solo al crear, no al editar)
+                if (!isEditing && isFarmacia) {
+                    setOutputModal({
+                        open: true,
+                        ventaId,
+                        info: {
+                            numero: result.data.numero,
+                            fecha: result.data.fecha,
+                            monto: result.data.total,
+                        },
+                    });
+                }
 
                 // ✅ NUEVO: Seleccionar automáticamente cliente GENERAL después de limpiar
                 const clienteGeneral = clientesSeguro.find((c: Cliente) => c.codigo_cliente === 'GENERAL');
@@ -2217,83 +2278,6 @@ export default function VentaForm() {
                                 </span>
                             </div>
 
-                            {/* Servicio de transferencias: efectivo que pasa por caja (no suma al total) */}
-                            {/* Sin servicio en la venta, la transferencia se registra aquí; con servicio, en su fila */}
-                            {!isEditing && !detallesWithProducts.some((d) => Boolean((d.producto as any)?.es_servicio) || Boolean((productosSeguro.find((p) => p.id === d.producto_id) as any)?.es_servicio)) && (
-                                <div className="rounded-md border border-dashed border-blue-300 p-2 dark:border-blue-800">
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                                            Transferencia (efectivo por caja)
-                                        </span>
-                                        {(data.transferencia_monto || data.transferencia_tipo) && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setData('transferencia_monto', null);
-                                                    setData('transferencia_tipo', null);
-                                                }}
-                                                className="text-xs text-red-600 hover:underline dark:text-red-400"
-                                            >
-                                                Quitar
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setData('transferencia_tipo', 'SALIDA')}
-                                            className={`rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
-                                                data.transferencia_tipo === 'SALIDA'
-                                                    ? 'border-blue-600 bg-blue-600 text-white'
-                                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-gray-300'
-                                            }`}
-                                        >
-                                            <span className="block font-semibold">Cliente transfirió</span>
-                                            <span className="block opacity-80">Caja entrega efectivo (sale)</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setData('transferencia_tipo', 'ENTRADA')}
-                                            className={`rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
-                                                data.transferencia_tipo === 'ENTRADA'
-                                                    ? 'border-blue-600 bg-blue-600 text-white'
-                                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-gray-300'
-                                            }`}
-                                        >
-                                            <span className="block font-semibold">Cliente pagó efectivo</span>
-                                            <span className="block opacity-80">Caja transfiere (entra)</span>
-                                        </button>
-                                    </div>
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <span className="text-xs text-gray-600 dark:text-gray-400">Monto Bs</span>
-                                        <input
-                                            type="number"
-                                            min="0.01"
-                                            step="0.01"
-                                            inputMode="decimal"
-                                            value={data.transferencia_monto ?? ''}
-                                            onChange={(e) =>
-                                                setData('transferencia_monto', e.target.value === '' ? null : Number(e.target.value))
-                                            }
-                                            placeholder="0.00"
-                                            className="w-full rounded-md border border-gray-300 px-2 py-1 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                                        />
-                                    </div>
-                                    {data.transferencia_monto && data.transferencia_tipo && (
-                                        <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
-                                            {data.transferencia_tipo === 'SALIDA'
-                                                ? `Sale de caja ${formatCurrencyMinimalDecimals(data.transferencia_monto)} (no suma al total)`
-                                                : `Entra a caja ${formatCurrencyMinimalDecimals(data.transferencia_monto)} (no suma al total)`}
-                                        </p>
-                                    )}
-                                    {(errors.transferencia_monto || errors.transferencia_tipo) && (
-                                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                                            {errors.transferencia_monto || errors.transferencia_tipo}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-
                             {/* Monto Pagado y Cambio */}
                             {(() => {
                                 const montoPagado = Number(data.monto_pagado_inicial) || 0;
@@ -2417,6 +2401,17 @@ export default function VentaForm() {
                 monto={Number(montoTransferencia) || data.total}
                 monedaId={Number(data.moneda_id)}
             />
+
+            {/* Modal de selección de impresión (solo farmacias, tras crear la venta) */}
+            {outputModal.ventaId !== null && (
+                <OutputSelectionModal
+                    isOpen={outputModal.open}
+                    onClose={() => setOutputModal((prev) => ({ ...prev, open: false }))}
+                    documentoId={outputModal.ventaId}
+                    tipoDocumento="venta"
+                    documentoInfo={outputModal.info}
+                />
+            )}
 
             {/* Modal para crear cliente */}
             <ModalCrearCliente

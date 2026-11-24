@@ -44,6 +44,7 @@ class StoreVentaRequest extends FormRequest
     {
         return [
             'numero'                     => 'nullable|string|unique:ventas,numero',
+            'idempotency_key'            => 'nullable|string|max:100', // Evita crear la misma venta dos veces (doble clic / reintento)
             'fecha'                      => 'required|date',
             'subtotal'                   => 'required|numeric|min:0',
             'descuento'                  => 'nullable|numeric|min:0',
