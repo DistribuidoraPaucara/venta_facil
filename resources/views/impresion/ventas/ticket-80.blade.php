@@ -8,7 +8,7 @@
 
 {{-- ==================== INFO DEL DOCUMENTO ==================== --}}
 <div class="documento-titulo" style="font-size:12px;">{{ $documento->tipoDocumento->nombre ?? 'Folio: ' }} N°{{ $documento->id }}</div>
-<div class="documento-numero" style="font-size:12px;">{{ $documento->numero }}</div>
+<!-- <div class="documento-numero" style="font-size:12px;">{{ $documento->numero }}</div> -->
 <div class="center" style="margin-top: 3px; font-size:11px">
     <p style="margin: 2px 0;"><strong>Creado:</strong> {{ $documento->created_at->format('d/m/Y H:i') }}</p>
     <!-- <p style="margin: 2px 0;"><strong>Emisión:</strong> {{ now()->format('d/m/Y H:i') }}</p> -->

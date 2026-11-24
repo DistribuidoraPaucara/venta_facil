@@ -249,9 +249,6 @@
             @if($empresa->telefono)
             <div class="empresa-info">Celular: {{ $empresa->telefono }}</div>
             @endif
-            @if(!$empresa->es_farmacia)
-            <div class="empresa-info">Preventista: 71655177</div>
-            @endif
         </div>
     </div>
 
@@ -259,7 +256,7 @@
     @yield('contenido')
 
     {{-- ✅ FIRMAS DEL CLIENTE - Solo para distribuidores (no farmacias) --}}
-    @if(!$empresa->es_farmacia)
+    <!-- @if(!$empresa->es_farmacia)
     <div style="margin-top: 80px !important;">
         <div style="margin-bottom: 35px !important; padding-bottom: 35px !important; font-size: 12px;">
             <div style="height: 0; border-bottom: 1px solid #000; margin-bottom: 5px !important;"></div>
@@ -268,8 +265,8 @@
     </div>
 
     {{-- ✅ ESPACIO PARA CORTE - 5cm en blanco --}}
+    @endif -->
     <div class="espacio-corte"></div>
-    @endif
     </div>
 </body>
 </html>
