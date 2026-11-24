@@ -471,17 +471,20 @@ class VentaController extends Controller
             // ✅ NUEVO: Responder diferente según si es API o Web
             if ($isApiRequest) {
                 // ✅ Calcular si hay más páginas
-                $hasMorePages = $ventasPaginadas->currentPage() < $ventasPaginadas->lastPage();
+                // hasMorePages() existe en ambos paginadores (simple y con total)
+                $hasMorePages = $ventasPaginadas->hasMorePages();
+                // El paginador simple no tiene total ni última página: se envían solo si existen
+                $conTotalPaginas = $ventasPaginadas instanceof \Illuminate\Pagination\LengthAwarePaginator;
 
                 // API Response - Para Flutter app (con paginación)
                 return response()->json([
                     'success'        => true,
                     'message'        => 'Ventas obtenidas exitosamente',
                     'data'           => $ventasPaginadas->items(),
-                    'total'          => $ventasPaginadas->total(),
+                    'total'          => $conTotalPaginas ? $ventasPaginadas->total() : null,
                     'per_page'       => $ventasPaginadas->perPage(),
                     'current_page'   => $ventasPaginadas->currentPage(),
-                    'last_page'      => $ventasPaginadas->lastPage(),
+                    'last_page'      => $conTotalPaginas ? $ventasPaginadas->lastPage() : null,
                     'has_more_pages' => $hasMorePages, // ✅ Para que Flutter sepa si cargar más
                 ], 200);
             }
@@ -687,6 +690,38 @@ class VentaController extends Controller
      * 3. Delegar a Service
      * 4. Adaptar respuesta
      */
+    /**
+     * Catálogos para la pantalla "Nueva venta" de la app móvil.
+     *
+     * GET /api/app/ventas/catalogos
+     * Devuelve los IDs que el backend exige al crear una venta y que la app no tiene de otra forma.
+     */
+    public function catalogosApp(): JsonResponse
+    {
+        $user      = auth()->user();
+        $almacenId = $user?->empresa?->almacen_id
+            ?? \App\Models\Empresa::principal()?->almacen_id
+            ?? config('inventario.almacen_principal_id', 1);
+
+        // Cliente por defecto: "CLIENTE GENERAL" de la empresa (la web lo identifica con id 32)
+        $clienteGeneral = Cliente::porEmpresa()
+            ->whereRaw('UPPER(nombre) = ?', ['CLIENTE GENERAL'])
+            ->first(['id', 'nombre', 'nit', 'telefono'])
+            ?? Cliente::porEmpresa()->where('id', 32)->first(['id', 'nombre', 'nit', 'telefono']);
+
+        return $this->respondSuccess(
+            data: [
+                'usuario_id'          => $user?->id,
+                'almacen_id'          => (int) $almacenId,
+                'estado_documento_id' => EstadoDocumento::where('codigo', 'APROBADO')->value('id'),
+                'tipo_documento_id'   => TipoDocumento::where('codigo', 'REC')->value('id'),
+                'moneda_id'           => 1, // BOB: mismo valor por defecto que usa la web
+                'cliente_general'     => $clienteGeneral,
+            ],
+            message: 'Catálogos de venta',
+        );
+    }
+
     public function store(StoreVentaRequest $request): JsonResponse | RedirectResponse
     {
         try {
@@ -829,7 +864,10 @@ class VentaController extends Controller
                     'tipo_pago'      => $venta->tipoPago?->nombre ?? 'Contado',
                 ];
 
-                $this->printerService->printTicket($datosTicket);
+                // La app no imprime: el PDF se descargará desde el listado de ventas
+                if (! $request->routeIs('api.app.ventas.store')) {
+                    $this->printerService->printTicket($datosTicket);
+                }
             } catch (\Exception $e) {
                 // Log error pero no fallar la creación de venta
                 Log::warning('Advertencia al imprimir ticket', [
@@ -966,6 +1004,7 @@ class VentaController extends Controller
                         'id'                            => $venta->id,
                         'numero'                        => $venta->numero,
                         'fecha'                         => $venta->fecha,
+                        'created_at'                    => $venta->created_at, // Hora de registro de la venta
                         'entrega_id'                    => $venta->entrega_id, // ✅ ID de la entrega asignada
                         'cliente_id'                    => $venta->cliente_id,
                         'direccion_cliente_id'          => $venta->direccion_cliente_id,

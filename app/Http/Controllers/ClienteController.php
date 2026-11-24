@@ -1045,6 +1045,35 @@ class ClienteController extends Controller
         $q      = $request->string('q');
         $limite = $request->integer('limite', 10);
 
+        // Con "page": listado paginado de clientes (scroll infinito en la app); sin texto lista todos
+        if ($request->has('page')) {
+            $texto = strtolower((string) $q);
+            $paginado = ClienteModel::porEmpresa()
+                ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'puede_tener_credito', 'limite_credito'])
+                ->where('activo', true)
+                ->when(strlen($texto) >= 2, function ($query) use ($texto) {
+                    $query->where(function ($w) use ($texto) {
+                        $w->whereRaw('LOWER(nombre) like ?', ["%{$texto}%"])
+                            ->orWhereRaw('LOWER(razon_social) like ?', ["%{$texto}%"])
+                            ->orWhereRaw('LOWER(nit) like ?', ["%{$texto}%"])
+                            ->orWhereRaw('LOWER(telefono) like ?', ["%{$texto}%"]);
+                    });
+                })
+                ->orderBy('nombre')
+                ->paginate(min(max($limite, 1), 100), ['*'], 'page', max(1, $request->integer('page', 1)));
+
+            return response()->json([
+                'success'    => true,
+                'data'       => $paginado->items(),
+                'pagination' => [
+                    'current_page' => $paginado->currentPage(),
+                    'last_page'    => $paginado->lastPage(),
+                    'total'        => $paginado->total(),
+                    'has_more'     => $paginado->hasMorePages(),
+                ],
+            ]);
+        }
+
         if (! $q || strlen($q) < 2) {
             return ApiResponse::success([]);
         }
@@ -1052,7 +1081,7 @@ class ClienteController extends Controller
         // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
         $searchLower = strtolower($q);
         $clientes    = ClienteModel::query()
-            ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email'])
+            ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'puede_tener_credito', 'limite_credito'])
             ->where('activo', true)
             ->where(function ($query) use ($searchLower) {
                 $query->whereRaw('LOWER(nombre) like ?', ["%$searchLower%"])

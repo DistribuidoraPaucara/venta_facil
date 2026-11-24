@@ -12,6 +12,7 @@ import EstadoMermaController from './EstadoMermaController'
 import SectorController from './SectorController'
 import FraccionamientoApiController from './FraccionamientoApiController'
 import CatalogosApiController from './CatalogosApiController'
+import CajaAppController from './CajaAppController'
 import CategoriaApiController from './CategoriaApiController'
 import StockDisponiblePdfController from './StockDisponiblePdfController'
 import ApiProformaController from './ApiProformaController'
@@ -44,6 +45,8 @@ import VentasComidasController from './VentasComidasController'
 import CuentaPorCobrarController from './CuentaPorCobrarController'
 import EgresosAnalisisController from './EgresosAnalisisController'
 import EgresosController from './EgresosController'
+import IngresosController from './IngresosController'
+import AppInicioController from './AppInicioController'
 import LogsController from './LogsController'
 const Api = {
     AuthController,
@@ -60,6 +63,7 @@ EstadoMermaController,
 SectorController,
 FraccionamientoApiController,
 CatalogosApiController,
+CajaAppController,
 CategoriaApiController,
 StockDisponiblePdfController,
 ApiProformaController,
@@ -92,6 +96,8 @@ VentasComidasController,
 CuentaPorCobrarController,
 EgresosAnalisisController,
 EgresosController,
+IngresosController,
+AppInicioController,
 LogsController,
 }
 

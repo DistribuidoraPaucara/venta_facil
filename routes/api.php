@@ -371,6 +371,8 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     Route::get('/app/productos/filtros', [ProductoController::class, 'filtros']);
     Route::get('/app/productos/buscar', [ProductoController::class, 'buscarApi']);
     Route::get('/app/productos/listar', [ProductoController::class, 'listarApi']);
+    // Tipos de precio de la empresa (costo, venta, mayor, etc.) para el formulario de productos
+    Route::get('/app/tipos-precio', [ProductoController::class, 'tiposPrecioApi']);
     // Reposición sala de ventas ← almacén principal y compras sugeridas (desde stock_limites)
     Route::get('/app/inventario/reposicion-sugerida', [\App\Http\Controllers\ReposicionController::class, 'sugerenciasApi'])
         ->middleware('permission:inventario.reposiciones.index');
@@ -419,10 +421,21 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
     // ✅ MULTI-TENANCY: Todas las ventas están filtradas por empresa_id del usuario autenticado
     Route::prefix('app/ventas')->group(function () {
         Route::get('/', [VentaController::class, 'index'])->name('api.app.ventas.index');           // Listar ventas del tenant
-        Route::post('/', [VentaController::class, 'store'])->name('api.app.ventas.store');         // Crear venta (asigna empresa_id automáticamente)
+        Route::post('/', [VentaController::class, 'store'])->middleware('caja.abierta')->name('api.app.ventas.store');         // Crear venta: requiere caja abierta (igual que la web)
+        Route::get('catalogos', [VentaController::class, 'catalogosApp'])->name('api.app.ventas.catalogos'); // IDs para la pantalla Nueva venta (antes de {id})
         Route::get('{id}', [VentaController::class, 'show'])->name('api.app.ventas.show');         // Ver detalle de venta
+        Route::post('{id}/anular', [VentaController::class, 'anular'])->whereNumber('id')->name('api.app.ventas.anular'); // Anular venta (requiere permiso ventas.anular)
         Route::put('{id}', [VentaController::class, 'update'])->name('api.app.ventas.update');     // Actualizar venta
         Route::delete('{id}', [VentaController::class, 'destroy'])->name('api.app.ventas.destroy'); // Eliminar venta
+    });
+
+    // ==========================================
+    // 🧾 CAJA DEL USUARIO (para la app móvil) - misma lógica que la web (CajaController)
+    // ==========================================
+    Route::prefix('app/caja')->group(function () {
+        Route::get('estado', [\App\Http\Controllers\Api\CajaAppController::class, 'estado'])->middleware('permission:cajas.index');
+        Route::post('abrir', [\App\Http\Controllers\Api\CajaAppController::class, 'abrir'])->middleware('permission:cajas.index');
+        Route::post('cerrar', [\App\Http\Controllers\Api\CajaAppController::class, 'cerrar'])->middleware('permission:cajas.cerrar');
     });
 
     // ==========================================
@@ -2041,6 +2054,14 @@ Route::get('/cuentas-por-cobrar/{cuentaPorCobrar}', [CuentaPorCobrarController::
 // ✅ NUEVO 2026-07-22: API endpoint para Análisis de Egresos
 Route::prefix('egresos-analisis')->group(function () {
     Route::get('/', [EgresosAnalisisController::class, 'index'])->name('api.egresos-analisis.index');
+});
+
+// 💵 Egresos e ingresos desde la app móvil (token). Requieren caja abierta, igual que la venta.
+Route::middleware(['auth:sanctum'])->prefix('app')->group(function () {
+    Route::post('egresos', [\App\Http\Controllers\Api\EgresosController::class, 'store'])->middleware('caja.abierta');
+    Route::post('ingresos', [\App\Http\Controllers\Api\IngresosController::class, 'store'])->middleware('caja.abierta');
+    Route::get('inicio', [\App\Http\Controllers\Api\AppInicioController::class, 'resumen']);
+    Route::get('indicadores', [\App\Http\Controllers\Api\AppInicioController::class, 'indicadores']);
 });
 
 // ✅ NUEVO 2026-07-25: API CRUD para Egresos

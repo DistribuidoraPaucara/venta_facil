@@ -2092,7 +2092,7 @@ class ProductoController extends Controller
             'imagenes:id,producto_id,url,es_principal,orden',
             'precios'    => function ($precioQuery) {
                 $precioQuery->where('activo', true)
-                    ->select('id', 'producto_id', 'tipo_precio_id', 'nombre', 'precio', 'es_precio_base', 'margen_ganancia', 'porcentaje_ganancia')
+                    ->select('id', 'producto_id', 'tipo_precio_id', 'unidad_medida_id', 'nombre', 'precio', 'es_precio_base', 'margen_ganancia', 'porcentaje_ganancia')
                     ->with('tipoPrecio:id,nombre,codigo');
             },
             'stock.almacen:id,nombre',
@@ -2454,7 +2454,7 @@ class ProductoController extends Controller
                 'imagenes:id,producto_id,url,es_principal,orden',
                 'precios' => function ($precioQuery) {
                     $precioQuery->where('activo', true)
-                        ->select('id', 'producto_id', 'tipo_precio_id', 'nombre', 'precio', 'es_precio_base', 'margen_ganancia', 'porcentaje_ganancia')
+                        ->select('id', 'producto_id', 'tipo_precio_id', 'unidad_medida_id', 'nombre', 'precio', 'es_precio_base', 'margen_ganancia', 'porcentaje_ganancia')
                         ->with('tipoPrecio:id,nombre,codigo');
                 },
                 'codigosBarra:id,producto_id,codigo,tipo,es_principal,activo',
@@ -2665,7 +2665,7 @@ class ProductoController extends Controller
             'precios'      => function ($q) {
                 // Cargar SOLO precios activos con relación a tipo de precio
                 $q->where('activo', true)
-                    ->select('id', 'producto_id', 'tipo_precio_id', 'nombre', 'precio', 'es_precio_base', 'margen_ganancia', 'porcentaje_ganancia')
+                    ->select('id', 'producto_id', 'tipo_precio_id', 'unidad_medida_id', 'nombre', 'precio', 'es_precio_base', 'margen_ganancia', 'porcentaje_ganancia')
                     ->with('tipoPrecio:id,nombre,codigo');
             },
             'codigosBarra' => function ($q) {
@@ -3032,11 +3032,147 @@ class ProductoController extends Controller
     /**
      * API: Crear producto
      */
+    /**
+     * Tipos de precio activos de la empresa para el formulario de la app.
+     */
+    public function tiposPrecioApi(): JsonResponse
+    {
+        $tipos = TipoPrecio::porEmpresa()->activos()->ordenados()->get()->map(fn ($tipo) => [
+            'id'                  => $tipo->id,
+            'codigo'              => $tipo->codigo,
+            'nombre'              => $tipo->nombre,
+            'es_precio_base'      => (bool) $tipo->es_precio_base,
+            'porcentaje_ganancia' => (float) $tipo->porcentaje_ganancia,
+        ]);
+
+        return response()->json(['data' => $tipos]);
+    }
+
+    /**
+     * Valida los precios de unidad base que manda la app. Igual que la web:
+     * ningún tipo que no sea costo puede quedar por debajo del costo.
+     */
+    private function validarPreciosApi(?array $precios): ?string
+    {
+        if (empty($precios)) {
+            return null;
+        }
+
+        $costo = null;
+        foreach ($precios as $pp) {
+            $tipo = TipoPrecio::find((int) ($pp['tipo_precio_id'] ?? 0));
+            if ($tipo?->es_precio_base && (float) ($pp['monto'] ?? 0) > 0) {
+                $costo = (float) $pp['monto'];
+                break;
+            }
+        }
+        if ($costo === null) {
+            return null;
+        }
+
+        foreach ($precios as $pp) {
+            $tipo  = TipoPrecio::find((int) ($pp['tipo_precio_id'] ?? 0));
+            $monto = (float) ($pp['monto'] ?? 0);
+            if ($tipo && ! $tipo->es_precio_base && $monto > 0 && $monto < $costo) {
+                return "El precio de {$tipo->nombre} ({$monto}) no puede ser menor al costo ({$costo}).";
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Sincroniza los precios de unidad base del producto con la lista de la app.
+     * Solo toca precios sin unidad_medida_id: los precios de fraccionamiento no se alteran.
+     * Un tipo que no viene en la lista (o viene con monto 0) se desactiva.
+     */
+    private function sincronizarPreciosApi(Producto $producto, array $precios): void
+    {
+        $validos = array_values(array_filter(
+            $precios,
+            fn ($pp) => isset($pp['tipo_precio_id']) && (float) ($pp['monto'] ?? 0) > 0
+        ));
+        $tiposEnviados = array_map(fn ($pp) => (int) $pp['tipo_precio_id'], $validos);
+
+        $montoBase = 0.0;
+        foreach ($validos as $pp) {
+            if (TipoPrecio::find((int) $pp['tipo_precio_id'])?->es_precio_base) {
+                $montoBase = (float) $pp['monto'];
+                break;
+            }
+        }
+
+        // 1) Quitar los precios base activos que ya no vienen en la lista
+        // Base = sin unidad o en la unidad del propio producto (igual que la app al leer)
+        $filtroBase = fn ($q) => $q->whereNull('unidad_medida_id')
+            ->orWhere('unidad_medida_id', $producto->unidad_medida_id);
+
+        $activosAntes = PrecioProducto::where('producto_id', $producto->id)
+            ->where($filtroBase)
+            ->where('activo', true)
+            ->get();
+        foreach ($activosAntes as $precioAnterior) {
+            if (! in_array((int) $precioAnterior->tipo_precio_id, $tiposEnviados, true)) {
+                // Query directa: la baja se registra en el historial abajo, sin duplicar
+                PrecioProducto::whereKey($precioAnterior->id)->update(['activo' => false]);
+                $this->registrarHistorialPrecio($precioAnterior, (float) $precioAnterior->precio, 0, 'Precio quitado desde la app');
+            }
+        }
+
+        // 2) Crear o actualizar los precios enviados
+        foreach ($validos as $pp) {
+            $tipo = TipoPrecio::find((int) $pp['tipo_precio_id']);
+            if (! $tipo) {
+                continue;
+            }
+
+            $monto      = (float) $pp['monto'];
+            $esBase     = (bool) $tipo->es_precio_base;
+            $margen     = $esBase ? 0.0 : max(0.0, $monto - $montoBase);
+            $porcentaje = ($esBase || $montoBase <= 0) ? 0.0 : (($monto - $montoBase) / max($montoBase, 1)) * 100;
+
+            $existente = PrecioProducto::where('producto_id', $producto->id)
+                ->where('tipo_precio_id', $tipo->id)
+                ->where($filtroBase)
+                ->first();
+
+            if ($existente) {
+                $existente->update([
+                    'nombre'                     => $tipo->nombre,
+                    'precio'                     => $monto,
+                    'es_precio_base'             => $esBase,
+                    'margen_ganancia'            => $margen,
+                    'porcentaje_ganancia'        => $porcentaje,
+                    'activo'                     => true,
+                    'motivo_cambio'              => 'Edición desde la app',
+                    'fecha_ultima_actualizacion' => now(),
+                ]);
+                continue;
+            }
+
+            $nuevo = PrecioProducto::create([
+                'producto_id'                => $producto->id,
+                'nombre'                     => $tipo->nombre,
+                'precio'                     => $monto,
+                'tipo_precio_id'             => $tipo->id,
+                'es_precio_base'             => $esBase,
+                'margen_ganancia'            => $margen,
+                'porcentaje_ganancia'        => $porcentaje,
+                'activo'                     => true,
+                'fecha_ultima_actualizacion' => now(),
+            ]);
+            $this->registrarHistorialPrecio($nuevo, 0, $monto, 'Precio agregado desde la app');
+        }
+    }
+
     public function storeApi(Request $request): JsonResponse
     {
         $data = $request->validate([
             'nombre'                      => ['required', 'string', 'max:255'],
             'codigo'                      => ['nullable', 'string', 'max:100', 'unique:productos,codigo'],
+            'precios'                     => ['nullable', 'array'],
+            'precios.*.tipo_precio_id'    => ['required', 'integer', \Illuminate\Validation\Rule::exists('tipos_precio', 'id')->where('empresa_id', auth()->user()?->empresa_id)->where('activo', true)],
+            'precios.*.monto'             => ['required', 'numeric', 'min:0'],
             'descripcion'                 => ['nullable', 'string'],
             'categoria_id'                => ['nullable', 'exists:categorias,id'],
             'marca_id'                    => ['nullable', 'exists:marcas,id'],
@@ -3069,6 +3205,14 @@ class ProductoController extends Controller
             ], 422);
         }
 
+        if ($error = $this->validarPreciosApi($data['precios'] ?? null)) {
+            return response()->json([
+                'success' => false,
+                'message' => $error,
+                'errors'  => ['precios' => [$error]],
+            ], 422);
+        }
+
         // Sin unidad, el producto se crea con "UN" (ver abajo): validar contra esa
         $unidadProductoId = (int) ($data['unidad_medida_id']
             ?? UnidadMedida::where('codigo', 'UN')->where('activo', true)->value('id'));
@@ -3098,7 +3242,7 @@ class ProductoController extends Controller
 
                 // 🔥 Remover campos que no van a la tabla productos
                 $dataProducto = $data;
-                unset($dataProducto['codigos'], $dataProducto['codigos_barra'], $dataProducto['conversiones']);
+                unset($dataProducto['codigos'], $dataProducto['codigos_barra'], $dataProducto['conversiones'], $dataProducto['precios']);
 
                 // 🔥 FIX: Aplicar sanitize a campos nullable para permitir eliminación
                 $dataProducto['descripcion'] = $sanitize($dataProducto['descripcion'] ?? null);
@@ -3109,7 +3253,7 @@ class ProductoController extends Controller
                 $producto = Producto::create($dataProducto);
 
                 // Crear precio base (siempre, incluso si es 0)
-                if (isset($data['precio_venta']) && $data['precio_venta'] !== null) {
+                if (! isset($data['precios']) && isset($data['precio_venta']) && $data['precio_venta'] !== null) {
                     // ✨ NUEVO: Obtener tipo de precio VENTA de la EMPRESA del usuario
                     $tipoPrecioVenta = TipoPrecio::porEmpresa($data['empresa_id'])
                         ->where('codigo', 'VENTA')
@@ -3130,6 +3274,10 @@ class ProductoController extends Controller
                         'activo'         => true,
                         'empresa_id'     => $data['empresa_id'],
                     ]);
+                }
+
+                if (isset($data['precios'])) {
+                    $this->sincronizarPreciosApi($producto, $data['precios']);
                 }
 
                 // 🔥 NUEVO: Procesar códigos como array (compatible con Flutter)
@@ -3319,6 +3467,9 @@ class ProductoController extends Controller
             'nombre'                      => ['sometimes', 'required', 'string', 'max:255'],
             'sku'                         => ['nullable', 'string', 'max:20', 'unique:productos,sku,' . $producto->id],
             'codigo'                      => ['nullable', 'string', 'max:100', 'unique:productos,codigo,' . $producto->id],
+            'precios'                     => ['nullable', 'array'],
+            'precios.*.tipo_precio_id'    => ['required', 'integer', \Illuminate\Validation\Rule::exists('tipos_precio', 'id')->where('empresa_id', auth()->user()?->empresa_id)->where('activo', true)],
+            'precios.*.monto'             => ['required', 'numeric', 'min:0'],
             'descripcion'                 => ['nullable', 'string'],
             'categoria_id'                => ['nullable', 'exists:categorias,id'],
             'marca_id'                    => ['nullable', 'exists:marcas,id'],
@@ -3353,6 +3504,14 @@ class ProductoController extends Controller
             ], 422);
         }
 
+        if ($error = $this->validarPreciosApi($data['precios'] ?? null)) {
+            return response()->json([
+                'success' => false,
+                'message' => $error,
+                'errors'  => ['precios' => [$error]],
+            ], 422);
+        }
+
         $unidadProductoId = (int) ($data['unidad_medida_id'] ?? $producto->unidad_medida_id);
         if ($error = $this->validarConversionesApi($data, $unidadProductoId ?: null, $producto->id)) {
             return response()->json([
@@ -3371,12 +3530,15 @@ class ProductoController extends Controller
                 $dataProducto['codigos_vacío_intencional'],
                 $dataProducto['conversiones'],
                 $dataProducto['es_fraccionado'], // lo maneja guardarConversionesApi
+                $dataProducto['precios'],        // lo maneja sincronizarPreciosApi
             );
 
             $producto->update($dataProducto);
 
             // ✅ Actualizar precio_venta en precios_producto si se proporciona
-            if (isset($data['precio_venta'])) {
+            if (isset($data['precios'])) {
+                $this->sincronizarPreciosApi($producto, $data['precios']);
+            } elseif (isset($data['precio_venta'])) {
                 $precioVenta = $data['precio_venta'] ?? 0;
                 // ✨ NUEVO: Filtrar por empresa del usuario autenticado
                 $empresaId = auth()->user()?->empresa_id;
@@ -3798,7 +3960,8 @@ class ProductoController extends Controller
         $limite           = min(max($request->integer('limite', 10), 1), 100); // Tope de seguridad: 100
         // toString(): con Stringable, "=== 'exacta'" siempre era false y el escáner nunca buscaba exacto
         $tipoBusqueda     = $request->string('tipo_busqueda', 'parcial')->toString(); // ✅ exacta o parcial
-        $tipo             = $request->string('tipo', 'venta');              // ✅ 'venta' o 'compra'
+        // todos=1: catálogo completo de la empresa (listado de productos de la app), sin reglas de venta
+        $tipo             = $request->boolean('todos') ? 'todos' : $request->string('tipo', 'venta');              // ✅ 'venta' o 'compra'
         $clienteId        = $request->integer('cliente_id', null);          // ✅ NUEVO: Cliente para filtrar tipos_precio
         $permitirSinStock = $request->boolean('permitir_sin_stock', false); // ✅ NUEVO (2026-05-26): Permitir sin stock
         $empresaIdRequest = $request->integer('empresa_id', null);          // ✅ NUEVO: Permitir pasar empresa_id explícitamente
@@ -3834,7 +3997,10 @@ class ProductoController extends Controller
             $almacenId = $empresa?->almacen_id ?? config('inventario.almacen_principal_id', 1);
         }
 
-        if (! $q || strlen($q) < 2) {
+        // Sin texto y con "page": listado paginado de productos de venta (scroll infinito en la app)
+        $listadoPaginado = (string) $q === '' && $request->has('page');
+
+        if (! $listadoPaginado && (! $q || strlen($q) < 2)) {
             return ApiResponse::success([]);
         }
 
@@ -3909,11 +4075,14 @@ class ProductoController extends Controller
                                ->whereNull('deleted_at');
                         })
                         // O productos con permiso de venta sin stock
-                            ->orWhere('permite_venta_sin_stock', true);
+                            ->orWhere('permite_venta_sin_stock', true)
+                        // O servicios (comisión de transferencias): no manejan stock
+                            ->orWhere('es_servicio', true);
                     });
                 })
                 ->when($tipo === 'venta', function ($q) use ($clienteId) {
-                    return $q->whereHas('precios', function ($pq) use ($clienteId) {
+                    // Servicios: vendibles aunque no tengan precio VENTA (su precio se escribe en la venta)
+                    return $q->where(fn ($sq) => $sq->where('es_servicio', true)->orWhereHas('precios', function ($pq) use ($clienteId) {
                         // ✅ NUEVO: Filtrar por tipo_precio según el cliente
                         // Si cliente_id = 32 (CLIENTE GENERAL) → mostrar LICORERIA
                         // Si es otro cliente → mostrar VENTA
@@ -3922,9 +4091,40 @@ class ProductoController extends Controller
                         $pq->where('activo', true)->whereHas('tipoPrecio', function ($tq) use ($tipoPrecioCode) {
                             $tq->where('codigo', $tipoPrecioCode);
                         });
-                    });
+                    }));
                 });
         };
+
+        if ($listadoPaginado) {
+            // Solo productos con stock en los almacenes de venta; los servicios (sin stock) siempre aparecen.
+            // A diferencia de la búsqueda, no aplica el permiso de venta sin stock ni el de farmacia.
+            $paginado = $construirQueryBase(Producto::query())
+                ->where(function ($q) use ($almacenesConStock) {
+                    $q->where('es_servicio', true)
+                        ->orWhereHas('stock', function ($sq) use ($almacenesConStock) {
+                            $sq->whereIn('almacen_id', $almacenesConStock)
+                                ->where('cantidad_disponible', '>', 0)
+                                ->whereNull('deleted_at');
+                        });
+                })
+                ->orderBy('nombre')
+                ->paginate($limite, ['*'], 'page', max(1, $request->integer('page', 1)));
+
+            // mapearProductos devuelve la misma forma que la búsqueda; se toma su lista "data"
+            $items = $this->mapearProductos($paginado->getCollection(), $almacenId, $tipo, $clienteId)
+                ->getData(true)['data'] ?? [];
+
+            return response()->json([
+                'success'    => true,
+                'data'       => $items,
+                'pagination' => [
+                    'current_page' => $paginado->currentPage(),
+                    'last_page'    => $paginado->lastPage(),
+                    'total'        => $paginado->total(),
+                    'has_more'     => $paginado->hasMorePages(),
+                ],
+            ]);
+        }
 
         // ✅ PRIORIDAD 1 - ID exacto (solo si el texto son dígitos).
         // $q es Stringable: is_numeric($q) siempre daba false y el ID nunca se buscaba; se usa el texto.
