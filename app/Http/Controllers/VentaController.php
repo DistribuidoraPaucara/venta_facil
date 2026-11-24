@@ -238,6 +238,8 @@ class VentaController extends Controller
                 'fecha_hasta'         => $request->input('fecha_hasta'),
                 'numero'              => $request->input('numero'),
                 'search'              => $request->input('search') ?? $request->input('busqueda'), // Soportar busqueda del app
+                // Búsqueda unificada: número puro = folio; texto = número de venta o cliente
+                'buscar'              => $request->input('buscar'),
                 'monto_min'           => $request->input('monto_min'),
                 'monto_max'           => $request->input('monto_max'),
                 'moneda_id'           => $request->input('moneda_id'),

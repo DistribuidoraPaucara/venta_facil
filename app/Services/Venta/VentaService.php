@@ -783,6 +783,28 @@ class VentaService
                 ->when($filtros['numero'] ?? null, fn($q, $numero) =>
                     $q->where('numero', 'like', '%' . $numero . '%')
                 )
+                // Búsqueda unificada (Folio + Cliente):
+                // - Solo dígitos → folio (id exacto)
+                // - Texto → número de venta, o cliente por código, nombre, NIT o teléfono
+                ->when(trim((string) ($filtros['buscar'] ?? '')) !== '', function ($q) use ($filtros) {
+                    $texto = trim((string) $filtros['buscar']);
+
+                    if (ctype_digit($texto)) {
+                        return $q->where('id', (int) $texto);
+                    }
+
+                    $like = '%' . strtolower($texto) . '%';
+
+                    return $q->where(function ($sub) use ($texto, $like) {
+                        $sub->where('numero', 'like', '%' . $texto . '%')
+                            ->orWhereHas('cliente', fn($qCli) =>
+                                $qCli->whereRaw('LOWER(codigo_cliente) like ?', [$like])
+                                    ->orWhereRaw('LOWER(nombre) like ?', [$like])
+                                    ->orWhereRaw('LOWER(nit) like ?', [$like])
+                                    ->orWhereRaw('LOWER(telefono) like ?', [$like])
+                            );
+                    });
+                })
                 ->when($filtros['search'] ?? null, fn($q, $search) =>
                     $q->where(function ($subQuery) use ($search) {
                         // Si el término es un número, buscar por ID exacto primero

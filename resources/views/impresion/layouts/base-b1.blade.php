@@ -363,8 +363,8 @@
         {{-- Header con datos de empresa --}}
         <div class="header" style="padding-left: 30px; padding-right: 30px;">
             <div class="header-logo">
-                @if($empresa->logo_principal)
-                <img src="{{ $empresa->logo_principal }}" alt="{{ $empresa->nombre_comercial }}">
+                @if($empresa->logo_footer)
+                <img src="{{ $empresa->logo_footer }}" alt="{{ $empresa->nombre_comercial }}">
                 @endif
             </div>
             <div class="header-empresa">
@@ -391,10 +391,6 @@
             @if($empresa->logo_footer)
             <div style="margin-bottom: 10px;">
                 <img src="{{ $empresa->logo_footer }}" alt="Logo Footer" style="max-width: 100px; max-height: 40px; object-fit: contain;">
-            </div>
-            @elseif($empresa->logo_principal)
-            <div style="margin-bottom: 10px;">
-                <img src="{{ $empresa->logo_principal }}" alt="Logo Footer" style="max-width: 100px; max-height: 40px; object-fit: contain;">
             </div>
             @endif
             @if($empresa->mensaje_footer)

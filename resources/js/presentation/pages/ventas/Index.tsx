@@ -60,6 +60,7 @@ export default function VentasIndex() {
         if (nuevosFiltros.numero) params.append('numero', nuevosFiltros.numero);
 
         // Agregar solo filtros que tienen valor
+        if (nuevosFiltros.buscar) params.append('buscar', nuevosFiltros.buscar);
         if (nuevosFiltros.cliente_id) params.append('cliente_id', nuevosFiltros.cliente_id.toString());
         if (nuevosFiltros.estado_documento_id) params.append('estado_documento_id', nuevosFiltros.estado_documento_id.toString());
         if (nuevosFiltros.usuario_id) params.append('usuario_id', nuevosFiltros.usuario_id.toString());
@@ -68,8 +69,6 @@ export default function VentasIndex() {
         if (nuevosFiltros.monto_min) params.append('monto_min', nuevosFiltros.monto_min.toString());
         if (nuevosFiltros.monto_max) params.append('monto_max', nuevosFiltros.monto_max.toString());
         if (nuevosFiltros.moneda_id) params.append('moneda_id', nuevosFiltros.moneda_id.toString());
-        if (nuevosFiltros.id_desde) params.append('id_desde', nuevosFiltros.id_desde.toString());
-        if (nuevosFiltros.id_hasta) params.append('id_hasta', nuevosFiltros.id_hasta.toString());
         if (nuevosFiltros.tipo_pago_id) params.append('tipo_pago_id', nuevosFiltros.tipo_pago_id.toString());
         if (nuevosFiltros.preventista_id) params.append('preventista_id', nuevosFiltros.preventista_id.toString());
 

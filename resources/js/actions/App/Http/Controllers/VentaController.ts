@@ -242,7 +242,7 @@ export const index = {
 
 /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/app/ventas'
  */
 const store6147c64d02d84ec64fad753b8a0e4f65 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -257,7 +257,7 @@ store6147c64d02d84ec64fad753b8a0e4f65.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/app/ventas'
  */
 store6147c64d02d84ec64fad753b8a0e4f65.url = (options?: RouteQueryOptions) => {
@@ -266,7 +266,7 @@ store6147c64d02d84ec64fad753b8a0e4f65.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/app/ventas'
  */
 store6147c64d02d84ec64fad753b8a0e4f65.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -276,7 +276,7 @@ store6147c64d02d84ec64fad753b8a0e4f65.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/app/ventas'
  */
     const store6147c64d02d84ec64fad753b8a0e4f65Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -286,7 +286,7 @@ store6147c64d02d84ec64fad753b8a0e4f65.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/app/ventas'
  */
         store6147c64d02d84ec64fad753b8a0e4f65Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -297,7 +297,7 @@ store6147c64d02d84ec64fad753b8a0e4f65.post = (options?: RouteQueryOptions): Rout
     store6147c64d02d84ec64fad753b8a0e4f65.form = store6147c64d02d84ec64fad753b8a0e4f65Form
     /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/ventas'
  */
 const store2095395a67e3a716b06f7426c7cb10aa = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -312,7 +312,7 @@ store2095395a67e3a716b06f7426c7cb10aa.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/ventas'
  */
 store2095395a67e3a716b06f7426c7cb10aa.url = (options?: RouteQueryOptions) => {
@@ -321,7 +321,7 @@ store2095395a67e3a716b06f7426c7cb10aa.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/ventas'
  */
 store2095395a67e3a716b06f7426c7cb10aa.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -331,7 +331,7 @@ store2095395a67e3a716b06f7426c7cb10aa.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/ventas'
  */
     const store2095395a67e3a716b06f7426c7cb10aaForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -341,7 +341,7 @@ store2095395a67e3a716b06f7426c7cb10aa.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/api/ventas'
  */
         store2095395a67e3a716b06f7426c7cb10aaForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -352,7 +352,7 @@ store2095395a67e3a716b06f7426c7cb10aa.post = (options?: RouteQueryOptions): Rout
     store2095395a67e3a716b06f7426c7cb10aa.form = store2095395a67e3a716b06f7426c7cb10aaForm
     /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/ventas'
  */
 const store62656055d2cbb9a98ec927b8a0af2335 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -367,7 +367,7 @@ store62656055d2cbb9a98ec927b8a0af2335.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/ventas'
  */
 store62656055d2cbb9a98ec927b8a0af2335.url = (options?: RouteQueryOptions) => {
@@ -376,7 +376,7 @@ store62656055d2cbb9a98ec927b8a0af2335.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/ventas'
  */
 store62656055d2cbb9a98ec927b8a0af2335.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -386,7 +386,7 @@ store62656055d2cbb9a98ec927b8a0af2335.post = (options?: RouteQueryOptions): Rout
 
     /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/ventas'
  */
     const store62656055d2cbb9a98ec927b8a0af2335Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -396,7 +396,7 @@ store62656055d2cbb9a98ec927b8a0af2335.post = (options?: RouteQueryOptions): Rout
 
             /**
 * @see \App\Http\Controllers\VentaController::store
- * @see app/Http/Controllers/VentaController.php:725
+ * @see app/Http/Controllers/VentaController.php:727
  * @route '/ventas'
  */
         store62656055d2cbb9a98ec927b8a0af2335Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -414,7 +414,7 @@ export const store = {
 
 /**
 * @see \App\Http\Controllers\VentaController::catalogosApp
- * @see app/Http/Controllers/VentaController.php:699
+ * @see app/Http/Controllers/VentaController.php:701
  * @route '/api/app/ventas/catalogos'
  */
 export const catalogosApp = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -429,7 +429,7 @@ catalogosApp.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::catalogosApp
- * @see app/Http/Controllers/VentaController.php:699
+ * @see app/Http/Controllers/VentaController.php:701
  * @route '/api/app/ventas/catalogos'
  */
 catalogosApp.url = (options?: RouteQueryOptions) => {
@@ -438,7 +438,7 @@ catalogosApp.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::catalogosApp
- * @see app/Http/Controllers/VentaController.php:699
+ * @see app/Http/Controllers/VentaController.php:701
  * @route '/api/app/ventas/catalogos'
  */
 catalogosApp.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -447,7 +447,7 @@ catalogosApp.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\VentaController::catalogosApp
- * @see app/Http/Controllers/VentaController.php:699
+ * @see app/Http/Controllers/VentaController.php:701
  * @route '/api/app/ventas/catalogos'
  */
 catalogosApp.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -457,7 +457,7 @@ catalogosApp.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\VentaController::catalogosApp
- * @see app/Http/Controllers/VentaController.php:699
+ * @see app/Http/Controllers/VentaController.php:701
  * @route '/api/app/ventas/catalogos'
  */
     const catalogosAppForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -467,7 +467,7 @@ catalogosApp.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\VentaController::catalogosApp
- * @see app/Http/Controllers/VentaController.php:699
+ * @see app/Http/Controllers/VentaController.php:701
  * @route '/api/app/ventas/catalogos'
  */
         catalogosAppForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -476,7 +476,7 @@ catalogosApp.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\VentaController::catalogosApp
- * @see app/Http/Controllers/VentaController.php:699
+ * @see app/Http/Controllers/VentaController.php:701
  * @route '/api/app/ventas/catalogos'
  */
         catalogosAppForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -492,7 +492,7 @@ catalogosApp.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     catalogosApp.form = catalogosAppForm
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/app/ventas/{id}'
  */
 const showf0667a61fd1e4a53f894f1d5e962162b = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -507,7 +507,7 @@ showf0667a61fd1e4a53f894f1d5e962162b.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/app/ventas/{id}'
  */
 showf0667a61fd1e4a53f894f1d5e962162b.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -535,7 +535,7 @@ showf0667a61fd1e4a53f894f1d5e962162b.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/app/ventas/{id}'
  */
 showf0667a61fd1e4a53f894f1d5e962162b.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -544,7 +544,7 @@ showf0667a61fd1e4a53f894f1d5e962162b.get = (args: { id: string | number } | [id:
 })
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/app/ventas/{id}'
  */
 showf0667a61fd1e4a53f894f1d5e962162b.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -554,7 +554,7 @@ showf0667a61fd1e4a53f894f1d5e962162b.head = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/app/ventas/{id}'
  */
     const showf0667a61fd1e4a53f894f1d5e962162bForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -564,7 +564,7 @@ showf0667a61fd1e4a53f894f1d5e962162b.head = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/app/ventas/{id}'
  */
         showf0667a61fd1e4a53f894f1d5e962162bForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -573,7 +573,7 @@ showf0667a61fd1e4a53f894f1d5e962162b.head = (args: { id: string | number } | [id
         })
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/app/ventas/{id}'
  */
         showf0667a61fd1e4a53f894f1d5e962162bForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -589,7 +589,7 @@ showf0667a61fd1e4a53f894f1d5e962162b.head = (args: { id: string | number } | [id
     showf0667a61fd1e4a53f894f1d5e962162b.form = showf0667a61fd1e4a53f894f1d5e962162bForm
     /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{id}/detalles'
  */
 const show4ef3bdaf30af0bedb0ce7d739d92fb7b = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -604,7 +604,7 @@ show4ef3bdaf30af0bedb0ce7d739d92fb7b.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{id}/detalles'
  */
 show4ef3bdaf30af0bedb0ce7d739d92fb7b.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -632,7 +632,7 @@ show4ef3bdaf30af0bedb0ce7d739d92fb7b.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{id}/detalles'
  */
 show4ef3bdaf30af0bedb0ce7d739d92fb7b.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -641,7 +641,7 @@ show4ef3bdaf30af0bedb0ce7d739d92fb7b.get = (args: { id: string | number } | [id:
 })
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{id}/detalles'
  */
 show4ef3bdaf30af0bedb0ce7d739d92fb7b.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -651,7 +651,7 @@ show4ef3bdaf30af0bedb0ce7d739d92fb7b.head = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{id}/detalles'
  */
     const show4ef3bdaf30af0bedb0ce7d739d92fb7bForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -661,7 +661,7 @@ show4ef3bdaf30af0bedb0ce7d739d92fb7b.head = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{id}/detalles'
  */
         show4ef3bdaf30af0bedb0ce7d739d92fb7bForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -670,7 +670,7 @@ show4ef3bdaf30af0bedb0ce7d739d92fb7b.head = (args: { id: string | number } | [id
         })
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{id}/detalles'
  */
         show4ef3bdaf30af0bedb0ce7d739d92fb7bForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -686,7 +686,7 @@ show4ef3bdaf30af0bedb0ce7d739d92fb7b.head = (args: { id: string | number } | [id
     show4ef3bdaf30af0bedb0ce7d739d92fb7b.form = show4ef3bdaf30af0bedb0ce7d739d92fb7bForm
     /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{venta}'
  */
 const show8a5319b95720abf558e2089cc13e71ec = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -701,7 +701,7 @@ show8a5319b95720abf558e2089cc13e71ec.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{venta}'
  */
 show8a5319b95720abf558e2089cc13e71ec.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -729,7 +729,7 @@ show8a5319b95720abf558e2089cc13e71ec.url = (args: { venta: string | number } | [
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{venta}'
  */
 show8a5319b95720abf558e2089cc13e71ec.get = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -738,7 +738,7 @@ show8a5319b95720abf558e2089cc13e71ec.get = (args: { venta: string | number } | [
 })
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{venta}'
  */
 show8a5319b95720abf558e2089cc13e71ec.head = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -748,7 +748,7 @@ show8a5319b95720abf558e2089cc13e71ec.head = (args: { venta: string | number } | 
 
     /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{venta}'
  */
     const show8a5319b95720abf558e2089cc13e71ecForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -758,7 +758,7 @@ show8a5319b95720abf558e2089cc13e71ec.head = (args: { venta: string | number } | 
 
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{venta}'
  */
         show8a5319b95720abf558e2089cc13e71ecForm.get = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -767,7 +767,7 @@ show8a5319b95720abf558e2089cc13e71ec.head = (args: { venta: string | number } | 
         })
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/api/ventas/{venta}'
  */
         show8a5319b95720abf558e2089cc13e71ecForm.head = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -783,7 +783,7 @@ show8a5319b95720abf558e2089cc13e71ec.head = (args: { venta: string | number } | 
     show8a5319b95720abf558e2089cc13e71ec.form = show8a5319b95720abf558e2089cc13e71ecForm
     /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/ventas/{id}'
  */
 const showee84ecb1c01a6e60954e3bb60fb8ae07 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -798,7 +798,7 @@ showee84ecb1c01a6e60954e3bb60fb8ae07.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/ventas/{id}'
  */
 showee84ecb1c01a6e60954e3bb60fb8ae07.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -826,7 +826,7 @@ showee84ecb1c01a6e60954e3bb60fb8ae07.url = (args: { id: string | number } | [id:
 
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/ventas/{id}'
  */
 showee84ecb1c01a6e60954e3bb60fb8ae07.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -835,7 +835,7 @@ showee84ecb1c01a6e60954e3bb60fb8ae07.get = (args: { id: string | number } | [id:
 })
 /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/ventas/{id}'
  */
 showee84ecb1c01a6e60954e3bb60fb8ae07.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -845,7 +845,7 @@ showee84ecb1c01a6e60954e3bb60fb8ae07.head = (args: { id: string | number } | [id
 
     /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/ventas/{id}'
  */
     const showee84ecb1c01a6e60954e3bb60fb8ae07Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -855,7 +855,7 @@ showee84ecb1c01a6e60954e3bb60fb8ae07.head = (args: { id: string | number } | [id
 
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/ventas/{id}'
  */
         showee84ecb1c01a6e60954e3bb60fb8ae07Form.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -864,7 +864,7 @@ showee84ecb1c01a6e60954e3bb60fb8ae07.head = (args: { id: string | number } | [id
         })
             /**
 * @see \App\Http\Controllers\VentaController::show
- * @see app/Http/Controllers/VentaController.php:961
+ * @see app/Http/Controllers/VentaController.php:963
  * @route '/ventas/{id}'
  */
         showee84ecb1c01a6e60954e3bb60fb8ae07Form.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -888,7 +888,7 @@ export const show = {
 
 /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/app/ventas/{id}/anular'
  */
 const anular9f2da6e45cbca679761cc5974864e466 = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -903,7 +903,7 @@ anular9f2da6e45cbca679761cc5974864e466.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/app/ventas/{id}/anular'
  */
 anular9f2da6e45cbca679761cc5974864e466.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -931,7 +931,7 @@ anular9f2da6e45cbca679761cc5974864e466.url = (args: { id: string | number } | [i
 
 /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/app/ventas/{id}/anular'
  */
 anular9f2da6e45cbca679761cc5974864e466.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -941,7 +941,7 @@ anular9f2da6e45cbca679761cc5974864e466.post = (args: { id: string | number } | [
 
     /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/app/ventas/{id}/anular'
  */
     const anular9f2da6e45cbca679761cc5974864e466Form = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -951,7 +951,7 @@ anular9f2da6e45cbca679761cc5974864e466.post = (args: { id: string | number } | [
 
             /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/app/ventas/{id}/anular'
  */
         anular9f2da6e45cbca679761cc5974864e466Form.post = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -962,7 +962,7 @@ anular9f2da6e45cbca679761cc5974864e466.post = (args: { id: string | number } | [
     anular9f2da6e45cbca679761cc5974864e466.form = anular9f2da6e45cbca679761cc5974864e466Form
     /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/ventas/{venta}/anular'
  */
 const anulara95a658c27231fa294facfb449783679 = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -977,7 +977,7 @@ anulara95a658c27231fa294facfb449783679.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/ventas/{venta}/anular'
  */
 anulara95a658c27231fa294facfb449783679.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1005,7 +1005,7 @@ anulara95a658c27231fa294facfb449783679.url = (args: { venta: string | number } |
 
 /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/ventas/{venta}/anular'
  */
 anulara95a658c27231fa294facfb449783679.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1015,7 +1015,7 @@ anulara95a658c27231fa294facfb449783679.post = (args: { venta: string | number } 
 
     /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/ventas/{venta}/anular'
  */
     const anulara95a658c27231fa294facfb449783679Form = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1025,7 +1025,7 @@ anulara95a658c27231fa294facfb449783679.post = (args: { venta: string | number } 
 
             /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/api/ventas/{venta}/anular'
  */
         anulara95a658c27231fa294facfb449783679Form.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1036,7 +1036,7 @@ anulara95a658c27231fa294facfb449783679.post = (args: { venta: string | number } 
     anulara95a658c27231fa294facfb449783679.form = anulara95a658c27231fa294facfb449783679Form
     /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/ventas/{venta}/anular'
  */
 const anularbd695711014b1e126c408af4e254c30b = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1051,7 +1051,7 @@ anularbd695711014b1e126c408af4e254c30b.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/ventas/{venta}/anular'
  */
 anularbd695711014b1e126c408af4e254c30b.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1079,7 +1079,7 @@ anularbd695711014b1e126c408af4e254c30b.url = (args: { venta: string | number } |
 
 /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/ventas/{venta}/anular'
  */
 anularbd695711014b1e126c408af4e254c30b.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1089,7 +1089,7 @@ anularbd695711014b1e126c408af4e254c30b.post = (args: { venta: string | number } 
 
     /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/ventas/{venta}/anular'
  */
     const anularbd695711014b1e126c408af4e254c30bForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1099,7 +1099,7 @@ anularbd695711014b1e126c408af4e254c30b.post = (args: { venta: string | number } 
 
             /**
 * @see \App\Http\Controllers\VentaController::anular
- * @see app/Http/Controllers/VentaController.php:1278
+ * @see app/Http/Controllers/VentaController.php:1280
  * @route '/ventas/{venta}/anular'
  */
         anularbd695711014b1e126c408af4e254c30bForm.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1117,7 +1117,7 @@ export const anular = {
 
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/app/ventas/{id}'
  */
 const updatef0667a61fd1e4a53f894f1d5e962162b = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -1132,7 +1132,7 @@ updatef0667a61fd1e4a53f894f1d5e962162b.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/app/ventas/{id}'
  */
 updatef0667a61fd1e4a53f894f1d5e962162b.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1160,7 +1160,7 @@ updatef0667a61fd1e4a53f894f1d5e962162b.url = (args: { id: string | number } | [i
 
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/app/ventas/{id}'
  */
 updatef0667a61fd1e4a53f894f1d5e962162b.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -1170,7 +1170,7 @@ updatef0667a61fd1e4a53f894f1d5e962162b.put = (args: { id: string | number } | [i
 
     /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/app/ventas/{id}'
  */
     const updatef0667a61fd1e4a53f894f1d5e962162bForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1185,7 +1185,7 @@ updatef0667a61fd1e4a53f894f1d5e962162b.put = (args: { id: string | number } | [i
 
             /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/app/ventas/{id}'
  */
         updatef0667a61fd1e4a53f894f1d5e962162bForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1201,7 +1201,7 @@ updatef0667a61fd1e4a53f894f1d5e962162b.put = (args: { id: string | number } | [i
     updatef0667a61fd1e4a53f894f1d5e962162b.form = updatef0667a61fd1e4a53f894f1d5e962162bForm
     /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/ventas/{venta}'
  */
 const update8a5319b95720abf558e2089cc13e71ec = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -1216,7 +1216,7 @@ update8a5319b95720abf558e2089cc13e71ec.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/ventas/{venta}'
  */
 update8a5319b95720abf558e2089cc13e71ec.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1244,7 +1244,7 @@ update8a5319b95720abf558e2089cc13e71ec.url = (args: { venta: string | number } |
 
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/ventas/{venta}'
  */
 update8a5319b95720abf558e2089cc13e71ec.put = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -1253,7 +1253,7 @@ update8a5319b95720abf558e2089cc13e71ec.put = (args: { venta: string | number } |
 })
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/ventas/{venta}'
  */
 update8a5319b95720abf558e2089cc13e71ec.patch = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -1263,7 +1263,7 @@ update8a5319b95720abf558e2089cc13e71ec.patch = (args: { venta: string | number }
 
     /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/ventas/{venta}'
  */
     const update8a5319b95720abf558e2089cc13e71ecForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1278,7 +1278,7 @@ update8a5319b95720abf558e2089cc13e71ec.patch = (args: { venta: string | number }
 
             /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/ventas/{venta}'
  */
         update8a5319b95720abf558e2089cc13e71ecForm.put = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1292,7 +1292,7 @@ update8a5319b95720abf558e2089cc13e71ec.patch = (args: { venta: string | number }
         })
             /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/api/ventas/{venta}'
  */
         update8a5319b95720abf558e2089cc13e71ecForm.patch = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1308,7 +1308,7 @@ update8a5319b95720abf558e2089cc13e71ec.patch = (args: { venta: string | number }
     update8a5319b95720abf558e2089cc13e71ec.form = update8a5319b95720abf558e2089cc13e71ecForm
     /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/ventas/{venta}'
  */
 const update62967f9ad1b2d371e97b4ac4abfbeb93 = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -1323,7 +1323,7 @@ update62967f9ad1b2d371e97b4ac4abfbeb93.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/ventas/{venta}'
  */
 update62967f9ad1b2d371e97b4ac4abfbeb93.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1351,7 +1351,7 @@ update62967f9ad1b2d371e97b4ac4abfbeb93.url = (args: { venta: string | number } |
 
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/ventas/{venta}'
  */
 update62967f9ad1b2d371e97b4ac4abfbeb93.put = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -1360,7 +1360,7 @@ update62967f9ad1b2d371e97b4ac4abfbeb93.put = (args: { venta: string | number } |
 })
 /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/ventas/{venta}'
  */
 update62967f9ad1b2d371e97b4ac4abfbeb93.patch = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -1370,7 +1370,7 @@ update62967f9ad1b2d371e97b4ac4abfbeb93.patch = (args: { venta: string | number }
 
     /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/ventas/{venta}'
  */
     const update62967f9ad1b2d371e97b4ac4abfbeb93Form = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1385,7 +1385,7 @@ update62967f9ad1b2d371e97b4ac4abfbeb93.patch = (args: { venta: string | number }
 
             /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/ventas/{venta}'
  */
         update62967f9ad1b2d371e97b4ac4abfbeb93Form.put = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1399,7 +1399,7 @@ update62967f9ad1b2d371e97b4ac4abfbeb93.patch = (args: { venta: string | number }
         })
             /**
 * @see \App\Http\Controllers\VentaController::update
- * @see app/Http/Controllers/VentaController.php:1219
+ * @see app/Http/Controllers/VentaController.php:1221
  * @route '/ventas/{venta}'
  */
         update62967f9ad1b2d371e97b4ac4abfbeb93Form.patch = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1422,7 +1422,7 @@ export const update = {
 
 /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/app/ventas/{id}'
  */
 const destroyf0667a61fd1e4a53f894f1d5e962162b = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -1437,7 +1437,7 @@ destroyf0667a61fd1e4a53f894f1d5e962162b.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/app/ventas/{id}'
  */
 destroyf0667a61fd1e4a53f894f1d5e962162b.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1465,7 +1465,7 @@ destroyf0667a61fd1e4a53f894f1d5e962162b.url = (args: { id: string | number } | [
 
 /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/app/ventas/{id}'
  */
 destroyf0667a61fd1e4a53f894f1d5e962162b.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -1475,7 +1475,7 @@ destroyf0667a61fd1e4a53f894f1d5e962162b.delete = (args: { id: string | number } 
 
     /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/app/ventas/{id}'
  */
     const destroyf0667a61fd1e4a53f894f1d5e962162bForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1490,7 +1490,7 @@ destroyf0667a61fd1e4a53f894f1d5e962162b.delete = (args: { id: string | number } 
 
             /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/app/ventas/{id}'
  */
         destroyf0667a61fd1e4a53f894f1d5e962162bForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1506,7 +1506,7 @@ destroyf0667a61fd1e4a53f894f1d5e962162b.delete = (args: { id: string | number } 
     destroyf0667a61fd1e4a53f894f1d5e962162b.form = destroyf0667a61fd1e4a53f894f1d5e962162bForm
     /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/ventas/{venta}'
  */
 const destroy8a5319b95720abf558e2089cc13e71ec = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -1521,7 +1521,7 @@ destroy8a5319b95720abf558e2089cc13e71ec.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/ventas/{venta}'
  */
 destroy8a5319b95720abf558e2089cc13e71ec.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1549,7 +1549,7 @@ destroy8a5319b95720abf558e2089cc13e71ec.url = (args: { venta: string | number } 
 
 /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/ventas/{venta}'
  */
 destroy8a5319b95720abf558e2089cc13e71ec.delete = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -1559,7 +1559,7 @@ destroy8a5319b95720abf558e2089cc13e71ec.delete = (args: { venta: string | number
 
     /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/ventas/{venta}'
  */
     const destroy8a5319b95720abf558e2089cc13e71ecForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1574,7 +1574,7 @@ destroy8a5319b95720abf558e2089cc13e71ec.delete = (args: { venta: string | number
 
             /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/api/ventas/{venta}'
  */
         destroy8a5319b95720abf558e2089cc13e71ecForm.delete = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1590,7 +1590,7 @@ destroy8a5319b95720abf558e2089cc13e71ec.delete = (args: { venta: string | number
     destroy8a5319b95720abf558e2089cc13e71ec.form = destroy8a5319b95720abf558e2089cc13e71ecForm
     /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/ventas/{venta}'
  */
 const destroy62967f9ad1b2d371e97b4ac4abfbeb93 = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -1605,7 +1605,7 @@ destroy62967f9ad1b2d371e97b4ac4abfbeb93.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/ventas/{venta}'
  */
 destroy62967f9ad1b2d371e97b4ac4abfbeb93.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1633,7 +1633,7 @@ destroy62967f9ad1b2d371e97b4ac4abfbeb93.url = (args: { venta: string | number } 
 
 /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/ventas/{venta}'
  */
 destroy62967f9ad1b2d371e97b4ac4abfbeb93.delete = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -1643,7 +1643,7 @@ destroy62967f9ad1b2d371e97b4ac4abfbeb93.delete = (args: { venta: string | number
 
     /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/ventas/{venta}'
  */
     const destroy62967f9ad1b2d371e97b4ac4abfbeb93Form = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1658,7 +1658,7 @@ destroy62967f9ad1b2d371e97b4ac4abfbeb93.delete = (args: { venta: string | number
 
             /**
 * @see \App\Http\Controllers\VentaController::destroy
- * @see app/Http/Controllers/VentaController.php:1252
+ * @see app/Http/Controllers/VentaController.php:1254
  * @route '/ventas/{venta}'
  */
         destroy62967f9ad1b2d371e97b4ac4abfbeb93Form.delete = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1759,7 +1759,7 @@ ventasCliente.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     ventasCliente.form = ventasClienteForm
 /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/api/app/ventas/{venta}/pagos'
  */
 const registrarPago3af764f1a59ea1a3a14549546c4d57d5 = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1774,7 +1774,7 @@ registrarPago3af764f1a59ea1a3a14549546c4d57d5.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/api/app/ventas/{venta}/pagos'
  */
 registrarPago3af764f1a59ea1a3a14549546c4d57d5.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1802,7 +1802,7 @@ registrarPago3af764f1a59ea1a3a14549546c4d57d5.url = (args: { venta: string | num
 
 /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/api/app/ventas/{venta}/pagos'
  */
 registrarPago3af764f1a59ea1a3a14549546c4d57d5.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1812,7 +1812,7 @@ registrarPago3af764f1a59ea1a3a14549546c4d57d5.post = (args: { venta: string | nu
 
     /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/api/app/ventas/{venta}/pagos'
  */
     const registrarPago3af764f1a59ea1a3a14549546c4d57d5Form = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1822,7 +1822,7 @@ registrarPago3af764f1a59ea1a3a14549546c4d57d5.post = (args: { venta: string | nu
 
             /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/api/app/ventas/{venta}/pagos'
  */
         registrarPago3af764f1a59ea1a3a14549546c4d57d5Form.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1833,7 +1833,7 @@ registrarPago3af764f1a59ea1a3a14549546c4d57d5.post = (args: { venta: string | nu
     registrarPago3af764f1a59ea1a3a14549546c4d57d5.form = registrarPago3af764f1a59ea1a3a14549546c4d57d5Form
     /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/ventas/{venta}/registrar-pago'
  */
 const registrarPagoee0a4c20f6ebeab09b767419c88f44b8 = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1848,7 +1848,7 @@ registrarPagoee0a4c20f6ebeab09b767419c88f44b8.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/ventas/{venta}/registrar-pago'
  */
 registrarPagoee0a4c20f6ebeab09b767419c88f44b8.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1876,7 +1876,7 @@ registrarPagoee0a4c20f6ebeab09b767419c88f44b8.url = (args: { venta: string | num
 
 /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/ventas/{venta}/registrar-pago'
  */
 registrarPagoee0a4c20f6ebeab09b767419c88f44b8.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1886,7 +1886,7 @@ registrarPagoee0a4c20f6ebeab09b767419c88f44b8.post = (args: { venta: string | nu
 
     /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/ventas/{venta}/registrar-pago'
  */
     const registrarPagoee0a4c20f6ebeab09b767419c88f44b8Form = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1896,7 +1896,7 @@ registrarPagoee0a4c20f6ebeab09b767419c88f44b8.post = (args: { venta: string | nu
 
             /**
 * @see \App\Http\Controllers\VentaController::registrarPago
- * @see app/Http/Controllers/VentaController.php:1772
+ * @see app/Http/Controllers/VentaController.php:1774
  * @route '/ventas/{venta}/registrar-pago'
  */
         registrarPagoee0a4c20f6ebeab09b767419c88f44b8Form.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1913,7 +1913,7 @@ export const registrarPago = {
 
 /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/api/ventas/{venta}/imprimir'
  */
 const imprimir27b644b341d4f39f9a6c6408d35bf196 = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1928,7 +1928,7 @@ imprimir27b644b341d4f39f9a6c6408d35bf196.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/api/ventas/{venta}/imprimir'
  */
 imprimir27b644b341d4f39f9a6c6408d35bf196.url = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -1961,7 +1961,7 @@ imprimir27b644b341d4f39f9a6c6408d35bf196.url = (args: { venta: number | { id: nu
 
 /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/api/ventas/{venta}/imprimir'
  */
 imprimir27b644b341d4f39f9a6c6408d35bf196.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1970,7 +1970,7 @@ imprimir27b644b341d4f39f9a6c6408d35bf196.get = (args: { venta: number | { id: nu
 })
 /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/api/ventas/{venta}/imprimir'
  */
 imprimir27b644b341d4f39f9a6c6408d35bf196.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1980,7 +1980,7 @@ imprimir27b644b341d4f39f9a6c6408d35bf196.head = (args: { venta: number | { id: n
 
     /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/api/ventas/{venta}/imprimir'
  */
     const imprimir27b644b341d4f39f9a6c6408d35bf196Form = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1990,7 +1990,7 @@ imprimir27b644b341d4f39f9a6c6408d35bf196.head = (args: { venta: number | { id: n
 
             /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/api/ventas/{venta}/imprimir'
  */
         imprimir27b644b341d4f39f9a6c6408d35bf196Form.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1999,7 +1999,7 @@ imprimir27b644b341d4f39f9a6c6408d35bf196.head = (args: { venta: number | { id: n
         })
             /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/api/ventas/{venta}/imprimir'
  */
         imprimir27b644b341d4f39f9a6c6408d35bf196Form.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2015,7 +2015,7 @@ imprimir27b644b341d4f39f9a6c6408d35bf196.head = (args: { venta: number | { id: n
     imprimir27b644b341d4f39f9a6c6408d35bf196.form = imprimir27b644b341d4f39f9a6c6408d35bf196Form
     /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/ventas/{venta}/imprimir'
  */
 const imprimir4ad68826c38954639f69db21939b471f = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2030,7 +2030,7 @@ imprimir4ad68826c38954639f69db21939b471f.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/ventas/{venta}/imprimir'
  */
 imprimir4ad68826c38954639f69db21939b471f.url = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -2063,7 +2063,7 @@ imprimir4ad68826c38954639f69db21939b471f.url = (args: { venta: number | { id: nu
 
 /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/ventas/{venta}/imprimir'
  */
 imprimir4ad68826c38954639f69db21939b471f.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2072,7 +2072,7 @@ imprimir4ad68826c38954639f69db21939b471f.get = (args: { venta: number | { id: nu
 })
 /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/ventas/{venta}/imprimir'
  */
 imprimir4ad68826c38954639f69db21939b471f.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2082,7 +2082,7 @@ imprimir4ad68826c38954639f69db21939b471f.head = (args: { venta: number | { id: n
 
     /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/ventas/{venta}/imprimir'
  */
     const imprimir4ad68826c38954639f69db21939b471fForm = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2092,7 +2092,7 @@ imprimir4ad68826c38954639f69db21939b471f.head = (args: { venta: number | { id: n
 
             /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/ventas/{venta}/imprimir'
  */
         imprimir4ad68826c38954639f69db21939b471fForm.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2101,7 +2101,7 @@ imprimir4ad68826c38954639f69db21939b471f.head = (args: { venta: number | { id: n
         })
             /**
 * @see \App\Http\Controllers\VentaController::imprimir
- * @see app/Http/Controllers/VentaController.php:2012
+ * @see app/Http/Controllers/VentaController.php:2014
  * @route '/ventas/{venta}/imprimir'
  */
         imprimir4ad68826c38954639f69db21939b471fForm.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2123,7 +2123,7 @@ export const imprimir = {
 
 /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/api/ventas/{venta}/preview'
  */
 const preview76bded3e32859fe97a52bb19ac4376af = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2138,7 +2138,7 @@ preview76bded3e32859fe97a52bb19ac4376af.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/api/ventas/{venta}/preview'
  */
 preview76bded3e32859fe97a52bb19ac4376af.url = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -2171,7 +2171,7 @@ preview76bded3e32859fe97a52bb19ac4376af.url = (args: { venta: number | { id: num
 
 /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/api/ventas/{venta}/preview'
  */
 preview76bded3e32859fe97a52bb19ac4376af.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2180,7 +2180,7 @@ preview76bded3e32859fe97a52bb19ac4376af.get = (args: { venta: number | { id: num
 })
 /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/api/ventas/{venta}/preview'
  */
 preview76bded3e32859fe97a52bb19ac4376af.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2190,7 +2190,7 @@ preview76bded3e32859fe97a52bb19ac4376af.head = (args: { venta: number | { id: nu
 
     /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/api/ventas/{venta}/preview'
  */
     const preview76bded3e32859fe97a52bb19ac4376afForm = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2200,7 +2200,7 @@ preview76bded3e32859fe97a52bb19ac4376af.head = (args: { venta: number | { id: nu
 
             /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/api/ventas/{venta}/preview'
  */
         preview76bded3e32859fe97a52bb19ac4376afForm.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2209,7 +2209,7 @@ preview76bded3e32859fe97a52bb19ac4376af.head = (args: { venta: number | { id: nu
         })
             /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/api/ventas/{venta}/preview'
  */
         preview76bded3e32859fe97a52bb19ac4376afForm.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2225,7 +2225,7 @@ preview76bded3e32859fe97a52bb19ac4376af.head = (args: { venta: number | { id: nu
     preview76bded3e32859fe97a52bb19ac4376af.form = preview76bded3e32859fe97a52bb19ac4376afForm
     /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/ventas/{venta}/preview'
  */
 const preview030aad733cd31e4e2604dcd0dce6e484 = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2240,7 +2240,7 @@ preview030aad733cd31e4e2604dcd0dce6e484.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/ventas/{venta}/preview'
  */
 preview030aad733cd31e4e2604dcd0dce6e484.url = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -2273,7 +2273,7 @@ preview030aad733cd31e4e2604dcd0dce6e484.url = (args: { venta: number | { id: num
 
 /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/ventas/{venta}/preview'
  */
 preview030aad733cd31e4e2604dcd0dce6e484.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2282,7 +2282,7 @@ preview030aad733cd31e4e2604dcd0dce6e484.get = (args: { venta: number | { id: num
 })
 /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/ventas/{venta}/preview'
  */
 preview030aad733cd31e4e2604dcd0dce6e484.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2292,7 +2292,7 @@ preview030aad733cd31e4e2604dcd0dce6e484.head = (args: { venta: number | { id: nu
 
     /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/ventas/{venta}/preview'
  */
     const preview030aad733cd31e4e2604dcd0dce6e484Form = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2302,7 +2302,7 @@ preview030aad733cd31e4e2604dcd0dce6e484.head = (args: { venta: number | { id: nu
 
             /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/ventas/{venta}/preview'
  */
         preview030aad733cd31e4e2604dcd0dce6e484Form.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2311,7 +2311,7 @@ preview030aad733cd31e4e2604dcd0dce6e484.head = (args: { venta: number | { id: nu
         })
             /**
 * @see \App\Http\Controllers\VentaController::preview
- * @see app/Http/Controllers/VentaController.php:2099
+ * @see app/Http/Controllers/VentaController.php:2101
  * @route '/ventas/{venta}/preview'
  */
         preview030aad733cd31e4e2604dcd0dce6e484Form.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2333,7 +2333,7 @@ export const preview = {
 
 /**
 * @see \App\Http\Controllers\VentaController::ventasParaImpresion
- * @see app/Http/Controllers/VentaController.php:2397
+ * @see app/Http/Controllers/VentaController.php:2399
  * @route '/api/ventas/para-impresion'
  */
 export const ventasParaImpresion = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2348,7 +2348,7 @@ ventasParaImpresion.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::ventasParaImpresion
- * @see app/Http/Controllers/VentaController.php:2397
+ * @see app/Http/Controllers/VentaController.php:2399
  * @route '/api/ventas/para-impresion'
  */
 ventasParaImpresion.url = (options?: RouteQueryOptions) => {
@@ -2357,7 +2357,7 @@ ventasParaImpresion.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::ventasParaImpresion
- * @see app/Http/Controllers/VentaController.php:2397
+ * @see app/Http/Controllers/VentaController.php:2399
  * @route '/api/ventas/para-impresion'
  */
 ventasParaImpresion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2366,7 +2366,7 @@ ventasParaImpresion.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 })
 /**
 * @see \App\Http\Controllers\VentaController::ventasParaImpresion
- * @see app/Http/Controllers/VentaController.php:2397
+ * @see app/Http/Controllers/VentaController.php:2399
  * @route '/api/ventas/para-impresion'
  */
 ventasParaImpresion.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2376,7 +2376,7 @@ ventasParaImpresion.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
     /**
 * @see \App\Http\Controllers\VentaController::ventasParaImpresion
- * @see app/Http/Controllers/VentaController.php:2397
+ * @see app/Http/Controllers/VentaController.php:2399
  * @route '/api/ventas/para-impresion'
  */
     const ventasParaImpresionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2386,7 +2386,7 @@ ventasParaImpresion.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
             /**
 * @see \App\Http\Controllers\VentaController::ventasParaImpresion
- * @see app/Http/Controllers/VentaController.php:2397
+ * @see app/Http/Controllers/VentaController.php:2399
  * @route '/api/ventas/para-impresion'
  */
         ventasParaImpresionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2395,7 +2395,7 @@ ventasParaImpresion.head = (options?: RouteQueryOptions): RouteDefinition<'head'
         })
             /**
 * @see \App\Http\Controllers\VentaController::ventasParaImpresion
- * @see app/Http/Controllers/VentaController.php:2397
+ * @see app/Http/Controllers/VentaController.php:2399
  * @route '/api/ventas/para-impresion'
  */
         ventasParaImpresionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2411,7 +2411,7 @@ ventasParaImpresion.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     ventasParaImpresion.form = ventasParaImpresionForm
 /**
 * @see \App\Http\Controllers\VentaController::search
- * @see app/Http/Controllers/VentaController.php:2783
+ * @see app/Http/Controllers/VentaController.php:2785
  * @route '/api/ventas/search'
  */
 export const search = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2426,7 +2426,7 @@ search.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::search
- * @see app/Http/Controllers/VentaController.php:2783
+ * @see app/Http/Controllers/VentaController.php:2785
  * @route '/api/ventas/search'
  */
 search.url = (options?: RouteQueryOptions) => {
@@ -2435,7 +2435,7 @@ search.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::search
- * @see app/Http/Controllers/VentaController.php:2783
+ * @see app/Http/Controllers/VentaController.php:2785
  * @route '/api/ventas/search'
  */
 search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2444,7 +2444,7 @@ search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\VentaController::search
- * @see app/Http/Controllers/VentaController.php:2783
+ * @see app/Http/Controllers/VentaController.php:2785
  * @route '/api/ventas/search'
  */
 search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2454,7 +2454,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\VentaController::search
- * @see app/Http/Controllers/VentaController.php:2783
+ * @see app/Http/Controllers/VentaController.php:2785
  * @route '/api/ventas/search'
  */
     const searchForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2464,7 +2464,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\VentaController::search
- * @see app/Http/Controllers/VentaController.php:2783
+ * @see app/Http/Controllers/VentaController.php:2785
  * @route '/api/ventas/search'
  */
         searchForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2473,7 +2473,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\VentaController::search
- * @see app/Http/Controllers/VentaController.php:2783
+ * @see app/Http/Controllers/VentaController.php:2785
  * @route '/api/ventas/search'
  */
         searchForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2567,7 +2567,7 @@ searchWithPrestables.head = (options?: RouteQueryOptions): RouteDefinition<'head
     searchWithPrestables.form = searchWithPrestablesForm
 /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/api/ventas/verificar-stock'
  */
 const verificarStock7a87796bd2849517a48df1ab60ff5975 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2582,7 +2582,7 @@ verificarStock7a87796bd2849517a48df1ab60ff5975.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/api/ventas/verificar-stock'
  */
 verificarStock7a87796bd2849517a48df1ab60ff5975.url = (options?: RouteQueryOptions) => {
@@ -2591,7 +2591,7 @@ verificarStock7a87796bd2849517a48df1ab60ff5975.url = (options?: RouteQueryOption
 
 /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/api/ventas/verificar-stock'
  */
 verificarStock7a87796bd2849517a48df1ab60ff5975.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2601,7 +2601,7 @@ verificarStock7a87796bd2849517a48df1ab60ff5975.post = (options?: RouteQueryOptio
 
     /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/api/ventas/verificar-stock'
  */
     const verificarStock7a87796bd2849517a48df1ab60ff5975Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2611,7 +2611,7 @@ verificarStock7a87796bd2849517a48df1ab60ff5975.post = (options?: RouteQueryOptio
 
             /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/api/ventas/verificar-stock'
  */
         verificarStock7a87796bd2849517a48df1ab60ff5975Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2622,7 +2622,7 @@ verificarStock7a87796bd2849517a48df1ab60ff5975.post = (options?: RouteQueryOptio
     verificarStock7a87796bd2849517a48df1ab60ff5975.form = verificarStock7a87796bd2849517a48df1ab60ff5975Form
     /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/ventas/stock/verificar'
  */
 const verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2637,7 +2637,7 @@ verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/ventas/stock/verificar'
  */
 verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1.url = (options?: RouteQueryOptions) => {
@@ -2646,7 +2646,7 @@ verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1.url = (options?: RouteQueryOption
 
 /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/ventas/stock/verificar'
  */
 verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -2656,7 +2656,7 @@ verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1.post = (options?: RouteQueryOptio
 
     /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/ventas/stock/verificar'
  */
     const verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2666,7 +2666,7 @@ verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1.post = (options?: RouteQueryOptio
 
             /**
 * @see \App\Http\Controllers\VentaController::verificarStock
- * @see app/Http/Controllers/VentaController.php:1873
+ * @see app/Http/Controllers/VentaController.php:1875
  * @route '/ventas/stock/verificar'
  */
         verificarStockfd91eea2fd95a6c7de6a2ce0b83e27d1Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -2683,7 +2683,7 @@ export const verificarStock = {
 
 /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/api/ventas/productos/stock-bajo'
  */
 const productosStockBajo51b656bf5a19adf08db710b26069883b = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2698,7 +2698,7 @@ productosStockBajo51b656bf5a19adf08db710b26069883b.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/api/ventas/productos/stock-bajo'
  */
 productosStockBajo51b656bf5a19adf08db710b26069883b.url = (options?: RouteQueryOptions) => {
@@ -2707,7 +2707,7 @@ productosStockBajo51b656bf5a19adf08db710b26069883b.url = (options?: RouteQueryOp
 
 /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/api/ventas/productos/stock-bajo'
  */
 productosStockBajo51b656bf5a19adf08db710b26069883b.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2716,7 +2716,7 @@ productosStockBajo51b656bf5a19adf08db710b26069883b.get = (options?: RouteQueryOp
 })
 /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/api/ventas/productos/stock-bajo'
  */
 productosStockBajo51b656bf5a19adf08db710b26069883b.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2726,7 +2726,7 @@ productosStockBajo51b656bf5a19adf08db710b26069883b.head = (options?: RouteQueryO
 
     /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/api/ventas/productos/stock-bajo'
  */
     const productosStockBajo51b656bf5a19adf08db710b26069883bForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2736,7 +2736,7 @@ productosStockBajo51b656bf5a19adf08db710b26069883b.head = (options?: RouteQueryO
 
             /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/api/ventas/productos/stock-bajo'
  */
         productosStockBajo51b656bf5a19adf08db710b26069883bForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2745,7 +2745,7 @@ productosStockBajo51b656bf5a19adf08db710b26069883b.head = (options?: RouteQueryO
         })
             /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/api/ventas/productos/stock-bajo'
  */
         productosStockBajo51b656bf5a19adf08db710b26069883bForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2761,7 +2761,7 @@ productosStockBajo51b656bf5a19adf08db710b26069883b.head = (options?: RouteQueryO
     productosStockBajo51b656bf5a19adf08db710b26069883b.form = productosStockBajo51b656bf5a19adf08db710b26069883bForm
     /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/ventas/stock/bajo'
  */
 const productosStockBajoce5d9a17272226541db9102efbe90f0f = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2776,7 +2776,7 @@ productosStockBajoce5d9a17272226541db9102efbe90f0f.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/ventas/stock/bajo'
  */
 productosStockBajoce5d9a17272226541db9102efbe90f0f.url = (options?: RouteQueryOptions) => {
@@ -2785,7 +2785,7 @@ productosStockBajoce5d9a17272226541db9102efbe90f0f.url = (options?: RouteQueryOp
 
 /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/ventas/stock/bajo'
  */
 productosStockBajoce5d9a17272226541db9102efbe90f0f.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2794,7 +2794,7 @@ productosStockBajoce5d9a17272226541db9102efbe90f0f.get = (options?: RouteQueryOp
 })
 /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/ventas/stock/bajo'
  */
 productosStockBajoce5d9a17272226541db9102efbe90f0f.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2804,7 +2804,7 @@ productosStockBajoce5d9a17272226541db9102efbe90f0f.head = (options?: RouteQueryO
 
     /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/ventas/stock/bajo'
  */
     const productosStockBajoce5d9a17272226541db9102efbe90f0fForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2814,7 +2814,7 @@ productosStockBajoce5d9a17272226541db9102efbe90f0f.head = (options?: RouteQueryO
 
             /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/ventas/stock/bajo'
  */
         productosStockBajoce5d9a17272226541db9102efbe90f0fForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2823,7 +2823,7 @@ productosStockBajoce5d9a17272226541db9102efbe90f0f.head = (options?: RouteQueryO
         })
             /**
 * @see \App\Http\Controllers\VentaController::productosStockBajo
- * @see app/Http/Controllers/VentaController.php:1802
+ * @see app/Http/Controllers/VentaController.php:1804
  * @route '/ventas/stock/bajo'
  */
         productosStockBajoce5d9a17272226541db9102efbe90f0fForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2845,7 +2845,7 @@ export const productosStockBajo = {
 
 /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/api/ventas/{producto}/stock'
  */
 const obtenerStockProductof871834c3677537f452fd093d4e5e38d = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2860,7 +2860,7 @@ obtenerStockProductof871834c3677537f452fd093d4e5e38d.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/api/ventas/{producto}/stock'
  */
 obtenerStockProductof871834c3677537f452fd093d4e5e38d.url = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -2893,7 +2893,7 @@ obtenerStockProductof871834c3677537f452fd093d4e5e38d.url = (args: { producto: nu
 
 /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/api/ventas/{producto}/stock'
  */
 obtenerStockProductof871834c3677537f452fd093d4e5e38d.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2902,7 +2902,7 @@ obtenerStockProductof871834c3677537f452fd093d4e5e38d.get = (args: { producto: nu
 })
 /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/api/ventas/{producto}/stock'
  */
 obtenerStockProductof871834c3677537f452fd093d4e5e38d.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -2912,7 +2912,7 @@ obtenerStockProductof871834c3677537f452fd093d4e5e38d.head = (args: { producto: n
 
     /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/api/ventas/{producto}/stock'
  */
     const obtenerStockProductof871834c3677537f452fd093d4e5e38dForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2922,7 +2922,7 @@ obtenerStockProductof871834c3677537f452fd093d4e5e38d.head = (args: { producto: n
 
             /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/api/ventas/{producto}/stock'
  */
         obtenerStockProductof871834c3677537f452fd093d4e5e38dForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2931,7 +2931,7 @@ obtenerStockProductof871834c3677537f452fd093d4e5e38d.head = (args: { producto: n
         })
             /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/api/ventas/{producto}/stock'
  */
         obtenerStockProductof871834c3677537f452fd093d4e5e38dForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -2947,7 +2947,7 @@ obtenerStockProductof871834c3677537f452fd093d4e5e38d.head = (args: { producto: n
     obtenerStockProductof871834c3677537f452fd093d4e5e38d.form = obtenerStockProductof871834c3677537f452fd093d4e5e38dForm
     /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/ventas/stock/producto/{producto}'
  */
 const obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -2962,7 +2962,7 @@ obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/ventas/stock/producto/{producto}'
  */
 obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.url = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -2995,7 +2995,7 @@ obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.url = (args: { producto: nu
 
 /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/ventas/stock/producto/{producto}'
  */
 obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3004,7 +3004,7 @@ obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.get = (args: { producto: nu
 })
 /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/ventas/stock/producto/{producto}'
  */
 obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3014,7 +3014,7 @@ obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.head = (args: { producto: n
 
     /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/ventas/stock/producto/{producto}'
  */
     const obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35aForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3024,7 +3024,7 @@ obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.head = (args: { producto: n
 
             /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/ventas/stock/producto/{producto}'
  */
         obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35aForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3033,7 +3033,7 @@ obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35a.head = (args: { producto: n
         })
             /**
 * @see \App\Http\Controllers\VentaController::obtenerStockProducto
- * @see app/Http/Controllers/VentaController.php:1835
+ * @see app/Http/Controllers/VentaController.php:1837
  * @route '/ventas/stock/producto/{producto}'
  */
         obtenerStockProductoa80d4f4a6788a762379a84a99ab2f35aForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3255,7 +3255,7 @@ export const obtenerResumenStock = {
 
 /**
 * @see \App\Http\Controllers\VentaController::verificarReversionStock
- * @see app/Http/Controllers/VentaController.php:2550
+ * @see app/Http/Controllers/VentaController.php:2552
  * @route '/api/ventas/{venta}/verificar-reversion-stock'
  */
 export const verificarReversionStock = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3270,7 +3270,7 @@ verificarReversionStock.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::verificarReversionStock
- * @see app/Http/Controllers/VentaController.php:2550
+ * @see app/Http/Controllers/VentaController.php:2552
  * @route '/api/ventas/{venta}/verificar-reversion-stock'
  */
 verificarReversionStock.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -3298,7 +3298,7 @@ verificarReversionStock.url = (args: { venta: string | number } | [venta: string
 
 /**
 * @see \App\Http\Controllers\VentaController::verificarReversionStock
- * @see app/Http/Controllers/VentaController.php:2550
+ * @see app/Http/Controllers/VentaController.php:2552
  * @route '/api/ventas/{venta}/verificar-reversion-stock'
  */
 verificarReversionStock.get = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3307,7 +3307,7 @@ verificarReversionStock.get = (args: { venta: string | number } | [venta: string
 })
 /**
 * @see \App\Http\Controllers\VentaController::verificarReversionStock
- * @see app/Http/Controllers/VentaController.php:2550
+ * @see app/Http/Controllers/VentaController.php:2552
  * @route '/api/ventas/{venta}/verificar-reversion-stock'
  */
 verificarReversionStock.head = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3317,7 +3317,7 @@ verificarReversionStock.head = (args: { venta: string | number } | [venta: strin
 
     /**
 * @see \App\Http\Controllers\VentaController::verificarReversionStock
- * @see app/Http/Controllers/VentaController.php:2550
+ * @see app/Http/Controllers/VentaController.php:2552
  * @route '/api/ventas/{venta}/verificar-reversion-stock'
  */
     const verificarReversionStockForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3327,7 +3327,7 @@ verificarReversionStock.head = (args: { venta: string | number } | [venta: strin
 
             /**
 * @see \App\Http\Controllers\VentaController::verificarReversionStock
- * @see app/Http/Controllers/VentaController.php:2550
+ * @see app/Http/Controllers/VentaController.php:2552
  * @route '/api/ventas/{venta}/verificar-reversion-stock'
  */
         verificarReversionStockForm.get = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3336,7 +3336,7 @@ verificarReversionStock.head = (args: { venta: string | number } | [venta: strin
         })
             /**
 * @see \App\Http\Controllers\VentaController::verificarReversionStock
- * @see app/Http/Controllers/VentaController.php:2550
+ * @see app/Http/Controllers/VentaController.php:2552
  * @route '/api/ventas/{venta}/verificar-reversion-stock'
  */
         verificarReversionStockForm.head = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3352,7 +3352,7 @@ verificarReversionStock.head = (args: { venta: string | number } | [venta: strin
     verificarReversionStock.form = verificarReversionStockForm
 /**
 * @see \App\Http\Controllers\VentaController::ejecutarReversionStock
- * @see app/Http/Controllers/VentaController.php:2658
+ * @see app/Http/Controllers/VentaController.php:2660
  * @route '/api/ventas/{venta}/ejecutar-reversion-stock'
  */
 export const ejecutarReversionStock = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -3367,7 +3367,7 @@ ejecutarReversionStock.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::ejecutarReversionStock
- * @see app/Http/Controllers/VentaController.php:2658
+ * @see app/Http/Controllers/VentaController.php:2660
  * @route '/api/ventas/{venta}/ejecutar-reversion-stock'
  */
 ejecutarReversionStock.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -3395,7 +3395,7 @@ ejecutarReversionStock.url = (args: { venta: string | number } | [venta: string 
 
 /**
 * @see \App\Http\Controllers\VentaController::ejecutarReversionStock
- * @see app/Http/Controllers/VentaController.php:2658
+ * @see app/Http/Controllers/VentaController.php:2660
  * @route '/api/ventas/{venta}/ejecutar-reversion-stock'
  */
 ejecutarReversionStock.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -3405,7 +3405,7 @@ ejecutarReversionStock.post = (args: { venta: string | number } | [venta: string
 
     /**
 * @see \App\Http\Controllers\VentaController::ejecutarReversionStock
- * @see app/Http/Controllers/VentaController.php:2658
+ * @see app/Http/Controllers/VentaController.php:2660
  * @route '/api/ventas/{venta}/ejecutar-reversion-stock'
  */
     const ejecutarReversionStockForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -3415,7 +3415,7 @@ ejecutarReversionStock.post = (args: { venta: string | number } | [venta: string
 
             /**
 * @see \App\Http\Controllers\VentaController::ejecutarReversionStock
- * @see app/Http/Controllers/VentaController.php:2658
+ * @see app/Http/Controllers/VentaController.php:2660
  * @route '/api/ventas/{venta}/ejecutar-reversion-stock'
  */
         ejecutarReversionStockForm.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -3426,7 +3426,7 @@ ejecutarReversionStock.post = (args: { venta: string | number } | [venta: string
     ejecutarReversionStock.form = ejecutarReversionStockForm
 /**
 * @see \App\Http\Controllers\VentaController::checkCajaAbierta
- * @see app/Http/Controllers/VentaController.php:616
+ * @see app/Http/Controllers/VentaController.php:618
  * @route '/ventas/check-caja-abierta'
  */
 export const checkCajaAbierta = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3441,7 +3441,7 @@ checkCajaAbierta.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::checkCajaAbierta
- * @see app/Http/Controllers/VentaController.php:616
+ * @see app/Http/Controllers/VentaController.php:618
  * @route '/ventas/check-caja-abierta'
  */
 checkCajaAbierta.url = (options?: RouteQueryOptions) => {
@@ -3450,7 +3450,7 @@ checkCajaAbierta.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::checkCajaAbierta
- * @see app/Http/Controllers/VentaController.php:616
+ * @see app/Http/Controllers/VentaController.php:618
  * @route '/ventas/check-caja-abierta'
  */
 checkCajaAbierta.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3459,7 +3459,7 @@ checkCajaAbierta.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => 
 })
 /**
 * @see \App\Http\Controllers\VentaController::checkCajaAbierta
- * @see app/Http/Controllers/VentaController.php:616
+ * @see app/Http/Controllers/VentaController.php:618
  * @route '/ventas/check-caja-abierta'
  */
 checkCajaAbierta.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3469,7 +3469,7 @@ checkCajaAbierta.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
 
     /**
 * @see \App\Http\Controllers\VentaController::checkCajaAbierta
- * @see app/Http/Controllers/VentaController.php:616
+ * @see app/Http/Controllers/VentaController.php:618
  * @route '/ventas/check-caja-abierta'
  */
     const checkCajaAbiertaForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3479,7 +3479,7 @@ checkCajaAbierta.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
 
             /**
 * @see \App\Http\Controllers\VentaController::checkCajaAbierta
- * @see app/Http/Controllers/VentaController.php:616
+ * @see app/Http/Controllers/VentaController.php:618
  * @route '/ventas/check-caja-abierta'
  */
         checkCajaAbiertaForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3488,7 +3488,7 @@ checkCajaAbierta.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
         })
             /**
 * @see \App\Http\Controllers\VentaController::checkCajaAbierta
- * @see app/Http/Controllers/VentaController.php:616
+ * @see app/Http/Controllers/VentaController.php:618
  * @route '/ventas/check-caja-abierta'
  */
         checkCajaAbiertaForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3504,7 +3504,7 @@ checkCajaAbierta.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
     checkCajaAbierta.form = checkCajaAbiertaForm
 /**
 * @see \App\Http\Controllers\VentaController::edit
- * @see app/Http/Controllers/VentaController.php:1191
+ * @see app/Http/Controllers/VentaController.php:1193
  * @route '/ventas/{venta}/edit'
  */
 export const edit = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3519,7 +3519,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::edit
- * @see app/Http/Controllers/VentaController.php:1191
+ * @see app/Http/Controllers/VentaController.php:1193
  * @route '/ventas/{venta}/edit'
  */
 edit.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -3547,7 +3547,7 @@ edit.url = (args: { venta: string | number } | [venta: string | number ] | strin
 
 /**
 * @see \App\Http\Controllers\VentaController::edit
- * @see app/Http/Controllers/VentaController.php:1191
+ * @see app/Http/Controllers/VentaController.php:1193
  * @route '/ventas/{venta}/edit'
  */
 edit.get = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3556,7 +3556,7 @@ edit.get = (args: { venta: string | number } | [venta: string | number ] | strin
 })
 /**
 * @see \App\Http\Controllers\VentaController::edit
- * @see app/Http/Controllers/VentaController.php:1191
+ * @see app/Http/Controllers/VentaController.php:1193
  * @route '/ventas/{venta}/edit'
  */
 edit.head = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3566,7 +3566,7 @@ edit.head = (args: { venta: string | number } | [venta: string | number ] | stri
 
     /**
 * @see \App\Http\Controllers\VentaController::edit
- * @see app/Http/Controllers/VentaController.php:1191
+ * @see app/Http/Controllers/VentaController.php:1193
  * @route '/ventas/{venta}/edit'
  */
     const editForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3576,7 +3576,7 @@ edit.head = (args: { venta: string | number } | [venta: string | number ] | stri
 
             /**
 * @see \App\Http\Controllers\VentaController::edit
- * @see app/Http/Controllers/VentaController.php:1191
+ * @see app/Http/Controllers/VentaController.php:1193
  * @route '/ventas/{venta}/edit'
  */
         editForm.get = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3585,7 +3585,7 @@ edit.head = (args: { venta: string | number } | [venta: string | number ] | stri
         })
             /**
 * @see \App\Http\Controllers\VentaController::edit
- * @see app/Http/Controllers/VentaController.php:1191
+ * @see app/Http/Controllers/VentaController.php:1193
  * @route '/ventas/{venta}/edit'
  */
         editForm.head = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3601,7 +3601,7 @@ edit.head = (args: { venta: string | number } | [venta: string | number ] | stri
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:537
+ * @see app/Http/Controllers/VentaController.php:539
  * @route '/ventas/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3616,7 +3616,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:537
+ * @see app/Http/Controllers/VentaController.php:539
  * @route '/ventas/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -3625,7 +3625,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:537
+ * @see app/Http/Controllers/VentaController.php:539
  * @route '/ventas/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3634,7 +3634,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:537
+ * @see app/Http/Controllers/VentaController.php:539
  * @route '/ventas/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3644,7 +3644,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:537
+ * @see app/Http/Controllers/VentaController.php:539
  * @route '/ventas/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3654,7 +3654,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:537
+ * @see app/Http/Controllers/VentaController.php:539
  * @route '/ventas/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3663,7 +3663,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\VentaController::create
- * @see app/Http/Controllers/VentaController.php:537
+ * @see app/Http/Controllers/VentaController.php:539
  * @route '/ventas/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3679,7 +3679,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
- * @see app/Http/Controllers/VentaController.php:2175
+ * @see app/Http/Controllers/VentaController.php:2177
  * @route '/ventas/formatos-disponibles'
  */
 export const formatosDisponibles = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3694,7 +3694,7 @@ formatosDisponibles.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
- * @see app/Http/Controllers/VentaController.php:2175
+ * @see app/Http/Controllers/VentaController.php:2177
  * @route '/ventas/formatos-disponibles'
  */
 formatosDisponibles.url = (options?: RouteQueryOptions) => {
@@ -3703,7 +3703,7 @@ formatosDisponibles.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
- * @see app/Http/Controllers/VentaController.php:2175
+ * @see app/Http/Controllers/VentaController.php:2177
  * @route '/ventas/formatos-disponibles'
  */
 formatosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3712,7 +3712,7 @@ formatosDisponibles.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 })
 /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
- * @see app/Http/Controllers/VentaController.php:2175
+ * @see app/Http/Controllers/VentaController.php:2177
  * @route '/ventas/formatos-disponibles'
  */
 formatosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3722,7 +3722,7 @@ formatosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
     /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
- * @see app/Http/Controllers/VentaController.php:2175
+ * @see app/Http/Controllers/VentaController.php:2177
  * @route '/ventas/formatos-disponibles'
  */
     const formatosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3732,7 +3732,7 @@ formatosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
             /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
- * @see app/Http/Controllers/VentaController.php:2175
+ * @see app/Http/Controllers/VentaController.php:2177
  * @route '/ventas/formatos-disponibles'
  */
         formatosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3741,7 +3741,7 @@ formatosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'
         })
             /**
 * @see \App\Http\Controllers\VentaController::formatosDisponibles
- * @see app/Http/Controllers/VentaController.php:2175
+ * @see app/Http/Controllers/VentaController.php:2177
  * @route '/ventas/formatos-disponibles'
  */
         formatosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3757,7 +3757,7 @@ formatosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     formatosDisponibles.form = formatosDisponiblesForm
 /**
 * @see \App\Http\Controllers\VentaController::aprobar
- * @see app/Http/Controllers/VentaController.php:1722
+ * @see app/Http/Controllers/VentaController.php:1724
  * @route '/ventas/{venta}/aprobar'
  */
 export const aprobar = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -3772,7 +3772,7 @@ aprobar.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::aprobar
- * @see app/Http/Controllers/VentaController.php:1722
+ * @see app/Http/Controllers/VentaController.php:1724
  * @route '/ventas/{venta}/aprobar'
  */
 aprobar.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -3800,7 +3800,7 @@ aprobar.url = (args: { venta: string | number } | [venta: string | number ] | st
 
 /**
 * @see \App\Http\Controllers\VentaController::aprobar
- * @see app/Http/Controllers/VentaController.php:1722
+ * @see app/Http/Controllers/VentaController.php:1724
  * @route '/ventas/{venta}/aprobar'
  */
 aprobar.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -3810,7 +3810,7 @@ aprobar.post = (args: { venta: string | number } | [venta: string | number ] | s
 
     /**
 * @see \App\Http\Controllers\VentaController::aprobar
- * @see app/Http/Controllers/VentaController.php:1722
+ * @see app/Http/Controllers/VentaController.php:1724
  * @route '/ventas/{venta}/aprobar'
  */
     const aprobarForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -3820,7 +3820,7 @@ aprobar.post = (args: { venta: string | number } | [venta: string | number ] | s
 
             /**
 * @see \App\Http\Controllers\VentaController::aprobar
- * @see app/Http/Controllers/VentaController.php:1722
+ * @see app/Http/Controllers/VentaController.php:1724
  * @route '/ventas/{venta}/aprobar'
  */
         aprobarForm.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -3831,7 +3831,7 @@ aprobar.post = (args: { venta: string | number } | [venta: string | number ] | s
     aprobar.form = aprobarForm
 /**
 * @see \App\Http\Controllers\VentaController::rechazar
- * @see app/Http/Controllers/VentaController.php:1749
+ * @see app/Http/Controllers/VentaController.php:1751
  * @route '/ventas/{venta}/rechazar'
  */
 export const rechazar = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -3846,7 +3846,7 @@ rechazar.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::rechazar
- * @see app/Http/Controllers/VentaController.php:1749
+ * @see app/Http/Controllers/VentaController.php:1751
  * @route '/ventas/{venta}/rechazar'
  */
 rechazar.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -3874,7 +3874,7 @@ rechazar.url = (args: { venta: string | number } | [venta: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\VentaController::rechazar
- * @see app/Http/Controllers/VentaController.php:1749
+ * @see app/Http/Controllers/VentaController.php:1751
  * @route '/ventas/{venta}/rechazar'
  */
 rechazar.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -3884,7 +3884,7 @@ rechazar.post = (args: { venta: string | number } | [venta: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\VentaController::rechazar
- * @see app/Http/Controllers/VentaController.php:1749
+ * @see app/Http/Controllers/VentaController.php:1751
  * @route '/ventas/{venta}/rechazar'
  */
     const rechazarForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -3894,7 +3894,7 @@ rechazar.post = (args: { venta: string | number } | [venta: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\VentaController::rechazar
- * @see app/Http/Controllers/VentaController.php:1749
+ * @see app/Http/Controllers/VentaController.php:1751
  * @route '/ventas/{venta}/rechazar'
  */
         rechazarForm.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -3905,7 +3905,7 @@ rechazar.post = (args: { venta: string | number } | [venta: string | number ] | 
     rechazar.form = rechazarForm
 /**
 * @see \App\Http\Controllers\VentaController::exportarExcel
- * @see app/Http/Controllers/VentaController.php:2199
+ * @see app/Http/Controllers/VentaController.php:2201
  * @route '/ventas/{venta}/exportar-excel'
  */
 export const exportarExcel = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3920,7 +3920,7 @@ exportarExcel.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::exportarExcel
- * @see app/Http/Controllers/VentaController.php:2199
+ * @see app/Http/Controllers/VentaController.php:2201
  * @route '/ventas/{venta}/exportar-excel'
  */
 exportarExcel.url = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -3953,7 +3953,7 @@ exportarExcel.url = (args: { venta: number | { id: number } } | [venta: number |
 
 /**
 * @see \App\Http\Controllers\VentaController::exportarExcel
- * @see app/Http/Controllers/VentaController.php:2199
+ * @see app/Http/Controllers/VentaController.php:2201
  * @route '/ventas/{venta}/exportar-excel'
  */
 exportarExcel.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -3962,7 +3962,7 @@ exportarExcel.get = (args: { venta: number | { id: number } } | [venta: number |
 })
 /**
 * @see \App\Http\Controllers\VentaController::exportarExcel
- * @see app/Http/Controllers/VentaController.php:2199
+ * @see app/Http/Controllers/VentaController.php:2201
  * @route '/ventas/{venta}/exportar-excel'
  */
 exportarExcel.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -3972,7 +3972,7 @@ exportarExcel.head = (args: { venta: number | { id: number } } | [venta: number 
 
     /**
 * @see \App\Http\Controllers\VentaController::exportarExcel
- * @see app/Http/Controllers/VentaController.php:2199
+ * @see app/Http/Controllers/VentaController.php:2201
  * @route '/ventas/{venta}/exportar-excel'
  */
     const exportarExcelForm = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3982,7 +3982,7 @@ exportarExcel.head = (args: { venta: number | { id: number } } | [venta: number 
 
             /**
 * @see \App\Http\Controllers\VentaController::exportarExcel
- * @see app/Http/Controllers/VentaController.php:2199
+ * @see app/Http/Controllers/VentaController.php:2201
  * @route '/ventas/{venta}/exportar-excel'
  */
         exportarExcelForm.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -3991,7 +3991,7 @@ exportarExcel.head = (args: { venta: number | { id: number } } | [venta: number 
         })
             /**
 * @see \App\Http\Controllers\VentaController::exportarExcel
- * @see app/Http/Controllers/VentaController.php:2199
+ * @see app/Http/Controllers/VentaController.php:2201
  * @route '/ventas/{venta}/exportar-excel'
  */
         exportarExcelForm.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -4007,7 +4007,7 @@ exportarExcel.head = (args: { venta: number | { id: number } } | [venta: number 
     exportarExcel.form = exportarExcelForm
 /**
 * @see \App\Http\Controllers\VentaController::exportarPdf
- * @see app/Http/Controllers/VentaController.php:2235
+ * @see app/Http/Controllers/VentaController.php:2237
  * @route '/ventas/{venta}/exportar-pdf'
  */
 export const exportarPdf = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -4022,7 +4022,7 @@ exportarPdf.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::exportarPdf
- * @see app/Http/Controllers/VentaController.php:2235
+ * @see app/Http/Controllers/VentaController.php:2237
  * @route '/ventas/{venta}/exportar-pdf'
  */
 exportarPdf.url = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -4055,7 +4055,7 @@ exportarPdf.url = (args: { venta: number | { id: number } } | [venta: number | {
 
 /**
 * @see \App\Http\Controllers\VentaController::exportarPdf
- * @see app/Http/Controllers/VentaController.php:2235
+ * @see app/Http/Controllers/VentaController.php:2237
  * @route '/ventas/{venta}/exportar-pdf'
  */
 exportarPdf.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -4064,7 +4064,7 @@ exportarPdf.get = (args: { venta: number | { id: number } } | [venta: number | {
 })
 /**
 * @see \App\Http\Controllers\VentaController::exportarPdf
- * @see app/Http/Controllers/VentaController.php:2235
+ * @see app/Http/Controllers/VentaController.php:2237
  * @route '/ventas/{venta}/exportar-pdf'
  */
 exportarPdf.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -4074,7 +4074,7 @@ exportarPdf.head = (args: { venta: number | { id: number } } | [venta: number | 
 
     /**
 * @see \App\Http\Controllers\VentaController::exportarPdf
- * @see app/Http/Controllers/VentaController.php:2235
+ * @see app/Http/Controllers/VentaController.php:2237
  * @route '/ventas/{venta}/exportar-pdf'
  */
     const exportarPdfForm = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -4084,7 +4084,7 @@ exportarPdf.head = (args: { venta: number | { id: number } } | [venta: number | 
 
             /**
 * @see \App\Http\Controllers\VentaController::exportarPdf
- * @see app/Http/Controllers/VentaController.php:2235
+ * @see app/Http/Controllers/VentaController.php:2237
  * @route '/ventas/{venta}/exportar-pdf'
  */
         exportarPdfForm.get = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -4093,7 +4093,7 @@ exportarPdf.head = (args: { venta: number | { id: number } } | [venta: number | 
         })
             /**
 * @see \App\Http\Controllers\VentaController::exportarPdf
- * @see app/Http/Controllers/VentaController.php:2235
+ * @see app/Http/Controllers/VentaController.php:2237
  * @route '/ventas/{venta}/exportar-pdf'
  */
         exportarPdfForm.head = (args: { venta: number | { id: number } } | [venta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -4109,7 +4109,7 @@ exportarPdf.head = (args: { venta: number | { id: number } } | [venta: number | 
     exportarPdf.form = exportarPdfForm
 /**
 * @see \App\Http\Controllers\VentaController::storeConfirmacion
- * @see app/Http/Controllers/VentaController.php:2821
+ * @see app/Http/Controllers/VentaController.php:2823
  * @route '/ventas/{venta}/confirmaciones'
  */
 export const storeConfirmacion = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -4124,7 +4124,7 @@ storeConfirmacion.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::storeConfirmacion
- * @see app/Http/Controllers/VentaController.php:2821
+ * @see app/Http/Controllers/VentaController.php:2823
  * @route '/ventas/{venta}/confirmaciones'
  */
 storeConfirmacion.url = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -4152,7 +4152,7 @@ storeConfirmacion.url = (args: { venta: string | number } | [venta: string | num
 
 /**
 * @see \App\Http\Controllers\VentaController::storeConfirmacion
- * @see app/Http/Controllers/VentaController.php:2821
+ * @see app/Http/Controllers/VentaController.php:2823
  * @route '/ventas/{venta}/confirmaciones'
  */
 storeConfirmacion.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -4162,7 +4162,7 @@ storeConfirmacion.post = (args: { venta: string | number } | [venta: string | nu
 
     /**
 * @see \App\Http\Controllers\VentaController::storeConfirmacion
- * @see app/Http/Controllers/VentaController.php:2821
+ * @see app/Http/Controllers/VentaController.php:2823
  * @route '/ventas/{venta}/confirmaciones'
  */
     const storeConfirmacionForm = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -4172,7 +4172,7 @@ storeConfirmacion.post = (args: { venta: string | number } | [venta: string | nu
 
             /**
 * @see \App\Http\Controllers\VentaController::storeConfirmacion
- * @see app/Http/Controllers/VentaController.php:2821
+ * @see app/Http/Controllers/VentaController.php:2823
  * @route '/ventas/{venta}/confirmaciones'
  */
         storeConfirmacionForm.post = (args: { venta: string | number } | [venta: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -4183,7 +4183,7 @@ storeConfirmacion.post = (args: { venta: string | number } | [venta: string | nu
     storeConfirmacion.form = storeConfirmacionForm
 /**
 * @see \App\Http\Controllers\VentaController::destroyConfirmacion
- * @see app/Http/Controllers/VentaController.php:2976
+ * @see app/Http/Controllers/VentaController.php:2978
  * @route '/ventas/{venta}/confirmaciones/{confirmacion}'
  */
 export const destroyConfirmacion = (args: { venta: string | number, confirmacion: string | number } | [venta: string | number, confirmacion: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -4198,7 +4198,7 @@ destroyConfirmacion.definition = {
 
 /**
 * @see \App\Http\Controllers\VentaController::destroyConfirmacion
- * @see app/Http/Controllers/VentaController.php:2976
+ * @see app/Http/Controllers/VentaController.php:2978
  * @route '/ventas/{venta}/confirmaciones/{confirmacion}'
  */
 destroyConfirmacion.url = (args: { venta: string | number, confirmacion: string | number } | [venta: string | number, confirmacion: string | number ], options?: RouteQueryOptions) => {
@@ -4224,7 +4224,7 @@ destroyConfirmacion.url = (args: { venta: string | number, confirmacion: string 
 
 /**
 * @see \App\Http\Controllers\VentaController::destroyConfirmacion
- * @see app/Http/Controllers/VentaController.php:2976
+ * @see app/Http/Controllers/VentaController.php:2978
  * @route '/ventas/{venta}/confirmaciones/{confirmacion}'
  */
 destroyConfirmacion.delete = (args: { venta: string | number, confirmacion: string | number } | [venta: string | number, confirmacion: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -4234,7 +4234,7 @@ destroyConfirmacion.delete = (args: { venta: string | number, confirmacion: stri
 
     /**
 * @see \App\Http\Controllers\VentaController::destroyConfirmacion
- * @see app/Http/Controllers/VentaController.php:2976
+ * @see app/Http/Controllers/VentaController.php:2978
  * @route '/ventas/{venta}/confirmaciones/{confirmacion}'
  */
     const destroyConfirmacionForm = (args: { venta: string | number, confirmacion: string | number } | [venta: string | number, confirmacion: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -4249,7 +4249,7 @@ destroyConfirmacion.delete = (args: { venta: string | number, confirmacion: stri
 
             /**
 * @see \App\Http\Controllers\VentaController::destroyConfirmacion
- * @see app/Http/Controllers/VentaController.php:2976
+ * @see app/Http/Controllers/VentaController.php:2978
  * @route '/ventas/{venta}/confirmaciones/{confirmacion}'
  */
         destroyConfirmacionForm.delete = (args: { venta: string | number, confirmacion: string | number } | [venta: string | number, confirmacion: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

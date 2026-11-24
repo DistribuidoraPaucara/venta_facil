@@ -26,7 +26,7 @@ export default function FloatingSelect({
                 value={value}
                 onChange={onChange}
                 title={title}
-                className="peer w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white appearance-none transition-all"
+                className={`peer w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white appearance-none transition-all`}
             >
                 {children}
             </select>
@@ -37,7 +37,7 @@ export default function FloatingSelect({
             )}
             <label
                 htmlFor={id}
-                className="absolute left-10 -top-3 px-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-900 peer-focus:-top-3 peer-focus:text-blue-600 dark:peer-focus:text-blue-400 transition-all pointer-events-none"
+                className={`absolute ${icon ? 'left-10' : 'left-3'} -top-2.5 px-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-900 peer-focus:text-blue-600 dark:peer-focus:text-blue-400 transition-all pointer-events-none`}
             >
                 {label}
             </label>

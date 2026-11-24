@@ -357,10 +357,18 @@ export default function GenericFormFields<F extends BaseFormData>({
                     className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${error ? 'border-red-500' : ''}`}
                   />
                 </label>
-                {fileValue && (
+                {(fileValue || previewSrc) && (
                   <button
                     type="button"
-                    onClick={() => onChange(field.key, null)}
+                    onClick={() => {
+                      // Quitar archivo nuevo o imagen ya guardada.
+                      // Si había una guardada, se marca `<campo>_eliminar` para que el backend la borre.
+                      onChange(field.key, null);
+                      if (previewValue) {
+                        onChange(`${fieldKey}_preview` as keyof F, null);
+                        onChange(`${fieldKey}_eliminar` as keyof F, true);
+                      }
+                    }}
                     disabled={fieldDisabled}
                     className="text-sm px-4 py-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-red-50 hover:border-red-300 hover:text-red-600 dark:hover:bg-red-950/20 transition-all duration-200 whitespace-nowrap"
                   >

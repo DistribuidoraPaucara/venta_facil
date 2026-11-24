@@ -1,7 +1,8 @@
 import type { DatosParaFiltrosVentas, FiltrosVentas } from '@/domain/entities/ventas';
 import ventasService from '@/infrastructure/services/ventas.service';
-import { ArrowUpDown, Calendar, DollarSign, Filter, Hash, Search, X } from 'lucide-react';
+import { Calendar, CalendarDays, CreditCard, DollarSign, Filter, Search, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import ToggleGroup from '../ui/toggle-group';
 import FloatingInput from './floating-input';
 import FloatingSearchSelect from './floating-search-select';
@@ -16,7 +17,6 @@ interface FiltrosVentasProps {
 export default function FiltrosVentasComponent({ filtros: filtrosIniciales, datosParaFiltros, onFiltrosChange }: FiltrosVentasProps) {
     const [filtros, setFiltros] = useState<FiltrosVentas>(filtrosIniciales);
     const [mostrarFiltrosAvanzados, setMostrarFiltrosAvanzados] = useState(false);
-    const [busquedaCombinada, setBusquedaCombinada] = useState<string>('');
 
     // 🔍 DEBUG: Mostrar filtros iniciales
     React.useEffect(() => {
@@ -42,6 +42,22 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
     // Detectar si hay filtros activos
     const hayFiltrosActivos = Object.values(filtros).some((value) => value !== undefined && value !== null && value !== '');
 
+    // Sincronizar con los filtros aplicados (p. ej. al ordenar desde la tabla, el orden cambia por URL)
+    useEffect(() => {
+        setFiltros(filtrosIniciales);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [JSON.stringify(filtrosIniciales)]);
+
+    // Cambios pendientes: el estado local difiere de lo aplicado en la última búsqueda
+    const normalizarFiltros = (f: FiltrosVentas) =>
+        JSON.stringify(
+            Object.entries(f)
+                .filter(([, v]) => v !== undefined && v !== null && v !== '')
+                .map(([k, v]) => [k, String(v)])
+                .sort(([a], [b]) => a.localeCompare(b)),
+        );
+    const hayCambiosPendientes = normalizarFiltros(filtros) !== normalizarFiltros(filtrosIniciales);
+
     // Detectar si hay filtros avanzados activos
     // ⚠️ fecha_desde/fecha_hasta quedan fuera: el backend las precarga con "hoy" por defecto
     // y eso no debe forzar la apertura del panel de filtros avanzados al entrar a la pantalla.
@@ -50,9 +66,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
             filtros.monto_max ||
             filtros.usuario_id ||
             filtros.tipo_pago_id || // ✅ NUEVO: Incluir tipo_pago_id
-            filtros.preventista_id || // ✅ NUEVO (2026-03-01): Incluir preventista_id
-            filtros.id_desde || // ✅ NUEVO: Incluir id_desde
-            filtros.id_hasta, // ✅ NUEVO: Incluir id_hasta
+            filtros.preventista_id, // ✅ NUEVO (2026-03-01): Incluir preventista_id
     );
 
     useEffect(() => {
@@ -99,8 +113,6 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
             moneda_id: undefined,
             numero: null,
             id: null,
-            id_desde: undefined,
-            id_hasta: undefined,
             tipo_pago_id: undefined,
             preventista_id: undefined,
         };
@@ -118,29 +130,6 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
         // ⚠️ NO llamamos a onFiltrosChange aquí - esperar a que el usuario presione "Buscar"
     };
 
-    // Detecta si el input es un número puro o contiene letras (para numero de venta)
-    const handleBusquedaCombinada = (valor: string) => {
-        setBusquedaCombinada(valor);
-
-        const nuevosFiltros = { ...filtros };
-
-        if (!valor) {
-            nuevosFiltros.id = null;
-            nuevosFiltros.numero = null;
-        } else if (/^\d+$/.test(valor)) {
-            // Si es un número puro, buscar por ID
-            nuevosFiltros.id = Number(valor);
-            nuevosFiltros.numero = null;
-        } else {
-            // Si contiene letras o caracteres especiales, buscar por número de venta
-            nuevosFiltros.numero = valor;
-            nuevosFiltros.id = null;
-        }
-
-        setFiltros(nuevosFiltros);
-        // ⚠️ NO llamamos a onFiltrosChange aquí - solo actualizamos estado local
-    };
-
     const aplicarFiltros = (filtrosAplicar?: FiltrosVentas) => {
         const filtrosFinales = filtrosAplicar || filtros;
         console.log('🔍 [FiltrosVentas] Aplicando filtros:', filtrosFinales);
@@ -151,7 +140,6 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
     // Limpiar = ver TODAS las ventas (el padre agrega todas=1 al no haber fechas). Antes además llamaba a
     // ventasService.clearFilters(): eran dos navegaciones a /ventas, que el backend muestra como "solo hoy"
     const limpiarFiltros = () => {
-        setBusquedaCombinada('');
         setMostrarFiltrosAvanzados(false);
         handleLimpiarFiltros();
     };
@@ -167,17 +155,14 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
     const obtenerFiltrosActivos = () => {
         const filtrosActivos: Array<{ etiqueta: string; campo: keyof FiltrosVentas }> = [];
 
+        if (filtros.buscar) {
+            filtrosActivos.push({ etiqueta: `Buscar: ${filtros.buscar}`, campo: 'buscar' });
+        }
         if (filtros.id) {
             filtrosActivos.push({ etiqueta: `ID #${filtros.id}`, campo: 'id' });
         }
         if (filtros.numero) {
             filtrosActivos.push({ etiqueta: `Número: ${filtros.numero}`, campo: 'numero' });
-        }
-        if (filtros.id_desde) {
-            filtrosActivos.push({ etiqueta: `ID desde: ${filtros.id_desde}`, campo: 'id_desde' });
-        }
-        if (filtros.id_hasta) {
-            filtrosActivos.push({ etiqueta: `ID hasta: ${filtros.id_hasta}`, campo: 'id_hasta' });
         }
         if (filtros.cliente_id) {
             filtrosActivos.push({ etiqueta: `Cliente: ${filtros.cliente_id}`, campo: 'cliente_id' });
@@ -243,69 +228,21 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
         <div className="mb-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
             {/* Filtros básicos */}
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3 justify-between items-end">
-                {/* ID de venta o Número de venta (búsqueda combinada) */}
-                <div>
+                {/* Búsqueda unificada: folio (solo números) o número / cliente (texto) */}
+                <div className="md:col-span-2">
                     <FloatingInput
-                        id="busqueda"
-                        label="🔍 Búsqueda Folio"
-                        value={busquedaCombinada}
-                        onChange={(e) => handleBusquedaCombinada(e.target.value)}
+                        id="buscar"
+                        label="Folio o Cliente"
+                        value={filtros.buscar || ''}
+                        onChange={(e) => handleFiltroChange('buscar', e.target.value || null)}
                         onKeyPress={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
-                                console.log('⌨️ [filtros-ventas] Enter presionado en búsqueda, aplicando filtros');
                                 handleBuscar();
                             }
                         }}
-                        placeholder="ID o Número"
-                        title="Buscar por ID (58, 100) o Número (VEN20260128-0010) - Presiona Enter o Click Buscar"
-                        // icon={<Hash className="h-4 w-4" />}
-                    />
-                </div>
-
-                {/* Rango de IDs - Desde */}
-                {/* <div>
-                    <FloatingInput
-                        id="id_desde"
-                        label="Folio Desde"
-                        type="number"
-                        value={filtros.id_desde || ''}
-                        onChange={(e) => handleFiltroChange('id_desde', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="ID desde"
-                        title="ID mínimo de la venta"
-                        icon={<Hash className="h-4 w-4" />}
-                    />
-                </div> */}
-
-                {/* Rango de IDs - Hasta */}
-                {/* <div>
-                    <FloatingInput
-                        id="id_hasta"
-                        label="Folio Hasta"
-                        type="number"
-                        value={filtros.id_hasta || ''}
-                        onChange={(e) => handleFiltroChange('id_hasta', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="ID hasta"
-                        title="ID máximo de la venta"
-                        icon={<Hash className="h-4 w-4" />}
-                    />
-                </div> */}
-
-                {/* Cliente - Búsqueda por múltiples campos */}
-                <div>
-                    <FloatingInput
-                        id="cliente_id"
-                        label="👥Cliente"
-                        value={filtros.cliente_id || ''}
-                        onChange={(e) => handleFiltroChange('cliente_id', e.target.value || null)}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                aplicarFiltros();
-                            }
-                        }}
-                        placeholder="Cliente (ID, código, nombre, NIT, teléfono)"
-                        title="Buscar por ID, código cliente, nombre, NIT o teléfono"
+                        placeholder="Folio (58) · Número (VEN2026…) · Cliente (nombre, código, NIT, teléfono)"
+                        title="Un número busca por folio. Texto busca por número de venta o por cliente (nombre, código, NIT o teléfono). Enter o Buscar para aplicar"
                         icon={<Search className="h-4 w-4" />}
                     />
                 </div>
@@ -330,12 +267,12 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
             {/* Filtros avanzados */}
             {mostrarFiltrosAvanzados && (
                 <div className="mt-4 border-t border-gray-200 pt-4 dark:border-zinc-700">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 mt-2">
+                    <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                         {/* Rango de fechas */}
                         <div>
                             <FloatingInput
                                 id="fecha_desde"
-                                label="📅 Fecha desde"
+                                label="Fecha desde"
                                 type="date"
                                 value={filtros.fecha_desde || ''}
                                 onChange={(e) => handleFiltroChange('fecha_desde', e.target.value || undefined)}
@@ -346,7 +283,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                         <div>
                             <FloatingInput
                                 id="fecha_hasta"
-                                label="📅 Fecha hasta"
+                                label="Fecha hasta"
                                 type="date"
                                 value={filtros.fecha_hasta || ''}
                                 onChange={(e) => handleFiltroChange('fecha_hasta', e.target.value || undefined)}
@@ -358,9 +295,10 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                         <div>
                             <FloatingSelect
                                 id="tipo_pago_id"
-                                label="💳 Tipo de Pago"
+                                label="Tipo de Pago"
                                 value={filtros.tipo_pago_id || ''}
                                 onChange={(e) => handleFiltroChange('tipo_pago_id', e.target.value ? Number(e.target.value) : null)}
+                                icon={<CreditCard className="h-4 w-4" />}
                             >
                                 <option value="">Todos los tipos</option>
                                 {datosSeguros.tipos_pago.map((tipo) => (
@@ -390,7 +328,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                         <div>
                             <FloatingInput
                                 id="monto_min"
-                                label="💰 Monto mínimo"
+                                label="Monto mínimo"
                                 type="number"
                                 value={filtros.monto_min || ''}
                                 onChange={(e) => handleFiltroChange('monto_min', e.target.value ? Number(e.target.value) : undefined)}
@@ -403,7 +341,7 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                         <div>
                             <FloatingInput
                                 id="monto_max"
-                                label="💰 Monto máximo"
+                                label="Monto máximo"
                                 type="number"
                                 value={filtros.monto_max || ''}
                                 onChange={(e) => handleFiltroChange('monto_max', e.target.value ? Number(e.target.value) : undefined)}
@@ -460,110 +398,116 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                 </div>
             )}
             {/* Botones de acción */}
-            <div className="mt-2 flex flex-wrap items-end justify-between gap-4 border-t border-gray-200 p-2 dark:border-zinc-700">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 p-2 dark:border-zinc-700">
                 {/* Atajos de rango: se aplican al instante */}
-                <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            const hoy = hoyLocal();
-                            const nuevos = { ...filtros, fecha_desde: hoy, fecha_hasta: hoy };
-                            setFiltros(nuevos);
-                            onFiltrosChange?.(nuevos);
-                        }}
-                        className={`font-small rounded-md p-1 text-sm transition-colors ${
-                            filtros.fecha_desde === hoyLocal() && filtros.fecha_hasta === hoyLocal()
-                                ? 'bg-blue-600 text-white'
-                                : 'border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
-                        }`}
-                    >
-                        📅 Hoy
-                    </button>
-                    <button
-                        type="button"
-                        title="Ver ventas de todas las fechas (mantiene los demás filtros)"
-                        onClick={() => {
-                            const nuevos = { ...filtros, fecha_desde: undefined, fecha_hasta: undefined };
-                            setFiltros(nuevos);
-                            onFiltrosChange?.(nuevos);
-                        }}
-                        className={`font-small rounded-md p-1 text-sm transition-colors ${
-                            !filtros.fecha_desde && !filtros.fecha_hasta
-                                ? 'bg-blue-600 text-white'
-                                : 'border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
-                        }`}
-                    >
-                        🗓️ Todas
-                    </button>
+                {/* Rango de fechas: control segmentado (una sola opción activa) */}
+                <div
+                    role="group"
+                    aria-label="Rango de fechas"
+                    className="inline-flex overflow-hidden rounded-md border border-blue-300 dark:border-blue-700"
+                >
+                    {(() => {
+                        const esHoy = filtros.fecha_desde === hoyLocal() && filtros.fecha_hasta === hoyLocal();
+                        const esTodas = !filtros.fecha_desde && !filtros.fecha_hasta;
+                        const claseSegmento = (activo: boolean) =>
+                            `inline-flex items-center gap-1 px-2.5 py-1 text-sm transition-colors ${
+                                activo
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'
+                            }`;
+                        return (
+                            <>
+                                <button
+                                    type="button"
+                                    aria-pressed={esHoy}
+                                    onClick={() => {
+                                        const hoy = hoyLocal();
+                                        const nuevos = { ...filtros, fecha_desde: hoy, fecha_hasta: hoy };
+                                        setFiltros(nuevos);
+                                        onFiltrosChange?.(nuevos);
+                                    }}
+                                    className={claseSegmento(esHoy)}
+                                >
+                                    <CalendarDays className="h-3.5 w-3.5" />
+                                    Hoy
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-pressed={esTodas}
+                                    title="Ver ventas de todas las fechas (mantiene los demás filtros)"
+                                    onClick={() => {
+                                        const nuevos = { ...filtros, fecha_desde: undefined, fecha_hasta: undefined };
+                                        setFiltros(nuevos);
+                                        onFiltrosChange?.(nuevos);
+                                    }}
+                                    className={`${claseSegmento(esTodas)} border-l border-blue-300 dark:border-blue-700`}
+                                >
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    Todas
+                                </button>
+                            </>
+                        );
+                    })()}
                 </div>
 
-                {/* Controles de Ordenamiento - Columna 1 */}
-                <div className="flex items-center gap-2">
-                    <div>
-                        <label className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
-                            <ArrowUpDown className="h-3 w-3" />
-                            Columna
-                        </label>
-                        <select
-                            value={filtros.sort_by || 'id'}
-                            onChange={(e) => handleFiltroChange('sort_by', e.target.value || 'id')}
-                            className="rounded-md border border-gray-300 px-1 py-1 text-xs shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                        >
-                            <option value="id">Folio</option>
-                            <option value="created_at">Fecha de creación</option>
-                            <option value="updated_at">Fecha de actualización</option>
-                            <option value="fecha">Fecha de emisión</option>
-                            <option value="numero">Número de venta</option>
-                            <option value="total">Total</option>
-                            <option value="estado">Estado</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
-                            <ArrowUpDown className="h-3 w-3" />
-                            Ordenar por
-                        </label>
-                        <select
-                            value={filtros.sort_order || 'desc'}
-                            onChange={(e) => handleFiltroChange('sort_order', (e.target.value as 'asc' | 'desc') || 'desc')}
-                            className="rounded-md border border-gray-300 px-1 py-1 text-xs shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                        >
-                            <option value="desc">↓ Descendente (más reciente)</option>
-                            <option value="asc">↑ Ascendente (más antiguo)</option>
-                        </select>
-                    </div>
-                </div>
+                {/* Acciones: en pantallas chicas "Más filtros" y "Limpiar" son solo íconos con tooltip */}
+                <div className="ml-auto flex items-center gap-1 sm:gap-2">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                onClick={() => setMostrarFiltrosAvanzados(!mostrarFiltrosAvanzados)}
+                                aria-label={mostrarFiltrosAvanzados ? 'Ocultar filtros' : 'Más filtros'}
+                                aria-expanded={mostrarFiltrosAvanzados}
+                                className="inline-flex items-center rounded-md border border-gray-300 bg-gray-100 px-2 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700"
+                            >
+                                <Filter className="h-4 w-4 md:mr-1" />
+                                <span className="hidden md:inline">{mostrarFiltrosAvanzados ? 'Ocultar filtros' : 'Más filtros'}</span>
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{mostrarFiltrosAvanzados ? 'Ocultar filtros' : 'Más filtros'}</TooltipContent>
+                    </Tooltip>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setMostrarFiltrosAvanzados(!mostrarFiltrosAvanzados)}
-                        className="inline-flex items-center rounded-md border border-gray-300 bg-gray-100 px-2 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700"
-                    >
-                        <Filter className="mr-1 h-4 w-4" />
-                        {mostrarFiltrosAvanzados ? 'Ocultar filtros' : 'Más filtros'}
-                    </button>
-                    {hayFiltrosActivos && (
-                        <button
-                            type="button"
-                            onClick={limpiarFiltros}
-                            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700"
-                        >
-                            <X className="mr-1 h-4 w-4" />
-                            Limpiar
-                        </button>
-                    )}
+                    {/* Siempre visible para no mover la fila; deshabilitado (aria-disabled) sin filtros activos */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (hayFiltrosActivos) limpiarFiltros();
+                                }}
+                                aria-label="Limpiar filtros"
+                                aria-disabled={!hayFiltrosActivos}
+                                className={`inline-flex items-center rounded-md px-2 py-2 text-xs font-medium transition-colors ${
+                                    hayFiltrosActivos
+                                        ? 'text-gray-600 hover:text-gray-900 hover:underline dark:text-gray-400 dark:hover:text-gray-200'
+                                        : 'cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-600'
+                                }`}
+                            >
+                                <X className="h-4 w-4 md:mr-1" />
+                                <span className="hidden md:inline">Limpiar</span>
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{hayFiltrosActivos ? 'Limpiar filtros' : 'No hay filtros para limpiar'}</TooltipContent>
+                    </Tooltip>
 
+                    {/* Acción principal: siempre con texto */}
                     <button
                         type="button"
                         onClick={() => {
                             console.log('🔘 [filtros-ventas] Botón Buscar clickeado');
                             handleBuscar();
                         }}
-                        className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-2 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                        title={hayCambiosPendientes ? 'Hay cambios sin aplicar' : 'Buscar'}
+                        className={`relative inline-flex items-center rounded-md border border-transparent bg-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none ${
+                            hayCambiosPendientes ? 'ring-2 ring-amber-400 ring-offset-1 dark:ring-offset-zinc-900' : ''
+                        }`}
                     >
                         <Search className="mr-1 h-4 w-4" />
                         Buscar
+                        {hayCambiosPendientes && (
+                            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-400" aria-label="Cambios sin aplicar" />
+                        )}
                     </button>
                 </div>
             </div>
@@ -580,7 +524,12 @@ export default function FiltrosVentasComponent({ filtros: filtrosIniciales, dato
                                 <span>{filtroActivo.etiqueta}</span>
                                 <button
                                     type="button"
-                                    onClick={() => handleFiltroChange(filtroActivo.campo, null)}
+                                    onClick={() => {
+                                        // Quitar un chip aplica el cambio de inmediato
+                                        const nuevos = { ...filtros, [filtroActivo.campo]: null } as FiltrosVentas;
+                                        setFiltros(nuevos);
+                                        onFiltrosChange?.(nuevos);
+                                    }}
                                     className="ml-1 font-semibold text-blue-600 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
                                     title="Remover filtro"
                                 >

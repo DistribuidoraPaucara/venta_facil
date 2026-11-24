@@ -85,6 +85,7 @@ export default function ToggleGroup({
                                 }
                             }}
                             disabled={disabled}
+                            aria-pressed={isSelected}
                             style={isSelected ? selectedStyle : unselectedStyle}
                             className={`
                                 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5

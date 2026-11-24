@@ -260,8 +260,11 @@ export default function TablaVentas({ ventas, filtros }: TablaVentasProps) {
                 <Table className="divide-y divide-gray-200 dark:divide-zinc-700">
                     <TableHeader className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
                         <TableRow className="border-gray-200 dark:border-gray-700">
-                            <TableHead className="px-2 py-2 text-center text-xs tracking-wider text-gray-500 uppercase dark:text-gray-300">
-                                Folio
+                            <TableHead
+                                className="cursor-pointer px-2 py-2 text-center text-xs tracking-wider text-gray-500 uppercase hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700"
+                                onClick={() => handleSort('id')}
+                            >
+                                Folio {getSortIcon('id')}
                             </TableHead>
                             <TableHead
                                 className="cursor-pointer px-2 py-2 text-left text-xs tracking-wider text-gray-500 uppercase hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700"

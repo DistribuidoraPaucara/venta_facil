@@ -224,6 +224,12 @@ class EmpresaController extends Controller
                 $file = $request->file($field);
                 $storagePath = $file->store('empresas', 'public');
                 $data[$field] = '/storage/' . $storagePath;
+            } elseif ($request->boolean("{$field}_eliminar")) {
+                // Quitar logo guardado: borrar archivo y dejar el campo en null
+                if ($empresa && $empresa->$field) {
+                    $this->eliminarArchivoLogo($empresa->$field);
+                }
+                $data[$field] = null;
             } else {
                 if ($empresa && isset($data[$field])) {
                     unset($data[$field]);
@@ -249,6 +255,12 @@ class EmpresaController extends Controller
             $file = $request->file('fav_ico');
             $storagePath = $file->store('empresas/favicons', 'public');
             $data['fav_ico'] = '/storage/' . $storagePath;
+        } elseif ($request->boolean('fav_ico_eliminar')) {
+            // Quitar favicon guardado
+            if ($empresa && $empresa->fav_ico) {
+                $this->eliminarArchivoLogo($empresa->fav_ico);
+            }
+            $data['fav_ico'] = null;
         } else {
             if ($empresa && isset($data['fav_ico'])) {
                 unset($data['fav_ico']);
@@ -256,5 +268,17 @@ class EmpresaController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * Borrar un archivo de logo/favicon del disco público (acepta URL absoluta o ruta relativa)
+     */
+    private function eliminarArchivoLogo(string $ruta): void
+    {
+        $path = str_starts_with($ruta, 'http')
+            ? str_replace(Storage::disk('public')->url(''), '', $ruta)
+            : $ruta;
+
+        Storage::disk('public')->delete(ltrim($path, '/'));
     }
 }

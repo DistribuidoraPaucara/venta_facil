@@ -20,7 +20,7 @@ export function useGenericForm<T extends BaseEntity, F extends BaseFormData>(
     if (entity) {
       // Filtrar campos de archivo que son strings (rutas) para no enviarlos en actualizaciones
       const entityData = { ...entity };
-      const fileFields = ['foto_perfil', 'ci_anverso', 'ci_reverso', 'imagen', 'foto', 'archivo', 'logo', 'logo_principal', 'logo_compacto', 'logo_footer', 'perfil', 'galeria'];
+      const fileFields = ['foto_perfil', 'ci_anverso', 'ci_reverso', 'imagen', 'foto', 'archivo', 'logo', 'logo_principal', 'logo_compacto', 'logo_footer', 'fav_ico', 'perfil', 'galeria'];
 
       Object.keys(entityData).forEach((key) => {
         const value = entityData[key as keyof typeof entityData];
@@ -252,10 +252,11 @@ export function useGenericForm<T extends BaseEntity, F extends BaseFormData>(
   }, [entity, validateForm, post, put, service, data]);
 
   // Manejar cambios en los campos
+  // Usa actualización funcional: varios cambios seguidos (p. ej. quitar archivo + marcar eliminación) no se pisan
   const handleFieldChange = useCallback((field: keyof F, value: unknown) => {
     console.log(`📝 Campo cambiado: ${String(field)} =`, value);
-    setData({ ...(data as F), [field]: value } as F);
-  }, [setData, data]);
+    setData((prev) => ({ ...(prev as F), [field]: value } as F));
+  }, [setData]);
 
   // Resetear formulario con notificación
   const handleReset = useCallback(() => {

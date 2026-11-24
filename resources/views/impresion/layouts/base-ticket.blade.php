@@ -241,8 +241,8 @@
     <div class="ticket">
         {{-- Header compacto --}}
         <div class="header">
-            @if(!empty($logo_principal_base64))
-            <img src="{{ $logo_principal_base64 }}" class="logo" alt="{{ $empresa->nombre_comercial }}" style="max-width: 280px; max-height: 100px; object-fit: contain;">
+            @if(!empty($logo_footer_base64))
+            <img src="{{ $logo_footer_base64 }}" class="logo" alt="{{ $empresa->nombre_comercial }}" style="max-width: 280px; max-height: 100px; object-fit: contain;">
             @endif
             <div class="empresa-nombre">{{ $empresa->nombre_comercial }}</div>
             <div class="empresa-info">{{ $empresa->direccion }}</div>

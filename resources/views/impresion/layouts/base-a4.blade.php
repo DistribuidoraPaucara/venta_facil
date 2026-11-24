@@ -343,8 +343,8 @@
                 {{-- @if($empresa->logo_principal)
                     <img src="{{ $empresa->logo_principal }}" alt="{{ $empresa->nombre_comercial }}">
                 @endif --}}
-                @if(!empty($logo_principal_base64))
-                    <img src="{{ $logo_principal_base64 }}" class="logo" alt="{{ $empresa->nombre_comercial }}" style="max-width: 80px; max-height: 60px; object-fit: contain;">
+                @if(!empty($logo_footer_base64))
+                    <img src="{{ $logo_footer_base64 }}" class="logo" alt="{{ $empresa->nombre_comercial }}" style="max-width: 80px; max-height: 60px; object-fit: contain;">
                 @endif
             </div>
             <div class="header-empresa">

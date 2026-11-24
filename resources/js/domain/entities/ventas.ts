@@ -281,6 +281,7 @@ export interface VentaFormData extends BaseFormData {
 
 export interface FiltrosVentas {
     search?: string;
+    buscar?: string | null;  // Búsqueda unificada: folio (solo números) o número/cliente (texto)
     id?: number;
     id_desde?: number | null;           // ✅ NUEVO: Rango de ID desde
     id_hasta?: number | null;           // ✅ NUEVO: Rango de ID hasta
