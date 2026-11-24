@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::categorias
  * @see app/Http/Controllers/Api/CatalogosApiController.php:15
@@ -42,41 +42,6 @@ categorias.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::categorias
- * @see app/Http/Controllers/Api/CatalogosApiController.php:15
- * @route '/api/app/categorias'
- */
-    const categoriasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: categorias.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::categorias
- * @see app/Http/Controllers/Api/CatalogosApiController.php:15
- * @route '/api/app/categorias'
- */
-        categoriasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: categorias.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::categorias
- * @see app/Http/Controllers/Api/CatalogosApiController.php:15
- * @route '/api/app/categorias'
- */
-        categoriasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: categorias.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    categorias.form = categoriasForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
  * @see app/Http/Controllers/Api/CatalogosApiController.php:37
@@ -120,41 +85,6 @@ proveedores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:37
- * @route '/api/app/proveedores'
- */
-    const proveedoresForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: proveedores.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:37
- * @route '/api/app/proveedores'
- */
-        proveedoresForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: proveedores.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::proveedores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:37
- * @route '/api/app/proveedores'
- */
-        proveedoresForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: proveedores.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    proveedores.form = proveedoresForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
  * @see app/Http/Controllers/Api/CatalogosApiController.php:59
@@ -198,41 +128,6 @@ almacenes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:59
- * @route '/api/app/almacenes'
- */
-    const almacenesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: almacenes.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:59
- * @route '/api/app/almacenes'
- */
-        almacenesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: almacenes.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::almacenes
- * @see app/Http/Controllers/Api/CatalogosApiController.php:59
- * @route '/api/app/almacenes'
- */
-        almacenesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: almacenes.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    almacenes.form = almacenesForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectores
  * @see app/Http/Controllers/Api/CatalogosApiController.php:70
@@ -276,41 +171,6 @@ sectores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:70
- * @route '/api/app/sectores'
- */
-    const sectoresForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: sectores.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:70
- * @route '/api/app/sectores'
- */
-        sectoresForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: sectores.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::sectores
- * @see app/Http/Controllers/Api/CatalogosApiController.php:70
- * @route '/api/app/sectores'
- */
-        sectoresForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: sectores.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    sectores.form = sectoresForm
 /**
 * @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
  * @see app/Http/Controllers/Api/CatalogosApiController.php:80
@@ -372,42 +232,6 @@ sectoresPorAlmacen.head = (args: { almacen_id: string | number } | [almacen_id: 
     url: sectoresPorAlmacen.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:80
- * @route '/api/app/almacenes/{almacen_id}/sectores'
- */
-    const sectoresPorAlmacenForm = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: sectoresPorAlmacen.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:80
- * @route '/api/app/almacenes/{almacen_id}/sectores'
- */
-        sectoresPorAlmacenForm.get = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: sectoresPorAlmacen.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\CatalogosApiController::sectoresPorAlmacen
- * @see app/Http/Controllers/Api/CatalogosApiController.php:80
- * @route '/api/app/almacenes/{almacen_id}/sectores'
- */
-        sectoresPorAlmacenForm.head = (args: { almacen_id: string | number } | [almacen_id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: sectoresPorAlmacen.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    sectoresPorAlmacen.form = sectoresPorAlmacenForm
 const CatalogosApiController = { categorias, proveedores, almacenes, sectores, sectoresPorAlmacen }
 
 export default CatalogosApiController

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 import limites from './limites'
 import lotes from './lotes'
 /**
@@ -44,41 +44,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
- * @route '/inventario/editor-productos'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
- * @route '/inventario/editor-productos'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
- * @route '/inventario/editor-productos'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::datos
  * @see app/Http/Controllers/EditorProductosController.php:75
@@ -122,41 +87,6 @@ datos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
- * @route '/inventario/editor-productos/datos'
- */
-    const datosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: datos.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
- * @route '/inventario/editor-productos/datos'
- */
-        datosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: datos.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
- * @route '/inventario/editor-productos/datos'
- */
-        datosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: datos.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    datos.form = datosForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::guardar
  * @see app/Http/Controllers/EditorProductosController.php:226
@@ -191,27 +121,6 @@ guardar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\EditorProductosController::guardar
- * @see app/Http/Controllers/EditorProductosController.php:226
- * @route '/inventario/editor-productos/guardar'
- */
-    const guardarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: guardar.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\EditorProductosController::guardar
- * @see app/Http/Controllers/EditorProductosController.php:226
- * @route '/inventario/editor-productos/guardar'
- */
-        guardarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: guardar.url(options),
-            method: 'post',
-        })
-    
-    guardar.form = guardarForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::limites
  * @see app/Http/Controllers/EditorProductosController.php:398
@@ -274,41 +183,6 @@ limites.head = (args: { producto: string | number } | [producto: string | number
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
- * @route '/inventario/editor-productos/{producto}/limites'
- */
-    const limitesForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: limites.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
- * @route '/inventario/editor-productos/{producto}/limites'
- */
-        limitesForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: limites.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
- * @route '/inventario/editor-productos/{producto}/limites'
- */
-        limitesForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: limites.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    limites.form = limitesForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
  * @see app/Http/Controllers/EditorProductosController.php:460
@@ -370,42 +244,6 @@ lotes.head = (args: { producto: string | number } | [producto: string | number ]
     url: lotes.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
- * @route '/inventario/editor-productos/{producto}/lotes'
- */
-    const lotesForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: lotes.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
- * @route '/inventario/editor-productos/{producto}/lotes'
- */
-        lotesForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: lotes.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
- * @route '/inventario/editor-productos/{producto}/lotes'
- */
-        lotesForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: lotes.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    lotes.form = lotesForm
 const editorProductos = {
     index,
 datos,

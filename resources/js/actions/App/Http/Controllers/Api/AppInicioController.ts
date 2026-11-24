@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\AppInicioController::resumen
  * @see app/Http/Controllers/Api/AppInicioController.php:60
@@ -42,41 +42,6 @@ resumen.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Api\AppInicioController::resumen
- * @see app/Http/Controllers/Api/AppInicioController.php:60
- * @route '/api/app/inicio'
- */
-    const resumenForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: resumen.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\AppInicioController::resumen
- * @see app/Http/Controllers/Api/AppInicioController.php:60
- * @route '/api/app/inicio'
- */
-        resumenForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: resumen.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\AppInicioController::resumen
- * @see app/Http/Controllers/Api/AppInicioController.php:60
- * @route '/api/app/inicio'
- */
-        resumenForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: resumen.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    resumen.form = resumenForm
 /**
 * @see \App\Http\Controllers\Api\AppInicioController::indicadores
  * @see app/Http/Controllers/Api/AppInicioController.php:35
@@ -119,42 +84,6 @@ indicadores.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: indicadores.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Api\AppInicioController::indicadores
- * @see app/Http/Controllers/Api/AppInicioController.php:35
- * @route '/api/app/indicadores'
- */
-    const indicadoresForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: indicadores.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\AppInicioController::indicadores
- * @see app/Http/Controllers/Api/AppInicioController.php:35
- * @route '/api/app/indicadores'
- */
-        indicadoresForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: indicadores.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\AppInicioController::indicadores
- * @see app/Http/Controllers/Api/AppInicioController.php:35
- * @route '/api/app/indicadores'
- */
-        indicadoresForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: indicadores.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    indicadores.form = indicadoresForm
 const AppInicioController = { resumen, indicadores }
 
 export default AppInicioController

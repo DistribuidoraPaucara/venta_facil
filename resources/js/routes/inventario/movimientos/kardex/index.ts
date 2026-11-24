@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\InventarioController::exportar
  * @see app/Http/Controllers/InventarioController.php:4927
@@ -41,42 +41,6 @@ exportar.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: exportar.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\InventarioController::exportar
- * @see app/Http/Controllers/InventarioController.php:4927
- * @route '/inventario/movimientos/kardex/exportar'
- */
-    const exportarForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: exportar.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\InventarioController::exportar
- * @see app/Http/Controllers/InventarioController.php:4927
- * @route '/inventario/movimientos/kardex/exportar'
- */
-        exportarForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: exportar.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\InventarioController::exportar
- * @see app/Http/Controllers/InventarioController.php:4927
- * @route '/inventario/movimientos/kardex/exportar'
- */
-        exportarForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: exportar.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    exportar.form = exportarForm
 const kardex = {
     exportar,
 }

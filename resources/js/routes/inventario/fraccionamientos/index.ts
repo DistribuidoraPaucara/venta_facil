@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\FraccionamientoController::index
  * @see app/Http/Controllers/FraccionamientoController.php:9
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\FraccionamientoController::index
- * @see app/Http/Controllers/FraccionamientoController.php:9
- * @route '/inventario/fraccionamientos'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\FraccionamientoController::index
- * @see app/Http/Controllers/FraccionamientoController.php:9
- * @route '/inventario/fraccionamientos'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\FraccionamientoController::index
- * @see app/Http/Controllers/FraccionamientoController.php:9
- * @route '/inventario/fraccionamientos'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\FraccionamientoController::create
  * @see app/Http/Controllers/FraccionamientoController.php:14
@@ -119,42 +84,6 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: create.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\FraccionamientoController::create
- * @see app/Http/Controllers/FraccionamientoController.php:14
- * @route '/inventario/fraccionamientos/crear'
- */
-    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: create.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\FraccionamientoController::create
- * @see app/Http/Controllers/FraccionamientoController.php:14
- * @route '/inventario/fraccionamientos/crear'
- */
-        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\FraccionamientoController::create
- * @see app/Http/Controllers/FraccionamientoController.php:14
- * @route '/inventario/fraccionamientos/crear'
- */
-        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    create.form = createForm
 const fraccionamientos = {
     index,
 create,

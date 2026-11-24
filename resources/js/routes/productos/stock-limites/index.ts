@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProductoController::destroy
  * @see app/Http/Controllers/ProductoController.php:1255
@@ -51,38 +51,6 @@ destroy.delete = (args: { producto: number | { id: number }, limite: string | nu
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-    /**
-* @see \App\Http\Controllers\ProductoController::destroy
- * @see app/Http/Controllers/ProductoController.php:1255
- * @route '/productos/{producto}/stock-limites/{limite}'
- */
-    const destroyForm = (args: { producto: number | { id: number }, limite: string | number } | [producto: number | { id: number }, limite: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoController::destroy
- * @see app/Http/Controllers/ProductoController.php:1255
- * @route '/productos/{producto}/stock-limites/{limite}'
- */
-        destroyForm.delete = (args: { producto: number | { id: number }, limite: string | number } | [producto: number | { id: number }, limite: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 const stockLimites = {
     destroy,
 }

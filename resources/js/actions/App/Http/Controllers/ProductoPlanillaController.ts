@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProductoPlanillaController::index
  * @see app/Http/Controllers/ProductoPlanillaController.php:30
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoPlanillaController::index
- * @see app/Http/Controllers/ProductoPlanillaController.php:30
- * @route '/productos/importar-exportar'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoPlanillaController::index
- * @see app/Http/Controllers/ProductoPlanillaController.php:30
- * @route '/productos/importar-exportar'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ProductoPlanillaController::index
- * @see app/Http/Controllers/ProductoPlanillaController.php:30
- * @route '/productos/importar-exportar'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\ProductoPlanillaController::descargar
  * @see app/Http/Controllers/ProductoPlanillaController.php:57
@@ -120,41 +85,6 @@ descargar.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoPlanillaController::descargar
- * @see app/Http/Controllers/ProductoPlanillaController.php:57
- * @route '/productos/importar-exportar/descargar'
- */
-    const descargarForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: descargar.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoPlanillaController::descargar
- * @see app/Http/Controllers/ProductoPlanillaController.php:57
- * @route '/productos/importar-exportar/descargar'
- */
-        descargarForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: descargar.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ProductoPlanillaController::descargar
- * @see app/Http/Controllers/ProductoPlanillaController.php:57
- * @route '/productos/importar-exportar/descargar'
- */
-        descargarForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: descargar.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    descargar.form = descargarForm
 /**
 * @see \App\Http\Controllers\ProductoPlanillaController::validar
  * @see app/Http/Controllers/ProductoPlanillaController.php:67
@@ -189,27 +119,6 @@ validar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\ProductoPlanillaController::validar
- * @see app/Http/Controllers/ProductoPlanillaController.php:67
- * @route '/productos/importar-exportar/validar'
- */
-    const validarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: validar.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoPlanillaController::validar
- * @see app/Http/Controllers/ProductoPlanillaController.php:67
- * @route '/productos/importar-exportar/validar'
- */
-        validarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: validar.url(options),
-            method: 'post',
-        })
-    
-    validar.form = validarForm
 /**
 * @see \App\Http\Controllers\ProductoPlanillaController::importar
  * @see app/Http/Controllers/ProductoPlanillaController.php:84
@@ -243,28 +152,6 @@ importar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: importar.url(options),
     method: 'post',
 })
-
-    /**
-* @see \App\Http\Controllers\ProductoPlanillaController::importar
- * @see app/Http/Controllers/ProductoPlanillaController.php:84
- * @route '/productos/importar-exportar/importar'
- */
-    const importarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: importar.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProductoPlanillaController::importar
- * @see app/Http/Controllers/ProductoPlanillaController.php:84
- * @route '/productos/importar-exportar/importar'
- */
-        importarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: importar.url(options),
-            method: 'post',
-        })
-    
-    importar.form = importarForm
 const ProductoPlanillaController = { index, descargar, validar, importar }
 
 export default ProductoPlanillaController

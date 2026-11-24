@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\DashboardController::metricas
  * @see app/Http/Controllers/DashboardController.php:94
@@ -42,41 +42,6 @@ metricas.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\DashboardController::metricas
- * @see app/Http/Controllers/DashboardController.php:94
- * @route '/api/dashboard/metricas'
- */
-    const metricasForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: metricas.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\DashboardController::metricas
- * @see app/Http/Controllers/DashboardController.php:94
- * @route '/api/dashboard/metricas'
- */
-        metricasForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: metricas.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\DashboardController::metricas
- * @see app/Http/Controllers/DashboardController.php:94
- * @route '/api/dashboard/metricas'
- */
-        metricasForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: metricas.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    metricas.form = metricasForm
 /**
 * @see \App\Http\Controllers\DashboardController::graficos
  * @see app/Http/Controllers/DashboardController.php:107
@@ -120,41 +85,6 @@ graficos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\DashboardController::graficos
- * @see app/Http/Controllers/DashboardController.php:107
- * @route '/api/dashboard/graficos'
- */
-    const graficosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: graficos.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\DashboardController::graficos
- * @see app/Http/Controllers/DashboardController.php:107
- * @route '/api/dashboard/graficos'
- */
-        graficosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: graficos.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\DashboardController::graficos
- * @see app/Http/Controllers/DashboardController.php:107
- * @route '/api/dashboard/graficos'
- */
-        graficosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: graficos.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    graficos.form = graficosForm
 /**
 * @see \App\Http\Controllers\DashboardController::productosMasVendidos
  * @see app/Http/Controllers/DashboardController.php:126
@@ -198,41 +128,6 @@ productosMasVendidos.head = (options?: RouteQueryOptions): RouteDefinition<'head
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\DashboardController::productosMasVendidos
- * @see app/Http/Controllers/DashboardController.php:126
- * @route '/api/dashboard/productos-mas-vendidos'
- */
-    const productosMasVendidosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: productosMasVendidos.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\DashboardController::productosMasVendidos
- * @see app/Http/Controllers/DashboardController.php:126
- * @route '/api/dashboard/productos-mas-vendidos'
- */
-        productosMasVendidosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: productosMasVendidos.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\DashboardController::productosMasVendidos
- * @see app/Http/Controllers/DashboardController.php:126
- * @route '/api/dashboard/productos-mas-vendidos'
- */
-        productosMasVendidosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: productosMasVendidos.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    productosMasVendidos.form = productosMasVendidosForm
 /**
 * @see \App\Http\Controllers\DashboardController::alertasStock
  * @see app/Http/Controllers/DashboardController.php:140
@@ -276,41 +171,6 @@ alertasStock.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\DashboardController::alertasStock
- * @see app/Http/Controllers/DashboardController.php:140
- * @route '/api/dashboard/alertas-stock'
- */
-    const alertasStockForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: alertasStock.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\DashboardController::alertasStock
- * @see app/Http/Controllers/DashboardController.php:140
- * @route '/api/dashboard/alertas-stock'
- */
-        alertasStockForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: alertasStock.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\DashboardController::alertasStock
- * @see app/Http/Controllers/DashboardController.php:140
- * @route '/api/dashboard/alertas-stock'
- */
-        alertasStockForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: alertasStock.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    alertasStock.form = alertasStockForm
 /**
 * @see \App\Http\Controllers\DashboardController::ventasPorCanal
  * @see app/Http/Controllers/DashboardController.php:151
@@ -353,42 +213,6 @@ ventasPorCanal.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     url: ventasPorCanal.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\DashboardController::ventasPorCanal
- * @see app/Http/Controllers/DashboardController.php:151
- * @route '/api/dashboard/ventas-por-canal'
- */
-    const ventasPorCanalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: ventasPorCanal.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\DashboardController::ventasPorCanal
- * @see app/Http/Controllers/DashboardController.php:151
- * @route '/api/dashboard/ventas-por-canal'
- */
-        ventasPorCanalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: ventasPorCanal.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\DashboardController::ventasPorCanal
- * @see app/Http/Controllers/DashboardController.php:151
- * @route '/api/dashboard/ventas-por-canal'
- */
-        ventasPorCanalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: ventasPorCanal.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    ventasPorCanal.form = ventasPorCanalForm
 const dashboard = {
     metricas,
 graficos,

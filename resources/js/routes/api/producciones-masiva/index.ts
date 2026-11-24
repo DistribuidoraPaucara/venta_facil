@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProduccionMasivaController::productosDisponibles
  * @see app/Http/Controllers/ProduccionMasivaController.php:80
@@ -42,41 +42,6 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\ProduccionMasivaController::productosDisponibles
- * @see app/Http/Controllers/ProduccionMasivaController.php:80
- * @route '/api/producciones/masiva/productos-disponibles'
- */
-    const productosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: productosDisponibles.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProduccionMasivaController::productosDisponibles
- * @see app/Http/Controllers/ProduccionMasivaController.php:80
- * @route '/api/producciones/masiva/productos-disponibles'
- */
-        productosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: productosDisponibles.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\ProduccionMasivaController::productosDisponibles
- * @see app/Http/Controllers/ProduccionMasivaController.php:80
- * @route '/api/producciones/masiva/productos-disponibles'
- */
-        productosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: productosDisponibles.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    productosDisponibles.form = productosDisponiblesForm
 /**
 * @see \App\Http\Controllers\ProduccionMasivaController::calcularCapacidad
  * @see app/Http/Controllers/ProduccionMasivaController.php:131
@@ -111,27 +76,6 @@ calcularCapacidad.post = (options?: RouteQueryOptions): RouteDefinition<'post'> 
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\ProduccionMasivaController::calcularCapacidad
- * @see app/Http/Controllers/ProduccionMasivaController.php:131
- * @route '/api/producciones/masiva/calcular-capacidad'
- */
-    const calcularCapacidadForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: calcularCapacidad.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProduccionMasivaController::calcularCapacidad
- * @see app/Http/Controllers/ProduccionMasivaController.php:131
- * @route '/api/producciones/masiva/calcular-capacidad'
- */
-        calcularCapacidadForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: calcularCapacidad.url(options),
-            method: 'post',
-        })
-    
-    calcularCapacidad.form = calcularCapacidadForm
 /**
 * @see \App\Http\Controllers\ProduccionMasivaController::guardar
  * @see app/Http/Controllers/ProduccionMasivaController.php:232
@@ -166,27 +110,6 @@ guardar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\ProduccionMasivaController::guardar
- * @see app/Http/Controllers/ProduccionMasivaController.php:232
- * @route '/api/producciones/masiva/guardar'
- */
-    const guardarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: guardar.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\ProduccionMasivaController::guardar
- * @see app/Http/Controllers/ProduccionMasivaController.php:232
- * @route '/api/producciones/masiva/guardar'
- */
-        guardarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: guardar.url(options),
-            method: 'post',
-        })
-    
-    guardar.form = guardarForm
 /**
 * @see \App\Http\Controllers\RegistroProduccionController::registro
  * @see app/Http/Controllers/RegistroProduccionController.php:22
@@ -230,41 +153,6 @@ registro.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\RegistroProduccionController::registro
- * @see app/Http/Controllers/RegistroProduccionController.php:22
- * @route '/api/producciones/masiva/registro'
- */
-    const registroForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: registro.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\RegistroProduccionController::registro
- * @see app/Http/Controllers/RegistroProduccionController.php:22
- * @route '/api/producciones/masiva/registro'
- */
-        registroForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: registro.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\RegistroProduccionController::registro
- * @see app/Http/Controllers/RegistroProduccionController.php:22
- * @route '/api/producciones/masiva/registro'
- */
-        registroForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: registro.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    registro.form = registroForm
 /**
 * @see \App\Http\Controllers\RegistroProduccionController::show
  * @see app/Http/Controllers/RegistroProduccionController.php:72
@@ -327,41 +215,6 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\RegistroProduccionController::show
- * @see app/Http/Controllers/RegistroProduccionController.php:72
- * @route '/api/producciones/masiva/{id}'
- */
-    const showForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\RegistroProduccionController::show
- * @see app/Http/Controllers/RegistroProduccionController.php:72
- * @route '/api/producciones/masiva/{id}'
- */
-        showForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\RegistroProduccionController::show
- * @see app/Http/Controllers/RegistroProduccionController.php:72
- * @route '/api/producciones/masiva/{id}'
- */
-        showForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 /**
 * @see \App\Http\Controllers\RegistroProduccionController::cambiarEstado
  * @see app/Http/Controllers/RegistroProduccionController.php:106
@@ -415,37 +268,6 @@ cambiarEstado.put = (args: { id: string | number } | [id: string | number ] | st
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\RegistroProduccionController::cambiarEstado
- * @see app/Http/Controllers/RegistroProduccionController.php:106
- * @route '/api/producciones/masiva/{id}/estado'
- */
-    const cambiarEstadoForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: cambiarEstado.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\RegistroProduccionController::cambiarEstado
- * @see app/Http/Controllers/RegistroProduccionController.php:106
- * @route '/api/producciones/masiva/{id}/estado'
- */
-        cambiarEstadoForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: cambiarEstado.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    cambiarEstado.form = cambiarEstadoForm
 /**
 * @see \App\Http\Controllers\RegistroProduccionController::destroy
  * @see app/Http/Controllers/RegistroProduccionController.php:127
@@ -498,38 +320,6 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-    /**
-* @see \App\Http\Controllers\RegistroProduccionController::destroy
- * @see app/Http/Controllers/RegistroProduccionController.php:127
- * @route '/api/producciones/masiva/{id}'
- */
-    const destroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\RegistroProduccionController::destroy
- * @see app/Http/Controllers/RegistroProduccionController.php:127
- * @route '/api/producciones/masiva/{id}'
- */
-        destroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 const produccionesMasiva = {
     productosDisponibles,
 calcularCapacidad,

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\PagoQrController::generar
  * @see app/Http/Controllers/PagoQrController.php:20
@@ -32,28 +32,6 @@ generar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: generar.url(options),
     method: 'post',
 })
-
-    /**
-* @see \App\Http\Controllers\PagoQrController::generar
- * @see app/Http/Controllers/PagoQrController.php:20
- * @route '/ventas/qr/generar'
- */
-    const generarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: generar.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\PagoQrController::generar
- * @see app/Http/Controllers/PagoQrController.php:20
- * @route '/ventas/qr/generar'
- */
-        generarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: generar.url(options),
-            method: 'post',
-        })
-    
-    generar.form = generarForm
 const PagoQrController = { generar }
 
 export default PagoQrController
