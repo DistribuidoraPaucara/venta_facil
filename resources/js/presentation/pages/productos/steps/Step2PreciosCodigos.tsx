@@ -33,6 +33,7 @@ export interface Step2Props {
     };
     errors: Record<string, string>;
     tipos_precio: TipoPrecio[];
+    almacenesProducto?: number[]; // Almacenes donde el producto tiene stock o límites (para avisar si falta el de un precio)
     porcentajeInteres: number;
     precioCosto: number;
     isEditing?: boolean;
@@ -1012,6 +1013,27 @@ function Step2PreciosCodigos(props: Step2Props) {
                                                 <td className="px-2 py-2 text-xs text-left text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                                     <div className="flex items-center gap-2">
                                                         <span>{tpIcono(tp)} {tpNombre(tp)}</span>
+                                                        {/* Almacén del que descuenta este precio: aviso si el producto no tiene stock/límites en ese almacén */}
+                                                        {tp.almacen_id && (() => {
+                                                            const almacenTipo = Number(tp.almacen_id);
+                                                            const nombreAlmacen = tp.almacen_nombre ?? `#${almacenTipo}`;
+                                                            const productoEnAlmacen = (props.almacenesProducto ?? []).includes(almacenTipo);
+                                                            return checked && !productoEnAlmacen ? (
+                                                                <span
+                                                                    className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+                                                                    title={`Este precio descuenta del almacén ${nombreAlmacen}, pero el producto no tiene stock ni límites ahí. Agrega ${nombreAlmacen} en "Stock por almacén" para poder venderlo.`}
+                                                                >
+                                                                    ⚠ Falta almacén {nombreAlmacen}
+                                                                </span>
+                                                            ) : (
+                                                                <span
+                                                                    className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                                                                    title={`Al vender con este precio, el stock se descuenta de ${nombreAlmacen}`}
+                                                                >
+                                                                    🏬 {nombreAlmacen}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                         {/* <span className="font-bold text-green-600 dark:text-green-400">{pct}%</span> */}
                                                         <div className="flex gap-1">
                                                             {hasUnits ? (

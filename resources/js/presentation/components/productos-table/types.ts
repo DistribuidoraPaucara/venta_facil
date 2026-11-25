@@ -65,6 +65,7 @@ export interface ProductosTableProps {
     detalles: DetalleProducto[];
     onAddProduct: (producto: Producto) => void;
     onCambiarProductoLinea?: (index: number, producto: Producto) => void; // Ventas: cambia el producto de una línea (fraccionado ↔ padre/hijo)
+    alertaAlmacenPrecio?: (detalle: DetalleProducto) => string | null; // Ventas: aviso si el precio de la línea no tiene almacén asociado al producto
     onUpdateDetail: (index: number, field: keyof DetalleProducto, value: number | string) => void;
     onUpdateDetailMultiple?: (index: number, updates: Record<string, number | string | null>) => void; // ✅ NUEVO (2026-07-03): Actualizar múltiples campos de una sola vez
     onRemoveDetail: (index: number) => void;

@@ -1373,6 +1373,7 @@ function ProductoFormContenido({
                                         }}
                                         errors={errors}
                                         tipos_precio={tipos_precio}
+                                        almacenesProducto={(data.almacenes || []).map((a: any) => Number(a.almacen_id)).filter((id: number) => id > 0)}
                                         porcentajeInteres={porcentajeInteres}
                                         precioCosto={
                                             Array.isArray(data.precios)
@@ -1439,6 +1440,14 @@ function ProductoFormContenido({
                                         }))}
                                         sectores={sectores} // ✨ NUEVO: Pasar sectores pre-cargados
                                         lotesEliminados={(producto as any)?.stock_eliminados ?? []}
+                                        canalesPrecio={(tipos_precio as any[])
+                                            .filter((t) => t.almacen_id)
+                                            .map((t) => ({
+                                                id: Number(t.value),
+                                                nombre: String(t.label),
+                                                almacen_id: Number(t.almacen_id),
+                                                tieneprecio: (data.precios || []).some((p: any) => Number(p.tipo_precio_id) === Number(t.value)),
+                                            }))}
                                         addAlmacen={addAlmacen}
                                         setAlmacen={setAlmacen}
                                         removeAlmacen={removeAlmacen}

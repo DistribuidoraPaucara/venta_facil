@@ -149,6 +149,8 @@ class TipoPrecio extends Model
                     'es_precio_base'      => $tipo->es_precio_base,
                     'icono'               => $tipo->getIcono(),
                     'tooltip'             => $tipo->getTooltip(),
+                    'almacen_id'          => $tipo->almacen_id, // Almacén del que descuenta este precio (ej. FRIO → REFRIGERADOR)
+                    'almacen_nombre'      => $tipo->almacen?->nombre,
                     'configuracion'       => $tipo->configuracion,
                     'porcentaje_ganancia' => $tipo->porcentaje_ganancia,
                 ];

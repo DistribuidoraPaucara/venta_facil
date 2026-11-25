@@ -11,7 +11,6 @@ import EntregaSearchSelector from '@/presentation/components/entregas/EntregaSea
 import QrCobroModal from '@/presentation/components/ventas/QrCobroModal';
 import InputSearch from '@/presentation/components/ui/input-search';
 import ModalCrearCliente from '@/presentation/components/ui/modal-crear-cliente';
-import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
 // import { imprimirPdfSilencioso } from '@/presentation/components/impresion/imprimirPdfSilencioso'; // Desactivado por ahora
 import SearchSelect, { SelectOption } from '@/presentation/components/ui/search-select';
 
@@ -266,13 +265,8 @@ export default function VentaForm() {
     const [showCreateClienteModal, setShowCreateClienteModal] = useState(false);
     const [clienteSearchQuery, setClienteSearchQuery] = useState('');
 
-    // Estado para el modal de selección de salida (imprimir, Excel, PDF).
-    // Se abre tras crear una venta cuando la empresa es farmacia.
-    const [outputModal, setOutputModal] = useState<{
-        open: boolean;
-        ventaId: number | null;
-        info: { numero?: string; fecha?: string; monto?: number };
-    }>({ open: false, ventaId: null, info: {} });
+    // Farmacia: pestaña abierta al enviar la venta (se llena con la impresión cuando la venta se crea)
+    const ventanaImpresionRef = useRef<Window | null>(null);
 
     // ✅ NUEVO: Estado para manejar el cargando al guardar venta
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -770,6 +764,18 @@ export default function VentaForm() {
     const almacenDeTipoPrecio = (tipoPrecioId: number | string | null | undefined): number => {
         const almacenTipo = tipos_precio?.find((tp) => Number(tp.id) === Number(tipoPrecioId))?.almacen_id;
         return almacenTipo && almacenes_venta.some((a) => Number(a.id) === Number(almacenTipo)) ? Number(almacenTipo) : almacen_id_empresa;
+    };
+
+    // Alerta de una línea: el precio elegido descuenta de un almacén que el producto no tiene (ni stock ni registro).
+    // stock_por_almacen trae todos los almacenes con registro (aunque estén en 0): si no aparece, no hay asociación.
+    const alertaAlmacenPrecio = (d: DetalleProducto): string | null => {
+        const producto: any = d.producto;
+        if (!d.tipo_precio_id || !producto || producto.es_servicio || producto.es_combo) return null;
+        const almacenTipo = tipos_precio?.find((tp) => Number(tp.id) === Number(d.tipo_precio_id))?.almacen_id;
+        if (!almacenTipo) return null;
+        if (Object.prototype.hasOwnProperty.call(producto.stock_por_almacen || {}, String(almacenTipo))) return null;
+        const nombreAlmacen = almacenes_venta.find((a) => Number(a.id) === Number(almacenTipo))?.nombre ?? `#${almacenTipo}`;
+        return `Este precio descuenta de ${nombreAlmacen}, pero el producto no tiene stock ni registro en ese almacén`;
     };
 
     const nuevaLineaId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1353,9 +1359,16 @@ export default function VentaForm() {
         // Si ya hay un envío en curso (validación o guardado), ignorar el nuevo intento
         if (submitLockRef.current) return;
         submitLockRef.current = true;
+        // Farmacia: abrir la pestaña ya con el clic del usuario (los navegadores bloquean window.open tras un await)
+        if (!isEditing && isFarmacia) {
+            ventanaImpresionRef.current = window.open('about:blank', '_blank');
+        }
         try {
             await procesarEnvioVenta();
         } finally {
+            // Si la venta no llegó a crearse (cancelada o con error), la pestaña queda sin usar: se cierra
+            ventanaImpresionRef.current?.close();
+            ventanaImpresionRef.current = null;
             submitLockRef.current = false;
         }
     };
@@ -1633,17 +1646,16 @@ export default function VentaForm() {
                 //     imprimirPdfSilencioso(`/ventas/${ventaId}/imprimir?formato=TICKET_80&accion=stream`);
                 // }
 
-                // ✅ Farmacia: mostrar modal para elegir impresión (solo al crear, no al editar)
+                // ✅ Farmacia: la impresión se abre directo en la pestaña preparada al enviar (solo al crear, no al editar)
                 if (!isEditing && isFarmacia) {
-                    setOutputModal({
-                        open: true,
-                        ventaId,
-                        info: {
-                            numero: result.data.numero,
-                            fecha: result.data.fecha,
-                            monto: result.data.total,
-                        },
-                    });
+                    const urlImpresion = `/ventas/${ventaId}/imprimir?formato=TICKET_80&accion=stream`;
+                    const pestana = ventanaImpresionRef.current;
+                    ventanaImpresionRef.current = null;
+                    if (pestana && !pestana.closed) {
+                        pestana.location.href = urlImpresion;
+                    } else {
+                        window.open(urlImpresion, '_blank');
+                    }
                 }
 
                 // ✅ NUEVO: Seleccionar automáticamente cliente GENERAL después de limpiar
@@ -2171,6 +2183,7 @@ export default function VentaForm() {
                         detalles={detallesWithProducts}
                         onAddProduct={addProductToDetail}
                         onCambiarProductoLinea={(index, producto) => addProductToDetail(producto, index)}
+                        alertaAlmacenPrecio={alertaAlmacenPrecio}
                         transferencia={{ monto: data.transferencia_monto, tipo: data.transferencia_tipo }}
                         onTransferenciaChange={(cambios) => {
                             if (cambios.monto !== undefined) setData('transferencia_monto', cambios.monto);
@@ -2428,17 +2441,6 @@ export default function VentaForm() {
                 monto={Number(montoTransferencia) || data.total}
                 monedaId={Number(data.moneda_id)}
             />
-
-            {/* Modal de selección de impresión (solo farmacias, tras crear la venta) */}
-            {outputModal.ventaId !== null && (
-                <OutputSelectionModal
-                    isOpen={outputModal.open}
-                    onClose={() => setOutputModal((prev) => ({ ...prev, open: false }))}
-                    documentoId={outputModal.ventaId}
-                    tipoDocumento="venta"
-                    documentoInfo={outputModal.info}
-                />
-            )}
 
             {/* Modal para crear cliente */}
             <ModalCrearCliente

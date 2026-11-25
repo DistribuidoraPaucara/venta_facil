@@ -28,6 +28,8 @@ export interface Step3Props {
     productoId?: number; // Producto en edición (para eliminar límites guardados en el servidor)
     stockLimitesRepetidos?: LimiteRepetido[]; // Límites extra en un mismo almacén (el formulario edita solo uno por almacén)
     lotesEliminados?: LoteDadoDeBaja[]; // Lotes ya dados de baja (soft delete), solo para consulta
+    // Precios que descuentan de un almacén (ej. FRIO → REFRIGERADOR) y si el producto ya tiene ese precio
+    canalesPrecio?: { id: number; nombre: string; almacen_id: number; tieneprecio: boolean }[];
 }
 
 export interface LoteDadoDeBaja {
@@ -144,6 +146,7 @@ export default function Step3Almacenes({
     almacenesOptions,
     sectores,
     lotesEliminados = [],
+    canalesPrecio = [],
     addAlmacen,
     setAlmacen,
     removeAlmacen,
@@ -451,6 +454,8 @@ export default function Step3Almacenes({
                         const repetidosDelAlmacen = repetidos.filter((r) => String(r.almacen_id) === grupo.key);
                         const tieneLimite = !!limite.id || grupo.key in stockLimites;
                         const bajasDelAlmacen = lotesEliminados.filter((l) => String(l.almacen_id) === grupo.key);
+                        // Precios que se venden con stock de este almacén: avisa si el producto no tiene ese precio
+                        const canalesDelAlmacen = canalesPrecio.filter((c) => c.almacen_id === grupo.almacenId);
 
                         return (
                             <div key={`almacen-${grupo.key}`} className="overflow-visible rounded-lg border bg-card shadow-sm">
@@ -472,6 +477,25 @@ export default function Step3Almacenes({
                                                 <Warehouse className="h-4 w-4 text-amber-600" />
                                                 {grupo.nombre}
                                                 <span className="text-xs font-normal text-muted-foreground">#{grupo.key}</span>
+                                                {canalesDelAlmacen.map((c) =>
+                                                    c.tieneprecio ? (
+                                                        <span
+                                                            key={`canal-${c.id}`}
+                                                            className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                                                            title={`Este almacén se vende con el precio ${c.nombre}: su stock sale por ese precio`}
+                                                        >
+                                                            💲 Vende con {c.nombre}
+                                                        </span>
+                                                    ) : (
+                                                        <span
+                                                            key={`canal-${c.id}`}
+                                                            className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
+                                                            title={`Este almacén se vende con el precio ${c.nombre}, pero el producto no tiene ese precio. Agrégalo en la pestaña Precios`}
+                                                        >
+                                                            ⚠ Falta precio {c.nombre}
+                                                        </span>
+                                                    ),
+                                                )}
                                             </h3>
                                         )}
                                         <div className="flex items-center gap-2 text-xs">

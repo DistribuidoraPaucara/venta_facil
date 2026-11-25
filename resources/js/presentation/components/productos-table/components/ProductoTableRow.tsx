@@ -52,6 +52,7 @@ interface ProductoTableRowProps {
     onDuplicarLinea?: (index: number) => void;
     // Ventas: select con los padres e hijos del producto para cambiar el producto de esta línea
     onCambiarProductoLinea?: (index: number, producto: Producto) => void;
+    alertaAlmacenPrecio?: (detalle: DetalleProducto) => string | null; // aviso si el precio de la línea no tiene almacén asociado
 }
 
 export default function ProductoTableRow({
@@ -94,11 +95,15 @@ export default function ProductoTableRow({
     proveedorId = null,
     onDuplicarLinea,
     onCambiarProductoLinea,
+    alertaAlmacenPrecio,
 }: ProductoTableRowProps) {
     const productoInfo = detalle.producto as any;
     // Servicio (es_servicio, ej. comisión de transferencias): cantidad fija en 1 y precio escrito a mano en la venta
     const esServicio = Boolean(productoInfo?.es_servicio);
     const [validacionError, setValidacionError] = useState<string | null>(null);
+
+    // Ventas: el precio de la línea descuenta de un almacén que el producto no tiene asociado
+    const alertaAlmacen = tipo === 'venta' && alertaAlmacenPrecio ? alertaAlmacenPrecio(detalle) : null;
 
     // Ventas: familia de fraccionamiento precargada con la búsqueda (padres e hijos del producto)
     // Los IDs de la familia se resuelven con el diccionario de objetos completos que viene con el producto
@@ -408,6 +413,17 @@ export default function ProductoTableRow({
                         </Tooltip>
                     );
                 })()}
+
+                {/* Ventas: aviso de precio sin almacén asociado */}
+                {alertaAlmacen && (
+                    <div
+                        className="mt-1 flex items-start gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
+                        title={alertaAlmacen}
+                    >
+                        <span>⚠</span>
+                        <span>Sin almacén asociado para este precio</span>
+                    </div>
+                )}
 
                 {/* Compras: código de barras / SKU debajo del nombre */}
                 {tipo === 'compra' && codigoProducto && <div className="mt-1">{codigoProducto}</div>}

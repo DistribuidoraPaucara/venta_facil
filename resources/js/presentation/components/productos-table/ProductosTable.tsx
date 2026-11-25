@@ -93,6 +93,7 @@ export default function ProductosTable({
     detalles,
     onAddProduct,
     onCambiarProductoLinea,
+    alertaAlmacenPrecio,
     onUpdateDetail,
     onUpdateDetailMultiple,
     onRemoveDetail,
@@ -729,6 +730,7 @@ export default function ProductosTable({
                                         proveedorId={proveedor_id}
                                         onDuplicarLinea={onDuplicarLinea}
                                         onCambiarProductoLinea={onCambiarProductoLinea}
+                                        alertaAlmacenPrecio={alertaAlmacenPrecio}
                                         transferencia={transferencia}
                                         onTransferenciaChange={onTransferenciaChange}
                                         transferenciaError={transferenciaError}
