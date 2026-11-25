@@ -325,6 +325,48 @@ export default function CompraForm() {
     (props.tipos_pago?.find((t) => String(t.id) === String(data.tipo_pago_id)) as { es_credito?: boolean } | undefined)?.es_credito,
   );
 
+  // Desglose de pago al contado (efectivo / transferencia-QR), igual que en ventas.
+  // Se guarda en detalle_pago_compras; una compra a crédito no lo usa.
+  const tipoEfectivoId = props.tipos_pago?.find((t) => t.codigo === 'EFECTIVO')?.id;
+  const tipoTransferenciaId = props.tipos_pago?.find((t) => t.codigo === 'TRANSFERENCIA/QR')?.id;
+  const tipoMixtoId = props.tipos_pago?.find((t) => t.codigo === 'MIXTO')?.id;
+
+  const montoPagadoOriginal = (codigo: string): number => {
+    const pagos: { codigo: string | null; monto: number }[] = (props.compra as any)?.pagos_desglose ?? [];
+    return Number(pagos.find((p) => p.codigo === codigo)?.monto) || 0;
+  };
+
+  const [montoEfectivo, setMontoEfectivo] = useState<number | ''>(() => montoPagadoOriginal('EFECTIVO') || '');
+  const [montoTransferencia, setMontoTransferencia] = useState<number | ''>(() => montoPagadoOriginal('TRANSFERENCIA/QR') || '');
+
+  const totalDesglose = (Number(montoEfectivo) || 0) + (Number(montoTransferencia) || 0);
+  const totalCompra = parseFloat(String(data.total)) || 0;
+  const desgloseCuadra = Math.abs(totalDesglose - totalCompra) <= 0.01;
+
+  // Pagos a enviar al backend (vacío si no hay desglose o la compra es a crédito)
+  const pagosParaEnviar = (): { tipo_pago_id: number; monto: number }[] => {
+    if (esCredito) return [];
+    const lista: { tipo_pago_id: number; monto: number }[] = [];
+    if ((Number(montoEfectivo) || 0) > 0 && tipoEfectivoId) {
+      lista.push({ tipo_pago_id: Number(tipoEfectivoId), monto: Number(montoEfectivo) });
+    }
+    if ((Number(montoTransferencia) || 0) > 0 && tipoTransferenciaId) {
+      lista.push({ tipo_pago_id: Number(tipoTransferenciaId), monto: Number(montoTransferencia) });
+    }
+    return lista;
+  };
+
+  // Tipo de pago según el desglose (como en ventas): solo efectivo, solo transferencia, o mixto si hay ambos
+  useEffect(() => {
+    const ef = Number(montoEfectivo) || 0;
+    const tr = Number(montoTransferencia) || 0;
+    if (ef + tr <= 0) return;
+    const nuevo = ef > 0 && tr > 0 ? tipoMixtoId ?? null : ef > 0 ? tipoEfectivoId ?? null : tipoTransferenciaId ?? null;
+    if (nuevo && String(nuevo) !== String(data.tipo_pago_id)) {
+      setData('tipo_pago_id', nuevo);
+    }
+  }, [montoEfectivo, montoTransferencia]);
+
   const [proveedorValue, setProveedorValue] = useState<string | number | null>(data.proveedor_id);
   const [proveedorDisplay, setProveedorDisplay] = useState<string>('');
 
@@ -425,6 +467,8 @@ export default function CompraForm() {
         tipo_pago_id: data.tipo_pago_id ? parseInt(String(data.tipo_pago_id)) : null,
         fecha_vencimiento_credito: esCredito ? data.fecha_vencimiento_credito || null : null,
         almacen_id: data.almacen_id ? parseInt(String(data.almacen_id)) : null,
+        // Desglose solo cuando cuadra con el total (si no, se espera a que el usuario lo complete; el envío final lo valida)
+        ...(desgloseCuadra ? { pagos: pagosParaEnviar() } : {}),
         // Filtrar detalles válidos y convertir tipos
         detalles: data.detalles
           .filter(d => d.producto_id !== '')
@@ -469,7 +513,7 @@ export default function CompraForm() {
       console.error('Error en autoguardado:', error);
       // No mostrar error al usuario para no interrumpir su trabajo
     }
-  }, [data, hasMinimumContent, hasUnsavedChanges, isEditing, props.compra?.id, props.estados]);
+  }, [data, hasMinimumContent, hasUnsavedChanges, isEditing, props.compra?.id, props.estados, montoEfectivo, montoTransferencia]);
 
   // Detectar cambios en el formulario
   useEffect(() => {
@@ -478,6 +522,13 @@ export default function CompraForm() {
       setHasUnsavedChanges(true);
     }
   }, [data, lastSavedData]);
+
+  // El desglose de pago no está en `data`: marcar cambios cuando cambia
+  useEffect(() => {
+    if (lastSavedData !== '') {
+      setHasUnsavedChanges(true);
+    }
+  }, [montoEfectivo, montoTransferencia]);
 
   // Configurar autoguardado cada 30 segundos
   useEffect(() => {
@@ -727,7 +778,9 @@ export default function CompraForm() {
       (data.tipo_pago_id ? parseInt(String(data.tipo_pago_id)) : null) !== (props.compra.tipo_pago_id || null) ||
       (data.almacen_id ? parseInt(String(data.almacen_id)) : null) !== (props.compra.almacen_id || null) ||
       (data.fecha_vencimiento_credito || '') !==
-        ((props.compra as any).fecha_vencimiento_credito ? normalizeDateForInput((props.compra as any).fecha_vencimiento_credito) : '')
+        ((props.compra as any).fecha_vencimiento_credito ? normalizeDateForInput((props.compra as any).fecha_vencimiento_credito) : '') ||
+      (Number(montoEfectivo) || 0) !== montoPagadoOriginal('EFECTIVO') ||
+      (Number(montoTransferencia) || 0) !== montoPagadoOriginal('TRANSFERENCIA/QR')
     );
   };
 
@@ -927,6 +980,7 @@ export default function CompraForm() {
       tipo_pago_id: data.tipo_pago_id ? parseInt(String(data.tipo_pago_id)) : null,
       fecha_vencimiento_credito: esCredito ? data.fecha_vencimiento_credito || null : null,
       almacen_id: data.almacen_id ? parseInt(String(data.almacen_id)) : null,
+      pagos: pagosParaEnviar(), // efectivo + transferencia/QR (el backend valida que sumen el total)
       detalles: detallesTransformados,
     };
 
@@ -1293,6 +1347,12 @@ export default function CompraForm() {
                 options={tipoPagoOptions}
                 onChange={(value: any) => {
                   setData('tipo_pago_id', value || '');
+                  // Crédito no usa desglose de efectivo / transferencia: limpiarlo
+                  const tipoElegido = props.tipos_pago?.find((t) => String(t.id) === String(value)) as { es_credito?: boolean } | undefined;
+                  if (tipoElegido?.es_credito) {
+                    setMontoEfectivo('');
+                    setMontoTransferencia('');
+                  }
                   // Al elegir crédito, proponer vencimiento a 7 días de la fecha de compra (si no hay uno)
                   const tipo = props.tipos_pago?.find((t) => String(t.id) === String(value)) as { es_credito?: boolean } | undefined;
                   if (tipo?.es_credito && !data.fecha_vencimiento_credito && data.fecha) {
@@ -1528,6 +1588,60 @@ export default function CompraForm() {
                 }}
               />
             </div>
+
+            {/* Pago al contado: cuánto se pagó en efectivo y cuánto en transferencia/QR (como en ventas) */}
+            {!esCredito && (
+              <div className="space-y-2 border-t border-gray-200 pt-2 dark:border-zinc-700">
+                <p className="text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">Pago al contado</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="monto_efectivo" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Efectivo
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
+                      <input
+                        id="monto_efectivo"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        disabled={soloLectura}
+                        value={montoEfectivo}
+                        onChange={(e) => setMontoEfectivo(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                        className="flex-1 rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="monto_transferencia" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Transferencia/QR
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Bs.</span>
+                      <input
+                        id="monto_transferencia"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        disabled={soloLectura}
+                        value={montoTransferencia}
+                        onChange={(e) => setMontoTransferencia(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                        className="flex-1 rounded-md border border-gray-300 p-1 text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+                {totalDesglose > 0 && (
+                  <p className={`text-xs font-medium ${desgloseCuadra ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    Pagado {formatCurrencyMinimalDecimals(totalDesglose, selectedMoneda?.simbolo)} de{' '}
+                    {formatCurrencyMinimalDecimals(totalCompra, selectedMoneda?.simbolo)}
+                    {!desgloseCuadra && ' (debe coincidir con el total de la compra)'}
+                  </p>
+                )}
+              </div>
+            )}
               {/* <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Impuestos:</span>
                 <div className="flex items-center space-x-2">

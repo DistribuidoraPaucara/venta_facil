@@ -316,6 +316,23 @@ class ModuloSidebarSeeder extends Seeder
                 ],
             ],
 
+            // ===== MÓDULO: INGRESOS =====
+            'ingresos'        => [
+                'modulo'  => [
+                    'titulo'      => 'Ingresos',
+                    'ruta'        => '/ingresos',
+                    'icono'       => 'TrendingUp',
+                    'descripcion' => 'Gestión de ingresos de caja',
+                    'orden'       => 12,
+                    'categoria'   => 'Finanzas',
+                    'permisos'    => ['ingresos.index'],
+                ],
+                'submenu' => [
+                    ['titulo' => 'Ingresos', 'ruta' => '/ingresos', 'icono' => 'List', 'orden' => 1, 'permisos' => ['ingresos.index']],
+                    ['titulo' => 'Nuevo Ingreso', 'ruta' => '/ingresos/create', 'icono' => 'Plus', 'orden' => 2, 'permisos' => ['ingresos.create']],
+                ],
+            ],
+
             // ===== MÓDULO: CAJAS =====
             'cajas'           => [
                 'modulo'  => [

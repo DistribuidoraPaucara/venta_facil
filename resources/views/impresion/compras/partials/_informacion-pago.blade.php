@@ -5,6 +5,18 @@
         <p><strong>Tipo de Pago:</strong> {{ $compra->tipoPago->nombre }}</p>
     @endif
 
+    {{-- Desglose del pago al contado: efectivo y transferencia/QR --}}
+    @if($compra->detallesPago && $compra->detallesPago->count() > 0)
+        <div style="margin: 4px 0; padding: 4px 6px; border-left: 3px solid #3498db; background: #f4f8fb;">
+            @foreach($compra->detallesPago as $pago)
+                <p style="margin: 2px 0;">
+                    <strong>{{ $pago->tipoPago->nombre ?? 'Otro' }}:</strong>
+                    {{ $compra->moneda->simbolo ?? 'Bs' }} {{ number_format($pago->monto, 2) }}
+                </p>
+            @endforeach
+        </div>
+    @endif
+
     {{-- Detalles del pago si es inmediato --}}
     @if($compra->tipoPago && $compra->tipoPago->codigo !== 'CREDITO')
         <p style="color: #27ae60;">

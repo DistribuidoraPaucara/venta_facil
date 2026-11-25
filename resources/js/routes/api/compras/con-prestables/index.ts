@@ -1,7 +1,7 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\CompraController::search
- * @see app/Http/Controllers/CompraController.php:2517
+ * @see app/Http/Controllers/CompraController.php:2589
  * @route '/api/compras/con-prestables/search'
  */
 export const search = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ search.definition = {
 
 /**
 * @see \App\Http\Controllers\CompraController::search
- * @see app/Http/Controllers/CompraController.php:2517
+ * @see app/Http/Controllers/CompraController.php:2589
  * @route '/api/compras/con-prestables/search'
  */
 search.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ search.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\CompraController::search
- * @see app/Http/Controllers/CompraController.php:2517
+ * @see app/Http/Controllers/CompraController.php:2589
  * @route '/api/compras/con-prestables/search'
  */
 search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,13 +34,49 @@ search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\CompraController::search
- * @see app/Http/Controllers/CompraController.php:2517
+ * @see app/Http/Controllers/CompraController.php:2589
  * @route '/api/compras/con-prestables/search'
  */
 search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: search.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\CompraController::search
+ * @see app/Http/Controllers/CompraController.php:2589
+ * @route '/api/compras/con-prestables/search'
+ */
+    const searchForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: search.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\CompraController::search
+ * @see app/Http/Controllers/CompraController.php:2589
+ * @route '/api/compras/con-prestables/search'
+ */
+        searchForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: search.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\CompraController::search
+ * @see app/Http/Controllers/CompraController.php:2589
+ * @route '/api/compras/con-prestables/search'
+ */
+        searchForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: search.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    search.form = searchForm
 const conPrestables = {
     search,
 }

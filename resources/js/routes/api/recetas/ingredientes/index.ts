@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\RecetaController::store
  * @see app/Http/Controllers/RecetaController.php:126
@@ -57,6 +57,27 @@ store.post = (args: { receta: number | { id: number } } | [receta: number | { id
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\RecetaController::store
+ * @see app/Http/Controllers/RecetaController.php:126
+ * @route '/api/recetas/{receta}/ingredientes'
+ */
+    const storeForm = (args: { receta: number | { id: number } } | [receta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\RecetaController::store
+ * @see app/Http/Controllers/RecetaController.php:126
+ * @route '/api/recetas/{receta}/ingredientes'
+ */
+        storeForm.post = (args: { receta: number | { id: number } } | [receta: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(args, options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\RecetaController::destroy
  * @see app/Http/Controllers/RecetaController.php:175
@@ -112,6 +133,37 @@ destroy.delete = (args: { receta: number | { id: number }, ingrediente: number |
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\RecetaController::destroy
+ * @see app/Http/Controllers/RecetaController.php:175
+ * @route '/api/recetas/{receta}/ingredientes/{ingrediente}'
+ */
+    const destroyForm = (args: { receta: number | { id: number }, ingrediente: number | { id: number } } | [receta: number | { id: number }, ingrediente: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\RecetaController::destroy
+ * @see app/Http/Controllers/RecetaController.php:175
+ * @route '/api/recetas/{receta}/ingredientes/{ingrediente}'
+ */
+        destroyForm.delete = (args: { receta: number | { id: number }, ingrediente: number | { id: number } } | [receta: number | { id: number }, ingrediente: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\RecetaController::update
  * @see app/Http/Controllers/RecetaController.php:195
@@ -166,6 +218,38 @@ update.put = (args: { receta: number | { id: number }, ingrediente: number | { i
     url: update.url(args, options),
     method: 'put',
 })
+
+    /**
+* @see \App\Http\Controllers\RecetaController::update
+ * @see app/Http/Controllers/RecetaController.php:195
+ * @route '/api/recetas/{receta}/ingredientes/{ingrediente}'
+ */
+    const updateForm = (args: { receta: number | { id: number }, ingrediente: number | { id: number } } | [receta: number | { id: number }, ingrediente: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\RecetaController::update
+ * @see app/Http/Controllers/RecetaController.php:195
+ * @route '/api/recetas/{receta}/ingredientes/{ingrediente}'
+ */
+        updateForm.put = (args: { receta: number | { id: number }, ingrediente: number | { id: number } } | [receta: number | { id: number }, ingrediente: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 const ingredientes = {
     store,
 destroy,

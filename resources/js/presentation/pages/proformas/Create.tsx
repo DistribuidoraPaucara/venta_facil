@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import ProductosTable, { DetalleProducto } from '@/presentation/components/ProductosTable';
 import { LoadingOverlay } from '@/presentation/components/ui/LoadingOverlay';
 import { Button } from '@/presentation/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card';
+import { Card, CardContent } from '@/presentation/components/ui/card';
 import { Input } from '@/presentation/components/ui/input';
 import InputSearch from '@/presentation/components/ui/input-search';
 import { Label } from '@/presentation/components/ui/label';
@@ -20,7 +20,6 @@ import toast from 'react-hot-toast';
 // ✅ NUEVOS: Componentes reutilizables Fase 1, 2 y 3
 import DetallesEnvioPanel from '@/presentation/components/form-sections/DetallesEnvioPanel';
 import DeudaClientePanel from '@/presentation/components/form-sections/DeudaClientePanel';
-import RequiereEnvioToggle from '@/presentation/components/form-sections/RequiereEnvioToggle';
 import { UbicacionesMultiplesModal } from '@/presentation/pages/logistica/entregas/components/UbicacionesMultiplesModal';
 
 // ✅ NUEVO (2026-07-18): Hook para obtener deuda del cliente
@@ -393,7 +392,7 @@ export default function ProformasCreate({
                 preventista_id_proforma: proforma.preventista_id,
                 usuario_creador_id: proforma.usuario_creador_id,
                 preventistas_disponibles: preventistasSeguro.length,
-                preventistas_ids: preventistasSeguro.map(p => p.id),
+                preventistas_ids: preventistasSeguro.map((p) => p.id),
             });
 
             if (proforma.preventista_id) {
@@ -793,25 +792,7 @@ export default function ProformasCreate({
                 <form onSubmit={handleCrearProforma} className="space-y-6 p-4">
                     {/* Información básica */}
                     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                        <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-3 lg:grid-cols-3">
-                            {/* ✅ NUEVO (2026-07-18): Estado Inicial - Dinámico desde estados_logistica */}
-                            <div>
-                                <Label htmlFor="estado-inicial" className="text-sm">
-                                    📝 Estado
-                                </Label>
-                                <Select value={estadoInicial.toString()} onValueChange={(v) => setEstadoInicial(parseInt(v))}>
-                                    <SelectTrigger id="estado-inicial">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {estadosProforma.map((estado) => (
-                                            <SelectItem key={estado.id} value={estado.id.toString()}>
-                                                {estado.icono || '📌'} {estado.nombre}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <div className="grid grid-cols-1 items-end gap-6 sm:grid-cols-3 lg:grid-cols-3">
                             <div>
                                 <InputSearch
                                     id="cliente_search"
@@ -890,8 +871,38 @@ export default function ProformasCreate({
                                     </p>
                                 )}
                             </div>
-
-                            <RequiereEnvioToggle value={requiereEnvio} onChange={setRequiereEnvio} label="🚚 Requiere Envío" />
+                            {/* ✅ NUEVO (2026-07-18): Estado Inicial - Dinámico desde estados_logistica */}
+                            <div>
+                                <Label htmlFor="estado-inicial" className="text-sm">
+                                    📝 Estado
+                                </Label>
+                                <Select value={estadoInicial.toString()} onValueChange={(v) => setEstadoInicial(parseInt(v))}>
+                                    <SelectTrigger id="estado-inicial">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {estadosProforma.map((estado) => (
+                                            <SelectItem key={estado.id} value={estado.id.toString()}>
+                                                {estado.icono || '📌'} {estado.nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {/* Fecha Vencimiento */}
+                            <div>
+                                <Label htmlFor="fecha-vencimiento" className="text-sm">
+                                    📅 Fecha Vencimiento
+                                </Label>
+                                <Input
+                                    id="fecha-vencimiento"
+                                    type="date"
+                                    value={fechaVencimiento}
+                                    onChange={(e) => setFechaVencimiento(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            {/* <RequiereEnvioToggle value={requiereEnvio} onChange={setRequiereEnvio} label="🚚 Requiere Envío" /> */}
                         </div>
                         {/* ✅ NUEVO (2026-07-18): Panel de Deuda del Cliente - Solo si puede_tener_credito=true */}
                         {clienteDeuda && clienteDeuda.deuda && clienteDeuda.cliente.puede_tener_credito && (
@@ -957,17 +968,9 @@ export default function ProformasCreate({
                         )}
 
                         {/* ✅ NUEVO: Grid responsivo de fechas en 3 columnas */}
-                        <div className="mt-3">
+                        <div className="mt-1">
                             {/* Fechas en 3 columnas responsivas */}
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-5 lg:grid-cols-5">
-                                {/* Fecha */}
-                                {/* <div>
-                                    <Label htmlFor="fecha" className="text-sm">
-                                        📅 Fecha Creación
-                                    </Label>
-                                    <Input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
-                                </div> */}
-
                                 {/* Fecha Entrega Solicitada - solo si requiere_envio */}
                                 {requiereEnvio && (
                                     <>
@@ -1040,24 +1043,10 @@ export default function ProformasCreate({
                                         )}
                                     </>
                                 )}
-
-                                {/* Fecha Vencimiento */}
-                                <div>
-                                    <Label htmlFor="fecha-vencimiento" className="text-sm">
-                                        📅 Fecha Vencimiento
-                                    </Label>
-                                    <Input
-                                        id="fecha-vencimiento"
-                                        type="date"
-                                        value={fechaVencimiento}
-                                        onChange={(e) => setFechaVencimiento(e.target.value)}
-                                        required
-                                    />
-                                </div>
                             </div>
 
                             {/* Observaciones */}
-                            <div className="mt-2">
+                            <div className="mt-1">
                                 <Label htmlFor="observaciones" className="text-sm">
                                     📝 Observaciones
                                 </Label>
@@ -1066,39 +1055,34 @@ export default function ProformasCreate({
                                     placeholder="Notas adicionales..."
                                     value={observaciones}
                                     onChange={(e) => setObservaciones(e.target.value)}
-                                    rows={3}
+                                    rows={1}
                                 />
                             </div>
                         </div>
 
                         {/* Card Productos - ProductosTable */}
-                        <Card className="mt-2">
-                            <CardHeader>
-                                <CardTitle className="text-lg">🛒 Productos</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ProductosTable
-                                    productos={productosDisponibles}
-                                    detalles={detalles as DetalleProducto[]}
-                                    onAddProduct={handleAgregarProducto}
-                                    onUpdateDetail={handleUpdateDetalle}
-                                    onRemoveDetail={handleRemoveDetalle}
-                                    onTotalsChange={handleTotalsChange}
-                                    onComboItemsChange={handleComboItemsChange}
-                                    tipo="venta"
-                                    almacen_id={almacenIdSeguro}
-                                    isCalculatingPrices={isCalculandoRangos}
-                                    errors={undefined}
-                                    default_tipo_precio_id={default_tipo_precio_id}
-                                    carritoCalculado={carritoCalculado}
-                                    permitirProductosSinStock={true}
-                                    onDetallesActualizados={(nuevosDetalles) => {
-                                        console.log('🔄 [proformas/Create.tsx] ProductosTable notificó cambios en detalles por rangos');
-                                        setDetalles(nuevosDetalles);
-                                    }}
-                                />
-                            </CardContent>
-                        </Card>
+                        <div>
+                            <ProductosTable
+                                productos={productosDisponibles}
+                                detalles={detalles as DetalleProducto[]}
+                                onAddProduct={handleAgregarProducto}
+                                onUpdateDetail={handleUpdateDetalle}
+                                onRemoveDetail={handleRemoveDetalle}
+                                onTotalsChange={handleTotalsChange}
+                                onComboItemsChange={handleComboItemsChange}
+                                tipo="venta"
+                                almacen_id={almacenIdSeguro}
+                                isCalculatingPrices={isCalculandoRangos}
+                                errors={undefined}
+                                default_tipo_precio_id={default_tipo_precio_id}
+                                carritoCalculado={carritoCalculado}
+                                permitirProductosSinStock={true}
+                                onDetallesActualizados={(nuevosDetalles) => {
+                                    console.log('🔄 [proformas/Create.tsx] ProductosTable notificó cambios en detalles por rangos');
+                                    setDetalles(nuevosDetalles);
+                                }}
+                            />
+                        </div>
 
                         {/* Card Resumen */}
                         {detalles.length > 0 && (
@@ -1157,12 +1141,15 @@ export default function ProformasCreate({
                 {isSubmitting && <LoadingOverlay />}
 
                 {/* ✅ NUEVO (2026-07-18): Modal para ver dirección en mapa */}
-                {clienteSeleccionado && direccionEntregaId && direccionesDisponibles.length > 0 && (
+                {clienteSeleccionado &&
+                    direccionEntregaId &&
+                    direccionesDisponibles.length > 0 &&
                     (() => {
                         // ✅ MEJORADO: Usar dirección completa desde proforma (modo editar) o del array (modo crear)
-                        const direccionSeleccionada = modo === 'editar' && proforma?.direccion_entrega_solicitada
-                            ? proforma.direccion_entrega_solicitada
-                            : direccionesDisponibles.find(d => d.id === direccionEntregaId);
+                        const direccionSeleccionada =
+                            modo === 'editar' && proforma?.direccion_entrega_solicitada
+                                ? proforma.direccion_entrega_solicitada
+                                : direccionesDisponibles.find((d) => d.id === direccionEntregaId);
 
                         return (
                             <UbicacionesMultiplesModal
@@ -1185,8 +1172,7 @@ export default function ProformasCreate({
                                 titulo={`📍 Dirección de Entrega - ${proforma?.numero || 'Nueva Proforma'}`}
                             />
                         );
-                    })()
-                )}
+                    })()}
             </AppLayout>
         </>
     );

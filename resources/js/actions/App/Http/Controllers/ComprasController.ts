@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ComprasController::index
  * @see app/Http/Controllers/ComprasController.php:21
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ComprasController::index
+ * @see app/Http/Controllers/ComprasController.php:21
+ * @route '/inventario/productos-compra'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ComprasController::index
+ * @see app/Http/Controllers/ComprasController.php:21
+ * @route '/inventario/productos-compra'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ComprasController::index
+ * @see app/Http/Controllers/ComprasController.php:21
+ * @route '/inventario/productos-compra'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\ComprasController::crearBorrador
  * @see app/Http/Controllers/ComprasController.php:125
@@ -75,6 +110,28 @@ crearBorrador.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
     url: crearBorrador.url(options),
     method: 'post',
 })
+
+    /**
+* @see \App\Http\Controllers\ComprasController::crearBorrador
+ * @see app/Http/Controllers/ComprasController.php:125
+ * @route '/inventario/productos-compra/orden'
+ */
+    const crearBorradorForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: crearBorrador.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ComprasController::crearBorrador
+ * @see app/Http/Controllers/ComprasController.php:125
+ * @route '/inventario/productos-compra/orden'
+ */
+        crearBorradorForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: crearBorrador.url(options),
+            method: 'post',
+        })
+    
+    crearBorrador.form = crearBorradorForm
 const ComprasController = { index, crearBorrador }
 
 export default ComprasController

@@ -12,6 +12,7 @@ import QrCobroModal from '@/presentation/components/ventas/QrCobroModal';
 import InputSearch from '@/presentation/components/ui/input-search';
 import ModalCrearCliente from '@/presentation/components/ui/modal-crear-cliente';
 import { OutputSelectionModal } from '@/presentation/components/impresion/OutputSelectionModal';
+// import { imprimirPdfSilencioso } from '@/presentation/components/impresion/imprimirPdfSilencioso'; // Desactivado por ahora
 import SearchSelect, { SelectOption } from '@/presentation/components/ui/search-select';
 
 // Importar servicios adicionales
@@ -316,7 +317,8 @@ export default function VentaForm() {
         entrega_id: (venta?.entrega_id ? Number(venta.entrega_id) : null) as number | null,
         // Servicio de transferencias: efectivo que pasa por caja (no suma al total). Solo al crear una venta.
         transferencia_monto: null as number | null,
-        transferencia_tipo: null as 'ENTRADA' | 'SALIDA' | null,
+        // Por defecto: cliente transfirió → sale de caja (solo al crear; en edición no se cambia)
+        transferencia_tipo: (isEditing ? null : 'SALIDA') as 'ENTRADA' | 'SALIDA' | null,
     });
 
     // ✅ NUEVO: Filtrar tipos de pago disponibles basados en capacidad de crédito del cliente
@@ -423,9 +425,9 @@ export default function VentaForm() {
                 Boolean((d.producto as any)?.es_servicio) ||
                 Boolean((productosSeguro.find((p) => p.id === d.producto_id) as any)?.es_servicio),
         );
-        if (!hayServicio && (data.transferencia_monto || data.transferencia_tipo)) {
+        if (!hayServicio && (data.transferencia_monto || data.transferencia_tipo !== 'SALIDA')) {
             setData('transferencia_monto', null);
-            setData('transferencia_tipo', null);
+            setData('transferencia_tipo', 'SALIDA');
         }
     }, [detallesWithProducts, productosSeguro]);
 
@@ -1364,6 +1366,8 @@ export default function VentaForm() {
                 precio_unitario: d.precio_unitario,
                 descuento: d.descuento,
                 subtotal: d.subtotal,
+                // Almacén de la línea (el del precio elegido): el stock se valida contra ese almacén
+                almacen_id: d.almacen_id,
             })),
         };
         const validationErrors = await ventasService.validateData(dataToValidate);
@@ -1607,6 +1611,11 @@ export default function VentaForm() {
                 setMontoEfectivo(''); // Limpiar monto efectivo
                 setMontoTransferencia(''); // Limpiar monto transferencia
                 setPagos([]);
+
+                // Impresión automática del ticket al crear la venta: desactivada por ahora (no imprime directo a la impresora)
+                // if (!isEditing) {
+                //     imprimirPdfSilencioso(`/ventas/${ventaId}/imprimir?formato=TICKET_80&accion=stream`);
+                // }
 
                 // ✅ Farmacia: mostrar modal para elegir impresión (solo al crear, no al editar)
                 if (!isEditing && isFarmacia) {

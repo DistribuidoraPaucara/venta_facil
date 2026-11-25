@@ -50,7 +50,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: 'Gestión de Roles',
-        href: '/admin/permisos/roles',
+        href: '/roles',
     },
 ]
 

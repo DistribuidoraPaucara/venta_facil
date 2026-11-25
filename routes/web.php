@@ -1439,6 +1439,16 @@ Route::middleware(['auth', 'verified', 'platform'])->group(function () {
     });
 
     // ==========================================
+    // 💵 INGRESOS
+    // ==========================================
+    Route::prefix('ingresos')->name('ingresos.')->middleware('permission:ingresos.index')->group(function () {
+        Route::get('/', [\App\Http\Controllers\IngresosController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\IngresosController::class, 'create'])->name('create')->middleware('permission:ingresos.create');
+        Route::get('{ingreso}/imprimir', [\App\Http\Controllers\IngresosController::class, 'imprimir'])->name('imprimir')->where('ingreso', '[0-9]+');
+        Route::get('{ingreso}', [\App\Http\Controllers\IngresosController::class, 'show'])->name('show')->where('ingreso', '[0-9]+');
+    });
+
+    // ==========================================
     // 📦 PRÉSTAMOS - DASHBOARD, STOCK Y ALERTAS
     // ==========================================
     Route::prefix('prestamos')->name('prestamos.')->group(function () {

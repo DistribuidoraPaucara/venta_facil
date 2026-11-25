@@ -14,9 +14,15 @@ use Inertia\Inertia;
 // Route::get('admin/permisos/roles/compare', fn() => Inertia::render('admin/permisos/roles/compare'))->name('roles.compare.page');
 
 // Ruta adicional para crear funcionalidad (trait) para un rol existente
-Route::post('admin/permisos/roles/{role}/crear-funcionalidad', [RoleController::class, 'crearFuncionalidad'])
+Route::post('roles/{role}/crear-funcionalidad', [RoleController::class, 'crearFuncionalidad'])
     ->name('roles.crear-funcionalidad')
     ->middleware('permission:roles.edit');
 
 // Rutas de gestión de roles (esto va AL FINAL para no interferir con rutas estáticas)
-Route::resource('admin/permisos/roles', RoleController::class);
+// URL directa: /roles (igual que /permisos). Los nombres de ruta (roles.index, etc.) no cambian.
+Route::resource('roles', RoleController::class);
+
+// Redirección de la URL anterior para que no se rompan marcadores o enlaces viejos
+Route::get('admin/permisos/roles/{path?}', function (?string $path = null) {
+    return redirect('/roles' . ($path ? '/' . $path : ''));
+})->where('path', '.*');

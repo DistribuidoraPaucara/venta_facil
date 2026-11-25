@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminar
  * @see app/Http/Controllers/EditorProductosController.php:437
@@ -51,6 +51,38 @@ eliminar.delete = (args: { limite: string | number } | [limite: string | number 
     url: eliminar.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\Http\Controllers\EditorProductosController::eliminar
+ * @see app/Http/Controllers/EditorProductosController.php:437
+ * @route '/inventario/editor-productos/limites/{limite}'
+ */
+    const eliminarForm = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: eliminar.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::eliminar
+ * @see app/Http/Controllers/EditorProductosController.php:437
+ * @route '/inventario/editor-productos/limites/{limite}'
+ */
+        eliminarForm.delete = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: eliminar.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    eliminar.form = eliminarForm
 const limites = {
     eliminar,
 }

@@ -137,14 +137,34 @@ class VentaDistribucionService
 
     /**
      * Almacenes de los que puede salir una línea, en orden de preferencia.
-     * La línea descuenta de su almacén (ej. REFRIGERADOR para precio FRIO); si no es el de la empresa y no alcanza,
-     * completa con el almacén de la empresa (la sala). Las líneas del almacén de la empresa no tocan otros almacenes.
+     * La línea descuenta de su almacén (ej. SALA DE VENTAS o FRIO); si no alcanza, completa con los demás
+     * almacenes de venta de la empresa (permite_venta). Así un producto sin stock en la sala se vende si tiene
+     * stock en otro almacén de venta (ej. FRIO), igual que lo muestra la búsqueda.
      */
     private function almacenesDeLinea(array $item, int $almacenEmpresa): array
     {
         $almacenLinea = (int) ($item['almacen_id'] ?? 0) ?: $almacenEmpresa;
 
-        return $almacenLinea === $almacenEmpresa ? [$almacenEmpresa] : [$almacenLinea, $almacenEmpresa];
+        return array_values(array_unique(array_merge([$almacenLinea], $this->almacenesVentaEmpresa($almacenEmpresa))));
+    }
+
+    /**
+     * Almacenes de venta activos de la empresa del usuario: el de la empresa primero, luego el resto.
+     */
+    private function almacenesVentaEmpresa(int $almacenEmpresa): array
+    {
+        $empresaId = auth()->user()?->empresa_id;
+
+        $ids = \App\Models\Almacen::where('empresa_id', $empresaId)
+            ->where('activo', true)
+            ->where('permite_venta', true)
+            ->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$almacenEmpresa])
+            ->orderBy('id')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return $ids ?: [$almacenEmpresa];
     }
 
     /**

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\CategoriaApiController::index
  * @see app/Http/Controllers/Api/CategoriaApiController.php:18
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::index
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:18
+ * @route '/api/app/categorias-crud'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::index
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:18
+ * @route '/api/app/categorias-crud'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::index
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:18
+ * @route '/api/app/categorias-crud'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\CategoriaApiController::store
  * @see app/Http/Controllers/Api/CategoriaApiController.php:60
@@ -76,6 +111,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::store
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:60
+ * @route '/api/app/categorias-crud'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::store
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:60
+ * @route '/api/app/categorias-crud'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Api\CategoriaApiController::show
  * @see app/Http/Controllers/Api/CategoriaApiController.php:111
@@ -138,6 +194,41 @@ show.head = (args: { categoria: string | number } | [categoria: string | number 
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::show
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:111
+ * @route '/api/app/categorias-crud/{categoria}'
+ */
+    const showForm = (args: { categoria: string | number } | [categoria: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::show
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:111
+ * @route '/api/app/categorias-crud/{categoria}'
+ */
+        showForm.get = (args: { categoria: string | number } | [categoria: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::show
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:111
+ * @route '/api/app/categorias-crud/{categoria}'
+ */
+        showForm.head = (args: { categoria: string | number } | [categoria: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\CategoriaApiController::update
  * @see app/Http/Controllers/Api/CategoriaApiController.php:139
@@ -191,6 +282,37 @@ update.put = (args: { categoria: string | number } | [categoria: string | number
     method: 'put',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::update
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:139
+ * @route '/api/app/categorias-crud/{categoria}'
+ */
+    const updateForm = (args: { categoria: string | number } | [categoria: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::update
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:139
+ * @route '/api/app/categorias-crud/{categoria}'
+ */
+        updateForm.put = (args: { categoria: string | number } | [categoria: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\Api\CategoriaApiController::destroy
  * @see app/Http/Controllers/Api/CategoriaApiController.php:188
@@ -243,6 +365,38 @@ destroy.delete = (args: { categoria: string | number } | [categoria: string | nu
     url: destroy.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::destroy
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:188
+ * @route '/api/app/categorias-crud/{categoria}'
+ */
+    const destroyForm = (args: { categoria: string | number } | [categoria: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\CategoriaApiController::destroy
+ * @see app/Http/Controllers/Api/CategoriaApiController.php:188
+ * @route '/api/app/categorias-crud/{categoria}'
+ */
+        destroyForm.delete = (args: { categoria: string | number } | [categoria: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 const CategoriaApiController = { index, store, show, update, destroy }
 
 export default CategoriaApiController

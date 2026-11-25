@@ -5,7 +5,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/card';
 import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
-import { Input } from '@/presentation/components/ui/input';
+import InputSearch from '@/presentation/components/ui/input-search';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/presentation/components/ui/dialog';
 import type { Pagination } from '@/domain/entities/shared';
@@ -20,7 +20,6 @@ import {
     Eye,
     Package2,
     Trash2,
-    ChevronDown
 } from 'lucide-react';
 import type { Producto } from '@/domain/entities/productos';
 import type { Almacen } from '@/domain/entities/almacenes';
@@ -44,6 +43,19 @@ interface LoteDetalle {
     esta_vencido: boolean;
 }
 
+interface ProximoVencimiento {
+    id: number;
+    producto_id: number;
+    producto_nombre: string | null;
+    sku: string | null;
+    lote: string;
+    almacen: string | null;
+    cantidad: number;
+    fecha_vencimiento: string;
+    dias_para_vencer: number | null;
+    estado_vencimiento: LoteDetalle['estado_vencimiento'];
+}
+
 interface EstadisticasLotes {
     total_lotes: number;
     lotes_vigentes: number;
@@ -59,6 +71,8 @@ interface Props {
     lotes: Pagination<LoteDetalle>;
     calendario: LoteCalendario[];
     mesCalendario: string;
+    proximos: { total: number; items: ProximoVencimiento[] };
+    mesesProximos: number;
     estadisticas: EstadisticasLotes;
     productos: Producto[];
     almacenes: Almacen[];
@@ -74,6 +88,8 @@ const GestionLotesVencimientos: React.FC<Props> = ({
     lotes,
     calendario = [],
     mesCalendario,
+    proximos = { total: 0, items: [] },
+    mesesProximos = 6,
     estadisticas,
     productos,
     almacenes,
@@ -103,7 +119,6 @@ const GestionLotesVencimientos: React.FC<Props> = ({
     }, [lotes, estadisticas, productos, almacenes, filtros]);
 
     const [filtroLocal, setFiltroLocal] = useState(filtros);
-    const [mostrarFiltros, setMostrarFiltros] = useState(false); // Filtros inician ocultos
     const filtrosActivos = Object.values(filtros).filter((v) => v && v !== '').length;
     const [loteSeleccionado, setLoteSeleccionado] = useState<LoteDetalle | null>(null);
     const [mostrarDetalle, setMostrarDetalle] = useState(false);
@@ -152,6 +167,44 @@ const GestionLotesVencimientos: React.FC<Props> = ({
             default:
                 return <Package2 className="w-4 h-4" />;
         }
+    };
+
+    // Buscador único de productos del filtro (API, misma búsqueda que el resto del sistema)
+    const productoFiltroNombre = filtroLocal.producto_id
+        ? productos.find((p) => String(p.id) === String(filtroLocal.producto_id))?.nombre
+        : undefined;
+
+    const buscarProductosFiltro = async (query: string) => {
+        if (!query || query.length < 2) return [];
+        try {
+            const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(query)}&todos=1&limite=10`);
+            if (!response.ok) return [];
+            const result = await response.json();
+            if (!result.success || !result.data) return [];
+            return result.data.map((p: any) => ({
+                value: p.id,
+                label: p.nombre,
+                description: `SKU: ${p.sku || 'N/A'}`,
+            }));
+        } catch {
+            return [];
+        }
+    };
+
+    // Fechas corruptas (año < 2000) guardadas en la base: no mostrarlas como fecha válida
+    const fechaValida = (fecha: string | null): boolean => !!fecha && new Date(fecha).getFullYear() >= 2000;
+
+    // Cambiar el horizonte de próximos vencimientos sin mover el calendario ni la tabla
+    const cambiarMesesProximos = (valor: string) => {
+        const params: Record<string, string> = { mes: mesCalendario, meses: valor };
+        Object.entries(filtros).forEach(([k, v]) => {
+            if (v) params[k] = v;
+        });
+        router.get('/compras/lotes-vencimientos', params, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['proximos', 'mesesProximos'],
+        });
     };
 
     const aplicarFiltros = () => {
@@ -314,12 +367,7 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                 {/* Filtros */}
                 <div>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2 shadow">
-                        <button
-                            type="button"
-                            onClick={() => setMostrarFiltros((v) => !v)}
-                            className="flex w-full items-center justify-between text-left"
-                            aria-expanded={mostrarFiltros}
-                        >
+                        <div className="flex w-full items-center justify-between text-left">
                             <div>
                                 <CardTitle className="flex items-center text-lg">
                                     <Filter className="w-5 h-5 mr-2" />
@@ -331,46 +379,38 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                                     )}
                                 </CardTitle>
                                 <CardDescription>
-                                    {mostrarFiltros ? 'Utiliza los filtros para encontrar lotes específicos' : 'Haz clic para mostrar los filtros'}
+                                    Utiliza los filtros para encontrar lotes específicos
                                 </CardDescription>
                             </div>
-                            <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${mostrarFiltros ? 'rotate-180' : ''}`} />
-                        </button>
+                        </div>
 
-                        {mostrarFiltros && (
-                            <>
+                        <>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                                    <div>
+                                    <div className="lg:col-span-2">
                                         <label className="block text-sm font-medium mb-2">
-                                            Buscar
+                                            Producto o lote
                                         </label>
-                                        <Input
-                                            placeholder="Número de lote, producto..."
-                                            value={filtroLocal.q || ''}
-                                            onChange={(e) => setFiltroLocal(prev => ({ ...prev, q: e.target.value }))}
+                                        <InputSearch
+                                            id="buscar_producto_lote"
+                                            label=""
+                                            value={filtroLocal.producto_id ? Number(filtroLocal.producto_id) : ''}
+                                            displayValue={productoFiltroNombre ?? filtroLocal.q ?? undefined}
+                                            isSelected={!!filtroLocal.producto_id}
+                                            onSearch={buscarProductosFiltro}
+                                            onChange={(value, option) => {
+                                                if (value === null) {
+                                                    setFiltroLocal(prev => ({ ...prev, producto_id: '', q: '' }));
+                                                } else if (option && typeof value === 'number') {
+                                                    // Eligió un producto de la lista: filtra por producto
+                                                    setFiltroLocal(prev => ({ ...prev, producto_id: String(value), q: '' }));
+                                                } else {
+                                                    // Texto libre: nombre, SKU, código de barras o número de lote
+                                                    setFiltroLocal(prev => ({ ...prev, producto_id: '', q: String(value) }));
+                                                }
+                                            }}
+                                            placeholder="Nombre, SKU, código de barras o número de lote..."
+                                            emptyText="Sin productos con ese nombre; se buscará por número de lote"
                                         />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium mb-2">
-                                            Producto
-                                        </label>
-                                        <Select
-                                            value={filtroLocal.producto_id || 'all'}
-                                            onValueChange={(value) => setFiltroLocal(prev => ({ ...prev, producto_id: value === 'all' ? '' : value }))}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Todos los productos" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Todos los productos</SelectItem>
-                                                {productos.map((producto) => (
-                                                    <SelectItem key={producto.id} value={producto.id.toString()}>
-                                                        {producto.nombre}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
                                     </div>
 
                                     <div>
@@ -426,8 +466,7 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                                         Aplicar Filtros
                                     </Button>
                                 </div>
-                            </>
-                        )}
+                        </>
                     </div>
                 </div>
 
@@ -435,6 +474,7 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                     <TabsList className="mb-2">
                         <TabsTrigger value="calendario">Calendario</TabsTrigger>
                         <TabsTrigger value="lista">Lista</TabsTrigger>
+                        <TabsTrigger value="proximos">Próximos vencimientos</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="calendario">
@@ -527,11 +567,17 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div>
                                                                 <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                                    {lote.fecha_vencimiento ? formatDate(lote.fecha_vencimiento) : 'Sin fecha'}
+                                                                    {!lote.fecha_vencimiento
+                                                                        ? 'Sin fecha'
+                                                                        : fechaValida(lote.fecha_vencimiento)
+                                                                            ? formatDate(lote.fecha_vencimiento)
+                                                                            : 'Fecha inválida'}
                                                                 </div>
                                                                 <div className="text-sm text-gray-500">
                                                                     {lote.dias_para_vencer === null
                                                                         ? 'Sin vencimiento'
+                                                                        : !fechaValida(lote.fecha_vencimiento)
+                                                                            ? 'Revisar la fecha de este lote'
                                                                         : lote.dias_para_vencer >= 0
                                                                             ? `${lote.dias_para_vencer} días`
                                                                             : `Vencido hace ${Math.abs(lote.dias_para_vencer)} días`
@@ -582,6 +628,82 @@ const GestionLotesVencimientos: React.FC<Props> = ({
                                 )}
                             </div>
                         </div>
+                    </TabsContent>
+                    <TabsContent value="proximos">
+                        <div className="p-2 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <CardTitle>Próximos vencimientos</CardTitle>
+                                <CardDescription>
+                                    {proximos.total} lote{proximos.total !== 1 ? 's' : ''} vencen en los próximos {mesesProximos} meses
+                                    {proximos.total > proximos.items.length && ` (se muestran los ${proximos.items.length} más cercanos)`}
+                                </CardDescription>
+                            </div>
+                            <div className="w-56">
+                                <Select value={String(mesesProximos)} onValueChange={cambiarMesesProximos}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="3">Próximos 3 meses</SelectItem>
+                                        <SelectItem value="6">Próximos 6 meses</SelectItem>
+                                        <SelectItem value="12">Próximos 12 meses</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        {proximos.items.length === 0 ? (
+                            <div className="text-center py-12">
+                                <Package className="mx-auto h-12 w-12 text-gray-400" />
+                                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    No hay vencimientos en este periodo
+                                </h3>
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Ningún lote vence en los próximos {mesesProximos} meses con los filtros aplicados.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead className="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            {['Producto', 'Lote', 'Almacén', 'Cantidad', 'Vence', 'Días para vencer', 'Estado'].map((h) => (
+                                                <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                    {h}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                        {proximos.items.map((item) => (
+                                            <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                                        {item.producto_nombre || 'Producto no encontrado'}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">{item.sku || '-'}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono">{item.lote}</span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{item.almacen || '-'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{item.cantidad}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{formatDate(item.fecha_vencimiento)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {item.dias_para_vencer === null ? '-' : `${item.dias_para_vencer} días`}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <Badge className={`${getEstadoVencimientoColor(item.estado_vencimiento)} flex items-center w-fit`}>
+                                                        {getEstadoVencimientoIcon(item.estado_vencimiento)}
+                                                        <span className="ml-1">{item.estado_vencimiento.replace('_', ' ')}</span>
+                                                    </Badge>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </TabsContent>
                 </Tabs>
 

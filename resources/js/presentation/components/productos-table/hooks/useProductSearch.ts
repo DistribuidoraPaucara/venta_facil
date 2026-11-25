@@ -278,6 +278,8 @@ export function useProductSearch({
                 const tieneComponentes = ((p as any).combo_items?.length || 0) > 0;
                 const permiteSinStock = (p as any).permite_venta_sin_stock || false;
                 const esFraccionado = (p as any).es_fraccionado || false; // ✨ NUEVO: Detectar productos fraccionados
+                // Servicios (ej. comisión de transferencias): su precio se escribe en la venta, pueden tener precio 0
+                const esServicio = Boolean((p as any).es_servicio);
 
                 if (esCombo) {
                     return tieneComponentes;
@@ -287,13 +289,13 @@ export function useProductSearch({
                 if (permitirProductosSinStock) {
                     // ✨ NUEVO: Permitir productos fraccionados aunque tengan precio_venta = 0
                     // porque se venderán por sus unidades convertidas
-                    return p.precio_venta > 0 || esFraccionado;
+                    return p.precio_venta > 0 || esFraccionado || esServicio;
                 }
 
                 // Si NO permitir sin stock, aplicar filtro de stock normal
                 const tieneStockSuficiente = tieneStockVendible(p);
                 // ✨ NUEVO: Permitir productos fraccionados aunque tengan precio_venta = 0
-                return (tieneStockSuficiente || (es_farmacia && permiteSinStock)) && (p.precio_venta > 0 || esFraccionado);
+                return (tieneStockSuficiente || (es_farmacia && permiteSinStock)) && (p.precio_venta > 0 || esFraccionado || esServicio);
             }
             return true;
         });

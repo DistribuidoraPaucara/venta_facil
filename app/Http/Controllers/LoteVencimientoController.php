@@ -125,17 +125,31 @@ class LoteVencimientoController extends Controller
         ];
 
         // Calendario: lotes que vencen en el mes seleccionado (?mes=YYYY-MM)
-        $mes = $calendarioService->resolverMes($request->get('mes'));
-        $calendario = $calendarioService->obtener(
+        // Sin mes explícito: si hay producto filtrado, abre en el mes de su vencimiento más cercano
+        $productoIdFiltro = $request->producto_id ? (int) $request->producto_id : null;
+        $almacenIdFiltro  = $request->almacen_id ? (int) $request->almacen_id : null;
+        $mes = $request->filled('mes')
+            ? $calendarioService->resolverMes($request->get('mes'))
+            : $calendarioService->mesInicial($empresaId, $productoIdFiltro, $almacenIdFiltro);
+        $calendario = $calendarioService->obtener($empresaId, $mes, $productoIdFiltro, $almacenIdFiltro);
+
+        // Próximos vencimientos: lotes que vencen desde hoy en los próximos N meses (3, 6 o 12)
+        $mesesProximos = in_array((int) $request->get('meses', 6), [3, 6, 12], true)
+            ? (int) $request->get('meses', 6)
+            : 6;
+        $proximos = $calendarioService->proximosVencimientos(
             $empresaId,
-            $mes,
-            $request->producto_id ? (int) $request->producto_id : null,
-            $request->almacen_id ? (int) $request->almacen_id : null,
+            $mesesProximos,
+            $productoIdFiltro,
+            $almacenIdFiltro,
+            $request->q ?: null,
         );
 
         return Inertia::render('compras/lotes-vencimientos/index', [
             'calendario'    => $calendario,
             'mesCalendario' => $mes->format('Y-m'),
+            'proximos'      => $proximos,
+            'mesesProximos' => $mesesProximos,
             'lotes'        => $lotes,
             'filtros'      => $request->only(['producto_id', 'estado_vencimiento', 'almacen_id', 'q']),
             'estadisticas' => $estadisticas,

@@ -403,6 +403,20 @@ export default function CompraShow() {
                                 <dt className="text-base font-semibold text-gray-900 dark:text-white">Total</dt>
                                 <dd className="font-mono text-2xl font-bold text-gray-900 dark:text-white">{dinero(compra.total)}</dd>
                             </div>
+                            {/* Desglose del pago al contado: efectivo y transferencia/QR */}
+                            {(compra.pagos_desglose?.length ?? 0) > 0 && (
+                                <div className="space-y-1.5 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Pagado</p>
+                                    {compra.pagos_desglose!.map((pago) => (
+                                        <div key={String(pago.tipo_pago_id)} className="flex justify-between">
+                                            <dt className="text-gray-600 dark:text-gray-400">
+                                                {pago.codigo === 'EFECTIVO' ? 'Efectivo' : pago.codigo === 'TRANSFERENCIA/QR' ? 'Transferencia/QR' : 'Otro'}
+                                            </dt>
+                                            <dd className="font-mono text-gray-900 dark:text-white">{dinero(pago.monto)}</dd>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             {sinPrecio > 0 && (
                                 <p className="pt-1 text-xs text-amber-600 dark:text-amber-400">
                                     {sinPrecio} producto(s) sin precio: el total todavía no es el real.

@@ -561,6 +561,296 @@ function Step1DatosProducto({
                             {errors.descripcion && <div className="mt-1 text-sm text-red-500">⚠️ {errors.descripcion}</div>}
                         </div> */}
                     </div>
+                <div className="border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm text-muted-foreground mt-2">
+                    {/* Estado del producto: desactivar no borra nada, solo lo oculta en ventas, compras y reposiciones */}
+                    <div
+                        className={`mt-1 flex items-center justify-between gap-4 rounded-lg border-2 p-2 shadow-sm ${
+                            activo
+                                ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/20'
+                                : 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
+                        }`}
+                        title={
+                            activo
+                                ? 'Aparece en ventas, compras y reposiciones.'
+                                : 'No aparece en ventas, compras ni reposiciones. Su stock e historial se conservan; puede reactivarlo cuando quiera.'
+                        }
+                    >
+                        <label
+                            htmlFor="activo"
+                            className={`cursor-pointer text-xs font-semibold ${activo ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}
+                        >
+                            {activo ? '● Producto activo' : '● Producto inactivo'}
+                        </label>
+                        <button
+                            type="button"
+                            role="switch"
+                            id="activo"
+                            aria-checked={activo}
+                            aria-label={activo ? 'Desactivar producto' : 'Activar producto'}
+                            onClick={() => cambiarActivo(!activo)}
+                            className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                                activo ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
+                            }`}
+                        >
+                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                        </button>
+                    </div>
+
+                    {/* ✨ NUEVA SECCIÓN: Productos Fraccionados */}
+                    {permite_productos_fraccionados && (
+                        <FeatureToggle
+                            id="es_fraccionado"
+                            checked={!!data.es_fraccionado}
+                            onCheckedChange={(v) => setData('es_fraccionado', !!v)}
+                            icon="⚡"
+                            title="Fraccionar Producto"
+                            description="Permite fraccionamiento de este producto en diferentes unidades de medida."
+                            colorScheme="blue"
+                        />
+                    )}
+
+                    {/* Venta en cantidades decimales sin conversión de unidad (los fraccionados ya las admiten) */}
+                    {!data.es_fraccionado && (
+                        <FeatureToggle
+                            id="permite_cantidad_decimal"
+                            checked={!!data.permite_cantidad_decimal}
+                            onCheckedChange={(v) => setData('permite_cantidad_decimal', !!v)}
+                            icon="🔢"
+                            title="Permite cantidad decimal"
+                            description="Permite vender cantidades con decimales, por ejemplo Bs 10 de un producto que cuesta Bs 110 la libra."
+                            colorScheme="blue"
+                        />
+                    )}
+
+                    {/* 🍦 NUEVA SECCIÓN: Producto de Comida/Helado (controlado por empresa) */}
+                    {permite_productos_comida && (
+                        <FeatureToggle
+                            id="es_producto_comida"
+                            checked={!!data.es_producto_comida}
+                            onCheckedChange={(v) => setData('es_producto_comida', !!v)}
+                            icon="🍦"
+                            title="Producto de Comida"
+                            description="Marca este producto si es una comida o helado que se vende sin control de stock."
+                            hint="Ejemplo: Helados, postres, bebidas personalizadas"
+                            colorScheme="orange"
+                        />
+                    )}
+
+                    {/* 🏨 NUEVA SECCIÓN: Producto Alquilable (controlado por empresa) */}
+                    {permite_productos_alquilables && (
+                        <FeatureToggle
+                            id="es_alquilable"
+                            checked={!!data.es_alquilable}
+                            onCheckedChange={(v) => setData('es_alquilable', !!v)}
+                            icon="🏨"
+                            title="Producto Alquilable"
+                            description="Marca este producto si se puede alquilar en lugar de vender."
+                            hint="Ejemplo: Equipos, decoraciones, maquinaria, disfraces"
+                            colorScheme="amber"
+                        />
+                    )}
+
+                    {/* 📦 NUEVA SECCIÓN: Producto Combo (controlado por empresa) */}
+                    {permite_productos_combo && (
+                        <FeatureToggle
+                            id="es_combo"
+                            checked={!!data.es_combo}
+                            onCheckedChange={(v) => setData('es_combo', !!v)}
+                            icon="📦"
+                            title="Producto Combo"
+                            description="Marca este producto si es un combo que contiene múltiples productos."
+                            hint="Ejemplo: Combo promocional, paquete, kit"
+                            colorScheme="pink"
+                        />
+                    )}
+
+                    {/* Servicio sin stock (ej. comisión de transferencias): no descuenta inventario y su precio se escribe al vender */}
+                    <FeatureToggle
+                        id="es_servicio"
+                        checked={!!(data as any).es_servicio}
+                        onCheckedChange={(v) => setData('es_servicio' as any, !!v)}
+                        icon="🧾"
+                        title="Servicio (sin stock)"
+                        description="Marca este producto si es un servicio: no maneja stock y el precio se escribe en cada venta."
+                        hint="Ejemplo: Comisión por transferencia bancaria"
+                        colorScheme="blue"
+                    />
+
+                    {/* ✅ NUEVA SECCIÓN: Venta sin Stock (controlado por empresa) */}
+                    {permite_vender_sin_stock && (
+                        <FeatureToggle
+                            id="permite_venta_sin_stock"
+                            checked={!!data.permite_venta_sin_stock}
+                            onCheckedChange={(v) => setData('permite_venta_sin_stock', !!v)}
+                            icon="⚙️"
+                            title="Vender sin Stock"
+                            description="Marca este producto si es un servicio que se puede vender incluso sin inventario disponible."
+                            hint="Ejemplo: Inyecciones, curaciones, aplicación de medicamentos"
+                            colorScheme="purple"
+                        />
+                    )}
+
+                    {/* ✨ NUEVA SECCIÓN: Visibilidad en App */}
+                    {/* <FeatureToggle
+                        id="visible_app"
+                        checked={!!data.visible_app}
+                        onCheckedChange={(v) => setData('visible_app', !!v)}
+                        icon="👁️"
+                        title="Visible en App"
+                        description={
+                            data.visible_app
+                                ? '✅ Este producto es visible en la aplicación móvil'
+                                : '❌ Este producto está oculto en la aplicación móvil'
+                        }
+                        hint="Desactiva esta opción si quieres ocultarlo de los clientes en la app"
+                        colorScheme="green"
+                    /> */}
+
+                    {/* 🏭 Producto de Producción (controlado por empresa) */}
+                    {permite_productos_produccion && (
+                        <FeatureToggle
+                            id="es_de_produccion"
+                            checked={!!data.es_de_produccion}
+                            onCheckedChange={(v) => setData('es_de_produccion', !!v)}
+                            icon="🏭"
+                            title="Es Producto de Producción"
+                            description={
+                                data.es_de_produccion
+                                    ? '✅ Este producto es resultado de una receta de producción'
+                                    : '❌ Este es un producto básico sin receta'
+                            }
+                            hint="Activa esta opción si este producto se elabora internamente con una receta que asocia otros productos como ingredientes"
+                            colorScheme="orange"
+                        />
+                    )}
+
+                    {/* ✨ NUEVA SECCIÓN: Producto Adicional (controlado por empresa) */}
+                    {permite_productos_adicionales && (
+                        <FeatureToggle
+                            id="es_producto_adicional"
+                            checked={!!data.es_producto_adicional}
+                            onCheckedChange={(v) => setData('es_producto_adicional', !!v)}
+                            icon="🌶️"
+                            title="Es Producto Adicional"
+                            description={
+                                data.es_producto_adicional
+                                    ? '✅ Este producto es un adicional (topping, salsa, etc.)'
+                                    : '❌ Este no es un producto adicional'
+                            }
+                            hint="Marca este producto si es un adicional que se puede agregar a otros productos (ej: salsa extra, topping, guarnición)"
+                            colorScheme="orange"
+                        />
+                    )}
+
+                    {/* ✨ NUEVA SECCIÓN: Puede Tener Adicionales (controlado por empresa) */}
+                    {permite_productos_adicionales && (
+                        <FeatureToggle
+                            id="puede_tener_producto_adicional"
+                            checked={!!data.puede_tener_producto_adicional}
+                            onCheckedChange={(v) => setData('puede_tener_producto_adicional', !!v)}
+                            icon="🍔"
+                            title="Puede Tener Adicionales"
+                            description={
+                                data.puede_tener_producto_adicional
+                                    ? '✅ Este producto puede recibir adicionales'
+                                    : '❌ Este producto no permite adicionales'
+                            }
+                            hint="Marca este producto si permite que se le agreguen otros productos como adicionales (ej: hamburguesa, pizza, bebidas)"
+                            colorScheme="purple"
+                        />
+                    )}
+                </div>
+
+                {/* ✨ NUEVA SECCIÓN: Información de Medicamentos (solo para farmacias) */}
+                {es_farmacia && (
+                    <div className="mt-2 space-y-3 rounded-lg border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 p-2 shadow-sm dark:border-blue-800 dark:from-blue-950/30 dark:to-cyan-950/30">
+                        <div className="flex items-start gap-3">
+                            <svg
+                                className="mt-0.5 h-6 w-6 flex-shrink-0 text-blue-600 dark:text-blue-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12l2 2 4-4m7.53-2a10 10 0 11-14.06 0M9 12l2 2 4-4m0 0l4-4m-4 4l-4-4"
+                                />
+                            </svg>
+                            <div className="flex-1">
+                                <Label className="flex items-center gap-2 text-base font-semibold">
+                                    <span>💊</span> Información de Medicamento
+                                </Label>
+                                {/* <p className="mt-2 text-sm leading-relaxed text-blue-700 dark:text-blue-300">
+                                    Complete los campos de medicamento para identificar el principio activo e indicaciones de uso.
+                                </p> */}
+                            </div>
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <Label htmlFor="principio_activo" className="flex items-center gap-2">
+                                    <span className="text-blue-600 dark:text-blue-400">⚗️</span> Principio Activo
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+                                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Ingresa el ingrediente activo del medicamento</TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <textarea
+                                    id="principio_activo"
+                                    value={data.principio_activo ?? ''}
+                                    onChange={(e) => setData('principio_activo', e.target.value || null)}
+                                    placeholder="Ej: Ibuprofeno, Paracetamol, Amoxicilina"
+                                    className={`w-full rounded-md border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none ${getInputClassName('principio_activo')}`}
+                                    rows={3}
+                                />
+                                {errors.principio_activo && <div className="mt-1 text-sm text-red-500">⚠️ {errors.principio_activo}</div>}
+                            </div>
+
+                            <div className="space-y-1">
+                                <Label htmlFor="uso_de_medicacion" className="flex items-center gap-2">
+                                    <span className="text-blue-600 dark:text-blue-400">📋</span> Uso / Indicaciones
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+                                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Describe las indicaciones o usos principales del medicamento</TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <textarea
+                                    id="uso_de_medicacion"
+                                    value={data.uso_de_medicacion ?? ''}
+                                    onChange={(e) => setData('uso_de_medicacion', e.target.value || null)}
+                                    placeholder="Ej: Dolor, fiebre, inflamación / Infecciones bacterianas"
+                                    className={`w-full rounded-md border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none ${getInputClassName('uso_de_medicacion')}`}
+                                    rows={3}
+                                />
+                                {errors.uso_de_medicacion && <div className="mt-1 text-sm text-red-500">⚠️ {errors.uso_de_medicacion}</div>}
+                            </div>
+                        </div>
+                    </div>
+                )}
                 </div>
                 <aside className="h-fit rounded-lg border border-gray-200 p-3 dark:border-zinc-700">
                     <h4 className="flex items-center gap-1.5 text-sm font-medium">
@@ -834,296 +1124,6 @@ function Step1DatosProducto({
                 </div>
             </div> */}
 
-            <div className="border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm text-muted-foreground mt-2">
-                {/* Estado del producto: desactivar no borra nada, solo lo oculta en ventas, compras y reposiciones */}
-                <div
-                    className={`mt-1 flex items-center justify-between gap-4 rounded-lg border-2 p-2 shadow-sm ${
-                        activo
-                            ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/20'
-                            : 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
-                    }`}
-                    title={
-                        activo
-                            ? 'Aparece en ventas, compras y reposiciones.'
-                            : 'No aparece en ventas, compras ni reposiciones. Su stock e historial se conservan; puede reactivarlo cuando quiera.'
-                    }
-                >
-                    <label
-                        htmlFor="activo"
-                        className={`cursor-pointer text-xs font-semibold ${activo ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}
-                    >
-                        {activo ? '● Producto activo' : '● Producto inactivo'}
-                    </label>
-                    <button
-                        type="button"
-                        role="switch"
-                        id="activo"
-                        aria-checked={activo}
-                        aria-label={activo ? 'Desactivar producto' : 'Activar producto'}
-                        onClick={() => cambiarActivo(!activo)}
-                        className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
-                            activo ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
-                        }`}
-                    >
-                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                    </button>
-                </div>
-
-                {/* ✨ NUEVA SECCIÓN: Productos Fraccionados */}
-                {permite_productos_fraccionados && (
-                    <FeatureToggle
-                        id="es_fraccionado"
-                        checked={!!data.es_fraccionado}
-                        onCheckedChange={(v) => setData('es_fraccionado', !!v)}
-                        icon="⚡"
-                        title="Fraccionar Producto"
-                        description="Permite fraccionamiento de este producto en diferentes unidades de medida."
-                        colorScheme="blue"
-                    />
-                )}
-
-                {/* Venta en cantidades decimales sin conversión de unidad (los fraccionados ya las admiten) */}
-                {!data.es_fraccionado && (
-                    <FeatureToggle
-                        id="permite_cantidad_decimal"
-                        checked={!!data.permite_cantidad_decimal}
-                        onCheckedChange={(v) => setData('permite_cantidad_decimal', !!v)}
-                        icon="🔢"
-                        title="Permite cantidad decimal"
-                        description="Permite vender cantidades con decimales, por ejemplo Bs 10 de un producto que cuesta Bs 110 la libra."
-                        colorScheme="blue"
-                    />
-                )}
-
-                {/* 🍦 NUEVA SECCIÓN: Producto de Comida/Helado (controlado por empresa) */}
-                {permite_productos_comida && (
-                    <FeatureToggle
-                        id="es_producto_comida"
-                        checked={!!data.es_producto_comida}
-                        onCheckedChange={(v) => setData('es_producto_comida', !!v)}
-                        icon="🍦"
-                        title="Producto de Comida"
-                        description="Marca este producto si es una comida o helado que se vende sin control de stock."
-                        hint="Ejemplo: Helados, postres, bebidas personalizadas"
-                        colorScheme="orange"
-                    />
-                )}
-
-                {/* 🏨 NUEVA SECCIÓN: Producto Alquilable (controlado por empresa) */}
-                {permite_productos_alquilables && (
-                    <FeatureToggle
-                        id="es_alquilable"
-                        checked={!!data.es_alquilable}
-                        onCheckedChange={(v) => setData('es_alquilable', !!v)}
-                        icon="🏨"
-                        title="Producto Alquilable"
-                        description="Marca este producto si se puede alquilar en lugar de vender."
-                        hint="Ejemplo: Equipos, decoraciones, maquinaria, disfraces"
-                        colorScheme="amber"
-                    />
-                )}
-
-                {/* 📦 NUEVA SECCIÓN: Producto Combo (controlado por empresa) */}
-                {permite_productos_combo && (
-                    <FeatureToggle
-                        id="es_combo"
-                        checked={!!data.es_combo}
-                        onCheckedChange={(v) => setData('es_combo', !!v)}
-                        icon="📦"
-                        title="Producto Combo"
-                        description="Marca este producto si es un combo que contiene múltiples productos."
-                        hint="Ejemplo: Combo promocional, paquete, kit"
-                        colorScheme="pink"
-                    />
-                )}
-
-                {/* Servicio sin stock (ej. comisión de transferencias): no descuenta inventario y su precio se escribe al vender */}
-                <FeatureToggle
-                    id="es_servicio"
-                    checked={!!(data as any).es_servicio}
-                    onCheckedChange={(v) => setData('es_servicio' as any, !!v)}
-                    icon="🧾"
-                    title="Servicio (sin stock)"
-                    description="Marca este producto si es un servicio: no maneja stock y el precio se escribe en cada venta."
-                    hint="Ejemplo: Comisión por transferencia bancaria"
-                    colorScheme="blue"
-                />
-
-                {/* ✅ NUEVA SECCIÓN: Venta sin Stock (controlado por empresa) */}
-                {permite_vender_sin_stock && (
-                    <FeatureToggle
-                        id="permite_venta_sin_stock"
-                        checked={!!data.permite_venta_sin_stock}
-                        onCheckedChange={(v) => setData('permite_venta_sin_stock', !!v)}
-                        icon="⚙️"
-                        title="Vender sin Stock"
-                        description="Marca este producto si es un servicio que se puede vender incluso sin inventario disponible."
-                        hint="Ejemplo: Inyecciones, curaciones, aplicación de medicamentos"
-                        colorScheme="purple"
-                    />
-                )}
-
-                {/* ✨ NUEVA SECCIÓN: Visibilidad en App */}
-                {/* <FeatureToggle
-                    id="visible_app"
-                    checked={!!data.visible_app}
-                    onCheckedChange={(v) => setData('visible_app', !!v)}
-                    icon="👁️"
-                    title="Visible en App"
-                    description={
-                        data.visible_app
-                            ? '✅ Este producto es visible en la aplicación móvil'
-                            : '❌ Este producto está oculto en la aplicación móvil'
-                    }
-                    hint="Desactiva esta opción si quieres ocultarlo de los clientes en la app"
-                    colorScheme="green"
-                /> */}
-
-                {/* 🏭 Producto de Producción (controlado por empresa) */}
-                {permite_productos_produccion && (
-                    <FeatureToggle
-                        id="es_de_produccion"
-                        checked={!!data.es_de_produccion}
-                        onCheckedChange={(v) => setData('es_de_produccion', !!v)}
-                        icon="🏭"
-                        title="Es Producto de Producción"
-                        description={
-                            data.es_de_produccion
-                                ? '✅ Este producto es resultado de una receta de producción'
-                                : '❌ Este es un producto básico sin receta'
-                        }
-                        hint="Activa esta opción si este producto se elabora internamente con una receta que asocia otros productos como ingredientes"
-                        colorScheme="orange"
-                    />
-                )}
-
-                {/* ✨ NUEVA SECCIÓN: Producto Adicional (controlado por empresa) */}
-                {permite_productos_adicionales && (
-                    <FeatureToggle
-                        id="es_producto_adicional"
-                        checked={!!data.es_producto_adicional}
-                        onCheckedChange={(v) => setData('es_producto_adicional', !!v)}
-                        icon="🌶️"
-                        title="Es Producto Adicional"
-                        description={
-                            data.es_producto_adicional
-                                ? '✅ Este producto es un adicional (topping, salsa, etc.)'
-                                : '❌ Este no es un producto adicional'
-                        }
-                        hint="Marca este producto si es un adicional que se puede agregar a otros productos (ej: salsa extra, topping, guarnición)"
-                        colorScheme="orange"
-                    />
-                )}
-
-                {/* ✨ NUEVA SECCIÓN: Puede Tener Adicionales (controlado por empresa) */}
-                {permite_productos_adicionales && (
-                    <FeatureToggle
-                        id="puede_tener_producto_adicional"
-                        checked={!!data.puede_tener_producto_adicional}
-                        onCheckedChange={(v) => setData('puede_tener_producto_adicional', !!v)}
-                        icon="🍔"
-                        title="Puede Tener Adicionales"
-                        description={
-                            data.puede_tener_producto_adicional
-                                ? '✅ Este producto puede recibir adicionales'
-                                : '❌ Este producto no permite adicionales'
-                        }
-                        hint="Marca este producto si permite que se le agreguen otros productos como adicionales (ej: hamburguesa, pizza, bebidas)"
-                        colorScheme="purple"
-                    />
-                )}
-            </div>
-
-            {/* ✨ NUEVA SECCIÓN: Información de Medicamentos (solo para farmacias) */}
-            {es_farmacia && (
-                <div className="mt-2 space-y-3 rounded-lg border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 p-2 shadow-sm dark:border-blue-800 dark:from-blue-950/30 dark:to-cyan-950/30">
-                    <div className="flex items-start gap-3">
-                        <svg
-                            className="mt-0.5 h-6 w-6 flex-shrink-0 text-blue-600 dark:text-blue-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12l2 2 4-4m7.53-2a10 10 0 11-14.06 0M9 12l2 2 4-4m0 0l4-4m-4 4l-4-4"
-                            />
-                        </svg>
-                        <div className="flex-1">
-                            <Label className="flex items-center gap-2 text-base font-semibold">
-                                <span>💊</span> Información de Medicamento
-                            </Label>
-                            {/* <p className="mt-2 text-sm leading-relaxed text-blue-700 dark:text-blue-300">
-                                Complete los campos de medicamento para identificar el principio activo e indicaciones de uso.
-                            </p> */}
-                        </div>
-                    </div>
-
-                    <div className="mt-2 grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <Label htmlFor="principio_activo" className="flex items-center gap-2">
-                                <span className="text-blue-600 dark:text-blue-400">⚗️</span> Principio Activo
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
-                                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Ingresa el ingrediente activo del medicamento</TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <textarea
-                                id="principio_activo"
-                                value={data.principio_activo ?? ''}
-                                onChange={(e) => setData('principio_activo', e.target.value || null)}
-                                placeholder="Ej: Ibuprofeno, Paracetamol, Amoxicilina"
-                                className={`w-full rounded-md border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none ${getInputClassName('principio_activo')}`}
-                                rows={3}
-                            />
-                            {errors.principio_activo && <div className="mt-1 text-sm text-red-500">⚠️ {errors.principio_activo}</div>}
-                        </div>
-
-                        <div className="space-y-1">
-                            <Label htmlFor="uso_de_medicacion" className="flex items-center gap-2">
-                                <span className="text-blue-600 dark:text-blue-400">📋</span> Uso / Indicaciones
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <button className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
-                                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Describe las indicaciones o usos principales del medicamento</TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <textarea
-                                id="uso_de_medicacion"
-                                value={data.uso_de_medicacion ?? ''}
-                                onChange={(e) => setData('uso_de_medicacion', e.target.value || null)}
-                                placeholder="Ej: Dolor, fiebre, inflamación / Infecciones bacterianas"
-                                className={`w-full rounded-md border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none ${getInputClassName('uso_de_medicacion')}`}
-                                rows={3}
-                            />
-                            {errors.uso_de_medicacion && <div className="mt-1 text-sm text-red-500">⚠️ {errors.uso_de_medicacion}</div>}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

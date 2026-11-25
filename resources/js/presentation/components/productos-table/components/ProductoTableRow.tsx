@@ -130,7 +130,8 @@ export default function ProductoTableRow({
     // Stock disponible expresado en la unidad de venta (para fraccionados se convierte desde la unidad base)
     let stockDisponible =
         (productoInfo as any)?.stock_disponible_calc ?? (productoInfo as any)?.stock_disponible ?? (productoInfo as any)?.stock ?? 0;
-    // Ventas con varios almacenes (ej. SALA y REFRIGERADOR): el disponible es el del almacén elegido en la línea
+    // Ventas con varios almacenes de venta (ej. SALA, FRIO): el disponible es el del almacén del precio elegido
+    // (cambiar el precio cambia el almacén de la línea)
     const eligeAlmacen = tipo === 'venta' && almacenesVenta.length > 1;
     const almacenLinea = almacenesVenta.find((a) => Number(a.id) === Number(detalle.almacen_id));
     if (eligeAlmacen && detalle.almacen_id && productoInfo?.stock_por_almacen) {
@@ -453,23 +454,6 @@ export default function ProductoTableRow({
                     />
                     {/* ✅ NUEVO (2026-09-07): Mostrar error de validación de stock */}
                     {validacionError && <div className="text-xs text-red-600 dark:text-red-400">⚠️ {validacionError}</div>}
-                    {/* Ventas: disponible restante, recalculado en vivo con la cantidad */}
-                    {validarStockVenta && !validacionError && (
-                        <div
-                            className={`mt-0.5 text-xs font-semibold ${stockDisponible <= 0 || stockRestante < 0
-                                ? 'text-red-600 dark:text-red-400'
-                                : stockRestante < 5
-                                    ? 'text-orange-600 dark:text-orange-400'
-                                    : 'text-emerald-600 dark:text-emerald-400'
-                                }`}
-                        >
-                            {stockDisponible <= 0
-                                ? `Sin stock${eligeAlmacen && almacenLinea ? ` en ${almacenLinea.nombre}` : ''}`
-                                : `Quedan ${formatearCantidad(Math.max(0, stockRestante))} de ${formatearCantidad(stockDisponible)} ${unidadDisplay}${
-                                      eligeAlmacen && almacenLinea ? ` en ${almacenLinea.nombre}` : ''
-                                  }`}
-                        </div>
-                    )}
                     {/* Compras: stock resultante (la compra suma al disponible actual) */}
                     {tipo === 'compra' && (
                         <div
@@ -487,6 +471,50 @@ export default function ProductoTableRow({
                 </div>
             </td>
 
+            {/* Ventas: disponible en una columna propia (en vivo, restando la cantidad de la línea) */}
+            {tipo === 'venta' && !proformaConvertida && (
+                <td className="px-2 py-2 text-center">
+                    {validarStockVenta ? (
+                        <div
+                            className="flex flex-col items-center gap-0.5"
+                            title={
+                                eligeAlmacen
+                                    ? `Total en almacenes de venta: ${formatearCantidad(
+                                          almacenesVenta.reduce((t, a) => t + Number(productoInfo?.stock_por_almacen?.[a.id] ?? 0), 0),
+                                      )} ${unidadDisplay}\n${almacenesVenta
+                                          .map((a) => `${a.nombre}: ${formatearCantidad(Number(productoInfo?.stock_por_almacen?.[a.id] ?? 0))}`)
+                                          .join('\n')}`
+                                    : undefined
+                            }
+                        >
+                            {/* Almacén del precio elegido: su stock es el que se muestra */}
+                            {eligeAlmacen && almacenLinea && (
+                                <span className="max-w-[7rem] truncate text-[10px] font-semibold uppercase text-gray-600 dark:text-gray-300" title={almacenLinea.nombre}>
+                                    {almacenLinea.nombre}
+                                </span>
+                            )}
+                            <span
+                                className={`min-w-[3.5rem] rounded-md px-2 py-1 font-mono text-base font-bold text-white ${
+                                    stockDisponible <= 0 || stockRestante < 0
+                                        ? 'bg-red-600'
+                                        : stockRestante < 5
+                                          ? 'bg-orange-500'
+                                          : 'bg-emerald-600'
+                                }`}
+                            >
+                                {stockDisponible <= 0 ? 0 : formatearCantidad(Math.max(0, stockRestante))}
+                            </span>
+                            {/* Total del almacén (abajo) */}
+                            <span className="text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
+                                {stockDisponible <= 0 ? 'Sin stock' : `de ${formatearCantidad(stockDisponible)} ${unidadDisplay}`}
+                            </span>
+                        </div>
+                    ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-600">—</span>
+                    )}
+                </td>
+            )}
+
             {/* Unidad */}
             {/* <td className="items-left px-2 py-2">
                 <span className="font-small text-xs text-gray-700 uppercase dark:text-gray-300">
@@ -497,7 +525,7 @@ export default function ProductoTableRow({
             {/* Precio Unitario (Compra) */}
             {tipo === 'compra' && (
                 <>
-                    <td className="px-2 py-2">
+                    <td className="bg-violet-50/40 px-2 py-2 dark:bg-violet-950/20">
                         {/* Si el precio difiere del costo registrado, el detalle se muestra en un tooltip */}
                         <Tooltip open={tieneDiferencia ? undefined : false}>
                             <TooltipTrigger asChild>
@@ -566,7 +594,7 @@ export default function ProductoTableRow({
 
                     {/* Total Bs. (cantidad × precio, antes del descuento). Al escribirlo se despeja el precio unitario:
                         así se copia el importe de la nota aunque su precio impreso esté redondeado */}
-                    <td className="px-2 py-2">
+                    <td className="bg-violet-50/40 px-2 py-2 dark:bg-violet-950/20">
                         <input
                             type="text"
                             inputMode="decimal"
@@ -850,7 +878,7 @@ export default function ProductoTableRow({
             )}
             {/* Descuento de la línea, en monto (Bs). El costo del producto se calcula ya con este descuento */}
             {tipo === 'compra' && (
-                <td className="px-2 py-2 text-center">
+                <td className="bg-violet-50/40 px-2 py-2 text-center dark:bg-violet-950/20">
                     {(() => {
                         const importe = Number(detalle.cantidad || 0) * Number(detalle.precio_unitario || 0);
                         const descuento = Number(detalle.descuento || 0);
@@ -987,7 +1015,7 @@ export default function ProductoTableRow({
             {tipo === 'compra' && (
                 <>
                     {/* Lote */}
-                    <td className="px-2 py-4">
+                    <td className="bg-amber-50/40 px-2 py-4 dark:bg-amber-950/20">
                         <input
                             type="text"
                             disabled={readOnly}
@@ -1001,7 +1029,7 @@ export default function ProductoTableRow({
                     </td>
 
                     {/* Fecha Vencimiento */}
-                    <td className="px-2 py-4">
+                    <td className="bg-amber-50/40 px-2 py-4 dark:bg-amber-950/20">
                         <input
                             type="date"
                             disabled={readOnly}
@@ -1097,7 +1125,7 @@ export default function ProductoTableRow({
                     return (
                         <Fragment key={tp.tipo_precio_id}>
                             {/* Precio de venta: nuevo (editable; al editarlo se recalcula la ganancia) y debajo el registrado */}
-                            <td className="px-2 py-2 whitespace-nowrap">
+                            <td className="bg-violet-50/40 px-2 py-2 whitespace-nowrap dark:bg-violet-950/20">
                                 {inputGanancia(
                                     'precio',
                                     precioNuevo,
@@ -1122,7 +1150,7 @@ export default function ProductoTableRow({
                                 )}
                             </td>
                             {/* % de ganancia (al editarlo se recalcula la ganancia en Bs) */}
-                            <td className="px-2 py-2 whitespace-nowrap">
+                            <td className="bg-violet-50/40 px-2 py-2 whitespace-nowrap dark:bg-violet-950/20">
                                 {inputGanancia(
                                     'porcentaje',
                                     porcentaje,
@@ -1131,7 +1159,7 @@ export default function ProductoTableRow({
                                 )}
                             </td>
                             {/* Ganancia en Bs (precio = compra + ganancia; al editarla se recalcula el %) */}
-                            <td className="px-2 py-2 whitespace-nowrap">
+                            <td className="bg-violet-50/40 px-2 py-2 whitespace-nowrap dark:bg-violet-950/20">
                                 {inputGanancia(
                                     'monto',
                                     monto,

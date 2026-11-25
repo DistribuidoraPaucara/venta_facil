@@ -30,6 +30,10 @@ class StoreCompraRequest extends FormRequest
             'moneda_id'                    => 'required|exists:monedas,id',
             'tipo_pago_id'                 => 'nullable|exists:tipos_pago,id',
             'fecha_vencimiento_credito'    => 'nullable|date|after_or_equal:fecha', // solo aplica si el pago es a crédito
+            // Desglose al contado: efectivo y transferencia/QR (la suma debe ser el total: lo valida el controlador)
+            'pagos'                        => 'nullable|array',
+            'pagos.*.tipo_pago_id'         => 'required|exists:tipos_pago,id',
+            'pagos.*.monto'                => 'required|numeric|min:0.01',
             'almacen_id'                   => 'required|exists:almacenes,id',
             'detalles'                     => 'required|array|min:1',
             'detalles.*.producto_id'       => 'required|exists:productos,id',

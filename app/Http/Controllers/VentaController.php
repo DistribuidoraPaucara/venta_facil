@@ -1931,6 +1931,7 @@ class VentaController extends Controller
 
             $errores  = [];
             $detalles = [];
+            $pedidoPorStock = []; // producto|almacén → cantidad pedida acumulada
 
             foreach ($productos as $producto) {
                 $productoData = Producto::find($producto['producto_id']);
@@ -2002,16 +2003,22 @@ class VentaController extends Controller
                 } else {
                     // ✅ PRODUCTOS SIMPLES: Validar stock directo
                     // ✅ CRÍTICO: SIEMPRE filtrar por almacen_id (no usar when, que NO aplica si es null)
-                    $almacenIdValidar = $almacenId ?? auth()->user()?->empresa->almacen_id ?? 1;
-                    $stockDisponible = $productoData->stock()
+                    // Almacén de la LÍNEA (el que determina su precio); si no viene, el de la cabecera
+                    $almacenIdValidar = (int) ($producto['almacen_id'] ?? 0) ?: (int) ($almacenId ?? auth()->user()?->empresa->almacen_id ?? 1);
+                    $stockDisponible  = (float) $productoData->stock()
                         ->where('almacen_id', $almacenIdValidar)
-                        ->sum('cantidad_disponible') ?? 0;
+                        ->sum('cantidad_disponible');
 
-                    $tieneStock = $stockDisponible >= $cantidadSolicitada;
+                    // Varias líneas del mismo producto en el mismo almacén comparten ese stock
+                    $claveStock = $producto['producto_id'] . '|' . $almacenIdValidar;
+                    $pedidoAcumulado = ($pedidoPorStock[$claveStock] ?? 0) + (float) $cantidadSolicitada;
+                    $pedidoPorStock[$claveStock] = $pedidoAcumulado;
+
+                    $tieneStock = $stockDisponible >= $pedidoAcumulado;
 
                     if (! $tieneStock) {
-                        $diferencia = $cantidadSolicitada - $stockDisponible;
-                        $errores[]  = "{$productoData->nombre}: Faltan {$diferencia} unidades (solicitado: {$cantidadSolicitada}, disponible: {$stockDisponible})";
+                        $diferencia = $pedidoAcumulado - $stockDisponible;
+                        $errores[]  = "{$productoData->nombre}: Faltan {$diferencia} unidades (solicitado: {$pedidoAcumulado}, disponible: {$stockDisponible})";
                     }
 
                     $detalles[] = [
@@ -2020,7 +2027,7 @@ class VentaController extends Controller
                         'cantidad_solicitada' => $cantidadSolicitada,
                         'stock_disponible'    => $stockDisponible,
                         'es_combo'            => false,
-                        'diferencia'          => max(0, $cantidadSolicitada - $stockDisponible),
+                        'diferencia'          => max(0, $pedidoAcumulado - $stockDisponible),
                     ];
                 }
             }

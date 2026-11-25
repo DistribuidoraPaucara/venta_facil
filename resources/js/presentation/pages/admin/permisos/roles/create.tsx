@@ -29,7 +29,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: 'Crear Rol',
-        href: '/admin/permisos/roles/create',
+        href: '/roles/create',
     },
 ]
 

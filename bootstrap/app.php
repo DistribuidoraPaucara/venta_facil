@@ -8,6 +8,7 @@ use App\Http\Middleware\CheckUserAttributes;
 use App\Http\Middleware\ExecutionTracer;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequireApiAuthentication;
 use App\Http\Middleware\SetTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(append: [
             ExecutionTracer::class,
+            RequireApiAuthentication::class,  // 🔐 Deny-by-default: toda ruta de API exige sesión o token
             CheckUserActive::class,
             CheckUserAttributes::class,
             SetTenant::class,  // ✅ Multi-tenancy: Establecer tenant por empresa_id del usuario

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
  * @see app/Http/Controllers/ActualizarStockMasivoController.php:598
@@ -33,6 +33,27 @@ actualizarStockTabla.post = (options?: RouteQueryOptions): RouteDefinition<'post
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:598
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+    const actualizarStockTablaForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: actualizarStockTabla.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::actualizarStockTabla
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:598
+ * @route '/api/inventario/actualizar-stock-tabla'
+ */
+        actualizarStockTablaForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: actualizarStockTabla.url(options),
+            method: 'post',
+        })
+    
+    actualizarStockTabla.form = actualizarStockTablaForm
 /**
 * @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
  * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
@@ -66,6 +87,28 @@ transferirProducto.post = (options?: RouteQueryOptions): RouteDefinition<'post'>
     url: transferirProducto.url(options),
     method: 'post',
 })
+
+    /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/inventario/transferir-producto'
+ */
+    const transferirProductoForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: transferirProducto.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ActualizarStockMasivoController::transferirProducto
+ * @see app/Http/Controllers/ActualizarStockMasivoController.php:815
+ * @route '/api/inventario/transferir-producto'
+ */
+        transferirProductoForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: transferirProducto.url(options),
+            method: 'post',
+        })
+    
+    transferirProducto.form = transferirProductoForm
 const inventario = {
     actualizarStockTabla,
 transferirProducto,

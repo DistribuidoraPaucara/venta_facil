@@ -580,7 +580,7 @@ export default function ProductosTable({
 
             {/* Lista de productos agregados */}
             {detalles.length > 0 ? (
-                <div className="relative w-full overflow-x-auto">
+                <div className="relative w-full overflow-x-auto rounded-lg border border-gray-300 dark:border-zinc-600">
                     {/* Indicador de carga */}
                     {isCalculatingPrices && (
                         <div className="absolute top-0 right-0 z-10 flex items-center gap-1.5 rounded-bl-lg border-b border-l border-blue-200 bg-blue-50 px-3 py-1.5 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
@@ -600,7 +600,7 @@ export default function ProductosTable({
                                 : ''
                         }`}
                     >
-                        <thead className="border-b-2 border-gray-300 bg-gradient-to-b from-gray-100 to-gray-50 dark:border-zinc-600 dark:from-zinc-700 dark:to-zinc-800">
+                        <thead className="border-b-2 border-gray-300 bg-gradient-to-b rounded-lg from-gray-100 to-gray-50 dark:border-zinc-600 dark:from-zinc-700 dark:to-zinc-800">
                             <tr>
                                 {/* En compras, el ID va encima del nombre del producto */}
                                 {tipo !== 'compra' && (
@@ -621,25 +621,29 @@ export default function ProductosTable({
                                     className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
                                     title={tipo === 'compra' ? 'Cantidad y stock que quedará después de la compra' : undefined}
                                 >
-                                    {tipo === 'compra' ? 'Cant./Stock' : !proformaConvertida ? 'Cantidad / Disp.' : 'Cantidad'}
+                                    {tipo === 'compra' ? 'Cant./Stock' : 'Cantidad'}
                                 </th>
+                                {/* Ventas: disponible en su propia columna (no en proformas ya convertidas) */}
+                                {tipo === 'venta' && !proformaConvertida && (
+                                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Disp.</th>
+                                )}
                                 {/* <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">PRECIO</th> */}
                                 {tipo === 'compra' && (
                                     <>
                                         <th
-                                            className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                            className="bg-violet-50 px-2 py-2 text-left text-xs font-bold text-violet-700 uppercase dark:bg-violet-950/30 dark:text-violet-300"
                                             title="Precio unitario de compra, antes del descuento. Debajo, el costo registrado actualmente"
                                         >
                                             Precio U.
                                         </th>
                                         <th
-                                            className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                            className="bg-violet-50 px-2 py-2 text-left text-xs font-bold text-violet-700 uppercase dark:bg-violet-950/30 dark:text-violet-300"
                                             title="Total de la línea antes del descuento (cantidad × precio). Al escribirlo se calcula el precio unitario"
                                         >
                                             Total Bs.
                                         </th>
                                         <th
-                                            className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                            className="bg-violet-50 px-2 py-2 text-left text-xs font-bold text-violet-700 uppercase dark:bg-violet-950/30 dark:text-violet-300"
                                             title="Descuento de la línea en monto Bs (no en %): se resta de cantidad × precio"
                                         >
                                             Desc.
@@ -657,9 +661,9 @@ export default function ProductosTable({
                                 {/* Compras: costo registrado y una columna por tipo de precio de venta (% editable sobre el nuevo costo) */}
                                 {tipo === 'compra' && (
                                     <>
-                                        <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200">Lote</th>
+                                        <th className="bg-amber-50 px-2 py-2 text-left text-xs font-bold text-amber-700 uppercase dark:bg-amber-950/30 dark:text-amber-300">Lote</th>
                                         <th
-                                            className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase dark:text-gray-200"
+                                            className="bg-amber-50 px-2 py-2 text-left text-xs font-bold text-amber-700 uppercase dark:bg-amber-950/30 dark:text-amber-300"
                                             title="Fecha de vencimiento"
                                         >
                                             Venc.
@@ -668,20 +672,20 @@ export default function ProductosTable({
                                         {tiposPrecioVenta.map((tp) => (
                                             <Fragment key={tp.tipo_precio_id}>
                                                 <th
-                                                    className="px-2 py-2 text-left text-xs font-bold text-blue-700 uppercase dark:text-blue-300"
+                                                    className="bg-violet-50 px-2 py-2 text-left text-xs font-bold text-violet-700 uppercase dark:bg-violet-950/30 dark:text-violet-300"
                                                     title={`Nuevo ${tp.nombre} (editable). Debajo, el precio registrado actualmente`}
                                                 >
                                                     {abreviarTipoPrecio(tp.nombre)}
                                                 </th>
                                                 <th
-                                                    className="px-2 py-2 text-left text-xs font-bold text-blue-700 uppercase dark:text-blue-300"
+                                                    className="bg-violet-50 px-2 py-2 text-left text-xs font-bold text-violet-700 uppercase dark:bg-violet-950/30 dark:text-violet-300"
                                                     title={`% de ganancia de ${tp.nombre} sobre el precio de compra`}
                                                 >
                                                     % Gan.
                                                     <div className="text-[10px] font-semibold normal-case opacity-75">{abreviarTipoPrecio(tp.nombre)}</div>
                                                 </th>
                                                 <th
-                                                    className="px-2 py-2 text-left text-xs font-bold text-blue-700 uppercase dark:text-blue-300"
+                                                    className="bg-violet-50 px-2 py-2 text-left text-xs font-bold text-violet-700 uppercase dark:bg-violet-950/30 dark:text-violet-300"
                                                     title={`Ganancia de ${tp.nombre} en Bs sobre el precio de compra`}
                                                 >
                                                     Gan. Bs

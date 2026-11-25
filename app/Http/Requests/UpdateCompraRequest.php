@@ -30,6 +30,10 @@ class UpdateCompraRequest extends FormRequest
             'moneda_id'                    => 'sometimes|exists:monedas,id',
             'tipo_pago_id'                 => 'nullable|exists:tipos_pago,id',
             'fecha_vencimiento_credito'    => 'nullable|date', // solo aplica si el pago es a crédito
+            // Desglose al contado: efectivo y transferencia/QR (la suma debe ser el total: lo valida el controlador)
+            'pagos'                        => 'nullable|array',
+            'pagos.*.tipo_pago_id'         => 'required|exists:tipos_pago,id',
+            'pagos.*.monto'                => 'required|numeric|min:0.01',
             // Sin esta regla validated() descartaba el almacén: el cambio no se guardaba y al aprobar el
             // stock entraba al almacén anterior. (Que sea de la empresa: validarAlmacenDeLaEmpresa)
             'almacen_id'                   => 'sometimes|integer|exists:almacenes,id',

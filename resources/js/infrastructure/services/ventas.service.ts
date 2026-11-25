@@ -297,9 +297,11 @@ export class VentasService implements BaseService<Venta, VentaFormData> {
 
             // Validar stock disponible
             try {
+                // Cada línea se valida contra su almacén (el del precio elegido), no solo el de la cabecera
                 const productosParaValidar = data.detalles.map(detalle => ({
                     producto_id: detalle.producto_id,
                     cantidad: detalle.cantidad,
+                    almacen_id: (detalle as any).almacen_id ?? undefined,
                 }));
 
                 // ✅ CRÍTICO: Pasar almacen_id correcto (no 1 por defecto)
@@ -421,6 +423,7 @@ export class VentasService implements BaseService<Venta, VentaFormData> {
     async verificarStockDisponible(productos: Array<{
         producto_id: Id;
         cantidad: number;
+        almacen_id?: Id; // almacén de la línea (si no viene, el de la cabecera)
     }>, almacenId: Id = 1): Promise<{
         valido: boolean;
         errores: string[];

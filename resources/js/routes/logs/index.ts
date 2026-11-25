@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\LogsController::view
  * @see app/Http/Controllers/Api/LogsController.php:54
@@ -42,6 +42,41 @@ view.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\LogsController::view
+ * @see app/Http/Controllers/Api/LogsController.php:54
+ * @route '/logs/view'
+ */
+    const viewForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: view.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\LogsController::view
+ * @see app/Http/Controllers/Api/LogsController.php:54
+ * @route '/logs/view'
+ */
+        viewForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: view.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\LogsController::view
+ * @see app/Http/Controllers/Api/LogsController.php:54
+ * @route '/logs/view'
+ */
+        viewForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: view.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    view.form = viewForm
 /**
 * @see \App\Http\Controllers\Api\LogsController::download
  * @see app/Http/Controllers/Api/LogsController.php:16
@@ -84,6 +119,42 @@ download.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: download.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\Api\LogsController::download
+ * @see app/Http/Controllers/Api/LogsController.php:16
+ * @route '/logs/download'
+ */
+    const downloadForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: download.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\LogsController::download
+ * @see app/Http/Controllers/Api/LogsController.php:16
+ * @route '/logs/download'
+ */
+        downloadForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: download.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\LogsController::download
+ * @see app/Http/Controllers/Api/LogsController.php:16
+ * @route '/logs/download'
+ */
+        downloadForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: download.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    download.form = downloadForm
 const logs = {
     view,
 download,

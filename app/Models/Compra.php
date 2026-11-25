@@ -73,6 +73,12 @@ class Compra extends Model
         return $this->hasOne(CuentaPorPagar::class, 'compra_id');
     }
 
+    /** Desglose de pago al contado (Efectivo / Transferencia-QR) */
+    public function detallesPago()
+    {
+        return $this->hasMany(DetallePagoCompra::class, 'compra_id');
+    }
+
     public function pagos()
     {
         return $this->hasManyThrough(

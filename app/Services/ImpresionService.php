@@ -462,6 +462,11 @@ class ImpresionService
                 'TICKET_80' => 'impresion.egresos.ticket-80',
                 'TICKET_58' => 'impresion.egresos.ticket-58',
             ],
+            'ingreso' => [
+                'A4' => 'impresion.ingresos.hoja-completa',
+                'TICKET_80' => 'impresion.ingresos.ticket-80',
+                'TICKET_58' => 'impresion.ingresos.ticket-58',
+            ],
         ];
 
         $vistaEncontrada = $fallbacks[$tipoDocumento][$formato] ?? null;
@@ -685,6 +690,7 @@ class ImpresionService
             'detalles.producto',
             'usuario',
             'tipoPago',
+            'detallesPago.tipoPago',
             'moneda',
             'estadoDocumento',
             'almacen',
@@ -983,6 +989,34 @@ class ImpresionService
                 'formato' => $formato,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Imprimir Ingreso
+     *
+     * @param \App\Models\Ingreso $ingreso
+     * @param string|null $formato
+     * @param array $opciones
+     * @return \Barryvdh\DomPDF\PDF
+     */
+    public function imprimirIngreso($ingreso, ?string $formato = 'A4', array $opciones = [])
+    {
+        try {
+            $ingreso->load([
+                'tipoOperacion',
+                'usuario',
+                'detalles.tipoOperacion',
+            ]);
+
+            return $this->generarPDF('ingreso', $ingreso, $formato, $opciones);
+        } catch (\Exception $e) {
+            \Log::error('[ImpresionService::imprimirIngreso] ERROR', [
+                'ingreso_id' => $ingreso->id,
+                'formato' => $formato,
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }

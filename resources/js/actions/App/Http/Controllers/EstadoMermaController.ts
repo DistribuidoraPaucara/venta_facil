@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\EstadoMermaController::index
  * @see app/Http/Controllers/EstadoMermaController.php:26
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EstadoMermaController::index
+ * @see app/Http/Controllers/EstadoMermaController.php:26
+ * @route '/inventario/estados-merma'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::index
+ * @see app/Http/Controllers/EstadoMermaController.php:26
+ * @route '/inventario/estados-merma'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::index
+ * @see app/Http/Controllers/EstadoMermaController.php:26
+ * @route '/inventario/estados-merma'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\EstadoMermaController::create
  * @see app/Http/Controllers/EstadoMermaController.php:47
@@ -85,6 +120,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EstadoMermaController::create
+ * @see app/Http/Controllers/EstadoMermaController.php:47
+ * @route '/inventario/estados-merma/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::create
+ * @see app/Http/Controllers/EstadoMermaController.php:47
+ * @route '/inventario/estados-merma/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::create
+ * @see app/Http/Controllers/EstadoMermaController.php:47
+ * @route '/inventario/estados-merma/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\EstadoMermaController::store
  * @see app/Http/Controllers/EstadoMermaController.php:54
@@ -119,6 +189,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\EstadoMermaController::store
+ * @see app/Http/Controllers/EstadoMermaController.php:54
+ * @route '/inventario/estados-merma'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::store
+ * @see app/Http/Controllers/EstadoMermaController.php:54
+ * @route '/inventario/estados-merma'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\EstadoMermaController::edit
  * @see app/Http/Controllers/EstadoMermaController.php:65
@@ -186,6 +277,41 @@ edit.head = (args: { estadoMerma: number | { id: number } } | [estadoMerma: numb
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EstadoMermaController::edit
+ * @see app/Http/Controllers/EstadoMermaController.php:65
+ * @route '/inventario/estados-merma/{estadoMerma}/edit'
+ */
+    const editForm = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::edit
+ * @see app/Http/Controllers/EstadoMermaController.php:65
+ * @route '/inventario/estados-merma/{estadoMerma}/edit'
+ */
+        editForm.get = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::edit
+ * @see app/Http/Controllers/EstadoMermaController.php:65
+ * @route '/inventario/estados-merma/{estadoMerma}/edit'
+ */
+        editForm.head = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 /**
 * @see \App\Http\Controllers\EstadoMermaController::update
  * @see app/Http/Controllers/EstadoMermaController.php:72
@@ -253,6 +379,51 @@ update.patch = (args: { estadoMerma: number | { id: number } } | [estadoMerma: n
     method: 'patch',
 })
 
+    /**
+* @see \App\Http\Controllers\EstadoMermaController::update
+ * @see app/Http/Controllers/EstadoMermaController.php:72
+ * @route '/inventario/estados-merma/{estadoMerma}'
+ */
+    const updateForm = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::update
+ * @see app/Http/Controllers/EstadoMermaController.php:72
+ * @route '/inventario/estados-merma/{estadoMerma}'
+ */
+        updateForm.put = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::update
+ * @see app/Http/Controllers/EstadoMermaController.php:72
+ * @route '/inventario/estados-merma/{estadoMerma}'
+ */
+        updateForm.patch = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\EstadoMermaController::destroy
  * @see app/Http/Controllers/EstadoMermaController.php:90
@@ -310,6 +481,38 @@ destroy.delete = (args: { estadoMerma: number | { id: number } } | [estadoMerma:
     url: destroy.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\Http\Controllers\EstadoMermaController::destroy
+ * @see app/Http/Controllers/EstadoMermaController.php:90
+ * @route '/inventario/estados-merma/{estadoMerma}'
+ */
+    const destroyForm = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EstadoMermaController::destroy
+ * @see app/Http/Controllers/EstadoMermaController.php:90
+ * @route '/inventario/estados-merma/{estadoMerma}'
+ */
+        destroyForm.delete = (args: { estadoMerma: number | { id: number } } | [estadoMerma: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 const EstadoMermaController = { index, create, store, edit, update, destroy }
 
 export default EstadoMermaController

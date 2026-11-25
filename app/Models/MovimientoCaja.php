@@ -26,6 +26,7 @@ class MovimientoCaja extends Model
         'venta_id',      // ✅ NUEVO: ID de venta para análisis de rango
         'pago_id',       // ✅ NUEVO: ID de pago para análisis de rango
         'egreso_id',     // ✅ NUEVO: ID de egreso para trazabilidad
+        'ingreso_id',    // ID de ingreso para trazabilidad
     ];
 
     protected function casts(): array
@@ -75,6 +76,11 @@ class MovimientoCaja extends Model
     public function egreso()  // ✅ NUEVO: Relación con egreso
     {
         return $this->belongsTo(Egreso::class, 'egreso_id');
+    }
+
+    public function ingreso()
+    {
+        return $this->belongsTo(Ingreso::class, 'ingreso_id');
     }
 
     public function comprobantes()

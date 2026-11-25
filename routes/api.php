@@ -156,10 +156,10 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
 // 📋 RUTAS PARA GESTIÓN DE ROLES
 // ==========================================
 // Obtener roles con detalles, categorías y descripciones
-Route::get('/roles/details', [RoleController::class, 'getRolesWithDetails']);
+Route::get('/roles/details', [RoleController::class, 'getRolesWithDetails'])->middleware('permission:roles.index');
 
 // Validar combinación de roles
-Route::post('/roles/validate-combination', [RoleController::class, 'validateRoleCombination']);
+Route::post('/roles/validate-combination', [RoleController::class, 'validateRoleCombination'])->middleware('permission:roles.edit');
 
 // ==========================================
 // 📋 RUTAS API PARA MÓDULOS DEL SIDEBAR
@@ -748,7 +748,7 @@ Route::middleware(['auth:sanctum,web', 'platform'])->group(function () {
 });
 
 // Rutas API para contabilidad
-Route::group(['prefix' => 'contabilidad'], function () {
+Route::group(['prefix' => 'contabilidad', 'middleware' => 'permission:contabilidad.manage'], function () {
     Route::get('asientos', [AsientoContableController::class, 'indexApi']);
     Route::get('asientos/{asientoContable}', [AsientoContableController::class, 'showApi']);
 });
@@ -759,22 +759,22 @@ Route::group(['prefix' => 'inventario'], function () {
     Route::get('stock-producto/{producto}', [InventarioController::class, 'stockProducto']);
     Route::get('stock-filtrado', [InventarioController::class, 'apiStockFiltrado'])->middleware('auth:sanctum,web'); // Requiere usuario para filtrar por su empresa
     Route::get('lotes', [InventarioController::class, 'apiLotes'])->middleware('auth:sanctum,web'); // Requiere usuario para filtrar por su empresa
-    Route::post('ajustes', [InventarioController::class, 'procesarAjusteApi']);
+    Route::post('ajustes', [InventarioController::class, 'procesarAjusteApi'])->middleware('permission:inventario.ajuste.procesar');
     // ✅ NUEVO: Endpoint mejorado para ajustes por tabla
-    Route::post('ajuste', [InventarioController::class, 'procesarAjusteTabla']);
+    Route::post('ajuste', [InventarioController::class, 'procesarAjusteTabla'])->middleware('permission:inventario.ajuste.procesar');
     // ✅ NUEVO (2026-06-02): Recorrer stock desde un movimiento y calcular valores correctos
-    Route::post('recorrer-stock', [InventarioController::class, 'recorrerStock']);
+    Route::post('recorrer-stock', [InventarioController::class, 'recorrerStock'])->middleware('permission:inventario.movimientos');
     // ✅ NUEVO: Búsqueda de productos por almacén (incluye productos sin stock)
     Route::get('productos-almacen/{almacen_id}', [InventarioController::class, 'buscarProductosAlmacen']);
     // ✅ NUEVO: Crear stock_producto para producto nuevo
-    Route::post('crear-stock-producto', [InventarioController::class, 'crearStockProducto']);
+    Route::post('crear-stock-producto', [InventarioController::class, 'crearStockProducto'])->middleware('permission:productos.manage');
     Route::get('movimientos', [InventarioController::class, 'movimientosApi']);
     Route::get('movimientos-para-impresion', [InventarioController::class, 'movimientosParaImpresion']);
-    Route::post('movimientos', [InventarioController::class, 'crearMovimiento']);
+    Route::post('movimientos', [InventarioController::class, 'crearMovimiento'])->middleware('permission:inventario.movimientos');
     Route::get('estadisticas', [InventarioController::class, 'estadisticasApi']);
 
     // ✅ NUEVO: Rutas de Fraccionamiento (2026-09-10)
-    Route::group(['prefix' => 'fraccionamientos'], function () {
+    Route::group(['prefix' => 'fraccionamientos', 'middleware' => 'permission:inventario.fraccionamientos.manage'], function () {
         Route::post('/', [FraccionamientoApiController::class, 'store']);
         Route::get('/', [FraccionamientoApiController::class, 'index']);
         Route::get('productos/disponibles', [FraccionamientoApiController::class, 'productosDisponibles']);
@@ -786,7 +786,7 @@ Route::group(['prefix' => 'inventario'], function () {
     });
 
     // ✅ NUEVO: Rutas de Fraccionamiento Masivo (2026-09-11)
-    Route::group(['prefix' => 'fraccionamientos-masivos'], function () {
+    Route::group(['prefix' => 'fraccionamientos-masivos', 'middleware' => 'permission:inventario.fraccionamientos.manage'], function () {
         Route::post('/', [FraccionamientoMasivoApiController::class, 'store']);
         Route::get('/', [FraccionamientoMasivoApiController::class, 'index']);
         Route::get('{fraccionamientoMasivo}', [FraccionamientoMasivoApiController::class, 'show']);
@@ -807,7 +807,7 @@ Route::group(['prefix' => 'inventario'], function () {
         Route::get('movimientos-periodo', [ReporteInventarioApiController::class, 'movimientosPorPeriodo']);
         Route::get('productos-mas-movidos', [ReporteInventarioApiController::class, 'productosMasMovidos']);
         Route::get('valorizacion', [ReporteInventarioApiController::class, 'valorizacionInventario']);
-        Route::get('generar', [ReporteInventarioApiController::class, 'generar'])->name('inventario.reportes.generar');
+        Route::get('generar', [ReporteInventarioApiController::class, 'generar'])->middleware('permission:inventario.reportes')->name('inventario.reportes.generar');
     });
 });
 
@@ -1415,7 +1415,7 @@ Route::group(['prefix' => 'proveedores'], function () {
     // API endpoint que retorna proveedores en JSON con búsqueda y paginación
     Route::get('index-json', [ProveedorController::class, 'indexApi'])->name('api.proveedores.index-json');
     Route::get('/', [ProveedorController::class, 'indexApi']);
-    Route::post('/', [ProveedorController::class, 'storeApi']);
+    Route::post('/', [ProveedorController::class, 'storeApi'])->middleware('permission:proveedores.manage');
     Route::get('search', [ProveedorController::class, 'buscarApi']);
     Route::get('buscar', [ProveedorController::class, 'buscarApi']);
 });
@@ -2038,22 +2038,22 @@ Route::prefix('productos-comida')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'productosComida']);
     Route::get('/unidades-medida', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'unidadesMedida']); // ✅ NUEVO (2026-08-23): Obtener unidades de medida
     Route::get('/{producto}/adicionales', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'obtenerPorProducto']);
-    Route::post('/adicionales', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'store']);
-    Route::patch('/adicionales/{adicional}', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'update']);
-    Route::delete('/adicionales/{adicional}', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'destroy']);
+    Route::post('/adicionales', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'store'])->middleware('permission:productos.manage');
+    Route::patch('/adicionales/{adicional}', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'update'])->middleware('permission:productos.edit');
+    Route::delete('/adicionales/{adicional}', [\App\Http\Controllers\Api\AdicionalesProductoController::class, 'destroy'])->middleware('permission:productos.edit');
 });
 
 // ✨ NUEVO: Rutas para ventas de comidas/helados
-Route::post('/ventas-comidas', [\App\Http\Controllers\Api\VentasComidasController::class, 'store']);
-Route::get('/ventas-comidas/{venta}', [\App\Http\Controllers\Api\VentasComidasController::class, 'show']); // ✅ NUEVO (2026-08-23): Obtener detalles de venta con adicionales
+Route::post('/ventas-comidas', [\App\Http\Controllers\Api\VentasComidasController::class, 'store'])->middleware('permission:ventas.create');
+Route::get('/ventas-comidas/{venta}', [\App\Http\Controllers\Api\VentasComidasController::class, 'show'])->middleware('permission:ventas.show'); // ✅ NUEVO (2026-08-23): Obtener detalles de venta con adicionales
 
 // ✅ NUEVO 2026-06-23: API endpoint para Cuentas por Cobrar (para app Flutter)
-Route::get('/cuentas-por-cobrar', [CuentaPorCobrarController::class, 'indexApi'])->name('api.cuentas-por-cobrar.index');
-Route::get('/cuentas-por-cobrar/{cuentaPorCobrar}', [CuentaPorCobrarController::class, 'showApi'])->name('api.cuentas-por-cobrar.show');
+Route::get('/cuentas-por-cobrar', [CuentaPorCobrarController::class, 'indexApi'])->middleware('permission:ventas.cuentas-por-cobrar')->name('api.cuentas-por-cobrar.index');
+Route::get('/cuentas-por-cobrar/{cuentaPorCobrar}', [CuentaPorCobrarController::class, 'showApi'])->middleware('permission:ventas.cuentas-por-cobrar')->name('api.cuentas-por-cobrar.show');
 
 // ✅ NUEVO 2026-07-22: API endpoint para Análisis de Egresos
 Route::prefix('egresos-analisis')->group(function () {
-    Route::get('/', [EgresosAnalisisController::class, 'index'])->name('api.egresos-analisis.index');
+    Route::get('/', [EgresosAnalisisController::class, 'index'])->middleware('permission:cajas.index')->name('api.egresos-analisis.index');
 });
 
 // 💵 Egresos e ingresos desde la app móvil (token). Requieren caja abierta, igual que la venta.
@@ -2066,10 +2066,18 @@ Route::middleware(['auth:sanctum'])->prefix('app')->group(function () {
 
 // ✅ NUEVO 2026-07-25: API CRUD para Egresos
 Route::prefix('egresos')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Api\EgresosController::class, 'index'])->name('api.egresos.index');
-    Route::post('/', [\App\Http\Controllers\Api\EgresosController::class, 'store'])->name('api.egresos.store');
-    Route::get('{egreso}', [\App\Http\Controllers\Api\EgresosController::class, 'show'])->name('api.egresos.show');
-    Route::post('{egreso}/anular', [\App\Http\Controllers\Api\EgresosController::class, 'anular'])->name('api.egresos.anular');
+    Route::get('/', [\App\Http\Controllers\Api\EgresosController::class, 'index'])->middleware('permission:egresos.index')->name('api.egresos.index');
+    Route::post('/', [\App\Http\Controllers\Api\EgresosController::class, 'store'])->middleware('permission:egresos.create')->name('api.egresos.store');
+    Route::get('{egreso}', [\App\Http\Controllers\Api\EgresosController::class, 'show'])->middleware('permission:egresos.index')->name('api.egresos.show');
+    Route::post('{egreso}/anular', [\App\Http\Controllers\Api\EgresosController::class, 'anular'])->middleware('permission:egresos.create')->name('api.egresos.anular');
+});
+
+// API CRUD para Ingresos (web); la app móvil usa /app/ingresos
+Route::middleware(['auth:sanctum,web', 'platform'])->prefix('ingresos')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\IngresosController::class, 'index'])->middleware('permission:ingresos.index')->name('api.ingresos.index');
+    Route::post('/', [\App\Http\Controllers\Api\IngresosController::class, 'store'])->middleware('permission:ingresos.create')->name('api.ingresos.store');
+    Route::get('{ingreso}', [\App\Http\Controllers\Api\IngresosController::class, 'show'])->middleware('permission:ingresos.index')->name('api.ingresos.show');
+    Route::post('{ingreso}/anular', [\App\Http\Controllers\Api\IngresosController::class, 'anular'])->middleware('permission:ingresos.create')->name('api.ingresos.anular');
 });
 
 // ✨ NUEVO: API para Notificaciones Recurrentes
@@ -2084,7 +2092,7 @@ Route::prefix('notificaciones')->group(function () {
     Route::get('{notificacion}', [\App\Http\Controllers\NotificacionRecurrenteController::class, 'show'])->name('api.notificaciones.show');
     Route::put('{notificacion}', [\App\Http\Controllers\NotificacionRecurrenteController::class, 'update'])->name('api.notificaciones.update');
     Route::delete('{notificacion}', [\App\Http\Controllers\NotificacionRecurrenteController::class, 'destroy'])->name('api.notificaciones.destroy');
-    Route::post('{notificacion}/enviar', [\App\Http\Controllers\NotificacionRecurrenteController::class, 'enviarManual'])->name('api.notificaciones.enviar');
+    Route::post('{notificacion}/enviar', [\App\Http\Controllers\NotificacionRecurrenteController::class, 'enviarManual'])->middleware('permission:notificaciones.update')->name('api.notificaciones.enviar');
 });
 
 // ✅ NUEVO (2026-08-07): API para Actualización Masiva de Stock

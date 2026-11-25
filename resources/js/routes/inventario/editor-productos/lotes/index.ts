@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\EditorProductosController::baja
  * @see app/Http/Controllers/EditorProductosController.php:494
@@ -51,6 +51,38 @@ baja.delete = (args: { stock: string | number } | [stock: string | number ] | st
     url: baja.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\Http\Controllers\EditorProductosController::baja
+ * @see app/Http/Controllers/EditorProductosController.php:494
+ * @route '/inventario/editor-productos/lotes/{stock}'
+ */
+    const bajaForm = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: baja.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::baja
+ * @see app/Http/Controllers/EditorProductosController.php:494
+ * @route '/inventario/editor-productos/lotes/{stock}'
+ */
+        bajaForm.delete = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: baja.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    baja.form = bajaForm
 const lotes = {
     baja,
 }

@@ -1,8 +1,8 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\RoleController::crearFuncionalidad
  * @see app/Http/Controllers/RoleController.php:0
- * @route '/admin/permisos/roles/{role}/crear-funcionalidad'
+ * @route '/roles/{role}/crear-funcionalidad'
  */
 export const crearFuncionalidad = (args: { role: string | number } | [role: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: crearFuncionalidad.url(args, options),
@@ -11,13 +11,13 @@ export const crearFuncionalidad = (args: { role: string | number } | [role: stri
 
 crearFuncionalidad.definition = {
     methods: ["post"],
-    url: '/admin/permisos/roles/{role}/crear-funcionalidad',
+    url: '/roles/{role}/crear-funcionalidad',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::crearFuncionalidad
  * @see app/Http/Controllers/RoleController.php:0
- * @route '/admin/permisos/roles/{role}/crear-funcionalidad'
+ * @route '/roles/{role}/crear-funcionalidad'
  */
 crearFuncionalidad.url = (args: { role: string | number } | [role: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -45,17 +45,38 @@ crearFuncionalidad.url = (args: { role: string | number } | [role: string | numb
 /**
 * @see \App\Http\Controllers\RoleController::crearFuncionalidad
  * @see app/Http/Controllers/RoleController.php:0
- * @route '/admin/permisos/roles/{role}/crear-funcionalidad'
+ * @route '/roles/{role}/crear-funcionalidad'
  */
 crearFuncionalidad.post = (args: { role: string | number } | [role: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: crearFuncionalidad.url(args, options),
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\RoleController::crearFuncionalidad
+ * @see app/Http/Controllers/RoleController.php:0
+ * @route '/roles/{role}/crear-funcionalidad'
+ */
+    const crearFuncionalidadForm = (args: { role: string | number } | [role: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: crearFuncionalidad.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::crearFuncionalidad
+ * @see app/Http/Controllers/RoleController.php:0
+ * @route '/roles/{role}/crear-funcionalidad'
+ */
+        crearFuncionalidadForm.post = (args: { role: string | number } | [role: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: crearFuncionalidad.url(args, options),
+            method: 'post',
+        })
+    
+    crearFuncionalidad.form = crearFuncionalidadForm
 /**
 * @see \App\Http\Controllers\RoleController::index
  * @see app/Http/Controllers/RoleController.php:21
- * @route '/admin/permisos/roles'
+ * @route '/roles'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(options),
@@ -64,13 +85,13 @@ export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 index.definition = {
     methods: ["get","head"],
-    url: '/admin/permisos/roles',
+    url: '/roles',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::index
  * @see app/Http/Controllers/RoleController.php:21
- * @route '/admin/permisos/roles'
+ * @route '/roles'
  */
 index.url = (options?: RouteQueryOptions) => {
     return index.definition.url + queryParams(options)
@@ -79,7 +100,7 @@ index.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\RoleController::index
  * @see app/Http/Controllers/RoleController.php:21
- * @route '/admin/permisos/roles'
+ * @route '/roles'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(options),
@@ -88,17 +109,52 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 /**
 * @see \App\Http\Controllers\RoleController::index
  * @see app/Http/Controllers/RoleController.php:21
- * @route '/admin/permisos/roles'
+ * @route '/roles'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(options),
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\RoleController::index
+ * @see app/Http/Controllers/RoleController.php:21
+ * @route '/roles'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::index
+ * @see app/Http/Controllers/RoleController.php:21
+ * @route '/roles'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\RoleController::index
+ * @see app/Http/Controllers/RoleController.php:21
+ * @route '/roles'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\RoleController::create
  * @see app/Http/Controllers/RoleController.php:48
- * @route '/admin/permisos/roles/create'
+ * @route '/roles/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: create.url(options),
@@ -107,13 +163,13 @@ export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 
 create.definition = {
     methods: ["get","head"],
-    url: '/admin/permisos/roles/create',
+    url: '/roles/create',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::create
  * @see app/Http/Controllers/RoleController.php:48
- * @route '/admin/permisos/roles/create'
+ * @route '/roles/create'
  */
 create.url = (options?: RouteQueryOptions) => {
     return create.definition.url + queryParams(options)
@@ -122,7 +178,7 @@ create.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\RoleController::create
  * @see app/Http/Controllers/RoleController.php:48
- * @route '/admin/permisos/roles/create'
+ * @route '/roles/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: create.url(options),
@@ -131,17 +187,52 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 /**
 * @see \App\Http\Controllers\RoleController::create
  * @see app/Http/Controllers/RoleController.php:48
- * @route '/admin/permisos/roles/create'
+ * @route '/roles/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: create.url(options),
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\RoleController::create
+ * @see app/Http/Controllers/RoleController.php:48
+ * @route '/roles/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::create
+ * @see app/Http/Controllers/RoleController.php:48
+ * @route '/roles/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\RoleController::create
+ * @see app/Http/Controllers/RoleController.php:48
+ * @route '/roles/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\RoleController::store
  * @see app/Http/Controllers/RoleController.php:59
- * @route '/admin/permisos/roles'
+ * @route '/roles'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
@@ -150,13 +241,13 @@ export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 
 store.definition = {
     methods: ["post"],
-    url: '/admin/permisos/roles',
+    url: '/roles',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::store
  * @see app/Http/Controllers/RoleController.php:59
- * @route '/admin/permisos/roles'
+ * @route '/roles'
  */
 store.url = (options?: RouteQueryOptions) => {
     return store.definition.url + queryParams(options)
@@ -165,17 +256,38 @@ store.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\RoleController::store
  * @see app/Http/Controllers/RoleController.php:59
- * @route '/admin/permisos/roles'
+ * @route '/roles'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\RoleController::store
+ * @see app/Http/Controllers/RoleController.php:59
+ * @route '/roles'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::store
+ * @see app/Http/Controllers/RoleController.php:59
+ * @route '/roles'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\RoleController::show
  * @see app/Http/Controllers/RoleController.php:83
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 export const show = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
@@ -184,13 +296,13 @@ export const show = (args: { role: number | { id: number } } | [role: number | {
 
 show.definition = {
     methods: ["get","head"],
-    url: '/admin/permisos/roles/{role}',
+    url: '/roles/{role}',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::show
  * @see app/Http/Controllers/RoleController.php:83
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 show.url = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -223,7 +335,7 @@ show.url = (args: { role: number | { id: number } } | [role: number | { id: numb
 /**
 * @see \App\Http\Controllers\RoleController::show
  * @see app/Http/Controllers/RoleController.php:83
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 show.get = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
@@ -232,17 +344,52 @@ show.get = (args: { role: number | { id: number } } | [role: number | { id: numb
 /**
 * @see \App\Http\Controllers\RoleController::show
  * @see app/Http/Controllers/RoleController.php:83
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 show.head = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\RoleController::show
+ * @see app/Http/Controllers/RoleController.php:83
+ * @route '/roles/{role}'
+ */
+    const showForm = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::show
+ * @see app/Http/Controllers/RoleController.php:83
+ * @route '/roles/{role}'
+ */
+        showForm.get = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\RoleController::show
+ * @see app/Http/Controllers/RoleController.php:83
+ * @route '/roles/{role}'
+ */
+        showForm.head = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\Http\Controllers\RoleController::edit
  * @see app/Http/Controllers/RoleController.php:94
- * @route '/admin/permisos/roles/{role}/edit'
+ * @route '/roles/{role}/edit'
  */
 export const edit = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: edit.url(args, options),
@@ -251,13 +398,13 @@ export const edit = (args: { role: number | { id: number } } | [role: number | {
 
 edit.definition = {
     methods: ["get","head"],
-    url: '/admin/permisos/roles/{role}/edit',
+    url: '/roles/{role}/edit',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::edit
  * @see app/Http/Controllers/RoleController.php:94
- * @route '/admin/permisos/roles/{role}/edit'
+ * @route '/roles/{role}/edit'
  */
 edit.url = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -290,7 +437,7 @@ edit.url = (args: { role: number | { id: number } } | [role: number | { id: numb
 /**
 * @see \App\Http\Controllers\RoleController::edit
  * @see app/Http/Controllers/RoleController.php:94
- * @route '/admin/permisos/roles/{role}/edit'
+ * @route '/roles/{role}/edit'
  */
 edit.get = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: edit.url(args, options),
@@ -299,17 +446,52 @@ edit.get = (args: { role: number | { id: number } } | [role: number | { id: numb
 /**
 * @see \App\Http\Controllers\RoleController::edit
  * @see app/Http/Controllers/RoleController.php:94
- * @route '/admin/permisos/roles/{role}/edit'
+ * @route '/roles/{role}/edit'
  */
 edit.head = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: edit.url(args, options),
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\RoleController::edit
+ * @see app/Http/Controllers/RoleController.php:94
+ * @route '/roles/{role}/edit'
+ */
+    const editForm = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::edit
+ * @see app/Http/Controllers/RoleController.php:94
+ * @route '/roles/{role}/edit'
+ */
+        editForm.get = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\RoleController::edit
+ * @see app/Http/Controllers/RoleController.php:94
+ * @route '/roles/{role}/edit'
+ */
+        editForm.head = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 /**
 * @see \App\Http\Controllers\RoleController::update
  * @see app/Http/Controllers/RoleController.php:108
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 export const update = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
@@ -318,13 +500,13 @@ export const update = (args: { role: number | { id: number } } | [role: number |
 
 update.definition = {
     methods: ["put","patch"],
-    url: '/admin/permisos/roles/{role}',
+    url: '/roles/{role}',
 } satisfies RouteDefinition<["put","patch"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::update
  * @see app/Http/Controllers/RoleController.php:108
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 update.url = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -357,7 +539,7 @@ update.url = (args: { role: number | { id: number } } | [role: number | { id: nu
 /**
 * @see \App\Http\Controllers\RoleController::update
  * @see app/Http/Controllers/RoleController.php:108
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 update.put = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
@@ -366,17 +548,62 @@ update.put = (args: { role: number | { id: number } } | [role: number | { id: nu
 /**
 * @see \App\Http\Controllers\RoleController::update
  * @see app/Http/Controllers/RoleController.php:108
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 update.patch = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
     url: update.url(args, options),
     method: 'patch',
 })
 
+    /**
+* @see \App\Http\Controllers\RoleController::update
+ * @see app/Http/Controllers/RoleController.php:108
+ * @route '/roles/{role}'
+ */
+    const updateForm = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::update
+ * @see app/Http/Controllers/RoleController.php:108
+ * @route '/roles/{role}'
+ */
+        updateForm.put = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+            /**
+* @see \App\Http\Controllers\RoleController::update
+ * @see app/Http/Controllers/RoleController.php:108
+ * @route '/roles/{role}'
+ */
+        updateForm.patch = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\RoleController::destroy
  * @see app/Http/Controllers/RoleController.php:134
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 export const destroy = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
@@ -385,13 +612,13 @@ export const destroy = (args: { role: number | { id: number } } | [role: number 
 
 destroy.definition = {
     methods: ["delete"],
-    url: '/admin/permisos/roles/{role}',
+    url: '/roles/{role}',
 } satisfies RouteDefinition<["delete"]>
 
 /**
 * @see \App\Http\Controllers\RoleController::destroy
  * @see app/Http/Controllers/RoleController.php:134
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 destroy.url = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -424,12 +651,44 @@ destroy.url = (args: { role: number | { id: number } } | [role: number | { id: n
 /**
 * @see \App\Http\Controllers\RoleController::destroy
  * @see app/Http/Controllers/RoleController.php:134
- * @route '/admin/permisos/roles/{role}'
+ * @route '/roles/{role}'
  */
 destroy.delete = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\Http\Controllers\RoleController::destroy
+ * @see app/Http/Controllers/RoleController.php:134
+ * @route '/roles/{role}'
+ */
+    const destroyForm = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\RoleController::destroy
+ * @see app/Http/Controllers/RoleController.php:134
+ * @route '/roles/{role}'
+ */
+        destroyForm.delete = (args: { role: number | { id: number } } | [role: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 const roles = {
     crearFuncionalidad,
 index,

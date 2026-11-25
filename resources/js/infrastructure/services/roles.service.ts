@@ -40,87 +40,87 @@ export class RolesService extends GenericService<Role, RoleFormData> {
    * URL para ver los detalles de un rol
    */
   showUrl(id: Id): string {
-    return `/admin/permisos/roles/${id}`;
+    return `/roles/${id}`;
   }
 
   /**
    * URL para listar todos los roles con filtros opcionales
    */
   indexUrl(params?: { query?: Filters }) {
-    return `/admin/permisos/roles${buildQuery(params)}`;
+    return `/roles${buildQuery(params)}`;
   }
 
   /**
    * URL para mostrar el formulario de crear un nuevo rol
    */
   createUrl() {
-    return '/admin/permisos/roles/create';
+    return '/roles/create';
   }
 
   /**
    * URL para mostrar el formulario de editar un rol
    */
   editUrl(id: Id) {
-    return `/admin/permisos/roles/${id}/edit`;
+    return `/roles/${id}/edit`;
   }
 
   /**
    * URL para guardar un nuevo rol (POST)
    */
   storeUrl() {
-    return '/admin/permisos/roles';
+    return '/roles';
   }
 
   /**
    * URL para actualizar un rol (PUT/PATCH)
    */
   updateUrl(id: Id) {
-    return `/admin/permisos/roles/${id}`;
+    return `/roles/${id}`;
   }
 
   /**
    * URL para eliminar un rol (DELETE)
    */
   destroyUrl(id: Id) {
-    return `/admin/permisos/roles/${id}`;
+    return `/roles/${id}`;
   }
 
   /**
    * URLs para acciones específicas de roles
    */
   assignPermissionUrl(id: Id) {
-    return `/admin/permisos/roles/${id}/assign-permission`;
+    return `/roles/${id}/assign-permission`;
   }
 
   removePermissionUrl(id: Id) {
-    return `/admin/permisos/roles/${id}/remove-permission`;
+    return `/roles/${id}/remove-permission`;
   }
 
   applyTemplateUrl(id: Id) {
-    return `/admin/permisos/roles/${id}/apply-template`;
+    return `/roles/${id}/apply-template`;
   }
 
   copyFromUrl(id: Id) {
-    return `/admin/permisos/roles/${id}/copy-from`;
+    return `/roles/${id}/copy-from`;
   }
 
   createFunctionalityUrl(id: Id) {
-    return `/admin/permisos/roles/${id}/crear-funcionalidad`;
+    return `/roles/${id}/crear-funcionalidad`;
   }
 
   auditUrl(id: Id) {
-    return `/admin/permisos/roles/${id}/audit`;
+    return `/roles/${id}/audit`;
   }
 
   /**
    * URLs para vistas avanzadas
    */
   templatesUrl() {
-    return '/admin/permisos/roles/templates';
+    return '/roles/templates';
   }
 
   compareUrl() {
-    return '/admin/permisos/roles/compare';
+    return '/roles/compare';
   }
 
   /**

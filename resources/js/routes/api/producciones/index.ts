@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults, validateParameters } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults, validateParameters } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ProduccionController::index
  * @see app/Http/Controllers/ProduccionController.php:23
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProduccionController::index
+ * @see app/Http/Controllers/ProduccionController.php:23
+ * @route '/api/producciones'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::index
+ * @see app/Http/Controllers/ProduccionController.php:23
+ * @route '/api/producciones'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProduccionController::index
+ * @see app/Http/Controllers/ProduccionController.php:23
+ * @route '/api/producciones'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\ProduccionController::store
  * @see app/Http/Controllers/ProduccionController.php:75
@@ -76,6 +111,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\ProduccionController::store
+ * @see app/Http/Controllers/ProduccionController.php:75
+ * @route '/api/producciones'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::store
+ * @see app/Http/Controllers/ProduccionController.php:75
+ * @route '/api/producciones'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\ProduccionController::show
  * @see app/Http/Controllers/ProduccionController.php:53
@@ -143,6 +199,41 @@ show.head = (args: { produccion: number | { id: number } } | [produccion: number
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProduccionController::show
+ * @see app/Http/Controllers/ProduccionController.php:53
+ * @route '/api/producciones/{produccion}'
+ */
+    const showForm = (args: { produccion: number | { id: number } } | [produccion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::show
+ * @see app/Http/Controllers/ProduccionController.php:53
+ * @route '/api/producciones/{produccion}'
+ */
+        showForm.get = (args: { produccion: number | { id: number } } | [produccion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProduccionController::show
+ * @see app/Http/Controllers/ProduccionController.php:53
+ * @route '/api/producciones/{produccion}'
+ */
+        showForm.head = (args: { produccion: number | { id: number } } | [produccion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\Http\Controllers\ProduccionController::update
  * @see app/Http/Controllers/ProduccionController.php:163
@@ -201,6 +292,37 @@ update.put = (args: { produccion: number | { id: number } } | [produccion: numbe
     method: 'put',
 })
 
+    /**
+* @see \App\Http\Controllers\ProduccionController::update
+ * @see app/Http/Controllers/ProduccionController.php:163
+ * @route '/api/producciones/{produccion}'
+ */
+    const updateForm = (args: { produccion: number | { id: number } } | [produccion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::update
+ * @see app/Http/Controllers/ProduccionController.php:163
+ * @route '/api/producciones/{produccion}'
+ */
+        updateForm.put = (args: { produccion: number | { id: number } } | [produccion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\ProduccionController::destroy
  * @see app/Http/Controllers/ProduccionController.php:191
@@ -259,6 +381,37 @@ destroy.delete = (args: { produccion: number | { id: number } } | [produccion: n
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\ProduccionController::destroy
+ * @see app/Http/Controllers/ProduccionController.php:191
+ * @route '/api/producciones/{produccion}'
+ */
+    const destroyForm = (args: { produccion: number | { id: number } } | [produccion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::destroy
+ * @see app/Http/Controllers/ProduccionController.php:191
+ * @route '/api/producciones/{produccion}'
+ */
+        destroyForm.delete = (args: { produccion: number | { id: number } } | [produccion: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\ProduccionController::dia
  * @see app/Http/Controllers/ProduccionController.php:317
@@ -325,6 +478,41 @@ dia.head = (args?: { fecha?: string | number } | [fecha: string | number ] | str
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProduccionController::dia
+ * @see app/Http/Controllers/ProduccionController.php:317
+ * @route '/api/producciones/dia/{fecha?}'
+ */
+    const diaForm = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: dia.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::dia
+ * @see app/Http/Controllers/ProduccionController.php:317
+ * @route '/api/producciones/dia/{fecha?}'
+ */
+        diaForm.get = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: dia.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProduccionController::dia
+ * @see app/Http/Controllers/ProduccionController.php:317
+ * @route '/api/producciones/dia/{fecha?}'
+ */
+        diaForm.head = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: dia.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    dia.form = diaForm
 /**
 * @see \App\Http\Controllers\ProduccionController::reporteDia
  * @see app/Http/Controllers/ProduccionController.php:349
@@ -391,6 +579,41 @@ reporteDia.head = (args?: { fecha?: string | number } | [fecha: string | number 
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\ProduccionController::reporteDia
+ * @see app/Http/Controllers/ProduccionController.php:349
+ * @route '/api/producciones/reporte/dia/{fecha?}'
+ */
+    const reporteDiaForm = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: reporteDia.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::reporteDia
+ * @see app/Http/Controllers/ProduccionController.php:349
+ * @route '/api/producciones/reporte/dia/{fecha?}'
+ */
+        reporteDiaForm.get = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteDia.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProduccionController::reporteDia
+ * @see app/Http/Controllers/ProduccionController.php:349
+ * @route '/api/producciones/reporte/dia/{fecha?}'
+ */
+        reporteDiaForm.head = (args?: { fecha?: string | number } | [fecha: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: reporteDia.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    reporteDia.form = reporteDiaForm
 /**
 * @see \App\Http\Controllers\ProduccionController::productosDisponibles
  * @see app/Http/Controllers/ProduccionController.php:427
@@ -433,6 +656,42 @@ productosDisponibles.head = (options?: RouteQueryOptions): RouteDefinition<'head
     url: productosDisponibles.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\ProduccionController::productosDisponibles
+ * @see app/Http/Controllers/ProduccionController.php:427
+ * @route '/api/producciones/productos/disponibles'
+ */
+    const productosDisponiblesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: productosDisponibles.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\ProduccionController::productosDisponibles
+ * @see app/Http/Controllers/ProduccionController.php:427
+ * @route '/api/producciones/productos/disponibles'
+ */
+        productosDisponiblesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: productosDisponibles.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\ProduccionController::productosDisponibles
+ * @see app/Http/Controllers/ProduccionController.php:427
+ * @route '/api/producciones/productos/disponibles'
+ */
+        productosDisponiblesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: productosDisponibles.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    productosDisponibles.form = productosDisponiblesForm
 const producciones = {
     index,
 store,

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\EditorProductosController::index
  * @see app/Http/Controllers/EditorProductosController.php:42
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EditorProductosController::index
+ * @see app/Http/Controllers/EditorProductosController.php:42
+ * @route '/inventario/editor-productos'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::index
+ * @see app/Http/Controllers/EditorProductosController.php:42
+ * @route '/inventario/editor-productos'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EditorProductosController::index
+ * @see app/Http/Controllers/EditorProductosController.php:42
+ * @route '/inventario/editor-productos'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::datos
  * @see app/Http/Controllers/EditorProductosController.php:75
@@ -85,6 +120,41 @@ datos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EditorProductosController::datos
+ * @see app/Http/Controllers/EditorProductosController.php:75
+ * @route '/inventario/editor-productos/datos'
+ */
+    const datosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: datos.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::datos
+ * @see app/Http/Controllers/EditorProductosController.php:75
+ * @route '/inventario/editor-productos/datos'
+ */
+        datosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: datos.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EditorProductosController::datos
+ * @see app/Http/Controllers/EditorProductosController.php:75
+ * @route '/inventario/editor-productos/datos'
+ */
+        datosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: datos.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    datos.form = datosForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::guardar
  * @see app/Http/Controllers/EditorProductosController.php:226
@@ -119,6 +189,27 @@ guardar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\EditorProductosController::guardar
+ * @see app/Http/Controllers/EditorProductosController.php:226
+ * @route '/inventario/editor-productos/guardar'
+ */
+    const guardarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: guardar.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::guardar
+ * @see app/Http/Controllers/EditorProductosController.php:226
+ * @route '/inventario/editor-productos/guardar'
+ */
+        guardarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: guardar.url(options),
+            method: 'post',
+        })
+    
+    guardar.form = guardarForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::limites
  * @see app/Http/Controllers/EditorProductosController.php:398
@@ -181,6 +272,41 @@ limites.head = (args: { producto: string | number } | [producto: string | number
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EditorProductosController::limites
+ * @see app/Http/Controllers/EditorProductosController.php:398
+ * @route '/inventario/editor-productos/{producto}/limites'
+ */
+    const limitesForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: limites.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::limites
+ * @see app/Http/Controllers/EditorProductosController.php:398
+ * @route '/inventario/editor-productos/{producto}/limites'
+ */
+        limitesForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: limites.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EditorProductosController::limites
+ * @see app/Http/Controllers/EditorProductosController.php:398
+ * @route '/inventario/editor-productos/{producto}/limites'
+ */
+        limitesForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: limites.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    limites.form = limitesForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminarLimite
  * @see app/Http/Controllers/EditorProductosController.php:437
@@ -234,6 +360,37 @@ eliminarLimite.delete = (args: { limite: string | number } | [limite: string | n
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\EditorProductosController::eliminarLimite
+ * @see app/Http/Controllers/EditorProductosController.php:437
+ * @route '/inventario/editor-productos/limites/{limite}'
+ */
+    const eliminarLimiteForm = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: eliminarLimite.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::eliminarLimite
+ * @see app/Http/Controllers/EditorProductosController.php:437
+ * @route '/inventario/editor-productos/limites/{limite}'
+ */
+        eliminarLimiteForm.delete = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: eliminarLimite.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    eliminarLimite.form = eliminarLimiteForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
  * @see app/Http/Controllers/EditorProductosController.php:460
@@ -296,6 +453,41 @@ lotes.head = (args: { producto: string | number } | [producto: string | number ]
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\EditorProductosController::lotes
+ * @see app/Http/Controllers/EditorProductosController.php:460
+ * @route '/inventario/editor-productos/{producto}/lotes'
+ */
+    const lotesForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: lotes.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::lotes
+ * @see app/Http/Controllers/EditorProductosController.php:460
+ * @route '/inventario/editor-productos/{producto}/lotes'
+ */
+        lotesForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: lotes.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\EditorProductosController::lotes
+ * @see app/Http/Controllers/EditorProductosController.php:460
+ * @route '/inventario/editor-productos/{producto}/lotes'
+ */
+        lotesForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: lotes.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    lotes.form = lotesForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
  * @see app/Http/Controllers/EditorProductosController.php:494
@@ -348,6 +540,38 @@ darDeBajaLote.delete = (args: { stock: string | number } | [stock: string | numb
     url: darDeBajaLote.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
+ * @see app/Http/Controllers/EditorProductosController.php:494
+ * @route '/inventario/editor-productos/lotes/{stock}'
+ */
+    const darDeBajaLoteForm = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: darDeBajaLote.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
+ * @see app/Http/Controllers/EditorProductosController.php:494
+ * @route '/inventario/editor-productos/lotes/{stock}'
+ */
+        darDeBajaLoteForm.delete = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: darDeBajaLote.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    darDeBajaLote.form = darDeBajaLoteForm
 const EditorProductosController = { index, datos, guardar, limites, eliminarLimite, lotes, darDeBajaLote }
 
 export default EditorProductosController

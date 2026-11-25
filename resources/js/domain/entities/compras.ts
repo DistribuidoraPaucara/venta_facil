@@ -104,6 +104,8 @@ export interface Compra extends BaseEntity {
     moneda?: Moneda;
     tipo_pago_id?: Id | null;
     tipo_pago?: TipoPago | null;
+    // Desglose al contado: cuánto se pagó en efectivo y en transferencia/QR
+    pagos_desglose?: { tipo_pago_id: Id; codigo: string | null; monto: number }[];
 
     // Detalles
     detalles?: DetalleCompra[];

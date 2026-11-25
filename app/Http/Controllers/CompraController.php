@@ -415,6 +415,7 @@ class CompraController extends Controller
             'estadoDocumento',
             'moneda',
             'tipoPago',
+            'detallesPago.tipoPago:id,codigo,nombre',
             'detalles.producto.codigosBarra',
             'detalles.producto.prestables',
             'detalles.producto.unidad:id,nombre,codigo',
@@ -494,6 +495,11 @@ class CompraController extends Controller
         return Inertia::render('compras/show', [
             'compra' => array_merge($compra->toArray(), [
                 'detalles' => $detalles,
+                'pagos_desglose' => $compra->detallesPago->map(fn ($p) => [
+                    'tipo_pago_id' => $p->tipo_pago_id,
+                    'codigo'       => $p->tipoPago?->codigo,
+                    'monto'        => (float) $p->monto,
+                ])->values()->all(),
             ]),
         ]);
     }
@@ -514,6 +520,7 @@ class CompraController extends Controller
             'detalles.producto.productoProveedores.proveedor:id,nombre',
             'estadoDocumento',
             'tipoPago',
+            'detallesPago.tipoPago:id,codigo,nombre',
             'moneda',
             'proveedor',
             'usuario',
@@ -636,6 +643,12 @@ class CompraController extends Controller
                  ...$compra->toArray(),
                 'estadoDocumento' => $compra->estadoDocumento?->toArray(),
                 'detalles'        => $detallesMapeados, // ✅ NUEVO 2026-03-06: Usar detalles mapeados
+                // Desglose al contado: [{ tipo_pago_id, codigo, monto }]
+                'pagos_desglose'  => $compra->detallesPago->map(fn ($p) => [
+                    'tipo_pago_id' => $p->tipo_pago_id,
+                    'codigo'       => $p->tipoPago?->codigo,
+                    'monto'        => (float) $p->monto,
+                ])->values()->all(),
             ],
             'tipos_pago'  => TipoPago::orderBy('nombre')->get(['id', 'codigo', 'nombre', 'es_credito']),
             'proveedores' => Proveedor::where('activo', true)->orderBy('nombre')->get(['id', 'nombre', 'email']),
@@ -717,6 +730,9 @@ class CompraController extends Controller
         ]);
 
         $data = $request->validated();
+        // Desglose de pago (efectivo / transferencia-QR): no es columna de compras, se guarda en detalle_pago_compras
+        $pagosDesglose = $data['pagos'] ?? [];
+        unset($data['pagos']);
 
         Log::info('CompraController::store() - Validación exitosa, datos listos', [
             'numero_detalles' => count($data['detalles'] ?? []),
@@ -769,6 +785,8 @@ class CompraController extends Controller
                     'cantidad_tipo' => gettype($detalleCompra->cantidad),
                 ]);
             }
+
+            $this->sincronizarPagosCompra($compra, $pagosDesglose);
 
             // ✅ REFACTORIZADO (2026-03-27): Registrar inventario AGRUPADO después de crear todos los detalles
             if ($compra->estado_documento_id == $estadoAprobado?->id || $compra->estado_documento_id == $estadoRecibido?->id) {
@@ -1007,9 +1025,17 @@ class CompraController extends Controller
                 $this->revertirInventarioDetalles($compra);
             }
 
+            // Desglose de pago: se sincroniza solo si el request lo trae (null = no tocar los pagos actuales)
+            $pagosDesglose = $data['pagos'] ?? null;
+            unset($data['pagos']);
+
             // ✅ PRIMERO: Actualizar propiedades principales
             $compra->update($data);
             $compra->refresh(); // Recargar propiedades principales
+
+            if ($pagosDesglose !== null) {
+                $this->sincronizarPagosCompra($compra, $pagosDesglose);
+            }
 
             // ✅ SEGUNDO: Detectar si los detalles realmente cambiaron (FIX 2026-03-19: Comparar por ID, no por índice)
             $detallesChanged = false;
@@ -1982,6 +2008,52 @@ class CompraController extends Controller
             'pagado'              => $pagado,
             'saldo'               => $saldo,
             'vence'               => (string) $datos['fecha_vencimiento'],
+        ]);
+    }
+
+    /**
+     * Guarda el desglose de pago al contado (efectivo / transferencia-QR) de la compra.
+     * Reemplaza los pagos anteriores. Lanza excepción (se revierte la transacción del llamador) si:
+     * - la compra es a crédito (su pago va por la cuenta por pagar), o
+     * - la suma de los montos no coincide con el total de la compra.
+     * Sin pagos (lista vacía) solo borra el desglose anterior.
+     *
+     * @param array<int, array{tipo_pago_id: int|string, monto: float|string}> $pagos
+     */
+    private function sincronizarPagosCompra(Compra $compra, array $pagos): void
+    {
+        $compra->load('tipoPago');
+
+        if (empty($pagos)) {
+            $compra->detallesPago()->delete();
+            return;
+        }
+
+        if ($compra->tipoPago?->es_credito) {
+            throw new \Exception('Una compra a crédito no puede tener desglose de efectivo / transferencia: su pago se registra en la cuenta por pagar.');
+        }
+
+        $suma  = round(array_sum(array_map(fn ($p) => (float) $p['monto'], $pagos)), 2);
+        $total = round((float) $compra->total, 2);
+
+        if (abs($suma - $total) > 0.01) {
+            throw new \Exception(
+                'El efectivo + transferencia (Bs ' . number_format($suma, 2) . ') no coincide con el total de la compra (Bs ' . number_format($total, 2) . ').'
+            );
+        }
+
+        $compra->detallesPago()->delete();
+        foreach ($pagos as $pago) {
+            $compra->detallesPago()->create([
+                'tipo_pago_id' => (int) $pago['tipo_pago_id'],
+                'monto'        => round((float) $pago['monto'], 2),
+            ]);
+        }
+
+        Log::info('Desglose de pago de compra registrado', [
+            'compra_id' => $compra->id,
+            'pagos'     => $pagos,
+            'total'     => $total,
         ]);
     }
 
