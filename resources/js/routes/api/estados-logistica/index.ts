@@ -81,12 +81,4 @@ const estadosLogistica = {
     index,
 }
 
-export default estadosLogistica 'get',
-        })
-    
-    index.form = indexForm
-const estadosLogistica = {
-    index,
-}
-
 export default estadosLogistica

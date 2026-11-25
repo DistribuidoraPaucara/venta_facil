@@ -1,3 +1,4 @@
+import type { Producto } from '@/domain/entities/ventas';
 import { obtenerNombreConUnidad } from '@/infrastructure/helpers/nombre-dinamico-unidad.helper';
 import { validarStockDisponible } from '@/infrastructure/helpers/validar-stock-conversion.helper';
 import { formatCurrency, formatCurrencyMinimalDecimals } from '@/lib/utils';
@@ -5,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/presentation/componen
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { codigosDeProveedores, costoNetoLinea, type DetalleProducto } from '../types';
 import ComboExpandedRows from './ComboExpandedRows';
+import FamiliaFraccionamientoSelect from './FamiliaFraccionamientoSelect';
 
 interface ProductoTableRowProps {
     detalle: DetalleProducto;
@@ -48,6 +50,8 @@ interface ProductoTableRowProps {
     almacenesVenta?: Array<{ id: number; nombre: string }>;
     proveedorId?: number | null; // Compras: proveedor de la compra (su código de catálogo del producto)
     onDuplicarLinea?: (index: number) => void;
+    // Ventas: select con los padres e hijos del producto para cambiar el producto de esta línea
+    onCambiarProductoLinea?: (index: number, producto: Producto) => void;
 }
 
 export default function ProductoTableRow({
@@ -89,11 +93,48 @@ export default function ProductoTableRow({
     almacenesVenta = [],
     proveedorId = null,
     onDuplicarLinea,
+    onCambiarProductoLinea,
 }: ProductoTableRowProps) {
     const productoInfo = detalle.producto as any;
     // Servicio (es_servicio, ej. comisión de transferencias): cantidad fija en 1 y precio escrito a mano en la venta
     const esServicio = Boolean(productoInfo?.es_servicio);
     const [validacionError, setValidacionError] = useState<string | null>(null);
+
+    // Ventas: familia de fraccionamiento precargada con la búsqueda (padres e hijos del producto)
+    // Los IDs de la familia se resuelven con el diccionario de objetos completos que viene con el producto
+    const familiaDict: Record<string, Producto> = productoInfo?.familia_productos ?? {};
+    // Toda la familia conectada desde este producto (padres, hijos, nietos...), sin el producto actual
+    const idActual = String(productoInfo?.id ?? detalle.producto_id);
+    const idsFamilia = new Set<string>([idActual]);
+    const pendientes = [idActual];
+    while (pendientes.length > 0) {
+        const nodo = familiaDict[pendientes.shift()!] ?? (String(productoInfo?.id) === idActual ? productoInfo : undefined);
+        for (const id of [...(nodo?.familia_fraccionamiento?.padres ?? []), ...(nodo?.familia_fraccionamiento?.hijos ?? [])]) {
+            const clave = String(id);
+            if (!idsFamilia.has(clave)) {
+                idsFamilia.add(clave);
+                pendientes.push(clave);
+            }
+        }
+    }
+    const relacionados: Producto[] = [...idsFamilia]
+        .filter((id) => id !== idActual)
+        .map((id) => familiaDict[id])
+        .filter(Boolean);
+    // Padres e hijos directos se agrupan aparte; el resto de la familia (ej. la unidad desde el padre) va en "Otros"
+    const idsPadresDirectos = new Set((productoInfo?.familia_fraccionamiento?.padres ?? []).map(String));
+    const idsHijosDirectos = new Set((productoInfo?.familia_fraccionamiento?.hijos ?? []).map(String));
+    const familiaPadres = relacionados.filter((p) => idsPadresDirectos.has(String(p.id)));
+    const familiaHijos = relacionados.filter((p) => idsHijosDirectos.has(String(p.id)));
+    const familiaOtros = relacionados.filter((p) => !idsPadresDirectos.has(String(p.id)) && !idsHijosDirectos.has(String(p.id)));
+    // Fraccionados: el select siempre se muestra (sin relaciones queda deshabilitado); el resto solo si tienen familia
+    const puedeCambiarProducto =
+        tipo === 'venta' &&
+        !readOnly &&
+        !esServicio &&
+        !productoInfo?.es_combo &&
+        (productoInfo?.es_fraccionado || relacionados.length > 0) &&
+        !!onCambiarProductoLinea;
 
     console.log('ProductoTableRow - productoInfo:', productoInfo);
     console.log('📊 [ProductoTableRow] Detalle cantidad:', {
@@ -312,6 +353,19 @@ export default function ProductoTableRow({
 
                     console.log(`🏷️ [obtenerNombreConUnidad RESULTADO] nombre final: "${nombreDinamico}"`);
 
+                    // Ventas con familia de fraccionamiento: solo el select (su primera opción es el producto actual)
+                    if (puedeCambiarProducto && onCambiarProductoLinea) {
+                        return (
+                            <FamiliaFraccionamientoSelect
+                                nombreActual={nombreDinamico}
+                                padres={familiaPadres}
+                                hijos={familiaHijos}
+                                otros={familiaOtros}
+                                onSeleccionar={(producto) => onCambiarProductoLinea(index, { ...producto, familia_productos: familiaDict })}
+                            />
+                        );
+                    }
+
                     // Marca y categoría se muestran en un tooltip sobre el nombre
                     const marca = typeof productoInfo?.marca === 'string' ? productoInfo.marca : productoInfo?.marca?.nombre;
                     const categoria =
@@ -414,6 +468,7 @@ export default function ProductoTableRow({
                         {transferenciaError && <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">{transferenciaError}</p>}
                     </div>
                 )}
+
             </td>
 
             {/* Cantidad (el stock disponible se muestra debajo, recalculado en vivo: en ventas resta, en compras suma) */}
@@ -630,7 +685,7 @@ export default function ProductoTableRow({
 
             {/* Precio Venta - Con selector de precios para fraccionados */}
             {tipo === 'venta' && (
-                <td className="font-small px-2 py-2 text-xs text-left">
+                <td className="font-small px-2 py-2 text-xs text-center">
                     {(() => {
                         const precios = detalle.producto?.precios || [];
                         // Unidades que son otro producto (conversión con producto destino, ej. paquete 2125 → unidad 209):

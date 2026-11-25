@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\EditorProductosController::baja
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
 export const baja = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -16,7 +16,7 @@ baja.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::baja
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
 baja.url = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ baja.url = (args: { stock: string | number } | [stock: string | number ] | strin
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::baja
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
 baja.delete = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -54,7 +54,7 @@ baja.delete = (args: { stock: string | number } | [stock: string | number ] | st
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::baja
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
     const bajaForm = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -69,7 +69,7 @@ baja.delete = (args: { stock: string | number } | [stock: string | number ] | st
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::baja
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
         bajaForm.delete = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

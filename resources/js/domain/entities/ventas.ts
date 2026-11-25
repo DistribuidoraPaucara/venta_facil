@@ -72,6 +72,10 @@ export interface Producto extends BaseEntity {
     unidad_medida_id?: Id;
     unidad_medida_nombre?: string;
     conversiones?: ConversionVenta[];
+    // Ventas: IDs de los productos padres (de donde sale) e hijos (en lo que se fracciona)
+    familia_fraccionamiento?: { padres: Array<number | string>; hijos: Array<number | string> };
+    // Ventas: objetos completos de la familia, por id (los resuelve familia_fraccionamiento)
+    familia_productos?: Record<string, Producto>;
 }
 
 // =============== ENTIDADES PRINCIPALES ===============

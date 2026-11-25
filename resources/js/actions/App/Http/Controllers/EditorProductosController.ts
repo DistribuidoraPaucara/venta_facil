@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
+ * @see app/Http/Controllers/EditorProductosController.php:44
  * @route '/inventario/editor-productos'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
+ * @see app/Http/Controllers/EditorProductosController.php:44
  * @route '/inventario/editor-productos'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
+ * @see app/Http/Controllers/EditorProductosController.php:44
  * @route '/inventario/editor-productos'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
+ * @see app/Http/Controllers/EditorProductosController.php:44
  * @route '/inventario/editor-productos'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
+ * @see app/Http/Controllers/EditorProductosController.php:44
  * @route '/inventario/editor-productos'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
+ * @see app/Http/Controllers/EditorProductosController.php:44
  * @route '/inventario/editor-productos'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\EditorProductosController::index
- * @see app/Http/Controllers/EditorProductosController.php:42
+ * @see app/Http/Controllers/EditorProductosController.php:44
  * @route '/inventario/editor-productos'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
+ * @see app/Http/Controllers/EditorProductosController.php:77
  * @route '/inventario/editor-productos/datos'
  */
 export const datos = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ datos.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
+ * @see app/Http/Controllers/EditorProductosController.php:77
  * @route '/inventario/editor-productos/datos'
  */
 datos.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ datos.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
+ * @see app/Http/Controllers/EditorProductosController.php:77
  * @route '/inventario/editor-productos/datos'
  */
 datos.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ datos.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
+ * @see app/Http/Controllers/EditorProductosController.php:77
  * @route '/inventario/editor-productos/datos'
  */
 datos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ datos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
+ * @see app/Http/Controllers/EditorProductosController.php:77
  * @route '/inventario/editor-productos/datos'
  */
     const datosForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ datos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
+ * @see app/Http/Controllers/EditorProductosController.php:77
  * @route '/inventario/editor-productos/datos'
  */
         datosForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ datos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\EditorProductosController::datos
- * @see app/Http/Controllers/EditorProductosController.php:75
+ * @see app/Http/Controllers/EditorProductosController.php:77
  * @route '/inventario/editor-productos/datos'
  */
         datosForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ datos.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     datos.form = datosForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::guardar
- * @see app/Http/Controllers/EditorProductosController.php:226
+ * @see app/Http/Controllers/EditorProductosController.php:258
  * @route '/inventario/editor-productos/guardar'
  */
 export const guardar = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ guardar.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::guardar
- * @see app/Http/Controllers/EditorProductosController.php:226
+ * @see app/Http/Controllers/EditorProductosController.php:258
  * @route '/inventario/editor-productos/guardar'
  */
 guardar.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ guardar.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::guardar
- * @see app/Http/Controllers/EditorProductosController.php:226
+ * @see app/Http/Controllers/EditorProductosController.php:258
  * @route '/inventario/editor-productos/guardar'
  */
 guardar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ guardar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::guardar
- * @see app/Http/Controllers/EditorProductosController.php:226
+ * @see app/Http/Controllers/EditorProductosController.php:258
  * @route '/inventario/editor-productos/guardar'
  */
     const guardarForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ guardar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::guardar
- * @see app/Http/Controllers/EditorProductosController.php:226
+ * @see app/Http/Controllers/EditorProductosController.php:258
  * @route '/inventario/editor-productos/guardar'
  */
         guardarForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -212,7 +212,7 @@ guardar.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     guardar.form = guardarForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
+ * @see app/Http/Controllers/EditorProductosController.php:431
  * @route '/inventario/editor-productos/{producto}/limites'
  */
 export const limites = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -227,7 +227,7 @@ limites.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
+ * @see app/Http/Controllers/EditorProductosController.php:431
  * @route '/inventario/editor-productos/{producto}/limites'
  */
 limites.url = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -255,7 +255,7 @@ limites.url = (args: { producto: string | number } | [producto: string | number 
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
+ * @see app/Http/Controllers/EditorProductosController.php:431
  * @route '/inventario/editor-productos/{producto}/limites'
  */
 limites.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -264,7 +264,7 @@ limites.get = (args: { producto: string | number } | [producto: string | number 
 })
 /**
 * @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
+ * @see app/Http/Controllers/EditorProductosController.php:431
  * @route '/inventario/editor-productos/{producto}/limites'
  */
 limites.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -274,7 +274,7 @@ limites.head = (args: { producto: string | number } | [producto: string | number
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
+ * @see app/Http/Controllers/EditorProductosController.php:431
  * @route '/inventario/editor-productos/{producto}/limites'
  */
     const limitesForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -284,7 +284,7 @@ limites.head = (args: { producto: string | number } | [producto: string | number
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
+ * @see app/Http/Controllers/EditorProductosController.php:431
  * @route '/inventario/editor-productos/{producto}/limites'
  */
         limitesForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -293,7 +293,7 @@ limites.head = (args: { producto: string | number } | [producto: string | number
         })
             /**
 * @see \App\Http\Controllers\EditorProductosController::limites
- * @see app/Http/Controllers/EditorProductosController.php:398
+ * @see app/Http/Controllers/EditorProductosController.php:431
  * @route '/inventario/editor-productos/{producto}/limites'
  */
         limitesForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -309,7 +309,7 @@ limites.head = (args: { producto: string | number } | [producto: string | number
     limites.form = limitesForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminarLimite
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
 export const eliminarLimite = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -324,7 +324,7 @@ eliminarLimite.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminarLimite
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
 eliminarLimite.url = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -352,7 +352,7 @@ eliminarLimite.url = (args: { limite: string | number } | [limite: string | numb
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminarLimite
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
 eliminarLimite.delete = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -362,7 +362,7 @@ eliminarLimite.delete = (args: { limite: string | number } | [limite: string | n
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::eliminarLimite
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
     const eliminarLimiteForm = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -377,7 +377,7 @@ eliminarLimite.delete = (args: { limite: string | number } | [limite: string | n
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::eliminarLimite
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
         eliminarLimiteForm.delete = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -393,7 +393,7 @@ eliminarLimite.delete = (args: { limite: string | number } | [limite: string | n
     eliminarLimite.form = eliminarLimiteForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
+ * @see app/Http/Controllers/EditorProductosController.php:493
  * @route '/inventario/editor-productos/{producto}/lotes'
  */
 export const lotes = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -408,7 +408,7 @@ lotes.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
+ * @see app/Http/Controllers/EditorProductosController.php:493
  * @route '/inventario/editor-productos/{producto}/lotes'
  */
 lotes.url = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -436,7 +436,7 @@ lotes.url = (args: { producto: string | number } | [producto: string | number ] 
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
+ * @see app/Http/Controllers/EditorProductosController.php:493
  * @route '/inventario/editor-productos/{producto}/lotes'
  */
 lotes.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -445,7 +445,7 @@ lotes.get = (args: { producto: string | number } | [producto: string | number ] 
 })
 /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
+ * @see app/Http/Controllers/EditorProductosController.php:493
  * @route '/inventario/editor-productos/{producto}/lotes'
  */
 lotes.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -455,7 +455,7 @@ lotes.head = (args: { producto: string | number } | [producto: string | number ]
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
+ * @see app/Http/Controllers/EditorProductosController.php:493
  * @route '/inventario/editor-productos/{producto}/lotes'
  */
     const lotesForm = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -465,7 +465,7 @@ lotes.head = (args: { producto: string | number } | [producto: string | number ]
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
+ * @see app/Http/Controllers/EditorProductosController.php:493
  * @route '/inventario/editor-productos/{producto}/lotes'
  */
         lotesForm.get = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -474,7 +474,7 @@ lotes.head = (args: { producto: string | number } | [producto: string | number ]
         })
             /**
 * @see \App\Http\Controllers\EditorProductosController::lotes
- * @see app/Http/Controllers/EditorProductosController.php:460
+ * @see app/Http/Controllers/EditorProductosController.php:493
  * @route '/inventario/editor-productos/{producto}/lotes'
  */
         lotesForm.head = (args: { producto: string | number } | [producto: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -490,7 +490,7 @@ lotes.head = (args: { producto: string | number } | [producto: string | number ]
     lotes.form = lotesForm
 /**
 * @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
 export const darDeBajaLote = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -505,7 +505,7 @@ darDeBajaLote.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
 darDeBajaLote.url = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -533,7 +533,7 @@ darDeBajaLote.url = (args: { stock: string | number } | [stock: string | number 
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
 darDeBajaLote.delete = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -543,7 +543,7 @@ darDeBajaLote.delete = (args: { stock: string | number } | [stock: string | numb
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
     const darDeBajaLoteForm = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -558,7 +558,7 @@ darDeBajaLote.delete = (args: { stock: string | number } | [stock: string | numb
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::darDeBajaLote
- * @see app/Http/Controllers/EditorProductosController.php:494
+ * @see app/Http/Controllers/EditorProductosController.php:527
  * @route '/inventario/editor-productos/lotes/{stock}'
  */
         darDeBajaLoteForm.delete = (args: { stock: string | number } | [stock: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

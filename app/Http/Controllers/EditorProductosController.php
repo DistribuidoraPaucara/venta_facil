@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Almacen;
 use App\Models\Categoria;
 use App\Models\CodigoBarra;
+use App\Models\HistorialPrecio;
 use App\Models\Marca;
 use App\Models\MovimientoInventario;
 use App\Models\PrecioProducto;
@@ -36,6 +37,7 @@ use Inertia\Response;
 class EditorProductosController extends Controller
 {
     private const POR_PAGINA = 50;
+    private const MAX_TODOS = 5000; // tope al pedir "todos" en una sola página
 
     public function __construct(private MovimientoStockService $movimientoStockService) {}
 
@@ -102,9 +104,8 @@ class EditorProductosController extends Controller
             ->leftJoin('almacenes as a', 'a.id', '=', 'u.almacen_id')
             ->leftJoin('sectores as sec', 'sec.id', '=', 'u.sector_id')
             ->where('p.empresa_id', $empresaId)
-            ->where('p.activo', true)
             ->select([
-                'p.id as producto_id', 'p.nombre', 'p.sku', 'p.categoria_id', 'p.marca_id', 'p.unidad_medida_id', 'p.es_fraccionado',
+                'p.id as producto_id', 'p.nombre', 'p.sku', 'p.categoria_id', 'p.marca_id', 'p.unidad_medida_id', 'p.es_fraccionado', 'p.activo',
                 'u.almacen_id', 'a.nombre as almacen', 'u.sector_id', 'sec.nombre as sector',
                 DB::raw('COALESCE(s.cantidad, 0) AS stock'), DB::raw('COALESCE(s.disponible, 0) AS disponible'), DB::raw('COALESCE(s.lotes, 0) AS lotes'),
                 'l.stock_minimo', 'l.stock_maximo',
@@ -154,8 +155,38 @@ class EditorProductosController extends Controller
                 ->where('pp.precio', '>', 0));
         }
 
-        $pagina = $query->orderBy('p.nombre')->orderBy('p.id')->orderBy('a.nombre')->orderBy('sec.nombre')
-            ->paginate(self::POR_PAGINA);
+        // Estado: por defecto solo activos; inactivo = desactivados; todos = sin filtro
+        match ($request->input('estado')) {
+            'inactivo' => $query->where('p.activo', false),
+            'todos'    => null,
+            default    => $query->where('p.activo', true),
+        };
+        // Con precio vigente (> 0) del tipo de precio elegido (el opuesto de sin_precio)
+        if ($request->filled('con_precio')) {
+            $query->whereExists(fn($e) => $e->from('precios_producto as pp')
+                ->whereColumn('pp.producto_id', 'p.id')
+                ->where('pp.tipo_precio_id', (int) $request->input('con_precio'))
+                ->where('pp.activo', true)
+                ->where('pp.precio', '>', 0));
+        }
+        if ($request->filled('fraccionado')) {
+            $query->where('p.es_fraccionado', $request->input('fraccionado') === 'si');
+        }
+
+        // Orden: por nombre (por defecto), o por ID ascendente/descendente
+        match ($request->input('orden')) {
+            'id_asc'  => $query->orderBy('p.id'),
+            'id_desc' => $query->orderByDesc('p.id'),
+            default   => $query->orderBy('p.nombre')->orderBy('p.id'),
+        };
+        // Filas por página: 25, 50 (por defecto), 100 o "todos" (con tope de seguridad)
+        $porPagina = match ((string) $request->input('por_pagina')) {
+            '25'    => 25,
+            '100'   => 100,
+            'todos' => self::MAX_TODOS,
+            default => self::POR_PAGINA,
+        };
+        $pagina = $query->orderBy('a.nombre')->orderBy('sec.nombre')->paginate($porPagina);
 
         // Precios de los productos de la página: el de la unidad del producto (o sin unidad)
         $productoIds = collect($pagina->items())->pluck('producto_id')->unique();
@@ -193,6 +224,7 @@ class EditorProductosController extends Controller
                 'marca_id'         => $f->marca_id,
                 'unidad_medida_id' => $f->unidad_medida_id,
                 'es_fraccionado'   => (bool) $f->es_fraccionado,
+                'activo'           => (int) $f->activo, // 1 = activo; el checkbox lo desactiva al guardar
                 'almacen_id'       => $f->almacen_id,
                 'almacen'          => $f->almacen,
                 'sector_id'        => $f->sector_id,
@@ -211,7 +243,7 @@ class EditorProductosController extends Controller
             'pagina'     => $pagina->currentPage(),
             'paginas'    => $pagina->lastPage(),
             'total'      => $pagina->total(),
-            'por_pagina' => self::POR_PAGINA,
+            'por_pagina' => $porPagina,
         ]);
     }
 
@@ -232,6 +264,7 @@ class EditorProductosController extends Controller
             'productos.*.marca_id'         => 'sometimes|nullable|integer|exists:marcas,id',
             'productos.*.unidad_medida_id' => 'sometimes|integer|exists:unidades_medida,id',
             'productos.*.codigo_barras'    => 'sometimes|nullable|string|max:255',
+            'productos.*.activo'           => 'sometimes|boolean',
             'precios'                      => 'array',
             'precios.*.producto_id'        => 'required|integer',
             'precios.*.tipo_precio_id'     => 'required|integer',
@@ -347,7 +380,7 @@ class EditorProductosController extends Controller
 
                 foreach ($data['productos'] ?? [] as $id => $cambios) {
                     $producto = $productos[(int) $id];
-                    $campos   = array_intersect_key($cambios, array_flip(['nombre', 'categoria_id', 'marca_id', 'unidad_medida_id']));
+                    $campos   = array_intersect_key($cambios, array_flip(['nombre', 'categoria_id', 'marca_id', 'unidad_medida_id', 'activo']));
                     if ($campos) {
                         $producto->update($campos);
                     }
@@ -575,7 +608,7 @@ class EditorProductosController extends Controller
             return;
         }
 
-        PrecioProducto::create([
+        $nuevo = PrecioProducto::create([
             'producto_id'                => $producto->id,
             'tipo_precio_id'             => $tipoPrecioId,
             'nombre'                     => TipoPrecio::find($tipoPrecioId)?->nombre,
@@ -586,6 +619,18 @@ class EditorProductosController extends Controller
             'fecha_inicio'               => now(),
             'motivo_cambio'              => 'Editor de productos',
             'fecha_ultima_actualizacion' => now(),
+        ]);
+
+        // El observer solo registra actualizaciones: una alta queda en el historial como cambio de 0 al precio nuevo
+        HistorialPrecio::create([
+            'precio_producto_id' => $nuevo->id,
+            'valor_anterior'     => 0,
+            'valor_nuevo'        => $precio,
+            'porcentaje_cambio'  => 100,
+            'fecha_cambio'       => now(),
+            'motivo'             => 'Editor de productos',
+            'usuario'            => auth()->user()?->name ?? 'sistema',
+            'tipo_precio_id'     => $tipoPrecioId,
         ]);
     }
 

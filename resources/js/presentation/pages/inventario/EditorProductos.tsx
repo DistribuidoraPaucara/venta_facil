@@ -44,6 +44,7 @@ interface Fila {
     marca_id: number | null;
     unidad_medida_id: number | null;
     es_fraccionado: boolean;
+    activo: number; // 1 = activo, 0 = desactivado
     almacen_id: number | null;
     almacen: string | null;
     sector_id: number | null;
@@ -56,7 +57,7 @@ interface Fila {
     precios: Record<string, { id: number; precio: number }>;
 }
 
-type CampoProducto = 'nombre' | 'codigo_barras' | 'categoria_id' | 'marca_id' | 'unidad_medida_id';
+type CampoProducto = 'nombre' | 'codigo_barras' | 'categoria_id' | 'marca_id' | 'unidad_medida_id' | 'activo';
 interface Cambios {
     productos: Record<number, Partial<Record<CampoProducto, string | number | null>>>;
     precios: Record<string, { producto_id: number; tipo_precio_id: number; precio: number; original: number | null }>;
@@ -74,6 +75,9 @@ const filtrosIniciales = {
     marca_id: '',
     unidad_id: '',
     stock: '',
+    estado: '', // vacío = solo activos
+    fraccionado: '',
+    con_precio: '',
     sin_precio: '',
     limites_por_almacen: '',
 };
@@ -91,6 +95,11 @@ const colorAlmacen = (nombre: string | null) => {
 
 export default function EditorProductos({ opciones }: Props) {
     const [filtros, setFiltros] = useState(filtrosIniciales);
+    // Orden de la tabla: '' = por nombre; id_asc / id_desc = por ID (se cambia desde el encabezado Producto)
+    const [orden, setOrden] = useState<'' | 'id_asc' | 'id_desc'>('');
+    const ciclarOrdenId = () => setOrden((o) => (o === '' ? 'id_asc' : o === 'id_asc' ? 'id_desc' : ''));
+    // Filas por página: 25, 50 (por defecto), 100 o todos (el backend aplica un tope de seguridad)
+    const [porPagina, setPorPagina] = useState<'25' | '50' | '100' | 'todos'>('50');
     const [filas, setFilas] = useState<Fila[]>([]);
     const [pagina, setPagina] = useState(1);
     const [paginas, setPaginas] = useState(1);
@@ -119,7 +128,9 @@ export default function EditorProductos({ opciones }: Props) {
             const id = ++ultimaCarga.current;
             setCargando(true);
             try {
-                const params = Object.fromEntries(Object.entries({ ...f, page: paginaPedida }).filter(([, v]) => v !== ''));
+                const params = Object.fromEntries(
+                    Object.entries({ ...f, page: paginaPedida, orden, por_pagina: porPagina }).filter(([, v]) => v !== ''),
+                );
                 const { data } = await axios.get('/inventario/editor-productos/datos', { params });
                 if (id !== ultimaCarga.current) return; // respuesta vieja
                 data.filas.forEach((fila: Fila) => {
@@ -135,15 +146,15 @@ export default function EditorProductos({ opciones }: Props) {
                 if (id === ultimaCarga.current) setCargando(false);
             }
         },
-        [filtros],
+        [filtros, orden, porPagina],
     );
 
-    // Búsqueda y filtros con espera de 400 ms; siempre vuelve a la página 1
+    // Búsqueda, filtros, orden y filas por página con espera de 400 ms; siempre vuelve a la página 1
     useEffect(() => {
         const t = setTimeout(() => cargar(1, filtros), 400);
         return () => clearTimeout(t);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filtros]);
+    }, [filtros, orden, porPagina]);
 
     const totalCambios =
         Object.values(cambios.productos).reduce((n, c) => n + Object.keys(c).length, 0) +
@@ -288,9 +299,12 @@ export default function EditorProductos({ opciones }: Props) {
                     categoria_id: 'Categoría',
                     marca_id: 'Marca',
                     unidad_medida_id: 'Unidad',
+                    activo: 'Estado',
                 }[campo];
                 const texto =
-                    campo === 'categoria_id'
+                    campo === 'activo'
+                        ? (v ? 'Activo' : 'Desactivado')
+                        : campo === 'categoria_id'
                         ? categorias[v as number]?.nombre
                         : campo === 'marca_id'
                           ? marcas[v as number]?.nombre
@@ -353,86 +367,131 @@ export default function EditorProductos({ opciones }: Props) {
                     </p>
                 </div>
 
-                {/* Filtros */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative min-w-56 flex-1">
-                        <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-gray-400" />
-                        <input
-                            className={`${selectClass} w-full pl-8`}
-                            placeholder="Buscar por ID, nombre, SKU o código de barras"
-                            value={filtros.q}
-                            onChange={(e) => setFiltro('q', e.target.value)}
+                {/* Filtros: tarjeta con buscador, cuadrícula de filtros con etiqueta y resumen de filtros activos */}
+                <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                        <div className="relative flex-1">
+                            <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-gray-400" />
+                            <input
+                                className={`${selectClass} w-full pl-8`}
+                                placeholder="Buscar por ID, nombre, SKU o código de barras"
+                                value={filtros.q}
+                                onChange={(e) => setFiltro('q', e.target.value)}
+                            />
+                        </div>
+                        {Object.values(filtros).some(Boolean) && (
+                            <div className="flex items-center justify-between gap-2 md:justify-end">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {Object.values(filtros).filter(Boolean).length} filtro(s) activo(s)
+                                </span>
+                                <Button variant="ghost" size="sm" onClick={() => setFiltros(filtrosIniciales)}>
+                                    <RotateCcw className="mr-1 h-4 w-4" /> Limpiar filtros
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-3">
+                        <FiltroBuscable
+                            etiqueta="Almacén"
+                            placeholder="Todos"
+                            valor={filtros.almacen_id}
+                            onCambiar={(v) => setFiltro('almacen_id', v)}
+                            opciones={opciones.almacenes.map((a) => ({ value: a.id, label: a.nombre }))}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Sector"
+                            placeholder="Todos"
+                            valor={filtros.sector_id}
+                            onCambiar={(v) => setFiltro('sector_id', v)}
+                            opciones={sectoresFiltro.map((s) => ({
+                                value: s.id,
+                                label: s.nombre,
+                                description: opciones.almacenes.find((a) => a.id === s.almacen_id)?.nombre,
+                            }))}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Categoría"
+                            placeholder="Todas"
+                            valor={filtros.categoria_id}
+                            onCambiar={(v) => setFiltro('categoria_id', v)}
+                            opciones={opciones.categorias.map((c) => ({ value: c.id, label: c.nombre }))}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Marca"
+                            placeholder="Todas"
+                            valor={filtros.marca_id}
+                            onCambiar={(v) => setFiltro('marca_id', v)}
+                            opciones={opciones.marcas.map((m) => ({ value: m.id, label: m.nombre }))}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Unidad"
+                            placeholder="Todas"
+                            valor={filtros.unidad_id}
+                            onCambiar={(v) => setFiltro('unidad_id', v)}
+                            opciones={opciones.unidades.map((u) => ({
+                                value: u.id,
+                                label: u.codigo ? `${u.nombre} (${u.codigo})` : u.nombre,
+                                description: u.ajena ? '⚠️ De otra empresa' : undefined,
+                            }))}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Stock"
+                            placeholder="Cualquiera"
+                            valor={filtros.stock}
+                            onCambiar={(v) => setFiltro('stock', v)}
+                            opciones={[
+                                { value: 'sin_stock', label: 'Sin stock' },
+                                { value: 'con_stock', label: 'Con stock' },
+                                { value: 'bajo_minimo', label: 'Bajo el mínimo' },
+                                { value: 'sobre_maximo', label: 'Sobre el máximo' },
+                            ]}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Estado"
+                            placeholder="Solo activos"
+                            valor={filtros.estado}
+                            onCambiar={(v) => setFiltro('estado', v)}
+                            opciones={[
+                                { value: 'inactivo', label: 'Solo inactivos' },
+                                { value: 'todos', label: 'Activos e inactivos' },
+                            ]}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Fraccionado"
+                            placeholder="Todos"
+                            valor={filtros.fraccionado}
+                            onCambiar={(v) => setFiltro('fraccionado', v)}
+                            opciones={[
+                                { value: 'si', label: 'Solo fraccionados' },
+                                { value: 'no', label: 'Solo no fraccionados' },
+                            ]}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Con precio"
+                            placeholder="Cualquiera"
+                            valor={filtros.con_precio}
+                            onCambiar={(v) => setFiltro('con_precio', v)}
+                            opciones={opciones.tiposPrecio.map((t) => ({ value: t.id, label: `Con precio ${t.codigo}` }))}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Sin precio"
+                            placeholder="Cualquiera"
+                            valor={filtros.sin_precio}
+                            onCambiar={(v) => setFiltro('sin_precio', v)}
+                            opciones={opciones.tiposPrecio.map((t) => ({ value: t.id, label: `Sin precio ${t.codigo}` }))}
+                        />
+                        <FiltroBuscable
+                            etiqueta="Límites"
+                            placeholder="Cualquiera"
+                            valor={filtros.limites_por_almacen}
+                            onCambiar={(v) => setFiltro('limites_por_almacen', v)}
+                            opciones={[
+                                { value: 2, label: '2+ límites en un almacén', description: 'Límites repetidos (p. ej. uno por sector)' },
+                                { value: 3, label: '3+ límites en un almacén' },
+                            ]}
                         />
                     </div>
-                    <FiltroBuscable
-                        placeholder="Todos los almacenes"
-                        valor={filtros.almacen_id}
-                        onCambiar={(v) => setFiltro('almacen_id', v)}
-                        opciones={opciones.almacenes.map((a) => ({ value: a.id, label: a.nombre }))}
-                    />
-                    <FiltroBuscable
-                        placeholder="Todos los sectores"
-                        valor={filtros.sector_id}
-                        onCambiar={(v) => setFiltro('sector_id', v)}
-                        opciones={sectoresFiltro.map((s) => ({
-                            value: s.id,
-                            label: s.nombre,
-                            description: opciones.almacenes.find((a) => a.id === s.almacen_id)?.nombre,
-                        }))}
-                    />
-                    <FiltroBuscable
-                        placeholder="Todas las categorías"
-                        valor={filtros.categoria_id}
-                        onCambiar={(v) => setFiltro('categoria_id', v)}
-                        opciones={opciones.categorias.map((c) => ({ value: c.id, label: c.nombre }))}
-                    />
-                    <FiltroBuscable
-                        placeholder="Todas las marcas"
-                        valor={filtros.marca_id}
-                        onCambiar={(v) => setFiltro('marca_id', v)}
-                        opciones={opciones.marcas.map((m) => ({ value: m.id, label: m.nombre }))}
-                    />
-                    <FiltroBuscable
-                        placeholder="Todas las unidades"
-                        valor={filtros.unidad_id}
-                        onCambiar={(v) => setFiltro('unidad_id', v)}
-                        opciones={opciones.unidades.map((u) => ({
-                            value: u.id,
-                            label: u.codigo ? `${u.nombre} (${u.codigo})` : u.nombre,
-                            description: u.ajena ? '⚠️ De otra empresa' : undefined,
-                        }))}
-                    />
-                    <FiltroBuscable
-                        placeholder="Cualquier stock"
-                        valor={filtros.stock}
-                        onCambiar={(v) => setFiltro('stock', v)}
-                        opciones={[
-                            { value: 'sin_stock', label: 'Sin stock' },
-                            { value: 'con_stock', label: 'Con stock' },
-                            { value: 'bajo_minimo', label: 'Bajo el mínimo' },
-                            { value: 'sobre_maximo', label: 'Sobre el máximo' },
-                        ]}
-                    />
-                    <FiltroBuscable
-                        placeholder="Con o sin precio"
-                        valor={filtros.sin_precio}
-                        onCambiar={(v) => setFiltro('sin_precio', v)}
-                        opciones={opciones.tiposPrecio.map((t) => ({ value: t.id, label: `Sin precio ${t.codigo}` }))}
-                    />
-                    <FiltroBuscable
-                        placeholder="Cualquier límite"
-                        valor={filtros.limites_por_almacen}
-                        onCambiar={(v) => setFiltro('limites_por_almacen', v)}
-                        opciones={[
-                            { value: 2, label: '2+ límites en un almacén', description: 'Límites repetidos (p. ej. uno por sector)' },
-                            { value: 3, label: '3+ límites en un almacén' },
-                        ]}
-                    />
-                    {Object.values(filtros).some(Boolean) && (
-                        <Button variant="ghost" size="sm" onClick={() => setFiltros(filtrosIniciales)}>
-                            Limpiar
-                        </Button>
-                    )}
                 </div>
 
                 {/* Tabla */}
@@ -444,9 +503,22 @@ export default function EditorProductos({ opciones }: Props) {
                     <table className="w-full border-collapse text-sm">
                         <thead className="sticky top-0 z-20 bg-gray-100 text-left text-xs text-gray-600 uppercase dark:bg-slate-800 dark:text-gray-300">
                             <tr>
-                                <th className="sticky left-0 z-30 bg-gray-100 px-2 py-2 dark:bg-slate-800">Producto</th>
+                                <th className="sticky left-0 z-30 bg-gray-100 px-2 py-2 dark:bg-slate-800">
+                                    <div className="flex items-center gap-2">
+                                        <span>Producto</span>
+                                        <button
+                                            type="button"
+                                            onClick={ciclarOrdenId}
+                                            title="Ordenar por ID: ascendente, descendente o por nombre"
+                                            className={`rounded border px-1.5 py-0.5 text-[11px] font-semibold normal-case ${
+                                                orden === '' ? 'border-gray-300 text-gray-600 dark:border-slate-600 dark:text-gray-300' : 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                            }`}
+                                        >
+                                            ID {orden === 'id_asc' ? '↑' : orden === 'id_desc' ? '↓' : '⇅'}
+                                        </button>
+                                    </div>
+                                </th>
                                 <th className="px-2 py-2">Código de barras</th>
-                                <th className="px-2 py-2">Categoría</th>
                                 <th className="px-2 py-2">Marca</th>
                                 <th className="px-2 py-2">Unidad</th>
                                 {opciones.tiposPrecio.map((t) => (
@@ -514,7 +586,22 @@ export default function EditorProductos({ opciones }: Props) {
                                                             onCambiar={(v) => v.trim() && cambiarProducto(f, 'nombre', v.trim())}
                                                         />
                                                     </div>
-                                                    {f.sku && <div className="pl-1 text-xs text-gray-500">{f.sku}</div>}
+                                                    <div className="pl-1 text-xs text-gray-500">
+                                                        #{f.producto_id}
+                                                        {f.sku ? ` · ${f.sku}` : ''}
+                                                    </div>
+                                                    <label
+                                                        className={`mt-1 flex w-fit items-center gap-1.5 pl-1 text-xs ${
+                                                            'activo' in (cambios.productos[f.producto_id] ?? {}) ? 'font-semibold text-amber-700 dark:text-amber-300' : 'text-gray-600 dark:text-gray-300'
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Number(valorProducto(f, 'activo')) === 1}
+                                                            onChange={(e) => cambiarProducto(f, 'activo', e.target.checked ? 1 : 0)}
+                                                        />
+                                                        {Number(valorProducto(f, 'activo')) === 1 ? 'Activo' : 'Desactivado'}
+                                                    </label>
                                                     {span > 1 && (
                                                         <div className="pl-1 text-xs text-blue-600 dark:text-blue-400">{span} ubicaciones →</div>
                                                     )}
@@ -526,15 +613,6 @@ export default function EditorProductos({ opciones }: Props) {
                                                         vacio="sin código"
                                                         cambiado={'codigo_barras' in (cambios.productos[f.producto_id] ?? {})}
                                                         onCambiar={(v) => cambiarProducto(f, 'codigo_barras', v.trim() || null)}
-                                                    />
-                                                </td>
-                                                <td rowSpan={span} className="px-1 py-1 align-top">
-                                                    <CeldaSelect
-                                                        {...celda(`${f.producto_id}-categoria`)}
-                                                        opciones={opciones.categorias}
-                                                        valor={valorProducto(f, 'categoria_id') as number | null}
-                                                        cambiado={'categoria_id' in (cambios.productos[f.producto_id] ?? {})}
-                                                        onCambiar={(v) => cambiarProducto(f, 'categoria_id', v)}
                                                     />
                                                 </td>
                                                 <td rowSpan={span} className="px-1 py-1 align-top">
@@ -637,7 +715,7 @@ export default function EditorProductos({ opciones }: Props) {
                             })}
                             {!cargando && filas.length === 0 && (
                                 <tr>
-                                    <td colSpan={9 + opciones.tiposPrecio.length} className="py-10 text-center text-gray-500">
+                                    <td colSpan={8 + opciones.tiposPrecio.length} className="py-10 text-center text-gray-500">
                                         Sin productos para estos filtros.
                                     </td>
                                 </tr>
@@ -648,7 +726,7 @@ export default function EditorProductos({ opciones }: Props) {
 
                 {/* Paginación + barra de cambios */}
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <Button variant="outline" size="sm" disabled={pagina <= 1 || cargando} onClick={() => cargar(pagina - 1)}>
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
@@ -656,6 +734,19 @@ export default function EditorProductos({ opciones }: Props) {
                         <Button variant="outline" size="sm" disabled={pagina >= paginas || cargando} onClick={() => cargar(pagina + 1)}>
                             <ChevronRight className="h-4 w-4" />
                         </Button>
+                        <label className="ml-2 flex items-center gap-1.5">
+                            Mostrar
+                            <select
+                                className={selectClass}
+                                value={porPagina}
+                                onChange={(e) => setPorPagina(e.target.value as '25' | '50' | '100' | 'todos')}
+                            >
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </label>
                     </div>
                     <div className="flex items-center gap-2">
                         {totalCambios > 0 && (
@@ -1105,18 +1196,23 @@ function ModalLimites({
 
 /** Filtro de la barra superior: SearchSelect (el mismo de toda la web), vacío = "todos". */
 function FiltroBuscable({
+    etiqueta,
     placeholder,
     valor,
     opciones,
     onCambiar,
 }: {
+    etiqueta: string;
     placeholder: string;
     valor: string;
     opciones: SelectOption[];
     onCambiar: (v: string) => void;
 }) {
+    const conValor = valor !== '';
     return (
-        <div className="w-52">
+        <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{etiqueta}</span>
+            <div className={`w-full min-w-0 rounded-md ${conValor ? 'ring-2 ring-blue-500/60' : ''}`}>
             <SearchSelect
                 placeholder={placeholder}
                 searchPlaceholder="Buscar…"
@@ -1126,6 +1222,7 @@ function FiltroBuscable({
                 emptyText="Sin coincidencias"
                 allowClear
             />
+            </div>
         </div>
     );
 }

@@ -214,6 +214,17 @@ const ProductSearchBar = forwardRef<ProductSearchBarHandle, ProductSearchBarProp
                             value={productSearch}
                             onChange={(e) => setProductSearch(e.target.value)}
                             onKeyDown={(e) => {
+                                // Tab (sin Shift) salta directo al primer campo de la tabla de detalles, sin pasar por el botón de búsqueda
+                                if (e.key === 'Tab' && !e.shiftKey) {
+                                    const primerCampo = document.querySelector<HTMLElement>(
+                                        '[data-detalles-tabla] input:not([disabled]), [data-detalles-tabla] select:not([disabled]), [data-detalles-tabla] button:not([disabled]):not([tabindex="-1"])',
+                                    );
+                                    if (primerCampo) {
+                                        e.preventDefault();
+                                        primerCampo.focus();
+                                        return;
+                                    }
+                                }
                                 const hayLista = showSuggestions && productosDisponibles.length > 0;
                                 if (hayLista && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
                                     e.preventDefault();

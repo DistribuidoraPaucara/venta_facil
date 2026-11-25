@@ -25,6 +25,7 @@ interface InputSearchProps {
     allowScanner?: boolean;
     scannerLabel?: string;
     showCreateButton?: boolean;
+    buscarAlEnfocar?: boolean; // sin texto (al enfocar o al borrar), muestra sugeridos precargados: onSearch('')
     onCreateClick?: (searchQuery: string) => void;
     createButtonText?: string;
     showCreateIconButton?: boolean;
@@ -50,6 +51,7 @@ export default function InputSearch({
     allowScanner = false,
     scannerLabel = "Escanear código",
     showCreateButton = false,
+    buscarAlEnfocar = false,
     onCreateClick,
     createButtonText = "Crear nuevo",
     showCreateIconButton = false,
@@ -77,6 +79,23 @@ export default function InputSearch({
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
+    // Sugeridos precargados (sin texto): onSearch('') devuelve lo que el backend sugiere
+    const cargarPrecargados = async () => {
+        setLoading(true);
+        try {
+            const results = await onSearch('');
+            setOptions(results);
+            setIsOpen(results.length > 0);
+            setSelectedIndex(-1);
+        } catch (error) {
+            console.error('Error al cargar sugeridos:', error);
+            setOptions([]);
+            setIsOpen(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Debounce de búsqueda - Versión simplificada para evitar bucles infinitos
     useEffect(() => {
         // ✅ CORREGIDO (2026-03-03): No buscar si ya hay una opción seleccionada y el query coincide
@@ -84,6 +103,12 @@ export default function InputSearch({
         if (selectedOption && selectedOption.label === query) {
             setOptions([]);
             setIsOpen(false);
+            return;
+        }
+
+        // Sin texto con el campo enfocado (al borrar): sugeridos precargados, si el componente lo permite
+        if (!query && buscarAlEnfocar && document.activeElement === inputRef.current) {
+            cargarPrecargados();
             return;
         }
 
@@ -346,7 +371,15 @@ export default function InputSearch({
                         value={query}
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
-                        onFocus={() => query.length >= 2 && (options.length > 0 || (showCreateButton && !!onCreateClick)) && setIsOpen(true)}
+                        onFocus={() => {
+                            // Sin texto: muestra los sugeridos (los carga si aún no están)
+                            if (!query && buscarAlEnfocar) {
+                                if (options.length > 0) setIsOpen(true);
+                                else cargarPrecargados();
+                                return;
+                            }
+                            query.length >= 2 && (options.length > 0 || (showCreateButton && !!onCreateClick)) && setIsOpen(true);
+                        }}
                         placeholder={!label ? placeholder : ''}
                         disabled={disabled}
                         autoComplete="off" // ✅ Desabilita autocompletado del navegador
@@ -439,51 +472,29 @@ export default function InputSearch({
                         {/* Contenedor de resultados con scroll mejorado */}
                         <div className="max-h-80 overflow-y-auto">
                             {options.length === 0 && !loading ? (
-                                <div className="px-4 py-4 text-center">
-                                    {/* Banner de advertencia si hay búsqueda pero sin resultados */}
-                                    {query.length >= 2 && showCreateButton && onCreateClick && (
-                                        <div className="mb-3 p-2.5 bg-destructive/5 border-l-4 border-destructive rounded-r">
-                                            <div className="flex items-start space-x-2">
-                                                <div className="text-lg">⚠️</div>
-                                                <div className="flex-1 text-left">
-                                                    <p className="text-xs font-semibold text-foreground">
-                                                        No encontramos "{query}"
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                                        Puedes crearlo con el botón de abajo.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                <div className="px-3 py-2 text-center">
+                                    {/* Sin coincidencias: una línea; la ayuda para crear va en tooltip */}
+                                    {query.length >= 2 && showCreateButton && onCreateClick ? (
+                                        <p
+                                            className="text-xs text-muted-foreground"
+                                            title="Revisa el nombre escrito o crea un registro nuevo con este texto"
+                                        >
+                                            Sin coincidencias para «{query}»
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground">{emptyText}</p>
                                     )}
-                                    <div className="w-10 h-10 mx-auto mb-2 bg-muted rounded-full flex items-center justify-center">
-                                        <Search className="h-5 w-5 text-muted-foreground" />
-                                    </div>
-                                    <p className="text-xs text-foreground font-medium">
-                                        {emptyText}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Intenta con otros términos
-                                    </p>
 
-                                    {/* Botón para crear nuevo elemento */}
+                                    {/* Botón compacto para crear el elemento con el texto buscado */}
                                     {showCreateButton && query.length >= 2 && onCreateClick && (
-                                        <div className="mt-3 pt-3 border-t border-border">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    console.log('🖱️ Botón crear clickeado con query:', query);
-                                                    onCreateClick(query);
-                                                }}
-                                                className="w-full inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors duration-150"
-                                            >
-                                                <span className="mr-1.5">➕</span>
-                                                {createButtonText}
-                                            </button>
-                                            <p className="text-xs text-muted-foreground mt-2 text-center">
-                                                Crear elemento con este nombre
-                                            </p>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => onCreateClick(query)}
+                                            title="Crear un registro nuevo con este nombre"
+                                            className="mt-2 inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary/90"
+                                        >
+                                            ➕ {createButtonText}
+                                        </button>
                                     )}
                                 </div>
                             ) : (

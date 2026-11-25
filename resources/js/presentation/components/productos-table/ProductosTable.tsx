@@ -92,6 +92,7 @@ export default function ProductosTable({
     productos,
     detalles,
     onAddProduct,
+    onCambiarProductoLinea,
     onUpdateDetail,
     onUpdateDetailMultiple,
     onRemoveDetail,
@@ -594,6 +595,7 @@ export default function ProductosTable({
                         Celdas alineadas arriba: así todos los inputs quedan en la misma línea aunque alguno tenga texto debajo (ej. el stock).
                         Los selectores de descendientes tienen más especificidad que las clases de cada input, así no hay que tocarlos uno por uno */}
                     <table
+                        data-detalles-tabla
                         className={`min-w-full divide-y divide-gray-200 dark:divide-zinc-700 ${
                             tipo === 'compra'
                                 ? '[&_input]:h-7 [&_input]:rounded-md [&_input]:px-1.5 [&_input]:py-0 [&_input]:text-xs [&_input:not([type=date])]:max-w-[5.5rem] [&_input[type=date]]:w-[7.5rem] [&_td]:px-1.5 [&_td]:py-1 [&_td]:align-top [&_th]:px-1.5 [&_th]:py-1.5 [&_th]:whitespace-nowrap'
@@ -726,6 +728,7 @@ export default function ProductosTable({
                                         subtotalEditable={subtotalEditable}
                                         proveedorId={proveedor_id}
                                         onDuplicarLinea={onDuplicarLinea}
+                                        onCambiarProductoLinea={onCambiarProductoLinea}
                                         transferencia={transferencia}
                                         onTransferenciaChange={onTransferenciaChange}
                                         transferenciaError={transferenciaError}

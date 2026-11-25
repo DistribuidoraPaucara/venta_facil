@@ -79,7 +79,7 @@ listadoApi.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     listadoApi.form = listadoApiForm
 /**
 * @see \App\Http\Controllers\PrecioController::mostrarProducto
- * @see app/Http/Controllers/PrecioController.php:332
+ * @see app/Http/Controllers/PrecioController.php:344
  * @route '/api/precios/producto/{producto}'
  */
 export const mostrarProducto = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ mostrarProducto.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::mostrarProducto
- * @see app/Http/Controllers/PrecioController.php:332
+ * @see app/Http/Controllers/PrecioController.php:344
  * @route '/api/precios/producto/{producto}'
  */
 mostrarProducto.url = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -127,7 +127,7 @@ mostrarProducto.url = (args: { producto: number | { id: number } } | [producto: 
 
 /**
 * @see \App\Http\Controllers\PrecioController::mostrarProducto
- * @see app/Http/Controllers/PrecioController.php:332
+ * @see app/Http/Controllers/PrecioController.php:344
  * @route '/api/precios/producto/{producto}'
  */
 mostrarProducto.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -136,7 +136,7 @@ mostrarProducto.get = (args: { producto: number | { id: number } } | [producto: 
 })
 /**
 * @see \App\Http\Controllers\PrecioController::mostrarProducto
- * @see app/Http/Controllers/PrecioController.php:332
+ * @see app/Http/Controllers/PrecioController.php:344
  * @route '/api/precios/producto/{producto}'
  */
 mostrarProducto.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -146,7 +146,7 @@ mostrarProducto.head = (args: { producto: number | { id: number } } | [producto:
 
     /**
 * @see \App\Http\Controllers\PrecioController::mostrarProducto
- * @see app/Http/Controllers/PrecioController.php:332
+ * @see app/Http/Controllers/PrecioController.php:344
  * @route '/api/precios/producto/{producto}'
  */
     const mostrarProductoForm = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -156,7 +156,7 @@ mostrarProducto.head = (args: { producto: number | { id: number } } | [producto:
 
             /**
 * @see \App\Http\Controllers\PrecioController::mostrarProducto
- * @see app/Http/Controllers/PrecioController.php:332
+ * @see app/Http/Controllers/PrecioController.php:344
  * @route '/api/precios/producto/{producto}'
  */
         mostrarProductoForm.get = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -165,7 +165,7 @@ mostrarProducto.head = (args: { producto: number | { id: number } } | [producto:
         })
             /**
 * @see \App\Http\Controllers\PrecioController::mostrarProducto
- * @see app/Http/Controllers/PrecioController.php:332
+ * @see app/Http/Controllers/PrecioController.php:344
  * @route '/api/precios/producto/{producto}'
  */
         mostrarProductoForm.head = (args: { producto: number | { id: number } } | [producto: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -181,7 +181,7 @@ mostrarProducto.head = (args: { producto: number | { id: number } } | [producto:
     mostrarProducto.form = mostrarProductoForm
 /**
 * @see \App\Http\Controllers\PrecioController::obtenerComprasConDiferenciaCosto
- * @see app/Http/Controllers/PrecioController.php:532
+ * @see app/Http/Controllers/PrecioController.php:544
  * @route '/api/precios/producto/{productoId}/compras-diferencia-costo'
  */
 export const obtenerComprasConDiferenciaCosto = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -196,7 +196,7 @@ obtenerComprasConDiferenciaCosto.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::obtenerComprasConDiferenciaCosto
- * @see app/Http/Controllers/PrecioController.php:532
+ * @see app/Http/Controllers/PrecioController.php:544
  * @route '/api/precios/producto/{productoId}/compras-diferencia-costo'
  */
 obtenerComprasConDiferenciaCosto.url = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -224,7 +224,7 @@ obtenerComprasConDiferenciaCosto.url = (args: { productoId: string | number } | 
 
 /**
 * @see \App\Http\Controllers\PrecioController::obtenerComprasConDiferenciaCosto
- * @see app/Http/Controllers/PrecioController.php:532
+ * @see app/Http/Controllers/PrecioController.php:544
  * @route '/api/precios/producto/{productoId}/compras-diferencia-costo'
  */
 obtenerComprasConDiferenciaCosto.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -233,7 +233,7 @@ obtenerComprasConDiferenciaCosto.get = (args: { productoId: string | number } | 
 })
 /**
 * @see \App\Http\Controllers\PrecioController::obtenerComprasConDiferenciaCosto
- * @see app/Http/Controllers/PrecioController.php:532
+ * @see app/Http/Controllers/PrecioController.php:544
  * @route '/api/precios/producto/{productoId}/compras-diferencia-costo'
  */
 obtenerComprasConDiferenciaCosto.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -243,7 +243,7 @@ obtenerComprasConDiferenciaCosto.head = (args: { productoId: string | number } |
 
     /**
 * @see \App\Http\Controllers\PrecioController::obtenerComprasConDiferenciaCosto
- * @see app/Http/Controllers/PrecioController.php:532
+ * @see app/Http/Controllers/PrecioController.php:544
  * @route '/api/precios/producto/{productoId}/compras-diferencia-costo'
  */
     const obtenerComprasConDiferenciaCostoForm = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -253,7 +253,7 @@ obtenerComprasConDiferenciaCosto.head = (args: { productoId: string | number } |
 
             /**
 * @see \App\Http\Controllers\PrecioController::obtenerComprasConDiferenciaCosto
- * @see app/Http/Controllers/PrecioController.php:532
+ * @see app/Http/Controllers/PrecioController.php:544
  * @route '/api/precios/producto/{productoId}/compras-diferencia-costo'
  */
         obtenerComprasConDiferenciaCostoForm.get = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -262,7 +262,7 @@ obtenerComprasConDiferenciaCosto.head = (args: { productoId: string | number } |
         })
             /**
 * @see \App\Http\Controllers\PrecioController::obtenerComprasConDiferenciaCosto
- * @see app/Http/Controllers/PrecioController.php:532
+ * @see app/Http/Controllers/PrecioController.php:544
  * @route '/api/precios/producto/{productoId}/compras-diferencia-costo'
  */
         obtenerComprasConDiferenciaCostoForm.head = (args: { productoId: string | number } | [productoId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -278,7 +278,7 @@ obtenerComprasConDiferenciaCosto.head = (args: { productoId: string | number } |
     obtenerComprasConDiferenciaCosto.form = obtenerComprasConDiferenciaCostoForm
 /**
 * @see \App\Http\Controllers\PrecioController::update
- * @see app/Http/Controllers/PrecioController.php:366
+ * @see app/Http/Controllers/PrecioController.php:378
  * @route '/api/precios/{precio}'
  */
 export const update = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -293,7 +293,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::update
- * @see app/Http/Controllers/PrecioController.php:366
+ * @see app/Http/Controllers/PrecioController.php:378
  * @route '/api/precios/{precio}'
  */
 update.url = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -326,7 +326,7 @@ update.url = (args: { precio: number | { id: number } } | [precio: number | { id
 
 /**
 * @see \App\Http\Controllers\PrecioController::update
- * @see app/Http/Controllers/PrecioController.php:366
+ * @see app/Http/Controllers/PrecioController.php:378
  * @route '/api/precios/{precio}'
  */
 update.put = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -336,7 +336,7 @@ update.put = (args: { precio: number | { id: number } } | [precio: number | { id
 
     /**
 * @see \App\Http\Controllers\PrecioController::update
- * @see app/Http/Controllers/PrecioController.php:366
+ * @see app/Http/Controllers/PrecioController.php:378
  * @route '/api/precios/{precio}'
  */
     const updateForm = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -351,7 +351,7 @@ update.put = (args: { precio: number | { id: number } } | [precio: number | { id
 
             /**
 * @see \App\Http\Controllers\PrecioController::update
- * @see app/Http/Controllers/PrecioController.php:366
+ * @see app/Http/Controllers/PrecioController.php:378
  * @route '/api/precios/{precio}'
  */
         updateForm.put = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -367,7 +367,7 @@ update.put = (args: { precio: number | { id: number } } | [precio: number | { id
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\PrecioController::destroy
- * @see app/Http/Controllers/PrecioController.php:411
+ * @see app/Http/Controllers/PrecioController.php:423
  * @route '/api/precios/{precio}'
  */
 export const destroy = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -382,7 +382,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::destroy
- * @see app/Http/Controllers/PrecioController.php:411
+ * @see app/Http/Controllers/PrecioController.php:423
  * @route '/api/precios/{precio}'
  */
 destroy.url = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -415,7 +415,7 @@ destroy.url = (args: { precio: number | { id: number } } | [precio: number | { i
 
 /**
 * @see \App\Http\Controllers\PrecioController::destroy
- * @see app/Http/Controllers/PrecioController.php:411
+ * @see app/Http/Controllers/PrecioController.php:423
  * @route '/api/precios/{precio}'
  */
 destroy.delete = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -425,7 +425,7 @@ destroy.delete = (args: { precio: number | { id: number } } | [precio: number | 
 
     /**
 * @see \App\Http\Controllers\PrecioController::destroy
- * @see app/Http/Controllers/PrecioController.php:411
+ * @see app/Http/Controllers/PrecioController.php:423
  * @route '/api/precios/{precio}'
  */
     const destroyForm = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -440,7 +440,7 @@ destroy.delete = (args: { precio: number | { id: number } } | [precio: number | 
 
             /**
 * @see \App\Http\Controllers\PrecioController::destroy
- * @see app/Http/Controllers/PrecioController.php:411
+ * @see app/Http/Controllers/PrecioController.php:423
  * @route '/api/precios/{precio}'
  */
         destroyForm.delete = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -456,7 +456,7 @@ destroy.delete = (args: { precio: number | { id: number } } | [precio: number | 
     destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\PrecioController::historial
- * @see app/Http/Controllers/PrecioController.php:442
+ * @see app/Http/Controllers/PrecioController.php:454
  * @route '/api/precios/{precio}/historial'
  */
 export const historial = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -471,7 +471,7 @@ historial.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::historial
- * @see app/Http/Controllers/PrecioController.php:442
+ * @see app/Http/Controllers/PrecioController.php:454
  * @route '/api/precios/{precio}/historial'
  */
 historial.url = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -504,7 +504,7 @@ historial.url = (args: { precio: number | { id: number } } | [precio: number | {
 
 /**
 * @see \App\Http\Controllers\PrecioController::historial
- * @see app/Http/Controllers/PrecioController.php:442
+ * @see app/Http/Controllers/PrecioController.php:454
  * @route '/api/precios/{precio}/historial'
  */
 historial.get = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -513,7 +513,7 @@ historial.get = (args: { precio: number | { id: number } } | [precio: number | {
 })
 /**
 * @see \App\Http\Controllers\PrecioController::historial
- * @see app/Http/Controllers/PrecioController.php:442
+ * @see app/Http/Controllers/PrecioController.php:454
  * @route '/api/precios/{precio}/historial'
  */
 historial.head = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -523,7 +523,7 @@ historial.head = (args: { precio: number | { id: number } } | [precio: number | 
 
     /**
 * @see \App\Http\Controllers\PrecioController::historial
- * @see app/Http/Controllers/PrecioController.php:442
+ * @see app/Http/Controllers/PrecioController.php:454
  * @route '/api/precios/{precio}/historial'
  */
     const historialForm = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -533,7 +533,7 @@ historial.head = (args: { precio: number | { id: number } } | [precio: number | 
 
             /**
 * @see \App\Http\Controllers\PrecioController::historial
- * @see app/Http/Controllers/PrecioController.php:442
+ * @see app/Http/Controllers/PrecioController.php:454
  * @route '/api/precios/{precio}/historial'
  */
         historialForm.get = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -542,7 +542,7 @@ historial.head = (args: { precio: number | { id: number } } | [precio: number | 
         })
             /**
 * @see \App\Http\Controllers\PrecioController::historial
- * @see app/Http/Controllers/PrecioController.php:442
+ * @see app/Http/Controllers/PrecioController.php:454
  * @route '/api/precios/{precio}/historial'
  */
         historialForm.head = (args: { precio: number | { id: number } } | [precio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -558,7 +558,7 @@ historial.head = (args: { precio: number | { id: number } } | [precio: number | 
     historial.form = historialForm
 /**
 * @see \App\Http\Controllers\PrecioController::cambiosRecientes
- * @see app/Http/Controllers/PrecioController.php:463
+ * @see app/Http/Controllers/PrecioController.php:475
  * @route '/api/precios/resumen/cambios-recientes'
  */
 export const cambiosRecientes = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -573,7 +573,7 @@ cambiosRecientes.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::cambiosRecientes
- * @see app/Http/Controllers/PrecioController.php:463
+ * @see app/Http/Controllers/PrecioController.php:475
  * @route '/api/precios/resumen/cambios-recientes'
  */
 cambiosRecientes.url = (options?: RouteQueryOptions) => {
@@ -582,7 +582,7 @@ cambiosRecientes.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\PrecioController::cambiosRecientes
- * @see app/Http/Controllers/PrecioController.php:463
+ * @see app/Http/Controllers/PrecioController.php:475
  * @route '/api/precios/resumen/cambios-recientes'
  */
 cambiosRecientes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -591,7 +591,7 @@ cambiosRecientes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => 
 })
 /**
 * @see \App\Http\Controllers\PrecioController::cambiosRecientes
- * @see app/Http/Controllers/PrecioController.php:463
+ * @see app/Http/Controllers/PrecioController.php:475
  * @route '/api/precios/resumen/cambios-recientes'
  */
 cambiosRecientes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -601,7 +601,7 @@ cambiosRecientes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
 
     /**
 * @see \App\Http\Controllers\PrecioController::cambiosRecientes
- * @see app/Http/Controllers/PrecioController.php:463
+ * @see app/Http/Controllers/PrecioController.php:475
  * @route '/api/precios/resumen/cambios-recientes'
  */
     const cambiosRecientesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -611,7 +611,7 @@ cambiosRecientes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
 
             /**
 * @see \App\Http\Controllers\PrecioController::cambiosRecientes
- * @see app/Http/Controllers/PrecioController.php:463
+ * @see app/Http/Controllers/PrecioController.php:475
  * @route '/api/precios/resumen/cambios-recientes'
  */
         cambiosRecientesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -620,7 +620,7 @@ cambiosRecientes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
         })
             /**
 * @see \App\Http\Controllers\PrecioController::cambiosRecientes
- * @see app/Http/Controllers/PrecioController.php:463
+ * @see app/Http/Controllers/PrecioController.php:475
  * @route '/api/precios/resumen/cambios-recientes'
  */
         cambiosRecientesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -636,7 +636,7 @@ cambiosRecientes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
     cambiosRecientes.form = cambiosRecientesForm
 /**
 * @see \App\Http\Controllers\PrecioController::resumen
- * @see app/Http/Controllers/PrecioController.php:490
+ * @see app/Http/Controllers/PrecioController.php:502
  * @route '/api/precios/resumen'
  */
 export const resumen = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -651,7 +651,7 @@ resumen.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::resumen
- * @see app/Http/Controllers/PrecioController.php:490
+ * @see app/Http/Controllers/PrecioController.php:502
  * @route '/api/precios/resumen'
  */
 resumen.url = (options?: RouteQueryOptions) => {
@@ -660,7 +660,7 @@ resumen.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\PrecioController::resumen
- * @see app/Http/Controllers/PrecioController.php:490
+ * @see app/Http/Controllers/PrecioController.php:502
  * @route '/api/precios/resumen'
  */
 resumen.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -669,7 +669,7 @@ resumen.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\PrecioController::resumen
- * @see app/Http/Controllers/PrecioController.php:490
+ * @see app/Http/Controllers/PrecioController.php:502
  * @route '/api/precios/resumen'
  */
 resumen.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -679,7 +679,7 @@ resumen.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\PrecioController::resumen
- * @see app/Http/Controllers/PrecioController.php:490
+ * @see app/Http/Controllers/PrecioController.php:502
  * @route '/api/precios/resumen'
  */
     const resumenForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -689,7 +689,7 @@ resumen.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\PrecioController::resumen
- * @see app/Http/Controllers/PrecioController.php:490
+ * @see app/Http/Controllers/PrecioController.php:502
  * @route '/api/precios/resumen'
  */
         resumenForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -698,7 +698,7 @@ resumen.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\PrecioController::resumen
- * @see app/Http/Controllers/PrecioController.php:490
+ * @see app/Http/Controllers/PrecioController.php:502
  * @route '/api/precios/resumen'
  */
         resumenForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -714,7 +714,7 @@ resumen.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     resumen.form = resumenForm
 /**
 * @see \App\Http\Controllers\PrecioController::actualizarLote
- * @see app/Http/Controllers/PrecioController.php:707
+ * @see app/Http/Controllers/PrecioController.php:719
  * @route '/api/precios/actualizar-lote'
  */
 export const actualizarLote = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -729,7 +729,7 @@ actualizarLote.definition = {
 
 /**
 * @see \App\Http\Controllers\PrecioController::actualizarLote
- * @see app/Http/Controllers/PrecioController.php:707
+ * @see app/Http/Controllers/PrecioController.php:719
  * @route '/api/precios/actualizar-lote'
  */
 actualizarLote.url = (options?: RouteQueryOptions) => {
@@ -738,7 +738,7 @@ actualizarLote.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\PrecioController::actualizarLote
- * @see app/Http/Controllers/PrecioController.php:707
+ * @see app/Http/Controllers/PrecioController.php:719
  * @route '/api/precios/actualizar-lote'
  */
 actualizarLote.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -748,7 +748,7 @@ actualizarLote.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
     /**
 * @see \App\Http\Controllers\PrecioController::actualizarLote
- * @see app/Http/Controllers/PrecioController.php:707
+ * @see app/Http/Controllers/PrecioController.php:719
  * @route '/api/precios/actualizar-lote'
  */
     const actualizarLoteForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -758,7 +758,7 @@ actualizarLote.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
             /**
 * @see \App\Http\Controllers\PrecioController::actualizarLote
- * @see app/Http/Controllers/PrecioController.php:707
+ * @see app/Http/Controllers/PrecioController.php:719
  * @route '/api/precios/actualizar-lote'
  */
         actualizarLoteForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

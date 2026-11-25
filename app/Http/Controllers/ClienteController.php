@@ -1074,13 +1074,29 @@ class ClienteController extends Controller
             ]);
         }
 
+        // Sin texto y con "precargar": sugeridos al enfocar el buscador (cliente general primero, luego los de compra más reciente)
+        if ((string) $q === '' && $request->boolean('precargar')) {
+            $sugeridos = ClienteModel::porEmpresa()
+                ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'puede_tener_credito', 'limite_credito', 'codigo_cliente'])
+                ->where('activo', true)
+                ->withMax('ventas', 'created_at')
+                ->orderByRaw("CASE WHEN codigo_cliente = 'GENERAL' THEN 0 ELSE 1 END")
+                ->orderByDesc('ventas_max_created_at')
+                ->orderBy('nombre')
+                ->limit($limite)
+                ->get();
+
+            return ApiResponse::success($sugeridos);
+        }
+
         if (! $q || strlen($q) < 2) {
             return ApiResponse::success([]);
         }
 
         // Convertir búsqueda a minúsculas para hacer búsqueda case-insensitive
         $searchLower = strtolower($q);
-        $clientes    = ClienteModel::query()
+        // porEmpresa: sin esto la búsqueda devolvía clientes de otras empresas (ej. CLIENTE GENERAL de otra empresa)
+        $clientes    = ClienteModel::porEmpresa()
             ->select(['id', 'nombre', 'razon_social', 'nit', 'telefono', 'email', 'puede_tener_credito', 'limite_credito'])
             ->where('activo', true)
             ->where(function ($query) use ($searchLower) {

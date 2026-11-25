@@ -5,6 +5,7 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import { formatCurrency } from '@/lib/compras.utils';
+import { History, RefreshCw } from 'lucide-react';
 import type { OrdenTablaPrecios, PrecioProductoDTO, ProductoConPreciosDTO, TipoPrecioEntity } from '@/domain/entities/precios';
 
 interface TablaPreciosProps {
@@ -127,6 +128,17 @@ const CeldaPrecio: React.FC<CeldaPrecioProps> = ({ precio, esBase, onGuardar, on
                     >
                         {formatCurrency(precio.precio_actual)}
                     </button>
+                    <span className="text-[10px] text-gray-500 dark:text-slate-400" title="Unidad a la que aplica este precio">
+                        {precio.unidad_medida ?? 'sin unidad'}
+                    </span>
+                    {precio.posible_duplicado && (
+                        <span
+                            className="rounded bg-amber-200 px-1 text-[10px] font-semibold text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+                            title="Posible duplicado: otro precio activo de este producto y tipo tiene la misma unidad (o sin unidad) o el mismo valor. Revisa si debes desactivar uno"
+                        >
+                            ⚠ duplicado
+                        </span>
+                    )}
                     <button
                         type="button"
                         tabIndex={-1}
@@ -289,6 +301,12 @@ export const TablaPreciosComponent: React.FC<TablaPreciosProps> = ({
                                         )}
                                     </div>
                                     <div className="text-xs text-gray-600 dark:text-slate-400">SKU: {producto.sku || 'N/A'}</div>
+                                    <div
+                                        className="text-xs text-gray-500 dark:text-slate-500"
+                                        title="Los precios no tienen empresa propia: pertenecen a su producto"
+                                    >
+                                        Empresa: {producto.empresa ?? `#${producto.empresa_id ?? '—'}`}
+                                    </div>
                                 </td>
                                 {/* <td className="px-4 py-3 text-sm text-gray-600 dark:text-slate-400 align-top">
                                     {producto.categoria?.nombre || 'Sin categoría'}
@@ -329,19 +347,23 @@ export const TablaPreciosComponent: React.FC<TablaPreciosProps> = ({
                                     <div className="flex items-center justify-center gap-2">
                                         {onBuscarCompras && (
                                             <button
+                                                type="button"
                                                 onClick={() => onBuscarCompras(Number(producto.id))}
-                                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
-                                                title="Buscar compras con diferencia de costo"
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50 transition-colors"
+                                                title="Buscar compras con diferencia de costo (actualizar precios)"
+                                                aria-label="Actualizar precios desde compras"
                                             >
-                                                💱 Actualizar Precios
+                                                <RefreshCw className="h-4 w-4" />
                                             </button>
                                         )}
                                         <button
+                                            type="button"
                                             onClick={() => onVerHistorial(producto)}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors"
+                                            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 transition-colors"
                                             title="Ver historial de todos los precios del producto"
+                                            aria-label="Ver historial de precios"
                                         >
-                                            🕘 Historial
+                                            <History className="h-4 w-4" />
                                         </button>
                                     </div>
                                 </td>

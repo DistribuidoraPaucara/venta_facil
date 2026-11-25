@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminar
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
 export const eliminar = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -16,7 +16,7 @@ eliminar.definition = {
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminar
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
 eliminar.url = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ eliminar.url = (args: { limite: string | number } | [limite: string | number ] |
 
 /**
 * @see \App\Http\Controllers\EditorProductosController::eliminar
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
 eliminar.delete = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -54,7 +54,7 @@ eliminar.delete = (args: { limite: string | number } | [limite: string | number 
 
     /**
 * @see \App\Http\Controllers\EditorProductosController::eliminar
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
     const eliminarForm = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -69,7 +69,7 @@ eliminar.delete = (args: { limite: string | number } | [limite: string | number 
 
             /**
 * @see \App\Http\Controllers\EditorProductosController::eliminar
- * @see app/Http/Controllers/EditorProductosController.php:437
+ * @see app/Http/Controllers/EditorProductosController.php:470
  * @route '/inventario/editor-productos/limites/{limite}'
  */
         eliminarForm.delete = (args: { limite: string | number } | [limite: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

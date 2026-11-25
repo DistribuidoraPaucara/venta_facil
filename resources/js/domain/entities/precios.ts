@@ -56,6 +56,8 @@ export interface PrecioProductoDTO {
     id: Id;
     tipo_precio_id: Id;
     unidad_medida?: string | null;
+    unidad_medida_id?: Id | null;
+    posible_duplicado?: boolean; // otro precio activo del mismo producto y tipo, misma unidad (o sin unidad) o mismo valor
     precio_actual: number;
     margen_ganancia: number;
     porcentaje_ganancia: number;
@@ -75,6 +77,8 @@ export interface PrecioProductoDTO {
 
 export interface ProductoConPreciosDTO extends BaseEntity {
     id: Id;
+    empresa_id?: Id;
+    empresa?: string | null; // empresa del producto: los precios no tienen empresa propia
     nombre: string;
     sku?: string;
     codigos_barra?: string[];

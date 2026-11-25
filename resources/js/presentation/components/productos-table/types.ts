@@ -64,6 +64,7 @@ export interface ProductosTableProps {
     productos: Producto[]; // Ahora solo para referencia de IDs (podría no usarse)
     detalles: DetalleProducto[];
     onAddProduct: (producto: Producto) => void;
+    onCambiarProductoLinea?: (index: number, producto: Producto) => void; // Ventas: cambia el producto de una línea (fraccionado ↔ padre/hijo)
     onUpdateDetail: (index: number, field: keyof DetalleProducto, value: number | string) => void;
     onUpdateDetailMultiple?: (index: number, updates: Record<string, number | string | null>) => void; // ✅ NUEVO (2026-07-03): Actualizar múltiples campos de una sola vez
     onRemoveDetail: (index: number) => void;

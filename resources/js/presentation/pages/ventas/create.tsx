@@ -816,12 +816,15 @@ export default function VentaForm() {
         calculatePeso(newDetalles);
     };
 
-    const addProductToDetail = (producto: Producto) => {
+    // reemplazarIndex: cambia el producto de esa línea (ej. fraccionado → su padre/hijo) en la misma fila, sin sumar
+    const addProductToDetail = (producto: Producto, reemplazarIndex?: number) => {
         // Verificar si el producto ya está en los detalles. Con varias líneas del mismo producto (ej. una fría),
         // volver a escanearlo suma a la línea del almacén de la empresa (la natural)
         const existingDetail =
-            detallesWithProducts.find((d) => d.producto_id === producto.id && (d.almacen_id ?? almacen_id_empresa) === almacen_id_empresa) ??
-            detallesWithProducts.find((d) => d.producto_id === producto.id);
+            reemplazarIndex !== undefined
+                ? undefined
+                : (detallesWithProducts.find((d) => d.producto_id === producto.id && (d.almacen_id ?? almacen_id_empresa) === almacen_id_empresa) ??
+                  detallesWithProducts.find((d) => d.producto_id === producto.id));
 
         if (existingDetail) {
             // ✅ NUEVO: En lugar de rechazar, incrementar la cantidad
@@ -870,6 +873,16 @@ export default function VentaForm() {
         const conversiones = (producto as any).conversiones || [];
         const esProductoFraccionado = (producto as any).es_fraccionado && conversiones.length > 0;
 
+        // Precios propios del producto: se excluyen las unidades que son OTRO producto (conversión con producto destino).
+        // Ej. CJTE 1003 tenía su precio en la unidad de CIGARRILLO (1855): ese precio se vende desde el cigarrillo,
+        // si se usara, la línea de CJTE quedaba en CIGARRILLO
+        const unidadesDeOtroProducto = new Set<number>(
+            conversiones.filter((c: any) => c.producto_destino_id && c.activo !== false).map((c: any) => Number(c.unidad_destino_id)),
+        );
+        const preciosPropios: any[] = ((producto as any).precios || []).filter(
+            (p: any) => !(p.unidad_medida_id && unidadesDeOtroProducto.has(Number(p.unidad_medida_id))),
+        );
+
         // ✅ MODIFICADO (2026-02-17): Usar tipo_precio_id que viene del backend PRIMERO
         // El backend devuelve tipo_precio_id_recomendado basado en el código VENTA
         const tipoPrecioBaseId = (producto as any).tipo_precio_id_recomendado || tipoPrecioLicoreriId;
@@ -880,7 +893,7 @@ export default function VentaForm() {
         const almacenBase = almacenDeTipoPrecio(tipoPrecioBaseId);
         const precioConStock =
             !(producto as any).es_combo && !(Number(stockPorAlmacen[almacenBase]) > 0)
-                ? ((producto as any).precios || []).find(
+                ? preciosPropios.find(
                       (p: any) =>
                           p.tipo_precio_id &&
                           Number(p.precio) > 0 &&
@@ -911,11 +924,11 @@ export default function VentaForm() {
             }
         }
 
-        const precioRecomendado = (producto as any).precios?.find((p: any) =>
+        const precioRecomendado = preciosPropios.find((p: any) =>
             p.tipo_precio_id === tipoPrecioIdRecomendado &&
             p.unidad_medida_id === unidadBuscada
-        ) || (producto as any).precios?.find((p: any) =>
-            p.tipo_precio_id === tipoPrecioIdRecomendado // Fallback: Cualquier precio del tipo recomendado
+        ) || preciosPropios.find((p: any) =>
+            p.tipo_precio_id === tipoPrecioIdRecomendado // Fallback: cualquier precio propio del tipo recomendado
         );
 
         // ✅ NUEVO (2026-09-06): Determinar unidad_venta_id inicial basándose en el precio recomendado
@@ -960,8 +973,11 @@ export default function VentaForm() {
             tipo_precio_nombre_recomendado: (producto as any).tipo_precio_nombre_recomendado,
         };
 
-        // ✅ MODIFICADO: Agregar el producto al INICIO de la lista, no al final
-        const newDetalles = [newDetail, ...detallesWithProducts];
+        // ✅ MODIFICADO: Agregar el producto al INICIO de la lista, no al final (o reemplazar la línea indicada)
+        const newDetalles =
+            reemplazarIndex === undefined
+                ? [newDetail, ...detallesWithProducts]
+                : detallesWithProducts.map((d, i) => (i === reemplazarIndex ? newDetail : d));
         setDetallesWithProducts(newDetalles);
 
         // ✅ NUEVO (2026-07-03): Limpiar manuallySelectedTipoPrecio del nuevo producto para que use el tipo de precio por defecto
@@ -1826,7 +1842,7 @@ export default function VentaForm() {
 
                 {/* Información básica */}
                 <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-                    <div className="grid grid-cols-2 gap-4 items-end">
+                    <div className="grid grid-cols-2 gap-4 items-start">
                         {/* Campo número oculto - se genera automáticamente */}
                         <input type="hidden" value={data.numero} onChange={(e) => setData('numero', e.target.value)} />
                         {/* Campo moneda oculto - se establece automáticamente a BOB */}
@@ -1854,6 +1870,7 @@ export default function VentaForm() {
                                 required={true}
                                 allowScanner={false}
                                 showCreateButton={true}
+                                buscarAlEnfocar={true}
                                 onCreateClick={handleCreateCliente}
                                 createButtonText="Crear Cliente"
                                 showCreateIconButton={true}
@@ -2153,6 +2170,7 @@ export default function VentaForm() {
                         productos={productosSeguro}
                         detalles={detallesWithProducts}
                         onAddProduct={addProductToDetail}
+                        onCambiarProductoLinea={(index, producto) => addProductToDetail(producto, index)}
                         transferencia={{ monto: data.transferencia_monto, tipo: data.transferencia_tipo }}
                         onTransferenciaChange={(cambios) => {
                             if (cambios.monto !== undefined) setData('transferencia_monto', cambios.monto);

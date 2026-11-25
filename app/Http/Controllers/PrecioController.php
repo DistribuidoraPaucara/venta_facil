@@ -142,6 +142,8 @@ class PrecioController extends Controller
                     }]);
             },
             'categoria:id,nombre',
+            // Los precios no tienen empresa_id: su empresa es la del producto
+            'empresa:id,nombre_comercial',
             'codigosBarra' => fn($q) => $q->where('activo', true)->orderByDesc('es_principal')->orderBy('id'),
         ])
             ->where('activo', true);
@@ -280,6 +282,8 @@ class PrecioController extends Controller
             'id'                               => $producto->id,
             'nombre'                           => $producto->nombre,
             'sku'                              => $producto->sku,
+            'empresa_id'                       => $producto->empresa_id,
+            'empresa'                          => $producto->empresa?->nombre_comercial,
             'codigos_barra'                    => $producto->relationLoaded('codigosBarra') ? $producto->codigosBarra->pluck('codigo')->values() : [],
             'categoria'                        => $producto->categoria ? [
                 'id'     => $producto->categoria->id,
@@ -287,14 +291,22 @@ class PrecioController extends Controller
             ] : null,
             'costo_cambio_reciente'            => $costoCambiadoReciente,
             'tiene_diferencia_costo_en_compra' => $tieneDiferenciaCostoEnCompra,
-            'precios'                          => $producto->precios->map(function ($precio) use ($costoCambiadoReciente) {
+            'precios'                          => $producto->precios->map(function ($precio) use ($costoCambiadoReciente, $producto) {
                 $actualizadoReciente = $precio->fueActualizadoRecientemente();
                 $esCosto             = $precio->tipoPrecio && $precio->tipoPrecio->codigo === 'COSTO';
+
+                // Posible duplicado: otro precio activo del mismo producto y tipo, con la misma unidad (o sin unidad) o el mismo valor
+                $posibleDuplicado = $producto->precios->contains(fn($otro) => $otro->id !== $precio->id
+                    && (int) $otro->tipo_precio_id === (int) $precio->tipo_precio_id
+                    && (((int) ($otro->unidad_medida_id ?? 0)) === ((int) ($precio->unidad_medida_id ?? 0))
+                        || (float) $otro->precio === (float) $precio->precio));
 
                 return [
                     'id'                        => $precio->id,
                     'tipo_precio_id'            => $precio->tipo_precio_id,
+                    'unidad_medida_id'          => $precio->unidad_medida_id,
                     'unidad_medida'             => $precio->unidadMedida?->nombre,
+                    'posible_duplicado'         => $posibleDuplicado,
                     'precio_actual'             => (float) $precio->precio,
                     'margen_ganancia'           => (float) $precio->margen_ganancia,
                     'porcentaje_ganancia'       => (float) $precio->porcentaje_ganancia,

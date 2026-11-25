@@ -235,6 +235,11 @@ export function useProductSearch({
             unidad_medida_id: p.unidad_medida_id,
             unidad_medida_nombre: p.unidad_medida_nombre,
             conversiones: p.conversiones || [],
+            // Familia de fraccionamiento: IDs de padres e hijos + objetos completos (familia_productos) para cambiar la línea
+            familia_fraccionamiento: p.familia_fraccionamiento ?? { padres: [], hijos: [] },
+            familia_productos: Object.fromEntries(
+                Object.entries(p.familia_productos ?? {}).map(([id, nodo]) => [id, transformarProductoAPI(nodo)]),
+            ),
             precios: p.precios?.map((pr: any) => ({
                 id: pr.id,
                 tipo_precio_id: pr.tipo_precio_id,

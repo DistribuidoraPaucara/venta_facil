@@ -27,6 +27,17 @@ export interface Step3Props {
     handleCantidadTotalChange?: (i: number, newValue: number | undefined) => void; // ✨ NUEVO: Auto-llenar disponible y reservada
     productoId?: number; // Producto en edición (para eliminar límites guardados en el servidor)
     stockLimitesRepetidos?: LimiteRepetido[]; // Límites extra en un mismo almacén (el formulario edita solo uno por almacén)
+    lotesEliminados?: LoteDadoDeBaja[]; // Lotes ya dados de baja (soft delete), solo para consulta
+}
+
+export interface LoteDadoDeBaja {
+    id: number;
+    almacen_id: number;
+    sector_nombre: string | null;
+    lote: string | null;
+    fecha_vencimiento: string | null;
+    cantidad: number;
+    dado_de_baja_at: string | null;
 }
 
 interface LimiteRepetido {
@@ -132,6 +143,7 @@ export default function Step3Almacenes({
     setData,
     almacenesOptions,
     sectores,
+    lotesEliminados = [],
     addAlmacen,
     setAlmacen,
     removeAlmacen,
@@ -357,6 +369,8 @@ export default function Step3Almacenes({
 
     const almacenesDisponibles = almacenesOptions.filter((o) => !grupos.has(String(o.value)));
     const [agregandoAlmacen, setAgregandoAlmacen] = useState(false);
+    // Desplegable de lotes dados de baja, por almacén (clave: almacen_id)
+    const [bajasAbiertas, setBajasAbiertas] = useState<Record<string, boolean>>({});
 
     const totalLotes = (data.almacenes || []).length;
     const fmt = (n: number) => n.toLocaleString('es-BO', { maximumFractionDigits: 2 });
@@ -436,6 +450,7 @@ export default function Step3Almacenes({
                                     : null;
                         const repetidosDelAlmacen = repetidos.filter((r) => String(r.almacen_id) === grupo.key);
                         const tieneLimite = !!limite.id || grupo.key in stockLimites;
+                        const bajasDelAlmacen = lotesEliminados.filter((l) => String(l.almacen_id) === grupo.key);
 
                         return (
                             <div key={`almacen-${grupo.key}`} className="overflow-visible rounded-lg border bg-card shadow-sm">
@@ -469,8 +484,34 @@ export default function Step3Almacenes({
                                                 </span>
                                             )}
                                             {estadoStock && <span className={`rounded px-1.5 py-0.5 font-medium ${estadoStock.clase}`}>{estadoStock.texto}</span>}
+                                            {bajasDelAlmacen.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBajasAbiertas((prev) => ({ ...prev, [grupo.key]: !prev[grupo.key] }))}
+                                                    className="rounded border px-1.5 py-0.5 text-muted-foreground hover:bg-muted"
+                                                    title="Lotes que ya se dieron de baja (eliminados)"
+                                                >
+                                                    🗑 Dados de baja ({bajasDelAlmacen.length}) {bajasAbiertas[grupo.key] ? '▲' : '▼'}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
+
+                                    {bajasAbiertas[grupo.key] && bajasDelAlmacen.length > 0 && (
+                                        <div className="rounded border border-dashed bg-background p-2 text-xs">
+                                            <p className="mb-1 font-medium text-muted-foreground">Lotes dados de baja (solo consulta)</p>
+                                            <ul className="space-y-1">
+                                                {bajasDelAlmacen.map((l) => (
+                                                    <li key={l.id} className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 tabular-nums">
+                                                        <span>{l.lote ? `Lote ${l.lote}` : 'Sin lote'}</span>
+                                                        <span className="text-muted-foreground">{l.sector_nombre ?? 'Sin sector'}</span>
+                                                        <span>Vence: {l.fecha_vencimiento ?? '—'}</span>
+                                                        <span>Quedó: {fmt(l.cantidad)} · {l.dado_de_baja_at ?? ''}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
 
                                     {grupo.key !== '0' && (
                                         <div className="grid grid-cols-[1fr_5.5rem_5.5rem_auto] items-end gap-2">

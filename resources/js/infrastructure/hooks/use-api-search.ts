@@ -37,18 +37,23 @@ interface UseApiSearchOptions {
     endpoint: string;
     mapResults?: (item: ApiItem) => SearchOption;
     minQueryLength?: number;
+    permitirVacia?: boolean; // sin texto pide sugeridos precargados (precargar=1) en vez de devolver []
 }
 
 export function useApiSearch({
     endpoint,
     mapResults = (item) => ({ value: item.id, label: item.nombre }),
-    minQueryLength = 2
+    minQueryLength = 2,
+    permitirVacia = false,
 }: UseApiSearchOptions) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const search = useCallback(async (query: string): Promise<SearchOption[]> => {
-        if (!query || query.length < minQueryLength) {
+        if (!query && !permitirVacia) {
+            return [];
+        }
+        if (query && query.length < minQueryLength) {
             return [];
         }
 
@@ -56,7 +61,10 @@ export function useApiSearch({
         setError(null);
 
         try {
-            const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)}&limite=10`, {
+            const url = query
+                ? `${endpoint}?q=${encodeURIComponent(query)}&limite=10`
+                : `${endpoint}?q=&precargar=1&limite=10`;
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -185,6 +193,7 @@ export function useProductoSearch() {
 export function useClienteSearch() {
     return useApiSearch({
         endpoint: '/api/clientes/buscar',
+        permitirVacia: true, // sugeridos precargados al enfocar el buscador
         mapResults: (cliente) => {
             const cli = cliente as ClienteItem;
 

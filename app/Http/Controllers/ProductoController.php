@@ -1102,6 +1102,23 @@ class ProductoController extends Controller
                         'is_deleted'               => (bool) $s->deleted_at, // ✨ NUEVO: Indicar si está soft-deleted
                     ];
                 })->toArray(),
+            // Lotes dados de baja (soft delete): solo para consulta en el formulario
+            'stock_eliminados' => StockProducto::onlyTrashed()
+                ->where('producto_id', $producto->id)
+                ->with(['sector:id,nombre'])
+                ->orderByDesc('deleted_at')
+                ->get(['id', 'producto_id', 'almacen_id', 'sector_id', 'cantidad', 'lote', 'fecha_vencimiento', 'deleted_at'])
+                ->map(fn ($s) => [
+                    'id'                => (int) $s->id,
+                    'almacen_id'        => (int) $s->almacen_id,
+                    'sector_nombre'     => $s->sector?->nombre,
+                    'lote'              => $s->lote,
+                    'fecha_vencimiento' => $s->fecha_vencimiento ? $s->fecha_vencimiento->format('Y-m-d') : null,
+                    'cantidad'          => (float) $s->cantidad,
+                    'dado_de_baja_at'   => $s->deleted_at?->format('d/m/Y H:i'),
+                ])
+                ->values()
+                ->all(),
             'historial_precios' => $historialPrecios,
         ];
 
@@ -4329,7 +4346,88 @@ class ProductoController extends Controller
     /**
      * ✅ NUEVO: Método auxiliar para mapear productos con todas sus relaciones
      */
-    private function mapearProductos($productos, $almacenId, $tipo, $clienteId = null): JsonResponse
+    /**
+     * Ventas: adjunta a cada producto su familia de fraccionamiento, ya mapeada con la misma forma:
+     * - padres: productos con una conversión que apunta a este producto (de donde sale)
+     * - hijos: productos destino de sus conversiones (en lo que se fracciona)
+     * Usa una consulta de enlaces y una de productos relacionados (sin familia anidada).
+     */
+    private function adjuntarFamiliaFraccionamiento(array $items, $almacenId, $clienteId = null): array
+    {
+        $ids = collect($items)->pluck('id')->map(fn ($id) => (int) $id)->unique()->values();
+        $vacia = ['padres' => [], 'hijos' => []];
+        if ($ids->isEmpty()) {
+            return $items;
+        }
+
+        // Recorre la familia conectada (padre → hijo → nieto...) para que cada integrante tenga sus propios padres e hijos.
+        // Límites: 5 niveles y 100 productos, para acotar la consulta.
+        $conocidos = $ids->mapWithKeys(fn ($id) => [$id => true])->all();
+        $enlaces   = collect();
+        $frontera  = $ids;
+        for ($nivel = 0; $nivel < 5 && $frontera->isNotEmpty() && count($conocidos) < 100; $nivel++) {
+            $nuevos   = \App\Models\ConversionUnidadProducto::query()
+                ->where('activo', true)
+                ->whereNotNull('producto_destino_id')
+                ->where(fn ($q) => $q->whereIn('producto_id', $frontera)->orWhereIn('producto_destino_id', $frontera))
+                ->get(['producto_id', 'producto_destino_id']);
+
+            $frontera = collect();
+            foreach ($nuevos as $c) {
+                $padreId = (int) $c->producto_id;
+                $hijoId  = (int) $c->producto_destino_id;
+                if ($padreId === $hijoId) {
+                    continue;
+                }
+                $enlaces["{$padreId}-{$hijoId}"] = $c;
+                foreach ([$padreId, $hijoId] as $nodo) {
+                    if (! isset($conocidos[$nodo])) {
+                        $conocidos[$nodo] = true;
+                        $frontera->push($nodo);
+                    }
+                }
+            }
+        }
+
+        $enlaces = $enlaces->values();
+        if ($enlaces->isEmpty()) {
+            return array_map(fn ($item) => $item + ['familia_fraccionamiento' => $vacia], $items);
+        }
+
+        // Cada producto de la familia se mapea una sola vez (sin familia anidada)
+        $relacionados = Producto::query()->whereIn('id', array_keys($conocidos))->where('activo', true)->get();
+        $mapeados     = collect(
+            $relacionados->isEmpty()
+                ? []
+                : ($this->mapearProductos($relacionados, $almacenId, 'venta', $clienteId, false)->getData(true)['data'] ?? [])
+        )->keyBy(fn ($p) => (int) $p['id']);
+
+        // Familia de cada integrante como IDs (no anidada: el grafo puede tener ciclos)
+        $familiaIds = function (int $id) use ($enlaces, $mapeados): array {
+            $padres = $enlaces->where('producto_destino_id', $id)->pluck('producto_id')
+                ->map(fn ($pid) => (int) $pid)->filter(fn ($pid) => $mapeados->has($pid))->unique()->values()->all();
+            $hijos = $enlaces->where('producto_id', $id)->pluck('producto_destino_id')
+                ->map(fn ($hid) => (int) $hid)->filter(fn ($hid) => $mapeados->has($hid))->unique()->values()->all();
+
+            return ['padres' => $padres, 'hijos' => $hijos];
+        };
+
+        // Diccionario plano con todos los integrantes de la familia (objetos completos), compartido por las filas
+        $diccionario = $mapeados->map(fn ($nodo, $id) => $nodo + ['familia_fraccionamiento' => $familiaIds((int) $id)])
+            ->mapWithKeys(fn ($nodo, $id) => [(string) $id => $nodo])
+            ->all();
+
+        return array_map(function ($item) use ($familiaIds, $diccionario) {
+            $familia = $familiaIds((int) $item['id']);
+            if (empty($familia['padres']) && empty($familia['hijos'])) {
+                return $item + ['familia_fraccionamiento' => $familia];
+            }
+
+            return $item + ['familia_fraccionamiento' => $familia, 'familia_productos' => $diccionario];
+        }, $items);
+    }
+
+    private function mapearProductos($productos, $almacenId, $tipo, $clienteId = null, bool $conFamilia = true): JsonResponse
     {
         // Cargar relaciones necesarias
         $productosConRelaciones = $productos
@@ -4764,6 +4862,10 @@ class ProductoController extends Controller
 
         // 📤 LOG: Mostrar lo que se retorna al frontend
         $resultado                  = $productosConRelaciones->values()->all();
+        // (string): $tipo puede llegar como Stringable desde $request->string(), y === 'venta' fallaría
+        if ($conFamilia && (string) $tipo === 'venta') {
+            $resultado = $this->adjuntarFamiliaFraccionamiento($resultado, $almacenId, $clienteId);
+        }
         $permiteSinStockEnRespuesta = collect($resultado)
             ->where('permite_venta_sin_stock', true)
             ->count();

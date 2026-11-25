@@ -16,6 +16,8 @@ import Step3Almacenes, { validarYAjustarAlmacenes } from './steps/Step3Almacenes
 import Step3Conversiones from './steps/Step3Conversiones'; // ✨ NUEVO
 import Step4Imagenes from './steps/Step4Imagenes';
 import Step5PrecioRango from './steps/Step5PrecioRango'; // ✨ NUEVO
+import FraccionarProductoModal from '../inventario/components/fraccionar-producto-modal'; // Fraccionar desde el formulario (solo al editar)
+import TransferirProductoModal from '../inventario/components/transferir-producto-modal'; // Transferir entre almacenes desde el formulario (solo al editar)
 import StepRecetaIngredientes from './steps/StepRecetaIngredientes'; // 🏭 NUEVO: Ingredientes de receta
 
 // Estado del formulario tipado para evitar 'any' implícitos
@@ -63,7 +65,11 @@ interface ProductoFormPagePropsExtended extends ProductoFormPageProps {
     sectores?: Record<number | string, Array<{ value: number; label: string }>>; // ✨ NUEVO: Sectores pre-cargados
 }
 
-export default function ProductoForm({
+interface ProductoFormContenidoProps extends ProductoFormPagePropsExtended {
+    onStockModificado?: () => void; // Tras fraccionar o transferir: recarga el producto
+}
+
+function ProductoFormContenido({
     producto,
     categorias,
     marcas,
@@ -82,7 +88,8 @@ export default function ProductoForm({
     permite_productos_combo = false,
     permite_productos_adicionales = false,
     permite_productos_produccion = false,
-}: ProductoFormPagePropsExtended) {
+    onStockModificado = () => {},
+}: ProductoFormContenidoProps) {
     // 🔐 Obtener permisos del usuario desde Inertia
     const { auth } = usePage().props as any;
     const userPermissions = auth?.user?.permissions || [];
@@ -1089,6 +1096,63 @@ export default function ProductoForm({
         }
     };
 
+    // ── Fraccionar y transferir desde el formulario (solo al editar: operan sobre el producto guardado) ──
+    const [fraccionarAbierto, setFraccionarAbierto] = useState(false);
+    const [transferirDesde, setTransferirDesde] = useState<number | null>(null);
+
+    const stockGuardado: any[] = isEditing ? ((producto as any).stock_almacenes ?? []) : [];
+    const stocksDeAlmacen = (almacenId: number) =>
+        stockGuardado
+            .filter((s) => Number(s.almacen_id) === almacenId)
+            .map((s) => ({
+                id: Number(s.id),
+                sector: s.sector_nombre ?? null,
+                lote: s.lote ?? null,
+                fecha_vencimiento: s.fecha_vencimiento ?? null,
+                cantidad: Number(s.cantidad) || 0,
+                cantidad_disponible: Number(s.cantidad_disponible) || 0,
+            }));
+    const conversionesHijo = isEditing
+        ? ((producto as any).conversiones ?? [])
+              .filter((c: any) => c.producto_destino_id && c.activo !== false)
+              .map((c: any) => ({
+                  id: c.id,
+                  producto_hijo_id: Number(c.producto_destino_id),
+                  producto_hijo_nombre: c.producto_destino?.nombre ?? null,
+                  unidad_destino_nombre: c.unidad_destino?.nombre ?? '',
+                  factor_conversion: c.factor_conversion,
+              }))
+        : [];
+    const unidadNombre: string = (producto as any)?.unidad_medida_nombre ?? (producto as any)?.unidad?.nombre ?? '';
+    const esFraccionable = isEditing && Boolean((producto as any).es_fraccionado) && conversionesHijo.length > 0;
+    const almacenesConStock = isEditing && almacenes.length > 1
+        ? almacenes.filter((a) => stocksDeAlmacen(a.id).some((s) => s.cantidad > 0))
+        : [];
+
+    // Datos del producto en un almacén de origen (fila que espera el modal de transferencia)
+    const productoTransferible = (almacenId: number) => ({
+        id: Number(producto?.id),
+        nombre: producto?.nombre ?? '',
+        almacen_id: almacenId,
+        almacen: almacenes.find((a) => a.id === almacenId)?.nombre ?? '',
+        unidad_nombre: unidadNombre,
+        es_fraccionado: Boolean((producto as any).es_fraccionado),
+        stocks: stocksDeAlmacen(almacenId),
+        conversiones: conversionesHijo,
+    });
+
+    // El modal pide la fila del producto hijo para contar sus unidades sueltas; este formulario solo tiene el producto
+    // editado, así que para los hijos no hay fila (el backend igual calcula las sueltas al transferir)
+    const filaDe = (productoId: number, almacenId: number) => {
+        if (!isEditing || Number(productoId) !== Number(producto.id)) return undefined;
+        const stocks = stocksDeAlmacen(almacenId);
+        return {
+            cantidad_total: stocks.reduce((total, s) => total + s.cantidad, 0),
+            es_fraccionado: Boolean((producto as any).es_fraccionado),
+            stocks,
+        };
+    };
+
     return (
         <AppLayout
             breadcrumbs={[
@@ -1107,12 +1171,22 @@ export default function ProductoForm({
                             {isEditing ? `Modifica los datos del producto #${producto.id} - ${producto.sku}` : 'Agrega un nuevo producto al inventario'}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {!isEditing && (
                             <Button type="button" variant="destructive" size="sm" onClick={clearDraft}>
                                 Limpiar borrador
                             </Button>
                         )}
+                        {esFraccionable && (
+                            <Button type="button" variant="outline" size="sm" onClick={() => setFraccionarAbierto(true)}>
+                                ✂️ Fraccionar
+                            </Button>
+                        )}
+                        {almacenesConStock.map((a) => (
+                            <Button key={a.id} type="button" variant="outline" size="sm" onClick={() => setTransferirDesde(a.id)}>
+                                ⇄ Transferir desde {a.nombre}
+                            </Button>
+                        ))}
                     </div>
                 </div>
 
@@ -1364,6 +1438,7 @@ export default function ProductoForm({
                                             label: a.nombre,
                                         }))}
                                         sectores={sectores} // ✨ NUEVO: Pasar sectores pre-cargados
+                                        lotesEliminados={(producto as any)?.stock_eliminados ?? []}
                                         addAlmacen={addAlmacen}
                                         setAlmacen={setAlmacen}
                                         removeAlmacen={removeAlmacen}
@@ -1431,6 +1506,43 @@ export default function ProductoForm({
                     </Button>
                 </div>
             </div>
+
+            {isEditing && (
+                <>
+                    <FraccionarProductoModal
+                        producto={
+                            fraccionarAbierto
+                                ? { id: Number(producto.id), nombre: producto.nombre, unidad_nombre: unidadNombre, conversiones: conversionesHijo }
+                                : null
+                        }
+                        onClose={() => setFraccionarAbierto(false)}
+                        onFraccionado={onStockModificado}
+                    />
+                    <TransferirProductoModal
+                        producto={transferirDesde !== null ? productoTransferible(transferirDesde) : null}
+                        almacenes={almacenes}
+                        filaDe={filaDe}
+                        onClose={() => setTransferirDesde(null)}
+                        onTransferido={onStockModificado}
+                    />
+                </>
+            )}
         </AppLayout>
+    );
+}
+
+/**
+ * Tras fraccionar o transferir el servidor cambia el stock: se recarga el producto y el formulario se remonta
+ * con esos datos (si no, al guardar enviaría las cantidades viejas). Los cambios sin guardar del formulario se pierden.
+ */
+export default function ProductoForm(props: ProductoFormPagePropsExtended) {
+    const [version, setVersion] = useState(0);
+
+    return (
+        <ProductoFormContenido
+            key={version}
+            {...props}
+            onStockModificado={() => router.reload({ only: ['producto'], onSuccess: () => setVersion((v) => v + 1) })}
+        />
     );
 }
